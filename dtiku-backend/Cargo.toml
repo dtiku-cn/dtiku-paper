@@ -5,3 +5,6 @@ edition = "2021"
 publish = ["crates-io"]
 
 [dependencies]
+spring = "0.2"
+spring-web = "0.2"
+spring-job = "0.2"
