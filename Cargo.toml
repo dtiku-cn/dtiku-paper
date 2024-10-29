@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "dtiku-backend",
+    "dtiku-web",
+    "dtiku-core",
+]
