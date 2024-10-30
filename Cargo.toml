@@ -2,5 +2,8 @@
 members = [
     "dtiku-backend",
     "dtiku-web",
-    "dtiku-core",
+    "dtiku-paper",
 ]
+
+[workspace.dependencies]
+tokio = "1"

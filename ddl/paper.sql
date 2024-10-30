@@ -20,7 +20,8 @@ create table if not exists question(
 create table if not exists paper_question (
     paper_id integer not null,
     question_id integer not null,
-    sort smallint not null
+    sort smallint not null,
+    primary key (paper_id, question_id)
 );
 create table if not exists material (
     id serial primary key,
@@ -30,11 +31,13 @@ create table if not exists material (
 create table if not exists paper_material (
     paper_id integer not null,
     material_id integer not null,
-    sort smallint not null
+    sort smallint not null,
+    primary key (paper_id, material_id)
 );
 create table if not exists question_material (
     question_id integer not null,
-    material_id integer not null
+    material_id integer not null,
+    primary key (question_id, material_id)
 );
 create table if not exists solution (
     id serial primary key,

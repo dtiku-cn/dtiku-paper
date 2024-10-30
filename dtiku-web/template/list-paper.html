@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta th:replace="fragments/general :: meta(${province}+','+${cls}+',真题,答案,解析','提供全国各省市历年行测真题与答案')"/>
+    <title th:text="${province}+${cls.category.text}+${cls.text}+'真题库 | '+${system_siteTitle}"></title>
+    <link th:replace="fragments/general :: headerfiles"/>
+</head>
+<body class="container">
+<header th:insert="fragments/general.html :: header"></header>
+<div class="card mb-3">
+    <header class="card-header d-flex p-1 align-items-center">
+        <div class="dropdown">
+            <a class="btn btn-link dropdown-toggle d-flex align-items-center"
+               href="#" data-toggle="dropdown" role="button"
+               aria-expanded="false" id="clsDropdown">
+                <svg class="icon-svg icon-svg-sm mr-2">
+                    <use xlink:href="#ic-library"></use>
+                </svg>
+                <strong th:text="|${cls.category.text} / ${cls.text}|"></strong>
+            </a>
+            <div class="dropdown-menu shadow-sm" aria-labelledby="clsDropdown">
+                <a class="dropdown-item"
+                   th:each="cls:${allPaperTypes}"
+                   th:href="|?category=${cls.category}&cls=${cls.text}|"
+                   th:text="|${cls.category.text} / ${cls.text}|"></a>
+            </div>
+        </div>
+    </header>
+    <div id="allProvinces" class="card-body d-flex flex-wrap">
+        <a class="btn btn-link"
+           th:each="p : ${allProvinces}"
+           th:classappend="${province==p?'active':''}"
+           th:href="|?category=${cls.category}&cls=${cls.text}&province=${p}|"
+           th:text="${p}"></a>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <header class="d-flex card-header align-items-center">
+        <svg class="icon-svg icon-svg-sm mr-2">
+            <use xlink:href="#ic-list"></use>
+        </svg>
+        <strong th:text="|${province}${cls.text}试卷列表|"></strong>
+    </header>
+    <div id="fromType" class="text-center">
+        <a class="btn btn-link"
+           th:if="${#bools.isTrue(system_showVendor)}"
+           th:href="@{/paper(category=${cls.category},cls=${cls.text},province=${province})}"
+           th:classappend="${fromType==null?'active':''}">全部</a>
+        <a class="btn btn-link"
+           th:if="${#bools.isTrue(system_showVendor)}"
+           th:each="t : ${allFromType}"
+           th:href="@{/paper(category=${cls.category},cls=${cls.text},province=${province},fromType=${t})}"
+           th:text="${t.text}"
+           th:classappend="${fromType==t?'active':''}"></a>
+    </div>
+    <th:block th:include="fragments/paper::paper-table(${papers})"/>
+</div>
+<th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)"/>
+<th:block th:include="fragments/general::footer"/>
+</body>
+</html>

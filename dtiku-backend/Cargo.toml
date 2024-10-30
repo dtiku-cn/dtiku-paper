@@ -1,6 +1,6 @@
 [package]
 name = "dtiku-backend"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 publish = ["crates-io"]
 
@@ -8,3 +8,4 @@ publish = ["crates-io"]
 spring = "0.2"
 spring-web = "0.2"
 spring-job = "0.2"
+dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
