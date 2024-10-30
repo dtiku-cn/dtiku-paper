@@ -2,50 +2,50 @@ use serde::{Deserialize, Serialize};
 use std::ops::Range;
 
 pub struct Label {
-    id: i64,
+    id: i32,
     name: String,
-    pid: i64,
+    pid: i32,
 }
 
 pub struct Paper {
-    id: i64,
+    id: i32,
     title: String,
     descrp: Option<String>,
-    label_id: i64,
+    label_id: i32,
     extra: PaperExtra,
 }
 
 pub struct Question {
-    id: i64,
+    id: i32,
     content: String,
     extra: QuestionExtra,
 }
 
 pub struct PaperQuestion {
-    paper_id: i64,
-    question_id: i64,
-    sort: i32,
+    paper_id: i32,
+    question_id: i32,
+    sort: i16,
 }
 
 pub struct Material {
-    id: i64,
+    id: i32,
     content: String,
 }
 
 pub struct PaperMaterial {
-    paper_id: i64,
-    material_id: i64,
-    sort: i32,
+    paper_id: i32,
+    material_id: i32,
+    sort: i16,
 }
 
-pub struct QuestionMaterial{
-    question_id: i64,
-    material_id: i64,
+pub struct QuestionMaterial {
+    question_id: i32,
+    material_id: i32,
 }
 
 pub struct Solution {
-    id: i64,
-    question_id: i64,
+    id: i32,
+    question_id: i32,
     extra: SolutionExtra,
 }
 
@@ -59,7 +59,7 @@ pub enum PaperExtra {
 pub struct PaperChapter {
     name: String,
     desc: String,
-    range: Range<i32>,
+    range: Range<i16>,
 }
 
 #[derive(Serialize, Deserialize)]
