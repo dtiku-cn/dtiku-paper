@@ -5,6 +5,9 @@ edition = "2021"
 publish = ["crates-io"]
 
 [dependencies]
-sea-orm="1"
-serde="1"
-serde_json="1"
+sea-orm = { version = "1.1", features = ["sqlx-postgres"] }
+serde = "1"
+serde_json = "1"
+rust-bert = "0.23"
+pgvector = { version = "0.4", features = ["postgres"] }
+strum = { version = "0.26", features = ["derive"] }
