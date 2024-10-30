@@ -597,6 +597,8 @@ name = "dtiku-core"
 version = "0.0.0"
 dependencies = [
  "sea-orm",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
