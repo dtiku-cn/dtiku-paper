@@ -13,7 +13,7 @@ impl ActiveModelBehavior for ActiveModel {}
 pub struct Paper {
     pub id: i32,
     pub title: String,
-    pub descrp: Option<String>,
+    pub desc: Option<String>,
     pub label_id: i32,
     pub extra: PaperExtra,
 }
@@ -40,7 +40,7 @@ impl TryFrom<PaperSelect> for Paper {
         Ok(Self {
             id: value.id,
             title: value.title,
-            descrp: value.descrp,
+            desc: value.descrp,
             label_id: value.label_id,
             extra: serde_json::from_value(value.extra)?,
         })
