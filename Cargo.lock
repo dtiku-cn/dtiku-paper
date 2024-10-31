@@ -604,6 +604,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dtiku-bbs"
+version = "0.0.1"
+dependencies = [
+ "pgvector",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "spring",
+ "strum",
+]
+
+[[package]]
 name = "dtiku-paper"
 version = "0.0.1"
 dependencies = [
