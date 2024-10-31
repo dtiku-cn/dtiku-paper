@@ -52,6 +52,8 @@ impl TryFrom<PaperSelect> for Paper {
 pub enum PaperExtra {
     #[serde(rename = "cs")]
     Chapter(Vec<PaperChapter>),
+    #[serde(rename = "ce")]
+    EssayCluster(EssayCluster),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -59,6 +61,18 @@ pub struct PaperChapter {
     pub name: String,
     pub desc: String,
     pub range: Range<i16>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct EssayCluster {
+    pub topic: Option<String>,
+    pub blocks: Vec<PaperBlock>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PaperBlock {
+    pub name: String,
+    pub desc: String,
 }
 
 impl Entity {
