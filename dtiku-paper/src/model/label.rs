@@ -1,10 +1,18 @@
 pub use super::_entities::label::*;
+use anyhow::Context;
+use sea_orm::{ActiveModelBehavior, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 
-use sea_orm::{sqlx::types::chrono::Local, ActiveModelBehavior, ConnectionTrait, DbErr, Set};
-use spring::async_trait;
+impl ActiveModelBehavior for ActiveModel {}
 
-pub struct Label {
-    id: i32,
-    name: String,
-    pid: i32,
+impl Entity {
+    pub async fn find_by_pid<C>(db: &C, pid: i32) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .filter(Column::Pid.eq(pid))
+            .all(db)
+            .await
+            .with_context(|| format!("query label for pid#{pid}"))
+    }
 }
