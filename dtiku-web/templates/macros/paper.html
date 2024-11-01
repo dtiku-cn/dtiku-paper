@@ -1,0 +1,24 @@
+{% macro paper_meta(p)%}
+<span th:if="${bools.isTrue(system_showVendor)}" th:text="|数据来源：${p.paper.fromType.domain}|"></span>
+<span>分类：<b th:text="|${p.paper.type.text}/${p.paper.area}|"></b></span>
+<a th:each="m:${p.modes}" th:href="'/paper/'+${p.paper.id}+'?mode='+${m.name()}" th:text="${m.text}"></a>
+<a th:href="${user==null?'#loginModal':'javascript:window.print()'}" th:data-toggle="${user==null?'modal':''}">打印试卷</a>
+{% endmacro paper_meta %}
+
+{% macro paper_table(papers)%}
+<table id="paper-table" class="table table-hover">
+    <tr th:each="p : ${papers}">
+        <td class="p-2">
+            <img class="vendor-icon" rel="external nofollow noreferrer" th:if="${bools.isTrue(system_showVendor)}"
+                th:src="${p.fromType.iconUrl()}" th:alt="${p.fromType.name()}" />
+            <a target="_blank" th:href="'/paper/'+${p.id}" th:text="${p.title}"></a>
+            <b th:if="${!#strings.isEmpty(p.tag)}" class="badge badge-info" th:text="${p.tag}"></b>
+            <b th:if="${p.year==#temporals.year(#temporals.createNow())}" class="badge badge-success">New</b>
+        </td>
+        <td th:if="${bools.isTrue(system_showVendor)}" class="py-2 d-none d-sm-table-cell" width="75"
+            th:title="${p.fromType.domain}">
+            <div class="text-truncate" style="max-width:70px" th:text="${p.fromType.domain}"></div>
+        </td>
+    </tr>
+</table>
+{% endmacro paper_table%}

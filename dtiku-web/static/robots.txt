@@ -1,0 +1,107 @@
+User-agent: Googlebot
+Crawl-delay: 60
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: bingbot
+Crawl-delay: 60
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: Baiduspider
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: Sogou
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: Sogou web spider
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: Sogou inst spider
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: 360Spider
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: HaosouSpider
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: YisouSpider
+Crawl-delay: 600
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: EasouSpider
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: Sosospider
+Allow: /
+Disallow: /vendor/
+Disallow: /dist/
+Disallow: /webjars/
+Disallow: /image/
+Disallow: /img/
+Sitemap: https://gwy.dtiku.cn/sitemap_index.xml
+
+User-agent: Bytespider
+Disallow: /
+
+User-Agent: *
+Disallow: /

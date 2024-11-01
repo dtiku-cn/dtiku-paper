@@ -8,5 +8,7 @@ pub struct PaperService {
 }
 
 impl PaperService {
-    pub async fn search_by_name(&self, name: &str) {}
+    pub async fn search_by_name(&self, name: &str) {
+        println!("{name}")
+    }
 }

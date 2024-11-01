@@ -1,0 +1,56 @@
+{%- import "macros/general.html" as general -%}
+{%- import "macros/paper.html" as paper -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>${province}+${cls.category.text}+${cls.text}+'真题库 | '+${system_siteTitle}</title>
+    {% call general::headerfiles() %}
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <div class="card mb-3">
+        <header class="card-header d-flex p-1 align-items-center">
+            <div class="dropdown">
+                <a class="btn btn-link dropdown-toggle d-flex align-items-center" href="#" data-toggle="dropdown"
+                    role="button" aria-expanded="false" id="clsDropdown">
+                    <svg class="icon-svg icon-svg-sm mr-2">
+                        <use xlink:href="#ic-library"></use>
+                    </svg>
+                    <strong th:text="|${cls.category.text} / ${cls.text}|"></strong>
+                </a>
+                <div class="dropdown-menu shadow-sm" aria-labelledby="clsDropdown">
+                    <a class="dropdown-item" th:each="cls:${allPaperTypes}"
+                        th:href="|?category=${cls.category}&cls=${cls.text}|"
+                        th:text="|${cls.category.text} / ${cls.text}|"></a>
+                </div>
+            </div>
+        </header>
+        <div id="allProvinces" class="card-body d-flex flex-wrap">
+            <a class="btn btn-link" th:each="p : ${allProvinces}" th:classappend="${province==p?'active':''}"
+                th:href="|?category=${cls.category}&cls=${cls.text}&province=${p}|" th:text="${p}"></a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <header class="d-flex card-header align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-list"></use>
+            </svg>
+            <strong th:text="|${province}${cls.text}试卷列表|"></strong>
+        </header>
+        <div id="fromType" class="text-center">
+            <a class="btn btn-link" th:href="@{/paper(category=${cls.category},cls=${cls.text},province=${province})}"
+                th:classappend="${fromType==null?'active':''}">全部</a>
+            <a class="btn btn-link" th:each="t : ${allFromType}"
+                th:href="@{/paper(category=${cls.category},cls=${cls.text},province=${province},fromType=${t})}"
+                th:text="${t.text}" th:classappend="${fromType==t?'active':''}"></a>
+        </div>
+        {% call paper::paper_table(papers) %}
+    </div>
+    {% call general::footer() %}
+</body>
+
+</html>

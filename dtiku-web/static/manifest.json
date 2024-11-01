@@ -1,0 +1,46 @@
+{
+  "short_name": "公考加油站",
+  "name": "公考加油站",
+  "icons": [
+    {
+      "src": "/static/dist/icons.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/static/favicon.ico",
+      "type": "image/png",
+      "sizes": "256x256"
+    }
+  ],
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "scope": "/",
+  "shortcuts": [
+    {
+      "name": "行测真题",
+      "short_name": "行测真题",
+      "description": "公务员考试行测真题库",
+      "url": "/paper?category=gwy&cls=%E8%A1%8C%E6%B5%8B",
+      "icons": [
+        {
+          "src": "/static/favicon.ico",
+          "sizes": "256x256"
+        }
+      ]
+    },
+    {
+      "name": "申论真题",
+      "short_name": "申论真题",
+      "description": "公务员考试申论真题库",
+      "url": "/static/paper?category=gwy&cls=%E7%94%B3%E8%AE%BA",
+      "icons": [
+        {
+          "src": "/static/favicon.ico",
+          "sizes": "256x256"
+        }
+      ]
+    }
+  ],
+  "description": "公务员考试真题库"
+}

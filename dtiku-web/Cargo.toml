@@ -15,3 +15,5 @@ spring-sea-orm = { workspace = true, features = ["postgres"] }
 spring-redis = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
+askama = { workspace = true, features = ["with-axum"] }
+askama_axum = { workspace = true }

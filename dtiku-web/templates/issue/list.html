@@ -1,0 +1,141 @@
+{%- import "macros/general.html" as general -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>${strings.defaultString(search?.topic?.text,'')+' - 论坛交流 | '+system_siteTitle}</title>
+    {% call general::headerfiles() %}
+    <style>
+        .issue-list tr>td {
+            min-width: 10em;
+        }
+
+        .issue-list tr>td:last-child {
+            min-width: 8em;
+        }
+
+        .issue-list tr>td:first-child {
+            min-width: 10em;
+            width: 80%;
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <div class="card mb-3">
+        <header class="card-header d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-library"></use>
+            </svg>
+            <b>主题</b>
+        </header>
+        <div class="card-body d-flex flex-wrap">
+            <a class="btn btn-link" href="/bbs" th:classappend="${null==search.topic?'active':''}">全部</a>
+            <a class="btn btn-link" th:each="t : ${topics}" th:href="|?topic=${t}|" th:text="${t.text}"
+                th:classappend="${t==search.topic?'active':''}"></a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <header class="d-flex card-header p-1 pl-4 align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-list"></use>
+            </svg>
+            <strong class="mr-auto" th:text="|${strings.defaultString(search?.topic?.text,'')}帖子|"></strong>
+            <a class="btn card-link d-flex align-items-center" th:href="${user==null?'#loginModal':'/bbs/issue'}"
+                th:data-toggle="${user==null?'modal':''}">
+                <svg class="icon-svg icon-svg-sm mr-2">
+                    <use xlink:href="#ic-post"></use>
+                </svg>
+                <b>我来发帖</b>
+            </a>
+        </header>
+        <div class="input-group">
+            <input type="text" id="search" placeholder="输入标题进行搜索" th:value="${search?.title}"
+                onkeydown='if(event.keyCode==13){search();}' class="form-control rounded-0"
+                th:data-filter="'/bbs/issue/like?&q=#QUERY#'">
+            <div class="input-group-append">
+                <button id="submit" type="submit" data-target="#search" class="btn btn-outline-secondary">点我搜索</button>
+            </div>
+        </div>
+        <div class="card-body py-0">
+            <div class="mt-2 text-center" th:if="${page.isEmpty()}">啊欧，空空如也</div>
+            <table class="issue-list table">
+                <tr th:each="i:${page.content}">
+                    <td>
+                        <a th:href="|/bbs/issue/${i.id}|">
+                            <svg class="icon-svg icon-svg-md mr-2">
+                                <use th:xlink:href="|#${i.topic.icon}|"></use>
+                            </svg>
+                            <strong th:text="|【${i.topic.text}】|"></strong>
+                            <strong th:text="${i.title}"></strong>
+                        </a>
+                    </td>
+                    <td class="d-none d-lg-table-cell">
+                        <p class="d-flex align-items-center mb-1">
+                            <img class="border rounded-circle mr-2" style="height:2em" th:src="${i.user.avatar}"
+                                th:alt="${i.user.name}">
+                            <b th:text="${i.user.name}"></b>
+                        </p>
+                        <b class="mb-1" data-toggle="tooltip"
+                            th:title="${temporals.format(i.created,'yyyy-MM-dd HH:mm')}"
+                            th:text="${@thymeleafUtils.format(i.created, global_now)}"></b>
+                    </td>
+                    <td>
+                        <div class="d-flex justify-content-around mb-1">
+                            <div data-toggle="tooltip" th:title="|评论数: ${i.comment}|">
+                                <svg class="icon-svg icon-svg-sm mr-1">
+                                    <use xlink:href="#ic-comment"></use>
+                                </svg>
+                                <b th:text="${i.comment}"></b>
+                            </div>
+                            <div data-toggle="tooltip" th:title="|阅读量: ${i.view}|">
+                                <svg class="icon-svg icon-svg-sm mr-1">
+                                    <use xlink:href="#ic-view"></use>
+                                </svg>
+                                <b th:text="${i.view}"></b>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-around mb-1">
+                            <div data-toggle="tooltip" th:title="|点赞数: ${i.agree}|">
+                                <svg class="icon-svg icon-svg-sm mr-1">
+                                    <use xlink:href="#ic-agree"></use>
+                                </svg>
+                                <b th:text="${i.agree}"></b>
+                            </div>
+                            <div data-toggle="tooltip" th:title="|反对数: ${i.disagree}|">
+                                <svg class="icon-svg icon-svg-sm mr-1">
+                                    <use xlink:href="#ic-disagree"></use>
+                                </svg>
+                                <b th:text="${i.disagree}"></b>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <th:block
+                th:include="fragments/elements::pagination(${page},@{/bbs(topic=${search?.topic},area=${search?.area})},false)" />
+        </div>
+    </div>
+    <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
+    {% call general::footer() %}
+    <script src="/vendor/bootstrap-autocomplete.js/bootstrap-autocomplete.min.js"></script>
+    <script>
+        function search() {
+            const title = $("#search").val();
+            const params = new URLSearchParams(location.search);
+            params.set("title", title);
+            params.set("page", '1');
+            location.search = "?" + params.toString();
+        }
+
+        $(function () {
+            $("#submit").click(search);
+            $("#search").autocomplete();
+        })
+    </script>
+</body>
+
+</html>

@@ -2,4 +2,8 @@
 graceful = true
 
 [web.middlewares]
-static = { enable = true }
+static = { enable = true, uri = "/static", path = "static", precompressed = true }
+logger = { enable = true }
+
+[sea-orm]
+uri = "postgres://postgres:12345@localhost:5432/postgres"

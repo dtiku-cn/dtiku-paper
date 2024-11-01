@@ -1,0 +1,297 @@
+{% macro meta() %}
+<meta charset="UTF-8" />
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<meta name="google-site-verification" content="VCjvluBwap6weZ9wjbSywoJxZ0G3meNoyTqlckhYg4M" />
+<meta name="keywords" content="公务员考试真题,公考题库,行测题库,申论题库,成语统计" />
+<meta name="description" th:content="本站提供公务员考试真题整套、模块在线打印和下载服务，包含行测、申论、高频成语、高频词语、备考资料。" />
+<meta name="og:title" content="公务员考试真题,公考题库,行测题库,申论题库,成语统计" />
+<meta name="og:description" content="本站提供公务员考试真题整套、模块在线打印和下载服务，包含行测、申论、高频成语、高频词语、备考资料。" />
+<meta name="og:image" content="https://gwy.dtiku.cn/favicon.ico" />
+<meta name="apple-mobile-web-app-title" content="公考加油站">
+{% endmacro meta %}
+
+{% macro headerfiles() %}
+<link rel="shortcut icon" type="image/svg+xml" href="/static/dist/icon.svg">
+<link rel="apple-touch-icon" type="image/svg+xml" href="/static/dist/icon.svg">
+<link rel="stylesheet" href="/static/vendor/bootstrap-4.6.2/css/bootstrap.min.css">
+<link rel="stylesheet" th:href="/webjars/select2/4.0.13/css/select2.min.css">
+<link rel="stylesheet" href="/static/dist/css.css">
+<script src="/static/vendor/jquery-1.10.2/jquery.min.js"></script>
+<style rel="stylesheet">
+    .dark-theme .material *,
+    .dark-theme .question *,
+    .dark-theme .solution * {
+        color: #adafae !important;
+    }
+
+    .show-answer .-answer-,
+    .show-answer .-answer- * {
+        color: #CE1126 !important;
+    }
+
+    @media print {
+        body {
+            background: white !important;
+            color: black !important;
+        }
+
+        .paper,
+        .dark-theme .material *,
+        .dark-theme .question *,
+        .dark-theme .solution * {
+            color: black !important;
+        }
+
+        .paper a {
+            color: black !important;
+            text-decoration: none;
+        }
+    }
+</style>
+<style th:utext="${system_globalStyle}"></style>
+<script th:src="${system_iconfontUrl}"></script>
+<th:block th:utext="${system_globalHeadFiles}"></th:block>
+{% endmacro headerfiles %}
+
+{% macro header() %}
+<nav class="navbar navbar-expand-lg p-3 mb-3 shadow-sm rounded"
+    th:classappend="${darkTheme?'navbar-dark':'navbar-light'}" th:style="${system_navbarStyle}">
+    <a class="navbar-brand position-relative" href="/" th:utext="${system_navBrand}"></a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item dropdown" th:classappend="{request.requestURI.startsWith('/paper')?'active':''}">
+                <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">整卷真题</a>
+                <div class="dropdown-menu shadow">
+                    <a class="dropdown-item" th:each="p:${allPaperTypes}"
+                        th:href="|/paper?category=${p.category}&cls=${p.text}|"
+                        th:text="|${p.category.text} / ${p.text}|"></a>
+                </div>
+            </li>
+            <li class="nav-item dropdown"
+                th:classappend="${request.requestURI.startsWith('/idiom')||#request.requestURI.startsWith('/word')?'active':''}">
+                <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">成语统计</a>
+                <div class="dropdown-menu shadow">
+                    <a class="dropdown-item" href="/idiom">成语</a>
+                    <a class="dropdown-item" href="/word">词语</a>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">模块归类</a>
+                <div class="dropdown-menu shadow">
+                    <a class="dropdown-item" href="/question/section">模块打印</a>
+                    <a class="dropdown-item" href="/shenlun-categories">申论归类</a>
+                </div>
+            </li>
+            <li class="nav-item dropdown" th:classappend="${request.requestURI.startsWith('/summary')?'active':''}">
+                <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">知识总结</a>
+                <div class="dropdown-menu shadow">
+                    <a class="dropdown-item" href="/summary/analyse">资料分析</a>
+                    <a class="dropdown-item" href="/summary/understand">言语理解</a>
+                    <a class="dropdown-item" href="/summary/logic">判断推理</a>
+                    <a class="dropdown-item" href="/summary/math">数量关系</a>
+                    <a class="dropdown-item" href="/summary/common_sense">常识</a>
+                    <a class="dropdown-item" href="/summary/shenlun">申论</a>
+                </div>
+            </li>
+            <li class="nav-item" th:classappend="${request.requestURI.startsWith('/question/search')?'active':''}">
+                <a class="nav-link" href="/question/search"><span class="d-lg-none d-xl-inline">题库</span>搜索</a>
+            </li>
+            <li class="nav-item" th:classappend="${request.requestURI.startsWith('/bbs')?'active':''}">
+                <a class="nav-link" href="/bbs">论坛<span class="d-lg-none d-xl-inline">交流</span></a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <form class="nav-item form-inline my-2 my-lg-0">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="theme">
+                    <label class="custom-control-label" for="theme">
+                        <svg class="icon-svg" style="width: 1.5rem;height: 1.5rem">
+                            <use id="theme-svg" xlink:href="#ic-sun"></use>
+                        </svg>
+                    </label>
+                </div>
+            </form>
+            <div class="nav-item dropdown ml-lg-2">
+                <a th:if="${user==null}" class="nav-link d-flex align-items-center"
+                    th:data-toggle="${user==null?'modal':'dropdown'}" href="#loginModal">
+                    <svg class="icon-svg icon-svg-md mr-2">
+                        <use id="theme-svg" xlink:href="#ic-user"></use>
+                    </svg>
+                    <b>登录</b>
+                </a>
+                <a th:if="${user!=null}" class="nav-link d-flex align-items-center" href="#" data-toggle="dropdown">
+                    <img class="rounded-circle" th:src="${user.avatar}" th:alt="${user.name}" style="height:2rem" />
+                    <b class="ml-2 d-md-block d-lg-none align-items-center" th:text="${user.name}"></b>
+                </a>
+                <div th:if="${user!=null}" class="dropdown-menu dropdown-menu-right shadow">
+                    <b class="dropdown-item d-none d-lg-flex align-items-center">
+                        <svg th:if="${!user.isExpired()}" class="icon-svg icon-svg-md mr-2">
+                            <use id="theme-svg" xlink:href="#ic-diamond"></use>
+                        </svg>
+                        <span th:text="${user.name}"></span>
+                    </b>
+                    <b th:if="${!user.isExpired()}" class="dropdown-item"
+                        th:text="|有效期：${temporals.format(user.dueTime,'yyyy-MM-dd')}|"></b>
+                    <b class="dropdown-item" th:text="|积分点：${user.point}|"></b>
+                    <b class="dropdown-item" th:text="|声望值：${user.fame}|"></b>
+                    <div class="dropdown-divider"></div>
+                    <b class="dropdown-item" id="revoke">撤销授权</b>
+                </div>
+            </div>
+            <div class="nav-item ml-lg-2 d-none d-lg-flex align-items-center tooltip-light">
+                <svg class="icon-svg icon-svg-xl" data-toggle="tooltip" data-html="true" data-container=".tooltip-light"
+                    th:title="${system_promoteQrCode}">
+                    <use id="theme-svg" xlink:href="#ic-qrcode"></use>
+                </svg>
+            </div>
+            <a class="nav-item ml-lg-2 d-none d-lg-flex align-items-center text-reset" href="/message">
+                <svg class="icon-svg icon-svg-xl">
+                    <use id="theme-svg" xlink:href="#ic-about"></use>
+                </svg>
+            </a>
+        </ul>
+    </div>
+</nav>
+<div th:if="${!#strings.equalsIgnoreCase(dismissAlertKey,system_alertMessageKey) && !#strings.isEmpty(system_globalAlertMsg)}"
+    id="main-alert" class="alert alert-primary alert-dismissible d-print-none fade show" role="alert">
+    <th:block th:utext="${system_globalAlertMsg}" />
+    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+    <script>
+        $(function () {
+            var $mainAlert = $("#main-alert"), alertKey = '[[${system_alertMessageKey}]]';
+            $mainAlert.on('closed.bs.alert', function () {
+                Cookies.set("dis-alert", alertKey);
+            });
+        });
+    </script>
+</div>
+<div th:if="${user==null}" class="modal fade" id="loginModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <b class="modal-title">请使用手机摄像头扫码登录</b>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body d-flex flex-column align-items-center overflow-hidden"></div>
+        </div>
+    </div>
+</div>
+<div th:if="${user!=null && user.isExpired()}" class="modal fade" id="payModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <b class="modal-title">扫码赞助</b>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body d-flex flex-column align-items-center overflow-hidden"></div>
+        </div>
+    </div>
+</div>
+<div class="fixed-top d-flex justify-content-center align-items-center">
+    <div id="toast" class="toast fade hide mt-4" role="alert" data-delay="2000" style="flex-basis:auto">
+        <div class="toast-body bg-warning"></div>
+    </div>
+</div>
+<script defer>
+    $(function () {
+        $(document).ajaxError(function (e, jqxhr) {
+            $('#toast').toast('show').find('.toast-body').text(jqxhr.responseJSON.message);
+        })
+    })
+</script>
+{% endmacro header %}
+
+{% macro footer() %}
+<footer class="text-center font-weight-lighter d-none d-sm-block d-print-none mb-4" style="font-size:.8rem">
+    <a href="https://beian.miit.gov.cn/">赣ICP备17009276号-3</a>
+    <span th:text="|2021 ~ ${temporals.format(temporals.createNow(),'YYYY')}|"></span>
+    &copy;
+    网站内容部分来自网络，如有侵权请<a href="mailto:1938304905@qq.com">邮箱</a>联系删除
+</footer>
+<script src="/static/vendor/bootstrap-4.6.2/js/bootstrap.bundle.min.js"></script>
+<script src="/static/vendor/js-cookie-3.0.5/js.cookie.min.js"></script>
+<script>
+    window.loadingGif = "data:image/gif;base64,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";
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+        Cookies.set('sw', window.screen.availWidth);
+
+        function ThemeSwitcher() {
+            var listener = [];
+
+            function getTheme() {
+                return String(Cookies.get("darkTheme")) === "true";
+            }
+
+            function switchTo(dark) {
+                $("#bootstrap-default").attr("rel", dark ? "alternate stylesheet" : "stylesheet");
+                $("#bootstrap-dark").attr("rel", dark ? "stylesheet" : "alternate stylesheet");
+                $(document.body).toggleClass("dark-theme", dark);
+                $("#theme-svg").attr("xlink:href", dark ? "#ic-moon" : "#ic-sun")
+                    .parent().css(dark ? { width: "1.3rem", height: "1.3rem" } : { width: "1.5rem", height: "1.5rem" });
+                $(".navbar").toggleClass("navbar-dark", dark).toggleClass("navbar-light", !dark);
+                Cookies.set("darkTheme", dark);
+                listener.forEach(function (l) {
+                    if (typeof l === 'function') {
+                        l();
+                    } else {
+                        l.onChange && l.onChange(dark);
+                    }
+                });
+            }
+
+            $("#theme").prop("checked", getTheme()).click(function (e) {
+                switchTo($("#theme").is(':checked'));
+            });
+            return {
+                getTheme, switchTo, listener
+            };
+        }
+
+        window.themeSwitcher = new ThemeSwitcher();
+        themeSwitcher.switchTo(themeSwitcher.getTheme());
+
+        $("#loginModal").on('show.bs.modal', function () {
+            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"/oauth/render/WECHAT_OPEN\" width=\"400\" height=\"400\"" +
+                " style=\"overflow:hidden;background:url('" + window.loadingGif + "') center center no-repeat\"></iframe>" +
+                "<p class=\"text-center\">微信截图扫码无效哦</p>");
+        }).on('shown.bs.modal', function () {
+            sessionStorage.setItem('login-pre', location.href);
+        });
+        $("#payModal").on('show.bs.modal', function () {
+            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"/pay/create/[[${user?.id}]]\" width=\"400\" height=\"400\"" +
+                " style=\"overflow:hidden;background:url('" + window.loadingGif + "') center center no-repeat\"></iframe>");
+        });
+        $("#revoke").click(function () {
+            Cookies.remove("uuid");
+            localStorage.removeItem('WALINE_USER');
+            location.reload();
+        });
+    })
+</script>
+{% endmacro footer %}
+
+{% macro watermark() %}
+<style>
+    body {
+        position: relative;
+    }
+
+    #watermark {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: -1;
+        opacity: .2;
+    }
+</style>
+<div id="watermark" class="d-none d-print-block"></div>
+{% endmacro watermark %}

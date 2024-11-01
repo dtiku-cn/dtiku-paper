@@ -1,0 +1,210 @@
+{% macro img_display_block() %}
+<script>
+    $(".paper img").each(function () {
+        if ($(this).height() > 100) {
+            $(this).addClass("d-block");
+        }
+    });
+</script>
+{% endmacro img_display_block %}
+{# @see QuestionVo #}
+
+{# @see QuestionVo.solution #}
+{% macro solution_comment_script() %}
+<script>
+    $(function () {
+        $("a.comment-for").click(function () {
+            var $iframe = $($(this).attr('href')).addClass('active').children('.iframe-nested');
+            if (!$iframe.html().trim()) {
+                $iframe.html(function () {
+                    return "<iframe class='border-0' src='" + $(this).data("href") + "' width='" + $(this).parent().width() + "' height='600'></iframe>"
+                });
+            } else {
+                $iframe.find('iframe').attr('width', $iframe.parent().width());
+            }
+        });
+        $("a.recommend-for").click(function () {
+            var $target = $($(this).attr('href'));
+            if (!$target.html().trim()) {
+                $target.css('background', "url('" + window.loadingGif + "') center center no-repeat");
+                $.get($target.data('href'), function (html) {
+                    $target.html(html);
+                })
+            }
+        });
+    })
+</script>
+{% endmacro solution_comment_script %}
+
+{% macro question_solution(q) %}
+<ul class="nav nav-tabs mt-2" role="tablist">
+    <li th:if="${bools.isFalse(system_showSolution)}" role="presentation" class="nav-item">
+        <a class="nav-link active" role="tab" data-toggle="tab" th:href="|#solution-${q.id}-login|">参考答案</a>
+    </li>
+    <li th:if="${bools.isTrue(system_showSolution)}" role="presentation" class="nav-item"
+        th:each="type,iter:${q.solution.keySet()}">
+        <a class="nav-link" role="tab" data-toggle="tab" th:classappend="${iter.index==0?'active':''}"
+            th:href="'#solution-'+${q.id}+${type}"
+            th:text="${bools.isTrue(system_showVendor)?type.text:'参考解析'+@thymeleafUtils.formatChinese(iter.index+1)}"></a>
+    </li>
+    <li role="presentation" class="nav-item"
+        th:if="${q.hasImage && !#strings.startsWith(#request.requestURI,'/question/detail')}"
+        th:classappend="${bools.isTrue(system_showSolution)?'':'active'}">
+        <a class="nav-link recommend-for" role="tab" data-toggle="tab" th:href="'#recommend-for-'+${q.id}">相似题型</a>
+    </li>
+    <li role="presentation" class="nav-item"
+        th:if="${bools.isTrue(system_showComments) && !#strings.startsWith(#request.requestURI,'/question/detail')}"
+        th:classappend="${bools.isTrue(system_showSolution)?'':'active'}">
+        <a class="nav-link comment-for" role="tab" data-toggle="tab" th:href="'#comment-for-'+${q.id}">讨论区</a>
+    </li>
+</ul>
+<div class="tab-content card">
+    <div th:if="${bools.isFalse(system_showSolution)}" th:id="|solution-${q.id}-login|"
+        class="solution tab-pane card-body bg-light active" role="tabpanel">
+        <a class="btn btn-link btn-block" th:href="|#${user==null?'loginModal':'payModal'}|" data-toggle="modal"
+            th:text="${user==null?'请先登录':'网站赞助'}"></a>
+    </div>
+    <div th:if="${bools.isTrue(system_showSolution)}" role="tabpanel" th:each="entry,iter:${q.solution.entrySet()}"
+        th:id="'solution-'+${q.id}+${entry.key}"
+        th:class="${entry.key}+'-solution solution tab-pane card-body bg-light'"
+        th:classappend="${iter.index==0?'active':'fade'}" th:utext="${entry.value?.html}">
+    </div>
+    <div role="tabpanel" class="tab-pane card-body bg-light px-0"
+        th:if="${q.hasImage && !#strings.startsWith(#request.requestURI,'/question/detail')}"
+        th:id="|recommend-for-${q.id}|" th:data-href="'/question/recommend/'+${q.id}">
+    </div>
+    <div role="tabpanel" class="tab-pane card-body bg-light"
+        th:if="${bools.isTrue(system_showComments) && !#strings.startsWith(#request.requestURI,'/question/detail')}"
+        th:id="|comment-for-${q.id}|">
+        <div class="iframe-nested" th:data-href="'/question/detail/'+${q.id}+'?onlyComment=true'"></div>
+        <a class="btn btn-link btn-block" target="_blank" th:href="@{/question/detail/{id}(id=${q.id})}">跳转讨论区</a>
+    </div>
+</div>
+{% endmacro question_solution %}
+
+{% macro raw_question_solution(q) %}
+<div th:each="entry,iter:${q.solution.entrySet()}" th:id="'solution-'+${q.id}+${entry.key}"
+    th:class="${entry.key}+'-solution solution'" th:utext="${entry.value?.html}"></div>
+{% endmacro raw_question_solution %}
+
+{% macro answer_collapse_action() %}
+<script th:fragment="answer-collapse-action">
+    $(function () {
+        $('.question-wrapper .collapse').on('hidden.bs.collapse', function () {
+            $(this).closest(".question-wrapper").removeClass('show-answer');
+        }).on('shown.bs.collapse', function () {
+            $(this).closest(".question-wrapper").addClass('show-answer');
+        });
+    });
+</script>
+{% endmacro answer_collapse_action %}
+
+{# 行测答题模式 #}
+{% macro xingce_exercise_question(q,userAnswer) %}
+<div th:id="'question-'+${q.id}" class="question">
+    <div class="question-content" th:utext="${q.html}"></div>
+    <div class="option-group ml-4 d-flex flex-wrap">
+        <div th:class="${q.answer!=null&&q.answer.answer.length()>1?'custom-control custom-checkbox pl-0':'custom-control custom-radio pl-0'}"
+            th:each="o : ${q.options}" th:id="'option-'+${q.id}+${o.caption}"
+            th:classappend="${q.answer!=null && q.answer.answer.contains(o.caption)?'-answer-':''}"
+            th:style="'width:'+${q.optionLength<20&&screenWidth>768?'25%':(q.optionLength<30?'50%':'100%')}">
+            <input class="custom-control-input d-print-none"
+                th:type="${q.answer!=null&&q.answer.answer.length()>1?'checkbox':'radio'}"
+                th:id="|opt-${q.id}-${o.caption}|" th:name="${q.id}" th:value="${o.caption}"
+                th:attr="checked=(${userAnswer!=null && @thymeleafUtils.matchAnswer(userAnswer,q.id,o.caption)}),disabled=(${userAnswer!=null})">
+            <label class="d-flex custom-control-label" th:for="|opt-${q.id}-${o.caption}|">
+                <b th:if="${!T(cn.hff.tiku.paper.model.QuestionType).judgeTypes.contains(q.type)}"
+                    th:text="|${o.caption}.|"></b> &nbsp;
+                <span class="flex-grow-1" th:utext="${o.html}"></span>
+            </label>
+        </div>
+    </div>
+</div>
+<div class="d-print-none" th:if="${q.answer!=null || !#maps.isEmpty(q.solution)}">
+    <a class="btn btn-link mt-2" role="button" data-toggle="collapse" th:href="'#answer-'+${q.id}">查看解析</a>
+    <div class="collapse" th:id="'answer-'+${q.id}" th:classappend="${userAnswer!=null?'show':''}">
+        <div class="d-flex">
+            <div class="mr-4" th:if="${q.answer!=null}">
+                参考答案：<b class="-answer-" th:text="${q.answer.answer}"></b>
+            </div>
+            <div th:if="${timeMap!=null}">
+                耗时：<b class="text-info" th:text="${@thymeleafUtils.formatSecond(timeMap.getOrDefault(q.id,0))}"></b>
+            </div>
+        </div>
+        <th:block th:include="fragments/question::question_solution(${q})" />
+    </div>
+</div>
+{% endmacro xingce_exercise_question %}
+
+{# 行测 #}
+{% macro xingce_question(q) %}
+<div th:id="'question-'+${q.id}" class="question">
+    <div class="question-content" th:utext="${q.html}"></div>
+    <div class="option-group d-flex flex-wrap">
+        <div class="d-flex" th:each="o : ${q.options}" th:id="${q.id}+'-option-'+${o.caption}"
+            th:classappend="${q.answer!=null && q.answer.answer.contains(o.caption)?'-answer-':''}"
+            th:style="'width:'+${q.optionLength<20&&screenWidth>768?'25%':(q.optionLength<30?'50%':'100%')}">
+            <b th:text="${o.caption}"></b>. &nbsp;
+            <div th:id="${'opt-'+o.id}" class="flex-grow-1" th:utext="${o.html}"></div>
+        </div>
+    </div>
+</div>
+<div class="d-print-none" th:if="${q.answer!=null || !#maps.isEmpty(q.solution)}">
+    <a class="btn btn-link" role="button" data-toggle="collapse" th:href="'#answer-'+${q.id}">查看解析</a>
+    <div class="collapse" th:id="'answer-'+${q.id}">
+        <div th:if="${q.answer!=null}">参考答案：<b class="-answer-" th:text="${q.answer.answer}"></b></div>
+        <th:block th:include="fragments/question::question_solution(${q})" />
+    </div>
+</div>
+{% endmacro xingce_question %}
+
+{# 申论 #}
+{% macro shenlun_question(q) %}
+<div th:id="'question-'+${q.id}" class="clearfix question mt-3">
+    <div th:id="${'q-'+q.number}" class="q-number float-left">
+        <b th:text="${@thymeleafUtils.formatChinese(q.number)}"></b>、
+    </div>
+    <div class="question-content" th:utext="${q.html}"></div>
+</div>
+<div th:if="${q.solution!=null && q.solution.size()!=0}" class="d-print-none">
+    <a class="btn btn-link" role="button" data-toggle="collapse" th:href="'#answer-'+${q.id}">参考答案</a>
+    <div class="collapse" th:id="'answer-'+${q.id}" th:include="fragments/question::question_solution(${q})">
+    </div>
+</div>
+{% endmacro shenlun_question %}
+
+{% macro controversy_xingce_question(q,controversy) %}
+<div th:id="'question-'+${q.id}" class="question">
+    <div class="question-content" th:utext="${q.html}"></div>
+    <div class="d-flex flex-wrap">
+        <div class="d-flex" th:each="o : ${q.options}" th:id="${q.id}+'-option-'+${o.caption}"
+            th:classappend="${q.answer!=null && q.answer.answer.contains(o.caption)?'-answer-':''}"
+            th:style="'width:'+${q.optionLength<20&&screenWidth>768?'25%':(q.optionLength<30?'50%':'100%')}">
+            <b th:text="${o.caption}"></b>. &nbsp;
+            <div th:id="${'opt-'+o.id}" class="flex-grow-1" th:utext="${o.html}"></div>
+        </div>
+    </div>
+</div>
+<div th:if="${!#maps.isEmpty(q.explainMap)}" class="d-print-none">
+    <a class="btn btn-link mt-2" role="button" data-toggle="collapse" th:href="'#answer'+${q.id}">查看解析</a>
+    <div class="collapse mt-2" th:id="'answer'+${q.id}">
+        <div>争议答案：
+            <b class="-answer-" th:text="${controversy.get(q.id).foAnswer}"></b>,
+            <b class="-answer-" th:text="${controversy.get(q.id).toAnswer}"></b>
+        </div>
+        <th:block th:include="fragments/question::question_solution(${q})" />
+    </div>
+</div>
+{% endmacro controversy_xingce_question %}
+
+{% macro question_card(q) %}
+<div class="card-header d-flex">
+    <a class="mr-auto" th:href="'/paper/'+${q.paper.id}+'#q-'+${q.number}"
+        th:text="|${q.paper.title} 第${q.number}题|"></a>
+    <span th:if="${bools.isTrue(system_showVendor)}" class="d-none d-lg-inline-block text-truncate"
+        th:text="|数据来自于：${q.paper.fromType.domain}|"></span>
+</div>
+<div class="card-body question-wrapper" th:include="${q.type.name()=='shenlun'}?
+          ~{fragments/question::shenlun_question(${q})}:
+          ~{fragments/question::xingce_question(${q})}"></div>
+{% endmacro question_card %}

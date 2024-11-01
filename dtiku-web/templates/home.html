@@ -1,0 +1,158 @@
+{%- import "macros/general.html" as general -%}
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>公考加油站</title>
+    {% call general::headerfiles() %}
+    <style>
+        @media (max-width: 768px) {
+            .big-icon {
+                width: 0.8em;
+                height: 0.8em;
+            }
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+
+    <div class="row my-4 no-gutters">
+        <a href="/shenlun-categories" class="col-3 d-flex flex-column align-items-center text-reset">
+            <svg class="icon-svg big-icon">
+                <use xlink:href="#ic-classify"></use>
+            </svg>
+            <b>申论归类</b>
+        </a>
+        <a href="/summary" class="col-3 d-flex flex-column align-items-center text-reset">
+            <svg class="icon-svg big-icon">
+                <use xlink:href="#ic-knowledge"></use>
+            </svg>
+            <b>知识总结</b>
+        </a>
+
+        <a href="/question/search" class="col-3 d-flex flex-column align-items-center text-reset">
+            <svg class="icon-svg big-icon">
+                <use xlink:href="#ic-search"></use>
+            </svg>
+            <b>题库搜索</b>
+        </a>
+        <a href="/question/section" class="col-3 d-flex flex-column align-items-center text-reset">
+            <svg class="icon-svg big-icon">
+                <use xlink:href="#ic-printer"></use>
+            </svg>
+            <b>模块打印</b>
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12 col-lg-9 col-xl-9">
+            <div class="card mb-3">
+                <header class="d-flex card-header align-items-center p-1 pl-3">
+                    <svg class="icon-svg icon-svg-sm mr-2">
+                        <use xlink:href="#ic-list"></use>
+                    </svg>
+                    <strong>最新行测真题</strong>
+                    <div class="flex-grow-1"></div>
+                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper">
+                        <svg class="icon-svg icon-svg-sm mr-2">
+                            <use xlink:href="#ic-more"></use>
+                        </svg>
+                        <em>查看更多</em>
+                    </a>
+                </header>
+                <th:block th:include="fragments/paper::paper-table(${xPapers})" />
+                <footer class="card-footer">
+                    <a class="card-link" href="/paper">查看更多</a>
+                </footer>
+            </div>
+            <div class="card mb-3">
+                <header class="d-flex card-header align-items-center p-1 pl-3">
+                    <svg class="icon-svg icon-svg-sm mr-2">
+                        <use xlink:href="#ic-list"></use>
+                    </svg>
+                    <strong>最新申论真题</strong>
+                    <div class="flex-grow-1"></div>
+                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper?cls=申论">
+                        <svg class="icon-svg icon-svg-sm mr-2">
+                            <use xlink:href="#ic-more"></use>
+                        </svg>
+                        <em>查看更多</em>
+                    </a>
+                </header>
+                <th:block th:include="fragments/paper::paper-table(${sPapers})" />
+                <footer class="card-footer">
+                    <a class="card-link" href="/paper?cls=申论">查看更多</a>
+                </footer>
+            </div>
+        </div>
+        <div class="col-sm-12 col-lg-3 col-xl-3">
+            <div class="card mb-3">
+                <header class="d-flex card-header align-items-center p-1 pl-3">
+                    <svg class="icon-svg icon-svg-sm mr-2">
+                        <use xlink:href="#ic-list"></use>
+                    </svg>
+                    <strong>高频成语</strong>
+                    <div class="flex-grow-1"></div>
+                    <a class="btn btn-link d-flex align-items-center text-reset" href="/idiom">
+                        <svg class="icon-svg icon-svg-sm mr-2">
+                            <use xlink:href="#ic-more"></use>
+                        </svg>
+                        <em><i class="d-lg-none">查看</i>更多</em>
+                    </a>
+                </header>
+                <table class="table idiom-list">
+                    <tr>
+                        <th class="p-2">成语</th>
+                        <th class="p-2 text-right">次数</th>
+                    </tr>
+                    <tr th:each="s:${idioms}">
+                        <td class="p-2">
+                            <a th:href="@{/idiom/{t}(t=${s.text})}" th:text="${s.text}"></a>
+                        </td>
+                        <td class="p-2 text-right" th:text="${s.questionFrequency}"></td>
+                    </tr>
+                </table>
+                <footer class="card-footer">
+                    <a class="card-link" href="/idiom">查看更多</a>
+                </footer>
+            </div>
+            <div class="card mb-3">
+                <header class="d-flex card-header align-items-center p-1 pl-3">
+                    <svg class="icon-svg icon-svg-sm mr-2">
+                        <use xlink:href="#ic-list"></use>
+                    </svg>
+                    <strong>高频词语</strong>
+                    <div class="flex-grow-1"></div>
+                    <a class="btn btn-link d-flex align-items-center text-reset" href="/word">
+                        <svg class="icon-svg icon-svg-sm mr-2">
+                            <use xlink:href="#ic-more"></use>
+                        </svg>
+                        <em><i class="d-lg-none">查看</i>更多</em>
+                    </a>
+                </header>
+                <table class="table idiom-list">
+                    <tr>
+                        <th class="p-2">词语</th>
+                        <th class="p-2 text-right">次数</th>
+                    </tr>
+                    <tr th:each="s:${words}">
+                        <td class="p-2">
+                            <a th:href="@{/idiom/{t}(t=${s.text})}" th:text="${s.text}"></a>
+                        </td>
+                        <td class="p-2 text-right" th:text="${s.questionFrequency}"></td>
+                    </tr>
+                </table>
+                <footer class="card-footer">
+                    <a class="card-link" href="/idiom">查看更多</a>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    {% call general::footer() %}
+</body>
+
+</html>

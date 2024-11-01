@@ -1,0 +1,143 @@
+{%- import "macros/general.html" as general -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>题目搜索 | +${system_siteTitle}</title>
+    {% call general::headerfiles() %}
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <div class="d-flex justify-content-center mb-3">
+        <svg class="icon-svg">
+            <use xlink:href="#ic-search"></use>
+        </svg>
+    </div>
+    <h1 class="text-center">题库搜索</h1>
+
+    <div class="nav nav-pills nav-pills-group justify-content-center my-4">
+        <a class="nav-link active text-center" href="/question/search">搜题</a>
+        <a class="nav-link text-center" href="/question/search/image">搜图</a>
+    </div>
+
+    <div id="fromType" class="text-center">
+        <a class="btn btn-link" href="#" th:if="${bools.isTrue(system_showVendor)}"
+            th:classappend="${fromType==null?'active':''}">全部</a>
+        <a class="btn btn-link" href="#" th:if="${bools.isTrue(system_showVendor)}" th:each="type : ${allFromType}"
+            th:data="${type.name()}" th:text="${type.text}" th:classappend="${fromType==type?'active':''}"></a>
+    </div>
+
+    <div class="input-group has-validation border rounded">
+        <div id="question-type" class="input-group-prepend border-right">
+            <button class="btn btn-outline-secondary dropdown-toggle border-0" type="button" data-toggle="dropdown"
+                th:value="${type==null?'':type.name()}" th:text="${type==null?'全部':type.showText}">
+            </button>
+            <div class="dropdown-menu shadow-sm">
+                <a class="dropdown-item" href="#" value="">全部</a>
+                <a class="dropdown-item" href="#" th:each="t:${types}" th:value="${t.name()}"
+                    th:text="${t.showText}"></a>
+            </div>
+        </div>
+        <input type="text" id="search" placeholder="输入题目关键字就能搜出题目和答案哦！" th:value="${content}"
+            onkeydown='if(event.keyCode==13){search();}' class="form-control border-0 speech-input text-secondary"
+            style="background: transparent">
+        <div class="input-group-append border-left">
+            <button id="submit" type="submit" data-target="#search"
+                class="btn btn-outline-light border-0 d-flex align-items-center justify-content-center">
+                <svg class="icon-svg icon-svg-md">
+                    <use xlink:href="#ic-search"></use>
+                </svg>
+            </button>
+        </div>
+        <div class="invalid-feedback" style="position: absolute;bottom: -1.5em;">至少输入两个字</div>
+    </div>
+
+    <div th:if="${questions!=null}" id="printcontent" class="mt-4">
+        <div class="card mb-3" th:each="q : ${questions}" th:include="fragments/question::question_card(${q})"></div>
+    </div>
+    <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
+    {% call general::footer() %}
+    <script src="/webjars/mark.js/8.11.1/dist/jquery.mark.min.js"></script>
+    <th:block th:replace="fragments/painter::painter" />
+    <script th:replace="fragments/question::answer-collapse-action"></script>
+    <script th:replace="fragments/indent::solution-indent"></script>
+    <script src='/static/dist/js/speech.js'></script>
+    <script>
+        function search() {
+            const $search = $("#search");
+            const content = $search.val();
+            if (content && content.length && content.length >= 2) {
+                const type = $("#question-type button").attr('value');
+                location.href = "/question/search" + "?type=" + type + "&content=" + encodeURI(content);
+            } else {
+                $search.addClass('is-invalid');
+            }
+        }
+
+        function changeType(e) {
+            const $target = $(e.target);
+            const value = $target.attr('value');
+            const text = $target.text();
+            $("#question-type button").attr('value', value).text(text);
+        }
+
+        function onSearchChange(e) {
+            if (e.target.value.length >= 2) {
+                e.target.classList.remove('is-invalid');
+            }
+        }
+
+        window.bigram = nGram(2)
+
+        function nGram(n) {
+            if (
+                typeof n !== 'number' ||
+                Number.isNaN(n) ||
+                n < 1 ||
+                n === Number.POSITIVE_INFINITY
+            ) {
+                throw new Error('`' + n + '` is not a valid argument for `n-gram`')
+            }
+            return grams
+
+            function grams(value) {
+                var nGrams = []
+                var index
+                var source
+                if (value === null || value === undefined) {
+                    return nGrams
+                }
+                source = value.slice ? value : String(value)
+                index = source.length - n + 1
+                if (index < 1) {
+                    return nGrams
+                }
+                while (index--) {
+                    nGrams[index] = source.slice(index, index + n)
+                }
+                return nGrams
+            }
+        }
+
+        function changeFromType(e) {
+            const $target = $(e.target);
+            const fromType = $target.attr('data');
+            const params = new URLSearchParams(location.search);
+            params.set("fromType", fromType || '');
+            location.search = "?" + params.toString();
+        }
+
+        $(function () {
+            $("#fromType").click(changeFromType);
+            $("#submit").click(search);
+            $("#question-type .dropdown-menu>.dropdown-item").click(changeType);
+            var keyword = $("#search").change(onSearchChange).val().replaceAll(/[\s.,\/#!$\^&\*;:{}=\-_`~()、，。？！《》：；“”]/g, '')
+                .slice(0, 20).split('').join(' ');
+            $(".question-content").mark(keyword, { diacritics: false });
+        })
+    </script>
+</body>
+
+</html>

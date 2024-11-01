@@ -1,0 +1,236 @@
+{%- import "macros/general.html" as general -%}
+{%- import "macros/paper.html" as paper -%}
+{%- import "macros/question.html" as question -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>${paper.paper.title}+${strings.equals(paper.mode.name(),'show_answer')?'答案':''}+' | '+${system_siteTitle}
+    </title>
+    {% call general::headerfiles() %}
+    <style th:if="${strings.equals(paper.mode.name(),'exercise')}">
+        #xc-report tr:last-child {
+            border-top: 1px dashed grey;
+            font-weight: bold;
+        }
+
+        .answer-paper-wrapper {
+            background: rgba(255, 255, 255, 0.3);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            overflow-y: scroll;
+            max-height: 90vh;
+            border-radius: .5em .5em 0 0;
+            box-shadow: 0 0 6px 0 rgba(0, 0, 0, .6);
+            transition: bottom .3s;
+        }
+
+        .-answer- label {
+            color: #CE1126 !important;
+        }
+
+        .-answer- .custom-control-input~.custom-control-label::before {
+            background-color: #CE1126 !important;
+        }
+
+        .paper .custom-control-input:disabled:checked~.custom-control-label::before {
+            background-color: #FFC107 !important;
+        }
+
+        .paper .-answer- .custom-control-input:checked~.custom-control-label::before {
+            background-color: #59CE77 !important;
+        }
+
+        .paper .custom-radio {
+            z-index: auto;
+        }
+
+        .paper .custom-control-label::before,
+        .paper .custom-control-label::after {
+            z-index: 1;
+        }
+
+        #answer-paper a.answer-block {
+            display: block;
+            text-align: center;
+            font-size: 10px;
+            width: 3em;
+            height: 3em;
+            line-height: 3em;
+            margin: 1em;
+            border: 1px solid #59CE77;
+        }
+
+        #answer-paper-toggle .icon-svg-arrow {
+            transition: transform .3s;
+            transform: rotate(-90deg);
+        }
+
+        #answer-paper-toggle[aria-expanded="true"] .icon-svg-arrow {
+            transform: rotate(90deg);
+        }
+    </style>
+    <style th:if="${!#strings.equals(paper.mode.name(),'exercise')}">
+        #answer-list>a {
+            width: 20%;
+        }
+    </style>
+    <script src="/vendor/utif/3.1.0/UTIF.js"></script>
+</head>
+
+<body class="container" onload="UTIF.replaceIMG()">
+    {% call general::header() %}
+    <div id="printcontent" th:class="${user==null?'d-print-none':''}">
+        <h1 class="text-center" th:text="${paper.paper.title}"></h1>
+        <p class="text-center d-print-none">{% call paper::paper_meta(paper) %}</p>
+
+        <div id="answer-list" class="show-answer row" th:if="${strings.equals(paper.mode.name(),'show_answer')}">
+            <a th:each="q : ${paper.questions}" th:if="${q.answer!=null}" class="text-reset text-center"
+                th:href="'#q-'+${q.number}">
+                <b th:text="${q.number}"></b>、<b class="-answer-" th:text="${q.answer?.answer}"></b>
+            </a>
+        </div>
+
+        <table id="xc-report" class="mx-auto text-center d-print-none" style="width: 20em"
+            th:if="${strings.equals(paper.mode.name(),'exercise') && report!=null}">
+            <caption>测验报告</caption>
+            <tr>
+                <th>题型</th>
+                <th>正确</th>
+                <th>错误</th>
+                <th>题量</th>
+                <th>耗时</th>
+                <th>正确率</th>
+            </tr>
+            <tr th:each="c : ${report}">
+                <td th:text="${c.chapter.title()}"></td>
+                <td class="text-success" th:text="${c.correct}"></td>
+                <td class="text-warning" th:text="${c.error}"></td>
+                <td class="text-info" th:text="${c.chapter.questionCount}"></td>
+                <td class="text-info" th:text="${@thymeleafUtils.formatSecond(c.time)}"></td>
+                <td class="text-info" th:text="${numbers.formatPercent(c.correctRatio,1,2)}"></td>
+            </tr>
+        </table>
+
+        <div class="paper paper-xingce" th:classappend="${paper.mode.name()}">
+            <th:block th:if="${!#strings.equals('exercise',paper.mode.name())}" th:each="qvo : ${paper.questions}">
+                <div th:if="${qvo.chapter!=null}" class="mt-3">
+                    <h2 class="text-center" th:text="${qvo.chapter.header}"></h2>
+                    <p><b th:text="${qvo.chapter.desc}"></b></p>
+                </div>
+                <th:block th:if="${qvo.material!=null}" th:each="m:${qvo.material}">
+                    <h3 class="text-center mt-2" th:text="${m.chineseNumber()}"></h3>
+                    <div class="material" th:utext="${m.html}"></div>
+                </th:block>
+                <div class="d-flex mt-2">
+                    <div th:id="|q-${qvo.number}|" class="q-number flex-shrink-0"><b th:text="${qvo.number}"></b>.</div>
+                    <div class="flex-grow-1 question-wrapper" th:include="fragments/question::xingce_question(${qvo})">
+                    </div>
+                </div>
+            </th:block>
+
+            <form th:if="${strings.equals('exercise',paper.mode.name())}" method="post"
+                th:action="'/paper/'+${paper.paper.id}+'/report'">
+                <th:block th:each="qvo : ${paper.questions}">
+                    <div th:if="${qvo.chapter!=null}" class="mt-3">
+                        <h2 class="text-center" th:text="${qvo.chapter.header}"></h2>
+                        <p><b th:text="${qvo.chapter.desc}"></b></p>
+                    </div>
+                    <th:block th:if="${qvo.material!=null}" th:each="m:${qvo.material}">
+                        <h3 class="text-center mt-2" th:text="${m.chineseNumber()}"></h3>
+                        <div class="material" th:utext="${m.html}"></div>
+                    </th:block>
+                    <div class="d-flex mt-2">
+                        <div th:id="|q-${qvo.number}|" class="q-number flex-shrink-0"><b th:text="${qvo.number}"></b>.
+                        </div>
+                        <div th:include="fragments/question::xingce_exercise_question(${qvo},${answer})"
+                            class="flex-grow-1 question-wrapper show-answer"></div>
+                    </div>
+                </th:block>
+
+                <div class="fixed-bottom answer-paper-wrapper d-print-none">
+                    <div class="d-flex justify-content-center my-1">
+                        <a id="answer-paper-toggle" href="#answer-paper" data-toggle="collapse" class="btn btn-link">
+                            <svg class="icon-svg icon-svg-sm icon-svg-arrow mr-2">
+                                <use xlink:href="#ic-arrow"></use>
+                            </svg>
+                            <b>答题卡</b>
+                        </a>
+                        <button th:if="${answer==null}" class="btn btn-link" type="submit"><b>交卷</b></button>
+                    </div>
+                    <div id="answer-paper" class="collapse">
+                        <div class="d-flex flex-wrap justify-content-center">
+                            <a class="answer-block" th:each="qvo : ${paper.questions}" th:id="'answer-for-'+${qvo.id}"
+                                th:href="'#q-'+${qvo.number}"
+                                th:classappend="${answer==null?'text-muted':(@thymeleafUtils.matchAnswer(answer,qvo.id,qvo.answer.answer)?'text-white bg-success':'text-white bg-danger')}"
+                                th:text="${qvo.number}"></a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <th:block th:include="fragments/waline-comment::waline_comments(false,true,false,true,'来这里吐槽一下试卷😁')" />
+    <th:block th:include="fragments/general::footer" />
+    <script th:if="${strings.equals('exercise',paper.mode.name()) && #maps.isEmpty(answer)}">
+        window.floatButtonAddon = [{
+            style: 'always',
+            render: function () {
+                return "<div id='click_timer' class='d-flex align-items-center'>" +
+                    "<b class='total-timer d-lg-block d-none' style='min-width:4em'>00:00</b>" +
+                    "<svg class='icon-svg'><use xlink:href='#ic-timer'></use></svg>" +
+                    "</div>";
+            },
+            click: function () {
+            }
+        }]
+    </script>
+    <th:block th:replace="fragments/painter::painter" />
+    <script th:replace="fragments/question::solution-comment-script"></script>
+    <script th:replace="fragments/question::answer-collapse-action"></script>
+    <script src='/dist/js/speech.js'></script>
+    <script th:if="${strings.equals('exercise',paper.mode.name()) && #maps.isEmpty(answer)}">
+        $(function () {
+            var $clickTimer = $("#click_timer");
+
+            function s2String(s) {
+                m = Math.floor(s / 60);
+                return String(m).padStart(2, '0') + ":" + String(s % 60).padStart(2, '0');
+            }
+
+            function refreshTimer() {
+                var $timer = $clickTimer;
+                var totalTime = $timer.data("total-timer") || 0, itemTime = $timer.data("item-timer") || 0;
+                $timer.data("total-timer", totalTime + 1).data('item-timer', itemTime + 1);
+                $timer.find("b.total-timer").text(s2String(totalTime));
+            }
+
+            $('input[type="radio"]').change(function () {
+                if (this.value) {
+                    var $answer = $('#answer-for-' + this.name);
+                    var $qt = $answer
+                        .removeClass('text-muted')
+                        .toggleClass('bg-success', !!this.value)
+                        .toggleClass('text-white', !!this.value)
+                        .find('input[type="hidden"]');
+                    if ($qt.size()) {
+                        $qt.val(Number($qt.val()) + $clickTimer.data('item-timer'));
+                    } else {
+                        $answer.append('<input name="qt.' + this.name + '" type="hidden" value="' + $clickTimer.data('item-timer') + '"/>');
+                    }
+                    $clickTimer.data('item-timer', 0);
+                }
+            });
+
+            var t = setInterval(refreshTimer, 1000);
+            $clickTimer.click(function () {
+                t = t ? clearInterval(t) : setInterval(refreshTimer, 1000);
+                $(this).find(".icon-svg>use").attr('xlink:href', t ? '#ic-timer' : '#ic-rest');
+                $(this).find("b.total-timer").toggleClass('d-none', !!t).toggleClass('d-block', !t);
+            });
+        });
+    </script>
+</body>
+
+</html>
