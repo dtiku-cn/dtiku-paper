@@ -5,7 +5,7 @@ WORKDIR /build
 
 COPY frontend/package.json frontend/package-lock.json ./
 
-# cache dependencies
+# cache node_modules dependencies
 RUN npm install
 
 COPY frontend /build/
@@ -15,14 +15,9 @@ RUN npm run build
 ############### rust builder
 FROM rust:latest AS builder
 
-WORKDIR /build
+COPY . /build
 
-COPY Cargo.toml Cargo.lock ./
-
-# cache dependencies
-RUN cargo fetch
-
-COPY . .
+WORKDIR /build/dtiku-backend
 
 RUN cargo build --release
 
@@ -37,9 +32,9 @@ WORKDIR /runner
 
 COPY --from=frontend_builder /build/build/ ./static
 
-COPY --from=builder /build/target/release/spring-rs ./app
+COPY --from=builder /build/target/release/backend ./app
 
-COPY ./config ./config
+COPY ./dtiku-backend/config ./config
 
 EXPOSE 8080
 

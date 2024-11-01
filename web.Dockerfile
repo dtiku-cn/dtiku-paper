@@ -1,14 +1,9 @@
 ####################### rust builder
 FROM rust:latest AS builder
 
-WORKDIR /build
+COPY . /build
 
-COPY Cargo.toml Cargo.lock ./
-
-# cache dependencies
-RUN cargo fetch
-
-COPY . .
+WORKDIR /build/dtiku-web
 
 RUN cargo build --release
 
@@ -21,9 +16,9 @@ ENV RUST_LOG=info
 
 WORKDIR /runner
 
-COPY --from=builder /build/target/release/spring-rs ./app
+COPY --from=builder /build/target/release/web ./app
 
-COPY ./config ./config
+COPY ./dtiku-web/config ./config
 
 EXPOSE 8080
 

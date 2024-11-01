@@ -4,8 +4,8 @@ gen-model:
 
 ## build backend
 build-bk:
-    docker build --tag holmofy:dtiku-backend:latest ./dtiku-backend
+    docker build --tag holmofy/dtiku-backend:latest -f backend.Dockerfile .
 
 ## build web
 build-web:
-    docker build --tag holmofy:dtiku-web:latest ./dtiku-web
+    docker build --tag holmofy/dtiku-web:latest -f web.Dockerfile .
