@@ -6,3 +6,7 @@ pub struct PaperService {
     #[component]
     db: DbConn,
 }
+
+impl PaperService {
+    pub async fn search_by_name(&self, name: &str) {}
+}
