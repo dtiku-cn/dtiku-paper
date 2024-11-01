@@ -9,9 +9,9 @@ name = "web"
 path = "src/main.rs"
 
 [dependencies]
-spring = "0.2"
-spring-web = "0.2"
-spring-sea-orm = "0.2"
-spring-redis = "0.2"
+spring = { workspace = true }
+spring-web = { workspace = true }
+spring-sea-orm = { workspace = true, features = ["postgres"] }
+spring-redis = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }

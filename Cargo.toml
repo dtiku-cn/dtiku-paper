@@ -10,3 +10,16 @@ members = [
 
 [workspace.dependencies]
 tokio = "1"
+spring = "0.2"
+spring-web = "0.2"
+spring-sea-orm = "0.2"
+spring-redis = "0.2"
+sea-orm = "1.1"
+serde = "1"
+serde_json = "1"
+pgvector = "0.4"
+strum = "0.26"
+itertools = "0.13"
+anyhow = "1.0"
+fastembed = "3"
+# rust-bert = "0.23"

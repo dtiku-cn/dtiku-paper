@@ -5,13 +5,13 @@ edition = "2021"
 publish = ["crates-io"]
 
 [dependencies]
-spring = "0.2"
-sea-orm = { version = "1.1", features = ["sqlx-postgres"] }
-serde = "1"
-serde_json = "1"
-pgvector = { version = "0.4", features = ["postgres"] }
-strum = { version = "0.26", features = ["derive"] }
-itertools = "0.13"
-anyhow = "1.0"
-fastembed = "3"
+spring = { workspace = true }
+sea-orm = { workspace = true, features = ["sqlx-postgres"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+pgvector = { workspace = true, features = ["postgres"] }
+strum = { workspace = true, features = ["derive"] }
+itertools = { workspace = true }
+anyhow = { workspace = true }
+fastembed = { workspace = true }
 # rust-bert = "0.23"
