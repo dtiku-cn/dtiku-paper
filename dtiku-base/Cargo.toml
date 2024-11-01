@@ -1,0 +1,10 @@
+[package]
+name = "dtiku-base"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+spring = "0.2"
+sea-orm = { version = "1.1", features = ["sqlx-postgres"] }
+serde = "1"
+serde_json = "1"

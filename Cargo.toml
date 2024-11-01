@@ -4,6 +4,8 @@ members = [
     "dtiku-web",
     "dtiku-paper",
     "dtiku-bbs",
+    "dtiku-stats",
+    "dtiku-base",
 ]
 
 [workspace.dependencies]

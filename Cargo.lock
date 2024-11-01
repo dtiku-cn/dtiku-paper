@@ -98,6 +98,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c042108f3ed77fd83760a5fd79b53be043192bb3b9dba91d8c574c0ada7850c8"
 
 [[package]]
+name = "arc-swap"
+version = "1.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69f7f8c3906b62b754cd5326047894316021dcfe5a194c8ea52bdd94934a3457"
+
+[[package]]
 name = "arrayvec"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -751,10 +757,21 @@ dependencies = [
  "dtiku-paper",
  "spring",
  "spring-job",
+ "spring-redis",
  "spring-sea-orm",
  "spring-stream",
  "spring-web",
  "tokio",
+]
+
+[[package]]
+name = "dtiku-base"
+version = "0.0.0"
+dependencies = [
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "spring",
 ]
 
 [[package]]
@@ -785,11 +802,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "dtiku-stats"
+version = "0.0.1"
+dependencies = [
+ "dtiku-paper",
+]
+
+[[package]]
 name = "dtiku-web"
 version = "0.0.1"
 dependencies = [
  "dtiku-paper",
  "spring",
+ "spring-redis",
  "spring-sea-orm",
  "spring-web",
  "tokio",
@@ -982,6 +1007,7 @@ checksum = "65bc07b1a8bc7c85c5f2e110c476c7389b4554ba72af57d8445ea63a576b0876"
 dependencies = [
  "futures-channel",
  "futures-core",
+ "futures-executor",
  "futures-io",
  "futures-sink",
  "futures-task",
@@ -2144,6 +2170,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pin-project"
+version = "1.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be57f64e946e500c8ee36ef6331845d40a93055567ec57e8fae13efd33759b95"
+dependencies = [
+ "pin-project-internal",
+]
+
+[[package]]
+name = "pin-project-internal"
+version = "1.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c0f5fad0874fc7abcd4d750e76917eaebbecaa2c20bde22e1dbeeba8beb758c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.85",
+]
+
+[[package]]
 name = "pin-project-lite"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2465,6 +2511,31 @@ dependencies = [
  "pin-project-lite",
  "ryu",
  "tokio",
+ "tokio-util",
+ "url",
+]
+
+[[package]]
+name = "redis"
+version = "0.27.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81cccf17a692ce51b86564334614d72dcae1def0fd5ecebc9f02956da74352b5"
+dependencies = [
+ "arc-swap",
+ "async-trait",
+ "bytes",
+ "combine",
+ "futures",
+ "futures-util",
+ "itoa",
+ "num-bigint",
+ "percent-encoding",
+ "pin-project-lite",
+ "ryu",
+ "sha1_smol",
+ "socket2",
+ "tokio",
+ "tokio-retry2",
  "tokio-util",
  "url",
 ]
@@ -2874,7 +2945,7 @@ dependencies = [
  "lazy_static",
  "log",
  "mac_address",
- "redis",
+ "redis 0.25.4",
  "sea-streamer-runtime",
  "sea-streamer-types",
  "thiserror",
@@ -3057,6 +3128,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha1_smol"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbfa15b3dddfee50a0fff136974b3e1bde555604ba463834a7eb7deb6417705d"
+
+[[package]]
 name = "sha2"
 version = "0.10.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3227,6 +3304,20 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.85",
+]
+
+[[package]]
+name = "spring-redis"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81db46fb1e8e4161272e9be199dce8b6c5a1673fc678b4fc841b39f05529e59e"
+dependencies = [
+ "anyhow",
+ "redis 0.27.5",
+ "schemars",
+ "serde",
+ "spring",
+ "tracing",
 ]
 
 [[package]]
@@ -3781,6 +3872,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.85",
+]
+
+[[package]]
+name = "tokio-retry2"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "903934dba1c4c2f2e9cb460ef10b5695e0b0ecad3bf9ee7c8675e540c5e8b2d1"
+dependencies = [
+ "pin-project",
+ "rand",
+ "tokio",
 ]
 
 [[package]]

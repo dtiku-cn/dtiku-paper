@@ -1,0 +1,7 @@
+[package]
+name = "dtiku-stats"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
