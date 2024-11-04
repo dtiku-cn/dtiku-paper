@@ -14,6 +14,7 @@ spring-web = "0.2"
 spring-stream = "0.2"
 spring-job = "0.2"
 spring-sea-orm = "0.2"
+spring-sqlx = "0.2"
 spring-redis = "0.2"
 tokio = { workspace = true, features = ["full"] }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }

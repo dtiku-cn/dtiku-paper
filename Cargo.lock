@@ -823,6 +823,7 @@ dependencies = [
  "spring-job",
  "spring-redis",
  "spring-sea-orm",
+ "spring-sqlx",
  "spring-stream",
  "spring-web",
  "tokio",
@@ -3408,6 +3409,20 @@ dependencies = [
  "serde",
  "spring",
  "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "spring-sqlx"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71fc6dff792f83c5382ab129a1543640c8cc4deaa8efd6638878ffd98376ab37"
+dependencies = [
+ "anyhow",
+ "schemars",
+ "serde",
+ "spring",
+ "sqlx",
  "tracing",
 ]
 
