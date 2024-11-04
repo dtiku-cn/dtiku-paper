@@ -5,6 +5,7 @@ pub use super::material::Entity as Material;
 pub use super::paper::Entity as Paper;
 pub use super::paper_material::Entity as PaperMaterial;
 pub use super::paper_question::Entity as PaperQuestion;
+pub use super::paper_type::Entity as PaperType;
 pub use super::question::Entity as Question;
 pub use super::question_material::Entity as QuestionMaterial;
 pub use super::solution::Entity as Solution;

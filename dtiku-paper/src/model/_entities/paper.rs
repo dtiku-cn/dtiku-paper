@@ -12,6 +12,7 @@ pub struct Model {
     #[sea_orm(column_type = "Text", nullable)]
     pub descrp: Option<String>,
     pub label_id: i32,
+    pub paper_type: i16,
     #[sea_orm(column_type = "JsonBinary")]
     pub extra: Json,
 }

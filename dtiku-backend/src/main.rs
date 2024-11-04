@@ -1,3 +1,5 @@
+mod job;
+
 use spring::App;
 use spring_sea_orm::SeaOrmPlugin;
 use spring_sqlx::SqlxPlugin;

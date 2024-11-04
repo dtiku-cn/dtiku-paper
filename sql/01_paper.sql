@@ -1,14 +1,20 @@
 create extension if not exists vector;
+create table if not exists paper_type(
+    id serial2 primary key,
+    name varchar(32) not null
+);
 create table if not exists label (
     id serial primary key,
     name varchar(32) not null,
-    pid integer not null
+    pid integer not null,
+    paper_type int2 not null
 );
 create table if not exists paper(
     id serial primary key,
     title varchar(255) not null,
     descrp text default null,
     label_id integer not null,
+    paper_type int2 not null,
     extra jsonb not null
 );
 create table if not exists question(
