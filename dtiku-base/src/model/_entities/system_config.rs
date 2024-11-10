@@ -3,13 +3,15 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::model::enums::SystemConfigKey;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "system_config")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub version: i32,
-    pub key: String,
+    pub key: SystemConfigKey,
     #[sea_orm(column_type = "Text")]
     pub value: String,
     pub created: DateTime,

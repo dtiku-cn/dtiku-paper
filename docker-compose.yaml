@@ -4,8 +4,12 @@ services:
       context: ./docker
       dockerfile: postgres.Dockerfile
     volumes:
-      - ./sql/01_paper.sql:/docker-entrypoint-initdb.d/01_paper.sql
+      - ./sql/:/docker-entrypoint-initdb.d/
     environment:
       - POSTGRES_PASSWORD=12345
     ports:
       - 5432:5432
+  redis:
+    image: redis:7.4.0-alpine
+    ports:
+      - 6379:6379

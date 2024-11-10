@@ -1,7 +1,27 @@
-// You need to bring the type into scope to use it!!!
-use strum::EnumMessage;
+use sea_orm::prelude::StringLen;
+use sea_orm::DeriveActiveEnum;
+use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumIter, EnumMessage};
 
-#[derive(PartialEq, Eq, Debug, EnumMessage)]
+#[derive(
+    Copy,
+    Clone,
+    Hash,
+    PartialEq,
+    Eq,
+    Debug,
+    Serialize,
+    Deserialize,
+    DeriveActiveEnum,
+    EnumMessage,
+    EnumIter,
+    AsRefStr,
+)]
+#[sea_orm(
+    rs_type = "String",
+    db_type = "String(StringLen::None)",
+    rename_all = "camelCase"
+)]
 pub enum SystemConfigKey {
     #[strum(message = "联盟广告位脚本，show_ads开启时生效")]
     AdsScript,

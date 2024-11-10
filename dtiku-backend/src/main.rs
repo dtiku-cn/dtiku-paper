@@ -1,11 +1,14 @@
 mod job;
+mod router;
+mod views;
 
-use spring::App;
+use spring::{auto_config, App};
 use spring_sea_orm::SeaOrmPlugin;
 use spring_sqlx::SqlxPlugin;
 use spring_stream::StreamPlugin;
-use spring_web::WebPlugin;
+use spring_web::{WebConfigurator, WebPlugin};
 
+#[auto_config(WebConfigurator)]
 #[tokio::main]
 async fn main() {
     App::new()

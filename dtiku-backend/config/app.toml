@@ -1,5 +1,15 @@
 [web]
+port = 8000
 graceful = true
 
 [web.middlewares]
 static = { enable = true }
+
+[sqlx]
+uri = "postgres://postgres:12345@localhost:5432/postgres"
+
+[sea-orm]
+uri = "postgres://postgres:12345@localhost:5432/postgres"
+
+[stream]
+uri = "redis://localhost"
