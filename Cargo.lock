@@ -926,11 +926,14 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 name = "dtiku-backend"
 version = "0.0.1"
 dependencies = [
+ "anyhow",
  "chrono",
  "dtiku-base",
  "dtiku-paper",
  "itertools 0.13.0",
+ "sea-orm",
  "serde",
+ "serde_json",
  "spring",
  "spring-job",
  "spring-redis",

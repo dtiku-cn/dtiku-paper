@@ -2,7 +2,7 @@
 
 import { Layout, Menu, MenuProps } from 'antd'
 import './globals.css'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   DesktopOutlined,
   FileOutlined,
@@ -32,9 +32,9 @@ function getItem(
 }
 
 const items: MenuItem[] = [
-  getItem(<Link href="/">Dashboard</Link>, '1', <PieChartOutlined />),
-  getItem(<Link href="/configs">Config</Link>, '2', <DesktopOutlined />),
-  getItem(<Link href="/tasks">Task</Link>, 'sub1', <UserOutlined />),
+  getItem(<Link href="/">Dashboard</Link>, '/', <PieChartOutlined />),
+  getItem(<Link href="/configs">Config</Link>, '/configs', <DesktopOutlined />),
+  getItem(<Link href="/tasks">Task</Link>, '/tasks', <UserOutlined />),
   getItem('Team', 'sub2', <TeamOutlined />, [getItem('Team 1', '6'), getItem('Team 2', '8')]),
   getItem('Files', '9', <FileOutlined />),
 ];
@@ -44,7 +44,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const [selectedKey, setSelectedKey] = useState("");
   const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    setSelectedKey(location.pathname);
+  }, [location.pathname]);
   return (
     <html lang="en">
       <body>
@@ -52,7 +56,7 @@ export default function RootLayout({
           <Layout style={{ minHeight: '100vh' }}>
             <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
               <div className="demo-logo-vertical" />
-              <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" items={items} />
+              <Menu theme="dark" selectedKeys={[selectedKey]} mode="inline" items={items} />
             </Sider>
             <Layout>
               <Content style={{ margin: '0 16px' }}>

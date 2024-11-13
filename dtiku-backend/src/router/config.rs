@@ -1,12 +1,18 @@
 use crate::views::{config::SystemConfig as SystemConfigView, GetListResult};
-use dtiku_base::model::{enums::SystemConfigKey, system_config::Entity as SystemConfig};
+use anyhow::Context;
+use dtiku_base::model::{
+    enums::SystemConfigKey,
+    system_config::{self, Entity as SystemConfig},
+};
 use itertools::Itertools;
+use sea_orm::ActiveModelTrait;
+use sea_orm::Set;
 use spring_sea_orm::DbConn;
 use spring_web::{
     axum::{response::IntoResponse, Json},
     error::Result,
-    extractor::Component,
-    get,
+    extractor::{Component, Path},
+    get, put,
 };
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
@@ -24,4 +30,27 @@ async fn list_all_config(Component(db): Component<DbConn>) -> Result<impl IntoRe
         })
         .collect_vec();
     Ok(Json(GetListResult::from(result)))
+}
+
+#[put("/api/configs/:key")]
+async fn save_config(
+    Component(db): Component<DbConn>,
+    Path(key): Path<SystemConfigKey>,
+    Json(value): Json<serde_json::Value>,
+) -> Result<impl IntoResponse> {
+    let json = serde_json::to_string(&value).context("json is invalid")?;
+    let model = SystemConfig::find_by_key(&db, key).await?;
+    let active_model = match model {
+        Some(m) => system_config::ActiveModel {
+            id: Set(m.id),
+            value: Set(json),
+            ..Default::default()
+        },
+        None => system_config::ActiveModel {
+            value: Set(json),
+            ..Default::default()
+        },
+    };
+    active_model.save(&db).await.context("save config failed")?;
+    Ok("success")
 }
