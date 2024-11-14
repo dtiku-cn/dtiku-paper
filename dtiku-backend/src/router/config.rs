@@ -43,14 +43,16 @@ async fn save_config(
     let active_model = match model {
         Some(m) => system_config::ActiveModel {
             id: Set(m.id),
+            key: Set(key),
             value: Set(json),
             ..Default::default()
         },
         None => system_config::ActiveModel {
+            key: Set(key),
             value: Set(json),
             ..Default::default()
         },
     };
     active_model.save(&db).await.context("save config failed")?;
-    Ok("success")
+    Ok(Json("success"))
 }

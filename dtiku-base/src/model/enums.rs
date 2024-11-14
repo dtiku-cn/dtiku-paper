@@ -1,7 +1,7 @@
 use sea_orm::prelude::StringLen;
 use sea_orm::DeriveActiveEnum;
 use serde::{Deserialize, Serialize};
-use strum::{AsRefStr, EnumIter, EnumMessage};
+use strum::{AsRefStr, EnumIter, EnumMessage, EnumString};
 
 #[derive(
     Copy,
@@ -16,6 +16,7 @@ use strum::{AsRefStr, EnumIter, EnumMessage};
     EnumMessage,
     EnumIter,
     AsRefStr,
+    EnumString,
 )]
 #[sea_orm(
     rs_type = "String",

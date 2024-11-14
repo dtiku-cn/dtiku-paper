@@ -13,3 +13,6 @@ uri = "postgres://postgres:12345@localhost:5432/postgres"
 
 [stream]
 uri = "redis://localhost"
+
+[redis]
+uri = "redis://localhost"

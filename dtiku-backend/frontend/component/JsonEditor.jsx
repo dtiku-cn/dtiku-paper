@@ -5,6 +5,8 @@ export default function SvelteJSONEditor(props) {
   const refContainer = useRef(null);
   const refEditor = useRef(null);
 
+  const { style, ...rest } = props;
+
   useEffect(() => {
     // create editor
     console.log("create editor", refContainer.current);
@@ -26,10 +28,16 @@ export default function SvelteJSONEditor(props) {
   // update props
   useEffect(() => {
     if (refEditor.current) {
-      console.log("update props", props);
-      refEditor.current.updateProps(props);
+      console.log("update props", rest);
+      refEditor.current.updateProps(rest);
     }
-  }, [props]);
+  }, [rest]);
 
-  return <div className="vanilla-jsoneditor-react" ref={refContainer}></div>;
+  return (
+    <div
+      className="vanilla-jsoneditor-react"
+      style={style}
+      ref={refContainer}
+    ></div>
+  );
 }
