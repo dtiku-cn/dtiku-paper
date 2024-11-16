@@ -4,7 +4,8 @@ create table if not exists exam_category(
     id serial2 primary key,
     name varchar(16) not null,
     prefix varchar(16) not null,
-    pid int2 not null
+    pid int2 not null,
+    unique(pid, prefix)
 );
 -- 试卷标签：比如省、市；
 create table if not exists label(
@@ -12,7 +13,8 @@ create table if not exists label(
     name varchar(32) not null,
     pid integer not null,
     exam_id int2 not null,
-    paper_type int2 not null
+    paper_type int2 not null,
+    unique(paper_type, pid, name)
 );
 -- 试卷
 create table if not exists paper(

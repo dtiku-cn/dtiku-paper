@@ -9,5 +9,5 @@ jsonb_extract_path_text(extra,'parent','name') as parent_label,
 jsonb_extract_path_text(extra,'name') as label_name,
 id
 from label
-where from_ty ='fenbi'
+where from_ty = 'fenbi'
 order by exam_root,exam_name,paper_type,parent_label,label_name
