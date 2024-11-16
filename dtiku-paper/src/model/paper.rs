@@ -1,14 +1,11 @@
 pub use super::_entities::paper::*;
 use anyhow::Context;
 use sea_orm::{
-    ActiveModelBehavior, ColumnTrait, ConnectionTrait, DerivePartialModel, EntityTrait,
-    FromQueryResult, QueryFilter,
+    ColumnTrait, ConnectionTrait, DerivePartialModel, EntityTrait, FromQueryResult, QueryFilter,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::ops::Range;
-
-impl ActiveModelBehavior for ActiveModel {}
 
 pub struct Paper {
     pub id: i32,
@@ -25,8 +22,8 @@ struct PaperSelect {
     id: i32,
     #[sea_orm(from_col = "title")]
     title: String,
-    #[sea_orm(from_col = "descrp")]
-    pub descrp: Option<String>,
+    #[sea_orm(from_col = "summary")]
+    pub summary: Option<String>,
     #[sea_orm(from_col = "label_id")]
     pub label_id: i32,
     #[sea_orm(from_col = "extra")]
@@ -40,7 +37,7 @@ impl TryFrom<PaperSelect> for Paper {
         Ok(Self {
             id: value.id,
             title: value.title,
-            desc: value.descrp,
+            desc: value.summary,
             label_id: value.label_id,
             extra: serde_json::from_value(value.extra)?,
         })
@@ -51,7 +48,7 @@ impl TryFrom<PaperSelect> for Paper {
 #[serde(tag = "type")]
 pub enum PaperExtra {
     #[serde(rename = "cs")]
-    Chapter(Vec<PaperChapter>),
+    Chapters(Vec<PaperChapter>),
     #[serde(rename = "ce")]
     EssayCluster(EssayCluster),
 }

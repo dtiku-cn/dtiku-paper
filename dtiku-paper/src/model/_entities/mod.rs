@@ -2,12 +2,15 @@
 
 pub mod prelude;
 
+pub mod chapter_category;
+pub mod exam_category;
+pub mod key_point;
 pub mod label;
 pub mod material;
 pub mod paper;
 pub mod paper_material;
 pub mod paper_question;
-pub mod paper_type;
 pub mod question;
+pub mod question_key_point;
 pub mod question_material;
 pub mod solution;

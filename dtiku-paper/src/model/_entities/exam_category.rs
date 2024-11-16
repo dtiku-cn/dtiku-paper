@@ -4,11 +4,12 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "paper_type")]
+#[sea_orm(table_name = "exam_category")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i16,
     pub name: String,
+    pub pid: i16,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -1,1 +1,2 @@
-pub use super::_entities::paper_type::*;
+pub use super::_entities::exam_category::*;
+

@@ -6,7 +6,7 @@ graceful = true
 static = { enable = true }
 
 [sqlx]
-uri = "postgres://postgres:12345@localhost:5432/postgres"
+uri = "postgres://postgres:12345@localhost:5432/dtiku"
 
 [sea-orm]
 uri = "postgres://postgres:12345@localhost:5432/postgres"

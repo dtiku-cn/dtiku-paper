@@ -1,9 +1,7 @@
 pub use super::_entities::solution::*;
 use anyhow::Context;
-use sea_orm::{ActiveModelBehavior, ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
-
-impl ActiveModelBehavior for ActiveModel {}
 
 pub struct Solution {
     pub id: i32,
@@ -26,12 +24,30 @@ impl TryFrom<Model> for Solution {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SolutionExtra {
-    #[serde(rename = "s")]
-    SingleOption { answer: u32, analysis: String },
-    #[serde(rename = "m")]
-    MultiOption { answers: Vec<u32>, analysis: String },
-    #[serde(rename = "qa")]
-    QA { answer: String, analysis: String },
+    // 单选题
+    #[serde(rename = "sc")]
+    SingleChoice { answer: u32, analysis: String },
+    // 多选题
+    #[serde(rename = "mc")]
+    MultiChoice { answers: Vec<u32>, analysis: String },
+    // 不定项选择题
+    #[serde(rename = "ic")]
+    IndefiniteChoice { answer: Vec<u32>, analysis: String },
+    // 完形填空选择题
+    #[serde(rename = "bc")]
+    BlankChoice { answer: u32, analysis: String },
+    // 是非判断题
+    #[serde(rename = "tf")]
+    TrueFalse { answer: bool, analysis: String },
+    // 分步式解答题
+    #[serde(rename = "sa")]
+    StepByStepAnswer { analysis: Vec<String> },
+    // 封闭式解答题
+    #[serde(rename = "ce")]
+    ClosedEndedAnswer { answer: String, analysis: String },
+    // 开放式解答题
+    #[serde(rename = "oe")]
+    OpenEndedAnswer { answer: String, analysis: String },
 }
 
 impl Entity {

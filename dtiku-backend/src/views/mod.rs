@@ -54,9 +54,7 @@ impl<T> GetListResult<T> {
 
 impl<T> From<Vec<T>> for GetListResult<T> {
     fn from(data: Vec<T>) -> Self {
-        Self {
-            total: data.len() as i64,
-            data,
-        }
+        let total = data.len() as i64;
+        Self::new(data, total)
     }
 }

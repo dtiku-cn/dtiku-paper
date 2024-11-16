@@ -30,3 +30,28 @@ pub enum SystemConfigKey {
     #[strum(message = "Raline评论配置")]
     RalineConfig,
 }
+
+#[derive(
+    Copy,
+    Clone,
+    Hash,
+    PartialEq,
+    Eq,
+    Debug,
+    Serialize,
+    Deserialize,
+    DeriveActiveEnum,
+    EnumMessage,
+    EnumIter,
+    AsRefStr,
+    EnumString,
+)]
+#[sea_orm(
+    rs_type = "String",
+    db_type = "String(StringLen::None)",
+    rename_all = "camelCase"
+)]
+pub enum ScheduleTaskType {
+    #[strum(message = "同步粉笔数据")]
+    FenbiSync,
+}

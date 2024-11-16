@@ -2,8 +2,7 @@ pub use super::_entities::material::*;
 use super::{PaperMaterial, _entities::paper_material};
 use itertools::Itertools;
 use sea_orm::{
-    ActiveModelBehavior, ColumnTrait, ConnectionTrait, DerivePartialModel, EntityTrait,
-    FromQueryResult, QueryFilter,
+    ColumnTrait, ConnectionTrait, DerivePartialModel, EntityTrait, FromQueryResult, QueryFilter,
 };
 use std::collections::HashMap;
 
@@ -15,8 +14,6 @@ pub struct Material {
     #[sea_orm(from_col = "content")]
     pub content: String,
 }
-
-impl ActiveModelBehavior for ActiveModel {}
 
 impl Entity {
     pub async fn find_by_paper_id<C>(db: &C, paper_id: i32) -> anyhow::Result<Vec<Material>>

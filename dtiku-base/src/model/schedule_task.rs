@@ -1,5 +1,9 @@
+use crate::error::Error;
 pub use super::_entities::schedule_task::*;
-use sea_orm::{sqlx::types::chrono::Local, ActiveModelBehavior, ConnectionTrait, DbErr, Set};
+use sea_orm::{
+    sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue, ColumnTrait, ConnectionTrait,
+    DbErr, EntityTrait, QueryFilter, Set,
+};
 use spring::{async_trait, App};
 use spring_stream::Producer;
 
@@ -21,13 +25,33 @@ impl ActiveModelBehavior for ActiveModel {
         C: ConnectionTrait,
     {
         if model.active {
-            let json = serde_json::to_string(&model).expect("json serde failed");
-
             let producer = App::global()
                 .get_component::<Producer>()
                 .expect("stream producer component don't exists");
-            let _ = producer.send_to("task", json).await;
+            let _ = producer.send_json("task", &model).await;
         }
         Ok(model)
+    }
+}
+
+impl ActiveModel {
+    // 乐观锁更新
+    pub async fn optimistic_update<C>(mut self, db: &C) -> Result<Model, Error>
+    where
+        C: ConnectionTrait,
+    {
+        let old_version = match self.version {
+            ActiveValue::Set(v) => v,
+            _ => Err(Error::OptimisticLockErr(format!(
+                "schedule_task version not set"
+            )))?,
+        };
+        self.version = Set(old_version + 1);
+        let am = ActiveModelBehavior::before_save(self, db, false).await?;
+        let model = Entity::update(am)
+            .filter(Column::Version.eq(old_version))
+            .exec(db)
+            .await?;
+        Ok(Self::after_save(model, db, false).await?)
     }
 }

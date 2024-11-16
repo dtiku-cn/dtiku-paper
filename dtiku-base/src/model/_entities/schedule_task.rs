@@ -2,6 +2,7 @@
 
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::model::enums::ScheduleTaskType;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "schedule_task")]
@@ -9,7 +10,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub version: i32,
-    pub ty: String,
+    pub ty: ScheduleTaskType,
     pub active: bool,
     #[sea_orm(column_type = "Text")]
     pub context: String,

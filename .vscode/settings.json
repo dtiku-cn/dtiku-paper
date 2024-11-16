@@ -1,0 +1,26 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "dtiku",
+            "group": "dtiku",
+            "database": "dtiku",
+            "username": "postgres",
+            "password": "12345"
+        },
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "group": "dtiku",
+            "name": "postgres",
+            "database": "postgres",
+            "username": "postgres",
+            "password": "12345"
+        }
+    ]
+}

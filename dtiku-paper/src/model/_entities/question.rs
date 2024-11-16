@@ -10,6 +10,8 @@ pub struct Model {
     pub id: i32,
     #[sea_orm(column_type = "Text")]
     pub content: String,
+    pub exam_id: i16,
+    pub paper_type: i16,
     #[sea_orm(column_type = "JsonBinary")]
     pub extra: Json,
     #[sea_orm(column_type = "custom(\"vector\")")]
@@ -18,3 +20,5 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
+
+impl ActiveModelBehavior for ActiveModel {}

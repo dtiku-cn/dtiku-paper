@@ -1,4 +1,4 @@
-mod job;
+mod jobs;
 mod router;
 mod views;
 

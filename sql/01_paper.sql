@@ -1,34 +1,68 @@
 create extension if not exists vector;
-create table if not exists paper_type(
+-- 考试类型：root_id为exam_id; leaf_id为paper_type
+create table if not exists exam_category(
     id serial2 primary key,
-    name varchar(32) not null
+    name varchar(16) not null,
+    prefix varchar(16) not null,
+    pid int2 not null
 );
-create table if not exists label (
+-- 试卷标签：比如省、市；
+create table if not exists label(
     id serial primary key,
     name varchar(32) not null,
     pid integer not null,
+    exam_id int2 not null,
     paper_type int2 not null
 );
+-- 试卷
 create table if not exists paper(
     id serial primary key,
     title varchar(255) not null,
-    descrp text default null,
-    label_id integer not null,
+    summary text default null,
+    exam_id int2 not null,
     paper_type int2 not null,
+    label_id integer not null,
     extra jsonb not null
 );
+-- 类别
+create table if not exists chapter_category(
+    id serial primary key,
+    name varchar(32) not null,
+    exam_id int2 not null,
+    paper_type int2 not null
+);
+-- 知识点
+create table if not exists key_point(
+    id serial primary key,
+    name varchar(32) not null,
+    pid integer not null,
+    exam_id int2 not null,
+    paper_type int2 not null,
+    category integer not null
+);
+-- 问题
 create table if not exists question(
     id serial primary key,
     content text not null,
+    exam_id int2 not null,
+    paper_type int2 not null,
     extra jsonb not null,
     embedding vector(512) not null
+);
+create table if not exists question_key_point(
+    question_id integer not null,
+    key_point_id integer not null,
+    primary key (question_id, key_point_id)
 );
 create table if not exists paper_question (
     paper_id integer not null,
     question_id integer not null,
     sort smallint not null,
+    category integer not null,
+    correct_ratio float4 not null,
     primary key (paper_id, question_id)
 );
+-- 材料
 create table if not exists material (
     id serial primary key,
     content text not null,
@@ -45,6 +79,7 @@ create table if not exists question_material (
     material_id integer not null,
     primary key (question_id, material_id)
 );
+-- 解答
 create table if not exists solution (
     id serial primary key,
     question_id integer not null,
