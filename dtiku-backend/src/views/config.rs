@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 use dtiku_base::model::{enums::SystemConfigKey, system_config::Model};
 use serde::Serialize;
+use serde_json::Value;
 use strum::EnumMessage;
 
 #[derive(Debug, Serialize)]
@@ -9,7 +10,7 @@ pub struct SystemConfig {
     pub version: i32,
     pub key: SystemConfigKey,
     pub key_desc: &'static str,
-    pub value: Option<String>,
+    pub value: Option<Value>,
     pub created: Option<NaiveDateTime>,
     pub modified: Option<NaiveDateTime>,
 }

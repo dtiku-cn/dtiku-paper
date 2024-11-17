@@ -38,18 +38,17 @@ async fn save_config(
     Path(key): Path<SystemConfigKey>,
     Json(value): Json<serde_json::Value>,
 ) -> Result<impl IntoResponse> {
-    let json = serde_json::to_string(&value).context("json is invalid")?;
     let model = SystemConfig::find_by_key(&db, key).await?;
     let active_model = match model {
         Some(m) => system_config::ActiveModel {
             id: Set(m.id),
             key: Set(key),
-            value: Set(json),
+            value: Set(value),
             ..Default::default()
         },
         None => system_config::ActiveModel {
             key: Set(key),
-            value: Set(json),
+            value: Set(value),
             ..Default::default()
         },
     };

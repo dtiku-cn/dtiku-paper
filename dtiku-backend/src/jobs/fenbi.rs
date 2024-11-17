@@ -3,10 +3,12 @@ use dtiku_base::model::schedule_task;
 use dtiku_base::model::schedule_task::Progress;
 use dtiku_paper::model::exam_category;
 use dtiku_paper::model::label;
+use dtiku_paper::model::paper;
 use dtiku_paper::model::Label;
 use futures::StreamExt;
 use sea_orm::ConnectionTrait;
 use sea_orm::Set;
+use serde_json::Value;
 use spring::plugin::service::Service;
 use spring::tracing;
 use spring_sea_orm::DbConn;
@@ -21,27 +23,55 @@ pub struct FenbiSyncService {
 }
 
 impl FenbiSyncService {
-    pub async fn start(&self, task: &schedule_task::Model) -> anyhow::Result<()> {
-        self.sync_label(task).await?;
-        self.sync_paper(task).await?;
+    pub async fn start(&self, task: &mut schedule_task::Model) -> anyhow::Result<()> {
+        let mut progress = match task.context {
+            Value::Null => {
+                let total = self
+                    .total("select count(*) as total from label where from_ty='fenbi'")
+                    .await?;
+                let progress = Progress {
+                    name: "sync_label".to_string(),
+                    total,
+                    current: 0,
+                };
+                *task = task.update_progress(&progress, &self.target_db).await?;
+                progress
+            }
+            _ => serde_json::from_value(task.context.clone())?,
+        };
+        if progress.name == "sync_label" {
+            self.sync_label(task, &mut progress).await?;
+
+            let total = self
+                .total("select max(id) as total from paper where from_ty='fenbi'")
+                .await?;
+            progress = Progress {
+                name: "sync_paper".to_string(),
+                total,
+                current: 0,
+            };
+            *task = task.update_progress(&progress, &self.target_db).await?;
+        }
+        if progress.name == "sync_paper" {
+            self.sync_paper(task, &mut progress).await?;
+        }
         Ok(())
     }
 
-    async fn sync_label(&self, task: &schedule_task::Model) -> anyhow::Result<()> {
-        let total: i64 = sqlx::query("select count(*) as total from label where from_ty='fenbi'")
+    async fn total(&self, sql: &str) -> anyhow::Result<i64> {
+        Ok(sqlx::query(&sql)
             .fetch_one(&self.source_db)
             .await
-            .context("fetch label count failed")?
+            .with_context(|| format!("{sql} execute failed"))?
             .try_get("total")
-            .context("get label total failed")?;
+            .context("get total failed")?)
+    }
 
-        let mut progress = Progress {
-            name: "sync label".to_string(),
-            total,
-            current: 0,
-        };
-        task.update_progress(&progress, &self.target_db).await?;
-
+    async fn sync_label(
+        &self,
+        task: &mut schedule_task::Model,
+        progress: &mut Progress<i64>,
+    ) -> anyhow::Result<()> {
         let mut stream = sqlx::query_file_as!(OriginLabel, "src/jobs/fenbi/find_label.sql")
             .fetch(&self.source_db);
 
@@ -59,7 +89,7 @@ impl FenbiSyncService {
                         .context("update source db label target_id failed")?;
 
                     if progress.increase(1) {
-                        task.update_progress(&progress, &self.target_db).await?;
+                        *task = task.update_progress(&progress, &self.target_db).await?;
                     }
                 }
                 Err(e) => tracing::error!("find label failed: {:?}", e),
@@ -69,8 +99,47 @@ impl FenbiSyncService {
         Ok(())
     }
 
-    async fn sync_paper(&self, task: &schedule_task::Model) -> anyhow::Result<()> {
+    async fn sync_paper(
+        &self,
+        task: &mut schedule_task::Model,
+        progress: &mut Progress<i64>,
+    ) -> anyhow::Result<()> {
+        while progress.current < progress.total {
+            let current = progress.current;
+            let mut stream = sqlx::query_file_as!(
+                OriginPaper,
+                "src/jobs/fenbi/find_paper.sql",
+                current,
+                current + 1000
+            )
+            .fetch(&self.source_db);
+
+            while let Some(row) = stream.next().await {
+                match row {
+                    Ok(row) => {
+                        let source_id = row.id;
+                        let paper = self.save_paper(row).await?;
+
+                        sqlx::query("update paper set target_id=? where id=?")
+                            .bind(paper.id)
+                            .bind(source_id)
+                            .execute(&self.source_db)
+                            .await
+                            .context("update source db label target_id failed")?;
+
+                        if progress.increase(1) {
+                            *task = task.update_progress(&progress, &self.target_db).await?;
+                        }
+                    }
+                    Err(e) => tracing::error!("find label failed: {:?}", e),
+                };
+            }
+        }
         Ok(())
+    }
+
+    async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
+        todo!()
     }
 }
 
@@ -161,4 +230,14 @@ impl OriginLabel {
             .context("insert label failed")?;
         Ok(label)
     }
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct OriginPaper {
+    name: Option<String>,
+    date: Option<String>,
+    topic: Option<String>,
+    ty: Option<String>,
+    chapters: Option<String>,
+    id: i64,
 }

@@ -68,7 +68,7 @@ impl Entity {
                 let value = Self::find_by_key(db, key).await?.map(|m| m.value);
 
                 match value {
-                    Some(json) => Some(serde_json::from_str(&json).context("json decode failed")?),
+                    Some(json) => Some(serde_json::from_value(json).context("json decode failed")?),
                     None => None,
                 }
             }

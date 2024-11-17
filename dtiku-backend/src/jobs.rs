@@ -8,13 +8,13 @@ use spring_sea_orm::DbConn;
 use spring_stream::{extractor::Json, stream_listener};
 
 #[stream_listener("task")]
-async fn refresh_cache(Json(task): Json<schedule_task::Model>) {
+async fn refresh_cache(Json(mut task): Json<schedule_task::Model>) {
     let result = match task.ty {
         ScheduleTaskType::FenbiSync => {
             App::global()
                 .get_component::<FenbiSyncService>()
                 .expect("fenbi sync service not found")
-                .start(&task)
+                .start(&mut task)
                 .await
         }
     };

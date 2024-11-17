@@ -5,12 +5,10 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::ops::Range;
 
 pub struct Paper {
     pub id: i32,
     pub title: String,
-    pub desc: Option<String>,
     pub label_id: i32,
     pub extra: PaperExtra,
 }
@@ -22,8 +20,6 @@ struct PaperSelect {
     id: i32,
     #[sea_orm(from_col = "title")]
     title: String,
-    #[sea_orm(from_col = "summary")]
-    pub summary: Option<String>,
     #[sea_orm(from_col = "label_id")]
     pub label_id: i32,
     #[sea_orm(from_col = "extra")]
@@ -37,7 +33,6 @@ impl TryFrom<PaperSelect> for Paper {
         Ok(Self {
             id: value.id,
             title: value.title,
-            desc: value.summary,
             label_id: value.label_id,
             extra: serde_json::from_value(value.extra)?,
         })
@@ -48,16 +43,22 @@ impl TryFrom<PaperSelect> for Paper {
 #[serde(tag = "type")]
 pub enum PaperExtra {
     #[serde(rename = "cs")]
-    Chapters(Vec<PaperChapter>),
+    Chapters(Chapters),
     #[serde(rename = "ce")]
     EssayCluster(EssayCluster),
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Chapters {
+    pub desc: Option<String>,
+    pub cs: Vec<PaperChapter>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct PaperChapter {
     pub name: String,
     pub desc: String,
-    pub range: Range<i16>,
+    pub count: i16,
 }
 
 #[derive(Serialize, Deserialize)]

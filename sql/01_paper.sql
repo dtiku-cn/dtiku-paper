@@ -20,7 +20,6 @@ create table if not exists label(
 create table if not exists paper(
     id serial primary key,
     title varchar(255) not null,
-    summary text default null,
     exam_id int2 not null,
     paper_type int2 not null,
     label_id integer not null,

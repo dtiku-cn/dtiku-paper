@@ -76,17 +76,21 @@ impl ActiveModel {
 }
 
 impl Model {
-    pub async fn update_progress<T: Serialize, C: ConnectionTrait>(
+    pub async fn update_progress<T, C>(
         &self,
         progress: &Progress<T>,
         db: &C,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<Model>
+    where
+        T: Serialize,
+        C: ConnectionTrait,
+    {
         let mut active_model = self.clone().into_active_model();
-        active_model.context = Set(serde_json::to_string(progress)?);
-        active_model
+        active_model.context = Set(serde_json::to_value(progress)?);
+        let model = active_model
             .optimistic_update(db)
             .await
             .context("update progress failed")?;
-        Ok(())
+        Ok(model)
     }
 }

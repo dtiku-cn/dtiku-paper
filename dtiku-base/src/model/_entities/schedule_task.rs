@@ -12,8 +12,8 @@ pub struct Model {
     pub version: i32,
     pub ty: ScheduleTaskType,
     pub active: bool,
-    #[sea_orm(column_type = "Text")]
-    pub context: String,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub context: Json,
     pub error_count: i32,
     #[sea_orm(column_type = "Text")]
     pub error_cause: String,

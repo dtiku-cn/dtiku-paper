@@ -12,8 +12,8 @@ pub struct Model {
     pub id: i32,
     pub version: i32,
     pub key: SystemConfigKey,
-    #[sea_orm(column_type = "Text")]
-    pub value: String,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub value: Json,
     pub created: DateTime,
     pub modified: DateTime,
 }
