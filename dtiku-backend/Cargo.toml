@@ -28,3 +28,5 @@ sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 sqlx = { workspace = true, features = ["postgres"] }
 anyhow = { workspace = true }
 futures = { workspace = true }
+regex = { workspace = true }
+lazy_static = { workspace = true }

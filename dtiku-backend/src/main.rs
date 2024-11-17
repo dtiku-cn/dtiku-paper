@@ -1,6 +1,7 @@
 mod jobs;
 mod router;
 mod views;
+mod utils;
 
 use spring::{auto_config, App};
 use spring_redis::RedisPlugin;

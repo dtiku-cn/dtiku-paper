@@ -9,6 +9,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub title: String,
+    pub year: i16,
     pub exam_id: i16,
     pub paper_type: i16,
     pub label_id: i32,

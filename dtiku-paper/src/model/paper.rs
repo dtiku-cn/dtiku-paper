@@ -1,7 +1,8 @@
 pub use super::_entities::paper::*;
 use anyhow::Context;
 use sea_orm::{
-    ColumnTrait, ConnectionTrait, DerivePartialModel, EntityTrait, FromQueryResult, QueryFilter,
+    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
+    FromQueryResult, QueryFilter,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -51,7 +52,7 @@ pub enum PaperExtra {
 #[derive(Serialize, Deserialize)]
 pub struct Chapters {
     pub desc: Option<String>,
-    pub cs: Vec<PaperChapter>,
+    pub chapters: Vec<PaperChapter>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -87,5 +88,21 @@ impl Entity {
             .into_iter()
             .map(|p| p.try_into())
             .collect()
+    }
+}
+
+impl ActiveModel {
+    pub async fn insert_on_conflict<C>(self, db: &C) -> Result<Model, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::insert(self)
+            .on_conflict(
+                OnConflict::columns([Column::LabelId, Column::Title])
+                    .update_column(Column::Extra)
+                    .to_owned(),
+            )
+            .exec_with_returning(db)
+            .await
     }
 }

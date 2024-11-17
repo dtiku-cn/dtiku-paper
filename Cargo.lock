@@ -932,6 +932,8 @@ dependencies = [
  "dtiku-paper",
  "futures",
  "itertools 0.13.0",
+ "lazy_static",
+ "regex",
  "sea-orm",
  "serde",
  "serde_json",
@@ -987,6 +989,7 @@ dependencies = [
  "serde",
  "serde_json",
  "spring",
+ "spring-redis",
  "strum",
 ]
 

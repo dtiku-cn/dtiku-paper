@@ -6,7 +6,7 @@ use sea_orm::{
     EntityTrait, QueryFilter, Set,
 };
 use serde::de::DeserializeOwned;
-use spring::{async_trait, App};
+use spring::{async_trait, tracing, App};
 use spring_redis::{
     redis::{AsyncCommands, RedisError},
     Redis,
@@ -64,11 +64,21 @@ impl Entity {
         let cached: Result<String, RedisError> = redis.get(format!("config:{cache_key}")).await;
         Ok(match cached {
             Ok(json) => Some(serde_json::from_str(&json).context("json decode failed")?),
-            Err(_err) => {
+            Err(e) => {
+                tracing::error!("cache error:{:?}", e);
                 let value = Self::find_by_key(db, key).await?.map(|m| m.value);
 
                 match value {
-                    Some(json) => Some(serde_json::from_value(json).context("json decode failed")?),
+                    Some(json) => {
+                        let _: () = redis
+                            .set(
+                                cache_key,
+                                serde_json::to_string(&json).context("json encode failed")?,
+                            )
+                            .await
+                            .unwrap_or_else(|e| tracing::error!("cache error:{:?}", e));
+                        Some(serde_json::from_value(json).context("json decode failed")?)
+                    }
                     None => None,
                 }
             }

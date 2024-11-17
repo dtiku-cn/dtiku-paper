@@ -1,13 +1,20 @@
+use crate::utils::regex::pick_year;
 use anyhow::Context;
 use dtiku_base::model::schedule_task;
 use dtiku_base::model::schedule_task::Progress;
 use dtiku_paper::model::exam_category;
 use dtiku_paper::model::label;
 use dtiku_paper::model::paper;
+use dtiku_paper::model::paper::Chapters;
+use dtiku_paper::model::paper::EssayCluster;
+use dtiku_paper::model::paper::PaperBlock;
+use dtiku_paper::model::paper::PaperChapter;
 use dtiku_paper::model::Label;
 use futures::StreamExt;
 use sea_orm::ConnectionTrait;
 use sea_orm::Set;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 use spring::plugin::service::Service;
 use spring::tracing;
@@ -106,12 +113,23 @@ impl FenbiSyncService {
     ) -> anyhow::Result<()> {
         while progress.current < progress.total {
             let current = progress.current;
-            let mut stream = sqlx::query_file_as!(
-                OriginPaper,
-                "src/jobs/fenbi/find_paper.sql",
-                current,
-                current + 1000
+            let next_step_id = current + 1000;
+            let mut stream = sqlx::query_as::<_, OriginPaper>(
+                r##"
+                    select 
+                        jsonb_extract_path_text(extra,'name') as name,
+                        jsonb_extract_path_text(extra,'date') as date,
+                        jsonb_extract_path_text(extra,'topic') as topic,
+                        jsonb_extract_path_text(extra,'type') as ty,
+                        jsonb_extract_path_text(extra,'chapters') as chapters,
+                        id,
+                        label_id
+                    from paper
+                    where from_ty = 'fenbi' and id > ? and id <= ?
+                    "##,
             )
+            .bind(current)
+            .bind(next_step_id)
             .fetch(&self.source_db);
 
             while let Some(row) = stream.next().await {
@@ -127,9 +145,8 @@ impl FenbiSyncService {
                             .await
                             .context("update source db label target_id failed")?;
 
-                        if progress.increase(1) {
-                            *task = task.update_progress(&progress, &self.target_db).await?;
-                        }
+                        progress.current = source_id;
+                        *task = task.update_progress(&progress, &self.target_db).await?;
                     }
                     Err(e) => tracing::error!("find label failed: {:?}", e),
                 };
@@ -139,7 +156,17 @@ impl FenbiSyncService {
     }
 
     async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
-        todo!()
+        let source_paper_id = paper.id;
+        let target_label_id: i32 = sqlx::query("select target_id from label where id = ?")
+            .bind(paper.label_id)
+            .fetch_one(&self.source_db)
+            .await
+            .with_context(|| format!("find target_id for label#{}", paper.label_id))?
+            .try_get("target_id")
+            .context("get target_id failed")?;
+        let paper = paper.save_to(&self.target_db, target_label_id).await?;
+
+        Ok(paper)
     }
 }
 
@@ -237,7 +264,84 @@ struct OriginPaper {
     name: Option<String>,
     date: Option<String>,
     topic: Option<String>,
-    ty: Option<String>,
+    ty: Option<i64>,
     chapters: Option<String>,
     id: i64,
+    label_id: i64,
+}
+
+impl OriginPaper {
+    async fn save_to<C: ConnectionTrait>(
+        self,
+        db: &C,
+        label_id: i32,
+    ) -> anyhow::Result<paper::Model> {
+        let label = Label::find_by_id_with_cache(db, label_id)
+            .await
+            .with_context(|| format!("Label::find_by_id_with_cache({label_id}) failed"))?
+            .expect(&format!("label#{label_id} not exists"));
+
+        let year = pick_year(&self.date.expect("date is none")).expect("year not found");
+        let mut active_model = paper::ActiveModel {
+            title: Set(self.name.expect("name is none")),
+            year: Set(year),
+            exam_id: Set(label.exam_id),
+            paper_type: Set(label.paper_type),
+            label_id: Set(label.id),
+            ..Default::default()
+        };
+
+        let chapters = &self.chapters.expect("chapters is none");
+        let chapters: Vec<OriginChapter> =
+            serde_json::from_str(chapters).context("parse chapters failed")?;
+
+        let extra_value = if self.ty.expect("type is none") == 0 {
+            let cs = Chapters {
+                desc: None,
+                chapters: chapters.into_iter().map(|m| m.into()).collect(),
+            };
+            serde_json::to_value(cs).context("Chapters to_value failed")?
+        } else {
+            let ec = EssayCluster {
+                topic: self.topic,
+                blocks: chapters.into_iter().map(|m| m.into()).collect(),
+            };
+            serde_json::to_value(ec).context("EssayCluster to_value failed")?
+        };
+        active_model.extra = Set(extra_value);
+
+        let paper = active_model
+            .insert_on_conflict(db)
+            .await
+            .context("insert paper failed")?;
+
+        Ok(paper)
+    }
+}
+
+#[derive(Default, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OriginChapter {
+    pub desc: String,
+    pub name: String,
+    pub question_count: i64,
+}
+
+impl Into<PaperChapter> for OriginChapter {
+    fn into(self) -> PaperChapter {
+        PaperChapter {
+            desc: self.desc,
+            name: self.name,
+            count: self.question_count as i16,
+        }
+    }
+}
+
+impl Into<PaperBlock> for OriginChapter {
+    fn into(self) -> PaperBlock {
+        PaperBlock {
+            desc: self.desc,
+            name: self.name,
+        }
+    }
 }
