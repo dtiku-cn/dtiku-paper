@@ -11,6 +11,7 @@ use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
 use dtiku_paper::model::Label;
 use futures::StreamExt;
+use itertools::Itertools;
 use sea_orm::ConnectionTrait;
 use sea_orm::Set;
 use serde::Deserialize;
@@ -79,8 +80,21 @@ impl FenbiSyncService {
         task: &mut schedule_task::Model,
         progress: &mut Progress<i64>,
     ) -> anyhow::Result<()> {
-        let mut stream = sqlx::query_file_as!(OriginLabel, "src/jobs/fenbi/find_label.sql")
-            .fetch(&self.source_db);
+        let mut stream = sqlx::query_as::<_,OriginLabel>(r##"
+        select 
+            jsonb_extract_path_text(extra,'course_set','liveConfigItem','name') as exam_root,
+            jsonb_extract_path_text(extra,'course_set','liveConfigItem','prefix') as exam_root_prefix,
+            jsonb_extract_path_text(extra,'course_set','courseSet','name') as exam_name,
+            jsonb_extract_path_text(extra,'course_set','courseSet','prefix') as exam_prefix,
+            jsonb_extract_path_text(extra,'course','name') as paper_type,
+            jsonb_extract_path_text(extra,'course','prefix') as paper_prefix,
+            jsonb_extract_path_text(extra,'parent','name') as parent_label,
+            jsonb_extract_path_text(extra,'name') as label_name,
+            id
+        from label
+        where from_ty = 'fenbi'
+        order by exam_root,exam_name,paper_type,parent_label,label_name
+        "##).fetch(&self.source_db);
 
         while let Some(row) = stream.next().await {
             match row {
@@ -113,7 +127,7 @@ impl FenbiSyncService {
     ) -> anyhow::Result<()> {
         while progress.current < progress.total {
             let current = progress.current;
-            let next_step_id = current + 1000;
+            let next_step_id: i64 = current + 1000;
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
                     select 
@@ -166,7 +180,41 @@ impl FenbiSyncService {
             .context("get target_id failed")?;
         let paper = paper.save_to(&self.target_db, target_label_id).await?;
 
+        self.sync_questions_and_materials(source_paper_id, &paper)
+            .await?;
+
         Ok(paper)
+    }
+
+    async fn sync_questions_and_materials(
+        &self,
+        source_paper_id: i64,
+        paper: &paper::Model,
+    ) -> anyhow::Result<()> {
+        let question_ids: Vec<QuestionIdNumber> = sqlx::query_as(
+            r##"
+            select
+                question_id,
+                number
+            from paper_question
+            where from_ty = 'fenbi'
+            and paper_id = ?
+            order by number
+            "##,
+        )
+        .bind(source_paper_id)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find question_ids({source_paper_id}) failed"))?;
+
+        // let qids = question_ids.iter().map(|q| q.question_id).collect_vec();
+
+        // sqlx::query_as(r##"
+        //     select
+
+        // "##);
+
+        todo!()
     }
 }
 
@@ -344,4 +392,10 @@ impl Into<PaperBlock> for OriginChapter {
             name: self.name,
         }
     }
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct QuestionIdNumber {
+    question_id: i64,
+    number: i32,
 }
