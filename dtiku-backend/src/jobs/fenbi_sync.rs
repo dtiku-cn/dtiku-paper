@@ -22,6 +22,7 @@ use spring::tracing;
 use spring_sea_orm::DbConn;
 use spring_sqlx::sqlx;
 use spring_sqlx::ConnectPool;
+use sqlx::types::Json;
 use sqlx::Row;
 
 static SINGLE_CHOICE: [i16; 2] = [1, 6];
@@ -219,7 +220,7 @@ impl FenbiSyncService {
 
         let qids = question_ids.iter().map(|q| q.question_id).collect_vec();
 
-        let questions: Vec<OriginQuestions> = sqlx::query_as(
+        let questions = sqlx::query_as::<_, OriginQuestions>(
             r##"
             select
                 id,
@@ -260,19 +261,13 @@ impl FenbiSyncService {
 
         let mids = material_ids.iter().map(|m| m.material_id).collect_vec();
 
-        let materials: Vec<OriginMaterials> = sqlx::query_as(
+        let materials = sqlx::query_as::<_, OriginMaterial>(
             r##"
             select
                 id,
                 jsonb_extract_path(extra,'type') as ty,
                 jsonb_extract_path(extra,'content') as content,
-                jsonb_extract_path(extra,'accessories') as accessories,
-                jsonb_extract_path(extra,'questionMeta','correctRatio') as correct_ratio,
-                jsonb_extract_path(extra,'correctAnswer') as correct_answer,
-                jsonb_extract_path(extra,'solution') as solution,
-                jsonb_extract_path(extra,'solutionAccessories') as solution_accessories,
-                jsonb_extract_path(extra,'material') as material,
-                jsonb_extract_path(extra,'keypoints') as keypoints
+                jsonb_extract_path(extra,'accessories') as accessories
             from material
             where from_ty = 'fenbi'
             and id in (?)
@@ -473,24 +468,24 @@ struct QuestionIdNumber {
 struct OriginQuestions {
     ty: Option<i32>,
     content: Option<String>,
-    accessories: Option<Vec<Accessory>>,
-    material: Option<OriginMaterial>,
-    keypoints: Option<Vec<OriginKeyPoint>>,
+    accessories: Json<Vec<Accessory>>,
+    material: Json<OriginMaterial>,
+    keypoints: Json<Vec<OriginKeyPoint>>,
     correct_ratio: Option<String>,
     correct_answer: Option<String>,
     solution: Option<String>,
-    solution_accessories: Option<Vec<Accessory>>,
+    solution_accessories: Json<Vec<Accessory>>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
-struct OriginMaterial{
+struct OriginMaterial {
     pub id: i64,
     pub content: String,
-    pub accessories: Option<Vec<Accessory>>,
+    pub accessories: Json<Vec<Accessory>>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Accessory {
     #[serde(rename = "type")]
@@ -503,8 +498,14 @@ pub struct Accessory {
     pub duration: Option<i64>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct OriginKeyPoint {
     pub id: i64,
     pub name: String,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct MaterialIdNumber {
+    material_id: i64,
+    number: i32,
 }
