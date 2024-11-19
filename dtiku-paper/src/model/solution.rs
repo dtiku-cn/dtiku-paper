@@ -37,6 +37,9 @@ pub enum SolutionExtra {
     // 完形填空选择题
     #[serde(rename = "bc")]
     BlankChoice(SingleChoice),
+    // 填空题
+    #[serde(rename = "fb")]
+    FillBlank(Vec<String>),
     // 是非判断题
     #[serde(rename = "tf")]
     TrueFalse(TrueFalseChoice),

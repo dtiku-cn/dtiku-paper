@@ -68,6 +68,7 @@ create table if not exists paper_question (
 create table if not exists material (
     id serial primary key,
     content text not null,
+    extra jsonb not null,
     embedding vector(512) not null
 );
 create table if not exists paper_material (
@@ -87,3 +88,15 @@ create table if not exists solution (
     question_id integer not null,
     extra jsonb not null
 );
+create type src_type as enum(question, material, solution);
+--  图片,可能包含音频
+create table if not exists assets{
+    id serial primary key,
+    src_type src_type not null,
+    src_id integer not null,
+    src_url text not null,
+    storage_url text not null,
+    created timestamp not null,
+    modified timestamp not null,
+    unique(src_type, src_id)
+}

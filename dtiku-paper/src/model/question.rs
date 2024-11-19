@@ -52,9 +52,9 @@ pub enum QuestionExtra {
     // 完形填空选择题
     #[serde(rename = "bc")]
     BlankChoice(Vec<QuestionChoice>),
-    // 完形填空选择题
+    // 填空题
     #[serde(rename = "fb")]
-    FillBlank(Vec<String>),
+    FillBlank,
     // 是非判断题
     #[serde(rename = "tf")]
     TrueFalse,
