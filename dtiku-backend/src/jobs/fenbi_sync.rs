@@ -468,3 +468,43 @@ struct QuestionIdNumber {
     question_id: i64,
     number: i32,
 }
+
+#[derive(Debug, sqlx::FromRow)]
+struct OriginQuestions {
+    ty: Option<i32>,
+    content: Option<String>,
+    accessories: Option<Vec<Accessory>>,
+    material: Option<OriginMaterial>,
+    keypoints: Option<Vec<OriginKeyPoint>>,
+    correct_ratio: Option<String>,
+    correct_answer: Option<String>,
+    solution: Option<String>,
+    solution_accessories: Option<Vec<Accessory>>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OriginMaterial{
+    pub id: i64,
+    pub content: String,
+    pub accessories: Option<Vec<Accessory>>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Accessory {
+    #[serde(rename = "type")]
+    pub ty: i64,
+    pub label: Option<String>,
+    pub content: Option<String>,
+    pub is_member_control: Option<i64>,
+    pub url: Option<String>,
+    pub audio_id: Option<String>,
+    pub duration: Option<i64>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OriginKeyPoint {
+    pub id: i64,
+    pub name: String,
+}
