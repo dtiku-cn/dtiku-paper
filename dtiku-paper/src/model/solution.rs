@@ -2,6 +2,7 @@ pub use super::_entities::solution::*;
 use anyhow::Context;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
+use serde_with::{formats::CommaSeparator, serde_as, DisplayFromStr, StringWithSeparator};
 
 pub struct Solution {
     pub id: i32,
@@ -26,28 +27,65 @@ impl TryFrom<Model> for Solution {
 pub enum SolutionExtra {
     // 单选题
     #[serde(rename = "sc")]
-    SingleChoice { answer: u32, analysis: String },
+    SingleChoice(SingleChoice),
     // 多选题
     #[serde(rename = "mc")]
-    MultiChoice { answers: Vec<u32>, analysis: String },
+    MultiChoice(MultiChoice),
     // 不定项选择题
     #[serde(rename = "ic")]
-    IndefiniteChoice { answer: Vec<u32>, analysis: String },
+    IndefiniteChoice(MultiChoice),
     // 完形填空选择题
     #[serde(rename = "bc")]
-    BlankChoice { answer: u32, analysis: String },
+    BlankChoice(SingleChoice),
     // 是非判断题
     #[serde(rename = "tf")]
-    TrueFalse { answer: bool, analysis: String },
+    TrueFalse(TrueFalseChoice),
     // 分步式解答题
     #[serde(rename = "sa")]
-    StepByStepAnswer { analysis: Vec<String> },
+    StepByStepAnswer(StepByStepAnswer),
     // 封闭式解答题
     #[serde(rename = "ce")]
-    ClosedEndedAnswer { answer: String, analysis: String },
+    ClosedEndedAnswer(AnswerAnalysis),
     // 开放式解答题
     #[serde(rename = "oe")]
-    OpenEndedAnswer { answer: String, analysis: String },
+    OpenEndedAnswer(AnswerAnalysis),
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SingleChoice {
+    answer: u16,
+    analysis: String,
+}
+
+#[serde_as]
+#[derive(Serialize, Deserialize)]
+pub struct MultiChoice {
+    #[serde_as(as = "StringWithSeparator::<CommaSeparator, u16>")]
+    answer: Vec<u16>,
+    analysis: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct TrueFalseChoice {
+    answer: bool,
+    analysis: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct StepByStepAnswer {
+    analysis: Vec<StepAnalysis>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct StepAnalysis {
+    label: String,
+    content: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AnswerAnalysis {
+    answer: String,
+    analysis: String,
 }
 
 impl Entity {

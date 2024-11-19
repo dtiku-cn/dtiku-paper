@@ -24,6 +24,16 @@ use spring_sqlx::sqlx;
 use spring_sqlx::ConnectPool;
 use sqlx::Row;
 
+static SINGLE_CHOICE: [i16; 2] = [1, 6];
+static MULTI_CHOICE: [i16; 1] = [2];
+static INDEFINITE_CHOICE: [i16; 1] = [3];
+static BlankChoice: [i16; 1] = [4];
+static TrueFalse: [i16; 1] = [5];
+static StepByStepAnswer: [i16; 13] = [11, 12, 16, 21, 22, 23, 24, 25, 26, 101, 102, 301, 302];
+static ClosedEndedAnswer: [i16; 1] = [13];
+static OpenEndedAnswer: [i16; 3] = [14, 15, 303];
+static FillBlank: [i16; 2] = [61, 64];
+
 #[derive(Clone, Service)]
 pub struct FenbiSyncService {
     source_db: ConnectPool,
@@ -207,12 +217,71 @@ impl FenbiSyncService {
         .await
         .with_context(|| format!("find question_ids({source_paper_id}) failed"))?;
 
-        // let qids = question_ids.iter().map(|q| q.question_id).collect_vec();
+        let qids = question_ids.iter().map(|q| q.question_id).collect_vec();
 
-        // sqlx::query_as(r##"
-        //     select
+        let questions: Vec<OriginQuestions> = sqlx::query_as(
+            r##"
+            select
+                id,
+                jsonb_extract_path(extra,'type') as ty,
+                jsonb_extract_path(extra,'content') as content,
+                jsonb_extract_path(extra,'accessories') as accessories,
+                jsonb_extract_path(extra,'questionMeta','correctRatio') as correct_ratio,
+                jsonb_extract_path(extra,'correctAnswer') as correct_answer,
+                jsonb_extract_path(extra,'solution') as solution,
+                jsonb_extract_path(extra,'solutionAccessories') as solution_accessories,
+                jsonb_extract_path(extra,'material') as material,
+                jsonb_extract_path(extra,'keypoints') as keypoints
+            from question
+            where from_ty = 'fenbi'
+            and id in (?)
+        "##,
+        )
+        .bind(qids)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find question failed"))?;
 
-        // "##);
+        let material_ids: Vec<MaterialIdNumber> = sqlx::query_as(
+            r##"
+            select
+                material_id,
+                number
+            from paper_material
+            where from_ty = 'fenbi'
+            and paper_id = ?
+            order by number
+            "##,
+        )
+        .bind(source_paper_id)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find material_ids({source_paper_id}) failed"))?;
+
+        let mids = material_ids.iter().map(|m| m.material_id).collect_vec();
+
+        let materials: Vec<OriginMaterials> = sqlx::query_as(
+            r##"
+            select
+                id,
+                jsonb_extract_path(extra,'type') as ty,
+                jsonb_extract_path(extra,'content') as content,
+                jsonb_extract_path(extra,'accessories') as accessories,
+                jsonb_extract_path(extra,'questionMeta','correctRatio') as correct_ratio,
+                jsonb_extract_path(extra,'correctAnswer') as correct_answer,
+                jsonb_extract_path(extra,'solution') as solution,
+                jsonb_extract_path(extra,'solutionAccessories') as solution_accessories,
+                jsonb_extract_path(extra,'material') as material,
+                jsonb_extract_path(extra,'keypoints') as keypoints
+            from material
+            where from_ty = 'fenbi'
+            and id in (?)
+        "##,
+        )
+        .bind(mids)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find material failed"))?;
 
         todo!()
     }

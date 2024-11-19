@@ -10,6 +10,7 @@ spring-redis = { workspace = true }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_with = { workspace = true }
 pgvector = { workspace = true, features = ["postgres"] }
 strum = { workspace = true, features = ["derive"] }
 itertools = { workspace = true }

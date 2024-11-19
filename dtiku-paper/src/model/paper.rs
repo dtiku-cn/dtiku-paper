@@ -84,7 +84,7 @@ impl Entity {
             .into_partial_model::<PaperSelect>()
             .all(db)
             .await
-            .with_context(|| format!("find_by_label_id(${label_id}) failed"))?
+            .with_context(|| format!("find_by_label_id({label_id}) failed"))?
             .into_iter()
             .map(|p| p.try_into())
             .collect()
