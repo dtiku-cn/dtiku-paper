@@ -1,14 +1,18 @@
+use std::collections::HashMap;
+
 use crate::utils::regex::pick_year;
 use anyhow::Context;
 use dtiku_base::model::schedule_task;
 use dtiku_base::model::schedule_task::Progress;
 use dtiku_paper::model::exam_category;
 use dtiku_paper::model::label;
+use dtiku_paper::model::material;
 use dtiku_paper::model::paper;
 use dtiku_paper::model::paper::Chapters;
 use dtiku_paper::model::paper::EssayCluster;
 use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
+use dtiku_paper::model::question;
 use dtiku_paper::model::Label;
 use futures::StreamExt;
 use itertools::Itertools;
@@ -219,8 +223,12 @@ impl FenbiSyncService {
         .with_context(|| format!("find question_ids({source_paper_id}) failed"))?;
 
         let qids = question_ids.iter().map(|q| q.question_id).collect_vec();
+        let qid_map: HashMap<_, _> = question_ids
+            .into_iter()
+            .map(|q| (q.question_id, q.number))
+            .collect();
 
-        let questions = sqlx::query_as::<_, OriginQuestions>(
+        let questions = sqlx::query_as::<_, OriginQuestion>(
             r##"
             select
                 id,
@@ -260,6 +268,10 @@ impl FenbiSyncService {
         .with_context(|| format!("find material_ids({source_paper_id}) failed"))?;
 
         let mids = material_ids.iter().map(|m| m.material_id).collect_vec();
+        let mid_map: HashMap<_, _> = material_ids
+            .into_iter()
+            .map(|m| (m.material_id, m.number))
+            .collect();
 
         let materials = sqlx::query_as::<_, OriginMaterial>(
             r##"
@@ -278,6 +290,19 @@ impl FenbiSyncService {
         .await
         .with_context(|| format!("find material failed"))?;
 
+        self.save_questions_and_materials(questions, materials, paper, &qid_map, &mid_map)
+            .await?;
+        todo!()
+    }
+
+    async fn save_questions_and_materials(
+        &self,
+        questions: Vec<OriginQuestion>,
+        materials: Vec<OriginMaterial>,
+        paper: &paper::Model,
+        qid_map: &HashMap<i64, i32>,
+        mid_map: &HashMap<i64, i32>,
+    ) -> anyhow::Result<()> {
         todo!()
     }
 }
@@ -465,16 +490,26 @@ struct QuestionIdNumber {
 }
 
 #[derive(Debug, sqlx::FromRow)]
-struct OriginQuestions {
-    ty: Option<i32>,
-    content: Option<String>,
+struct OriginQuestion {
+    id: i64,
+    ty: i32,
+    content: String,
     accessories: Json<Vec<Accessory>>,
     material: Json<OriginMaterial>,
     keypoints: Json<Vec<OriginKeyPoint>>,
-    correct_ratio: Option<String>,
+    correct_ratio: Option<f32>,
     correct_answer: Option<String>,
     solution: Option<String>,
     solution_accessories: Json<Vec<Accessory>>,
+}
+
+impl Into<question::ActiveModel> for OriginQuestion {
+    fn into(self) -> question::ActiveModel {
+        question::ActiveModel {
+            content: Set(self.content),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, sqlx::FromRow)]
@@ -483,6 +518,15 @@ struct OriginMaterial {
     pub id: i64,
     pub content: String,
     pub accessories: Json<Vec<Accessory>>,
+}
+
+impl Into<material::ActiveModel> for OriginMaterial {
+    fn into(self) -> material::ActiveModel {
+        material::ActiveModel {
+            content: Set(self.content),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
