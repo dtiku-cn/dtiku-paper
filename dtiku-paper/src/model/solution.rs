@@ -3,7 +3,7 @@ use anyhow::Context;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serde_with::{formats::CommaSeparator, serde_as, DisplayFromStr, StringWithSeparator};
+use serde_with::{formats::CommaSeparator, serde_as, StringWithSeparator};
 
 pub struct Solution {
     pub id: i32,
