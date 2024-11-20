@@ -59,14 +59,27 @@ pub enum QuestionExtra {
     #[serde(rename = "tf")]
     TrueFalse,
     // 分步式解答题
-    #[serde(rename = "sa")]
-    StepByStepAnswer,
+    #[serde(rename = "sqa")]
+    StepByStepQA(QA),
     // 封闭式解答题
-    #[serde(rename = "ca")]
-    ClosedEndedAnswer,
+    #[serde(rename = "cqa")]
+    ClosedEndedQA(QA),
     // 开放式解答题
-    #[serde(rename = "oa")]
-    OpenEndedAnswer,
+    #[serde(rename = "oqa")]
+    OpenEndedQA(QA),
+    // 听力题
+    #[serde(rename = "lq")]
+    ListenQuestion(String),
+    // 复合型
+    #[serde(rename = "c")]
+    Compose(Vec<QuestionExtra>),
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct QA {
+    title: String,
+    word_count: Option<i16>,
+    material_ids: Vec<i32>,
 }
 
 pub type QuestionChoice = String;

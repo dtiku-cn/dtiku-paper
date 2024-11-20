@@ -2,6 +2,7 @@ pub use super::_entities::solution::*;
 use anyhow::Context;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use serde_with::{formats::CommaSeparator, serde_as, DisplayFromStr, StringWithSeparator};
 
 pub struct Solution {
@@ -45,13 +46,16 @@ pub enum SolutionExtra {
     TrueFalse(TrueFalseChoice),
     // 分步式解答题
     #[serde(rename = "sa")]
-    StepByStepAnswer(StepByStepAnswer),
+    StepByStepQA(StepByStepAnswer),
     // 封闭式解答题
     #[serde(rename = "ce")]
-    ClosedEndedAnswer(AnswerAnalysis),
+    ClosedEndedQA(AnswerAnalysis),
     // 开放式解答题
     #[serde(rename = "oe")]
-    OpenEndedAnswer(AnswerAnalysis),
+    OpenEndedQA(AnswerAnalysis),
+    // 其他
+    #[serde(rename = "o")]
+    Other(Value),
 }
 
 #[derive(Serialize, Deserialize)]
