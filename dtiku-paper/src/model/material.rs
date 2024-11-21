@@ -11,7 +11,7 @@ use std::collections::HashMap;
 pub struct Material {
     pub id: i32,
     pub content: String,
-    pub extra: MaterialExtra,
+    pub extra: Vec<MaterialExtra>,
 }
 
 #[derive(DerivePartialModel, FromQueryResult)]

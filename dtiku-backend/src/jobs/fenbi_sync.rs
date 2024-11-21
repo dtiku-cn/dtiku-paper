@@ -29,15 +29,15 @@ use spring_sqlx::ConnectPool;
 use sqlx::types::Json;
 use sqlx::Row;
 
-static SINGLE_CHOICE: [i16; 2] = [1, 6];
+static SINGLE_CHOICE: [i16; 1] = [1];
 static MULTI_CHOICE: [i16; 1] = [2];
 static INDEFINITE_CHOICE: [i16; 1] = [3];
-static BlankChoice: [i16; 1] = [4];
-static TrueFalse: [i16; 1] = [5];
-static StepByStepAnswer: [i16; 13] = [11, 12, 16, 21, 22, 23, 24, 25, 26, 101, 102, 301, 302];
-static ClosedEndedAnswer: [i16; 1] = [13];
-static OpenEndedAnswer: [i16; 3] = [14, 15, 303];
-static FillBlank: [i16; 2] = [61, 64];
+static BLANK_CHOICE: [i16; 2] = [4,6];
+static TRUE_FALSE: [i16; 1] = [5];
+static STEP_BY_STEP_ANSWER: [i16; 13] = [11, 12, 16, 21, 22, 23, 24, 25, 26, 101, 102, 301, 302];
+static CLOSED_ENDED_ANSWER: [i16; 1] = [13];
+static OPEN_ENDED_ANSWER: [i16; 3] = [14, 15, 303];
+static FILL_BLANK: [i16; 2] = [61, 64];
 
 #[derive(Clone, Service)]
 pub struct FenbiSyncService {
@@ -232,6 +232,7 @@ impl FenbiSyncService {
             r##"
             select
                 id,
+                target_id,
                 jsonb_extract_path(extra,'type') as ty,
                 jsonb_extract_path(extra,'content') as content,
                 jsonb_extract_path(extra,'accessories') as accessories,
@@ -277,6 +278,7 @@ impl FenbiSyncService {
             r##"
             select
                 id,
+                target_id,
                 jsonb_extract_path(extra,'type') as ty,
                 jsonb_extract_path(extra,'content') as content,
                 jsonb_extract_path(extra,'accessories') as accessories
@@ -303,6 +305,7 @@ impl FenbiSyncService {
         qid_map: &HashMap<i64, i32>,
         mid_map: &HashMap<i64, i32>,
     ) -> anyhow::Result<()> {
+        let qs = questions.iter().map(|q| q.to_question()).collect_vec();
         todo!()
     }
 }
@@ -492,54 +495,169 @@ struct QuestionIdNumber {
 #[derive(Debug, sqlx::FromRow)]
 struct OriginQuestion {
     id: i64,
-    ty: i32,
+    target_id: Option<i32>,
+    ty: i16,
     content: String,
-    accessories: Json<Vec<Accessory>>,
+    accessories: Json<Vec<QuestionAccessory>>,
     material: Json<OriginMaterial>,
     keypoints: Json<Vec<OriginKeyPoint>>,
     correct_ratio: Option<f32>,
     correct_answer: Option<String>,
     solution: Option<String>,
-    solution_accessories: Json<Vec<Accessory>>,
+    solution_accessories: Json<Vec<SolutionAccessory>>,
 }
 
-impl Into<question::ActiveModel> for OriginQuestion {
-    fn into(self) -> question::ActiveModel {
-        question::ActiveModel {
-            content: Set(self.content),
-            ..Default::default()
+impl OriginQuestion {
+    fn to_question(&self) {
+        let Self {
+            ty,
+            content,
+            accessories,
+            ..
+        } = self;
+        let extra = if SINGLE_CHOICE.contains(ty) {
+            let os = accessories
+                .0
+                .iter()
+                .filter(|a| [101i16, 102i16].contains(&a.ty))
+                .last()
+                .expect("SingleChoice don't contains 101/102 options");
+            question::QuestionExtra::SingleChoice(
+                os.options.expect("SingleChoice 101/102 options is none"),
+            )
+        } else if MULTI_CHOICE.contains(ty) {
+            let os = accessories
+                .0
+                .iter()
+                .filter(|a| [101i16, 102i16].contains(&a.ty))
+                .last()
+                .expect("MultiChoice don't contains 101/102 options");
+            question::QuestionExtra::MultiChoice(
+                os.options.expect("MultiChoice 101/102 options is none"),
+            )
+        }else if INDEFINITE_CHOICE.contains(ty) {
+            let os = accessories
+                .0
+                .iter()
+                .filter(|a| [101i16, 102i16].contains(&a.ty))
+                .last()
+                .expect("IndefiniteChoice don't contains 101/102 options");
+            question::QuestionExtra::IndefiniteChoice(
+                os.options.expect("IndefiniteChoice 101/102 options is none"),
+            )
+        }else if BLANK_CHOICE.contains(ty){
+            let os = accessories
+                .0
+                .iter()
+                .filter(|a| [101i16, 102i16].contains(&a.ty))
+                .last()
+                .expect("BlankChoice don't contains 101/102 options");
+            question::QuestionExtra::BlankChoice(
+                os.options.expect("BlankChoice 101/102 options is none"),
+            )
+        }else if TRUE_FALSE.contains(ty){
+            question::QuestionExtra::TrueFalse
+        } else if STEP_BY_STEP_ANSWER.contains(ty){
+
         }
+        todo!()
     }
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionAccessory {
+    #[serde(rename = "type")]
+    pub ty: i16,
+    pub options: Option<Vec<String>>,
+    pub name: Option<String>,
+    pub label: Option<String>,
+    pub content: Option<String>,
+    pub is_member_control: Option<i64>,
+    pub score: Option<f64>,
+    pub title: Option<String>,
+    pub blank_type: Option<i64>,
+    pub word_count: Option<i64>,
+    #[serde(default)]
+    pub material_indexes: Vec<i64>,
+    pub url: Option<String>,
+    pub audio_id: Option<String>,
+    pub duration: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SolutionAccessory {}
 
 #[derive(Debug, Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 struct OriginMaterial {
     pub id: i64,
+    pub target_id: Option<i32>,
     pub content: String,
-    pub accessories: Json<Vec<Accessory>>,
+    pub accessories: Json<Vec<MaterialAccessory>>,
 }
 
-impl Into<material::ActiveModel> for OriginMaterial {
-    fn into(self) -> material::ActiveModel {
-        material::ActiveModel {
+impl TryInto<material::ActiveModel> for OriginMaterial {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<material::ActiveModel, Self::Error> {
+        let extra = self
+            .accessories
+            .0
+            .into_iter()
+            .map(|a| a.try_into())
+            .collect::<anyhow::Result<Vec<material::MaterialExtra>>>()?;
+        let mut am = material::ActiveModel {
             content: Set(self.content),
+            extra: Set(serde_json::to_value(extra).context("serde encode failed")?),
             ..Default::default()
+        };
+        if let Some(id) = self.target_id {
+            am.id = Set(id);
+        }
+        Ok(am)
+    }
+}
+
+impl TryInto<material::MaterialExtra> for MaterialAccessory {
+    type Error = anyhow::Error;
+    fn try_into(self) -> Result<material::MaterialExtra, Self::Error> {
+        match self.ty {
+            151 => Ok(material::MaterialExtra::Translation(
+                self.translation.expect("translation is none"),
+            )),
+            181 => match self.label.expect("label is none").as_str() {
+                "materialExplain" => Ok(material::MaterialExtra::MaterialExplain(
+                    self.content.expect("materialExplain content is none"),
+                )),
+                "transcript" => Ok(material::MaterialExtra::Transcript(
+                    self.content.expect("transcript content is none"),
+                )),
+                "zdch" => Ok(material::MaterialExtra::Dictionary(
+                    self.content.expect("zdch content is none"),
+                )),
+                _unknown => Err(anyhow::anyhow!("unknown material label:{_unknown}")),
+            },
+            185 => Ok(material::MaterialExtra::Audio(
+                self.url.expect("Audio url is none"),
+            )),
+            _unknown => Err(anyhow::anyhow!(
+                "unknown material accessory type:{_unknown}"
+            )),
         }
     }
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Accessory {
+pub struct MaterialAccessory {
     #[serde(rename = "type")]
     pub ty: i64,
     pub label: Option<String>,
     pub content: Option<String>,
-    pub is_member_control: Option<i64>,
+    pub translation: Option<String>,
     pub url: Option<String>,
-    pub audio_id: Option<String>,
-    pub duration: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
