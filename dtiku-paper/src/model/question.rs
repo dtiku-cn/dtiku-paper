@@ -77,9 +77,9 @@ pub enum QuestionExtra {
 
 #[derive(Serialize, Deserialize)]
 pub struct QA {
-    title: String,
-    word_count: Option<i16>,
-    material_ids: Vec<i32>,
+    pub title: String,
+    pub word_count: Option<i16>,
+    pub material_ids: Vec<i32>,
 }
 
 pub type QuestionChoice = String;

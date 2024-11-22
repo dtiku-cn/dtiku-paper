@@ -13,6 +13,7 @@ use dtiku_paper::model::paper::EssayCluster;
 use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
 use dtiku_paper::model::question;
+use dtiku_paper::model::solution;
 use dtiku_paper::model::Label;
 use futures::StreamExt;
 use itertools::Itertools;
@@ -32,7 +33,7 @@ use sqlx::Row;
 static SINGLE_CHOICE: [i16; 1] = [1];
 static MULTI_CHOICE: [i16; 1] = [2];
 static INDEFINITE_CHOICE: [i16; 1] = [3];
-static BLANK_CHOICE: [i16; 2] = [4,6];
+static BLANK_CHOICE: [i16; 2] = [4, 6];
 static TRUE_FALSE: [i16; 1] = [5];
 static STEP_BY_STEP_ANSWER: [i16; 13] = [11, 12, 16, 21, 22, 23, 24, 25, 26, 101, 102, 301, 302];
 static CLOSED_ENDED_ANSWER: [i16; 1] = [13];
@@ -508,7 +509,7 @@ struct OriginQuestion {
 }
 
 impl OriginQuestion {
-    fn to_question(&self) {
+    fn to_question(&self) -> anyhow::Result<question::ActiveModel> {
         let Self {
             ty,
             content,
@@ -535,7 +536,7 @@ impl OriginQuestion {
             question::QuestionExtra::MultiChoice(
                 os.options.expect("MultiChoice 101/102 options is none"),
             )
-        }else if INDEFINITE_CHOICE.contains(ty) {
+        } else if INDEFINITE_CHOICE.contains(ty) {
             let os = accessories
                 .0
                 .iter()
@@ -543,9 +544,10 @@ impl OriginQuestion {
                 .last()
                 .expect("IndefiniteChoice don't contains 101/102 options");
             question::QuestionExtra::IndefiniteChoice(
-                os.options.expect("IndefiniteChoice 101/102 options is none"),
+                os.options
+                    .expect("IndefiniteChoice 101/102 options is none"),
             )
-        }else if BLANK_CHOICE.contains(ty){
+        } else if BLANK_CHOICE.contains(ty) {
             let os = accessories
                 .0
                 .iter()
@@ -555,11 +557,67 @@ impl OriginQuestion {
             question::QuestionExtra::BlankChoice(
                 os.options.expect("BlankChoice 101/102 options is none"),
             )
-        }else if TRUE_FALSE.contains(ty){
+        } else if TRUE_FALSE.contains(ty) {
             question::QuestionExtra::TrueFalse
-        } else if STEP_BY_STEP_ANSWER.contains(ty){
+        } else if STEP_BY_STEP_ANSWER.contains(ty) {
+            let os = accessories
+                .0
+                .iter()
+                .filter(|a| [182i16].contains(&a.ty))
+                .last()
+                .expect("BlankChoice don't contains 182 options");
+            question::QuestionExtra::StepByStepQA(question::QA {
+                title: os.title.expect("StepByStepQA title is none"),
+                word_count: os.word_count,
+                material_ids: os.material_indexes,
+            })
+        } else if CLOSED_ENDED_ANSWER.contains(ty) {
+            let os = accessories
+                .0
+                .iter()
+                .filter(|a| [182i16].contains(&a.ty))
+                .last()
+                .expect("BlankChoice don't contains 182 options");
+            question::QuestionExtra::ClosedEndedQA(question::QA {
+                title: os.title.expect("StepByStepQA title is none"),
+                word_count: os.word_count,
+                material_ids: os.material_indexes,
+            })
+        } else if OPEN_ENDED_ANSWER.contains(ty) {
+            let os = accessories
+                .0
+                .iter()
+                .filter(|a| [182i16].contains(&a.ty))
+                .last()
+                .expect("BlankChoice don't contains 182 options");
+            question::QuestionExtra::ClosedEndedQA(question::QA {
+                title: os.title.expect("StepByStepQA title is none"),
+                word_count: os.word_count,
+                material_ids: os.material_indexes,
+            })
+        } else if FILL_BLANK.contains(ty) {
+            let os = accessories
+                .0
+                .iter()
+                .filter(|a| [182i16].contains(&a.ty))
+                .last()
+                .expect("BlankChoice don't contains 182 options");
+            question::QuestionExtra::ClosedEndedQA(question::QA {
+                title: os.title.expect("StepByStepQA title is none"),
+                word_count: os.word_count,
+                material_ids: os.material_indexes,
+            })
+        } else {
+            Err(anyhow::anyhow!(""))?
+        };
+        todo!()
+    }
 
-        }
+    fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
+        todo!()
+    }
+
+    fn to_material(&self) -> anyhow::Result<material::ActiveModel> {
         todo!()
     }
 }
@@ -577,9 +635,9 @@ struct QuestionAccessory {
     pub score: Option<f64>,
     pub title: Option<String>,
     pub blank_type: Option<i64>,
-    pub word_count: Option<i64>,
+    pub word_count: Option<i16>,
     #[serde(default)]
-    pub material_indexes: Vec<i64>,
+    pub material_indexes: Vec<i32>,
     pub url: Option<String>,
     pub audio_id: Option<String>,
     pub duration: Option<i64>,
