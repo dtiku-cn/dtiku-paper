@@ -510,14 +510,10 @@ struct OriginQuestion {
 
 impl OriginQuestion {
     fn to_question(&self) -> anyhow::Result<question::ActiveModel> {
-        let Self {
-            ty,
-            content,
-            accessories,
-            ..
-        } = self;
+        let Self { ty, content, .. } = self;
         let extra = if SINGLE_CHOICE.contains(ty) {
-            let os = accessories
+            let os = self
+                .accessories
                 .0
                 .iter()
                 .filter(|a| [101i16, 102i16].contains(&a.ty))
@@ -527,7 +523,8 @@ impl OriginQuestion {
                 os.options.expect("SingleChoice 101/102 options is none"),
             )
         } else if MULTI_CHOICE.contains(ty) {
-            let os = accessories
+            let os = self
+                .accessories
                 .0
                 .iter()
                 .filter(|a| [101i16, 102i16].contains(&a.ty))
@@ -537,7 +534,8 @@ impl OriginQuestion {
                 os.options.expect("MultiChoice 101/102 options is none"),
             )
         } else if INDEFINITE_CHOICE.contains(ty) {
-            let os = accessories
+            let os = self
+                .accessories
                 .0
                 .iter()
                 .filter(|a| [101i16, 102i16].contains(&a.ty))
@@ -548,7 +546,8 @@ impl OriginQuestion {
                     .expect("IndefiniteChoice 101/102 options is none"),
             )
         } else if BLANK_CHOICE.contains(ty) {
-            let os = accessories
+            let os = self
+                .accessories
                 .0
                 .iter()
                 .filter(|a| [101i16, 102i16].contains(&a.ty))
@@ -560,7 +559,8 @@ impl OriginQuestion {
         } else if TRUE_FALSE.contains(ty) {
             question::QuestionExtra::TrueFalse
         } else if STEP_BY_STEP_ANSWER.contains(ty) {
-            let os = accessories
+            let os = self
+                .accessories
                 .0
                 .iter()
                 .filter(|a| [182i16].contains(&a.ty))
@@ -572,7 +572,8 @@ impl OriginQuestion {
                 material_ids: os.material_indexes,
             })
         } else if CLOSED_ENDED_ANSWER.contains(ty) {
-            let os = accessories
+            let os = self
+                .accessories
                 .0
                 .iter()
                 .filter(|a| [182i16].contains(&a.ty))
@@ -584,7 +585,8 @@ impl OriginQuestion {
                 material_ids: os.material_indexes,
             })
         } else if OPEN_ENDED_ANSWER.contains(ty) {
-            let os = accessories
+            let os = self
+                .accessories
                 .0
                 .iter()
                 .filter(|a| [182i16].contains(&a.ty))
@@ -596,12 +598,8 @@ impl OriginQuestion {
                 material_ids: os.material_indexes,
             })
         } else if FILL_BLANK.contains(ty) {
-            let os = accessories
-                .0
-                .iter()
-                .filter(|a| [182i16].contains(&a.ty))
-                .last()
-                .expect("BlankChoice don't contains 182 options");
+            let vec = self.filter_accessory(|a| [182i16].contains(&a.ty));
+            let os = vec.last().expect("BlankChoice don't contains 182 options");
             question::QuestionExtra::ClosedEndedQA(question::QA {
                 title: os.title.expect("StepByStepQA title is none"),
                 word_count: os.word_count,
@@ -619,6 +617,17 @@ impl OriginQuestion {
 
     fn to_material(&self) -> anyhow::Result<material::ActiveModel> {
         todo!()
+    }
+
+    fn filter_accessory<F>(&self, filter: F) -> Vec<&QuestionAccessory>
+    where
+        F: Fn(&QuestionAccessory) -> bool,
+    {
+        self.accessories
+            .0
+            .iter()
+            .filter(|a| filter(a))
+            .collect_vec()
     }
 }
 
