@@ -68,8 +68,7 @@ create table if not exists paper_question (
 create table if not exists material (
     id serial primary key,
     content text not null,
-    extra jsonb not null,
-    embedding vector(512) not null
+    extra jsonb not null
 );
 create table if not exists paper_material (
     paper_id integer not null,

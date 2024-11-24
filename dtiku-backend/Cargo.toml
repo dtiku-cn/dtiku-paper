@@ -33,3 +33,5 @@ regex = { workspace = true }
 lazy_static = { workspace = true }
 fastembed = { workspace = true }
 scraper = { workspace = true }
+hnsw = { workspace = true }
+hnsw_rs = { workspace = true }

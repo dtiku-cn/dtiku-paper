@@ -12,8 +12,6 @@ pub struct Model {
     pub content: String,
     #[sea_orm(column_type = "JsonBinary")]
     pub extra: Json,
-    #[sea_orm(column_type = "custom(\"vector\")")]
-    pub embedding: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
