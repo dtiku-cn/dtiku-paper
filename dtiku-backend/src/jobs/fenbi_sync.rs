@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use crate::plugins::fastembed::TxtEmbedding;
 use crate::utils::regex::pick_year;
 use anyhow::Context;
 use dtiku_base::model::schedule_task;
@@ -17,6 +16,7 @@ use dtiku_paper::model::solution;
 use dtiku_paper::model::Label;
 use futures::StreamExt;
 use itertools::Itertools;
+use scraper::Html;
 use sea_orm::ConnectionTrait;
 use sea_orm::Set;
 use serde::Deserialize;
@@ -29,6 +29,7 @@ use spring_sqlx::sqlx;
 use spring_sqlx::ConnectPool;
 use sqlx::types::Json;
 use sqlx::Row;
+use std::collections::HashMap;
 
 static SINGLE_CHOICE: [i16; 1] = [1];
 static MULTI_CHOICE: [i16; 1] = [2];
@@ -44,6 +45,7 @@ static FILL_BLANK: [i16; 2] = [61, 64];
 pub struct FenbiSyncService {
     source_db: ConnectPool,
     target_db: DbConn,
+    txt_embedding: TxtEmbedding,
 }
 
 impl FenbiSyncService {
@@ -306,7 +308,17 @@ impl FenbiSyncService {
         qid_map: &HashMap<i64, i32>,
         mid_map: &HashMap<i64, i32>,
     ) -> anyhow::Result<()> {
-        let qs = questions.iter().map(|q| q.to_question()).collect_vec();
+        for q in questions {
+            let mut question = q.to_question(&self.txt_embedding)?;
+            question.exam_id = Set(paper.exam_id);
+            question.paper_type = Set(paper.paper_type);
+            let mut solution = q.to_solution()?;
+        }
+
+        for m in materials {
+            let material = TryInto::<material::ActiveModel>::try_into(m)?;
+        }
+
         todo!()
     }
 }
@@ -509,114 +521,194 @@ struct OriginQuestion {
 }
 
 impl OriginQuestion {
-    fn to_question(&self) -> anyhow::Result<question::ActiveModel> {
+    fn to_question(&self, model: &TxtEmbedding) -> anyhow::Result<question::ActiveModel> {
         let Self { ty, content, .. } = self;
+        let mut options_string = String::new();
         let extra = if SINGLE_CHOICE.contains(ty) {
-            let os = self
-                .accessories
-                .0
-                .iter()
-                .filter(|a| [101i16, 102i16].contains(&a.ty))
+            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
+            let os = list
                 .last()
                 .expect("SingleChoice don't contains 101/102 options");
-            question::QuestionExtra::SingleChoice(
-                os.options.expect("SingleChoice 101/102 options is none"),
-            )
+            let options = os
+                .options
+                .clone()
+                .expect("SingleChoice 101/102 options is none");
+            options_string = options.iter().join("\n");
+            question::QuestionExtra::SingleChoice(options)
         } else if MULTI_CHOICE.contains(ty) {
-            let os = self
-                .accessories
-                .0
-                .iter()
-                .filter(|a| [101i16, 102i16].contains(&a.ty))
+            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
+            let os = list
                 .last()
                 .expect("MultiChoice don't contains 101/102 options");
-            question::QuestionExtra::MultiChoice(
-                os.options.expect("MultiChoice 101/102 options is none"),
-            )
+            let options = os
+                .options
+                .clone()
+                .expect("MultiChoice 101/102 options is none");
+            options_string = options.iter().join("\n");
+            question::QuestionExtra::MultiChoice(options)
         } else if INDEFINITE_CHOICE.contains(ty) {
-            let os = self
-                .accessories
-                .0
-                .iter()
-                .filter(|a| [101i16, 102i16].contains(&a.ty))
+            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
+            let os = list
                 .last()
                 .expect("IndefiniteChoice don't contains 101/102 options");
-            question::QuestionExtra::IndefiniteChoice(
-                os.options
-                    .expect("IndefiniteChoice 101/102 options is none"),
-            )
+            let options = os
+                .options
+                .clone()
+                .expect("IndefiniteChoice 101/102 options is none");
+            options_string = options.iter().join("\n");
+            question::QuestionExtra::IndefiniteChoice(options)
         } else if BLANK_CHOICE.contains(ty) {
-            let os = self
-                .accessories
-                .0
-                .iter()
-                .filter(|a| [101i16, 102i16].contains(&a.ty))
+            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
+            let os = list
                 .last()
                 .expect("BlankChoice don't contains 101/102 options");
-            question::QuestionExtra::BlankChoice(
-                os.options.expect("BlankChoice 101/102 options is none"),
-            )
+            let options = os
+                .options
+                .clone()
+                .expect("BlankChoice 101/102 options is none");
+            options_string = options.iter().join("\n");
+            question::QuestionExtra::BlankChoice(options)
         } else if TRUE_FALSE.contains(ty) {
             question::QuestionExtra::TrueFalse
         } else if STEP_BY_STEP_ANSWER.contains(ty) {
-            let os = self
-                .accessories
-                .0
-                .iter()
-                .filter(|a| [182i16].contains(&a.ty))
-                .last()
-                .expect("BlankChoice don't contains 182 options");
+            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
+            let os = list.last().expect("BlankChoice don't contains 182 options");
             question::QuestionExtra::StepByStepQA(question::QA {
-                title: os.title.expect("StepByStepQA title is none"),
+                title: os.title.clone().expect("StepByStepQA title is none"),
                 word_count: os.word_count,
-                material_ids: os.material_indexes,
+                material_ids: os.material_indexes.clone(),
             })
         } else if CLOSED_ENDED_ANSWER.contains(ty) {
-            let os = self
-                .accessories
-                .0
-                .iter()
-                .filter(|a| [182i16].contains(&a.ty))
+            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
+            let os = list
                 .last()
-                .expect("BlankChoice don't contains 182 options");
+                .expect("ClosedEndedQA don't contains 182 options");
             question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os.title.expect("StepByStepQA title is none"),
+                title: os.title.clone().expect("StepByStepQA title is none"),
                 word_count: os.word_count,
-                material_ids: os.material_indexes,
+                material_ids: os.material_indexes.clone(),
             })
         } else if OPEN_ENDED_ANSWER.contains(ty) {
-            let os = self
-                .accessories
-                .0
-                .iter()
-                .filter(|a| [182i16].contains(&a.ty))
-                .last()
-                .expect("BlankChoice don't contains 182 options");
+            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
+            let os = list.last().expect("BlankChoice don't contains 182 options");
             question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os.title.expect("StepByStepQA title is none"),
+                title: os.title.clone().expect("StepByStepQA title is none"),
                 word_count: os.word_count,
-                material_ids: os.material_indexes,
+                material_ids: os.material_indexes.clone(),
             })
         } else if FILL_BLANK.contains(ty) {
             let vec = self.filter_accessory(|a| [182i16].contains(&a.ty));
             let os = vec.last().expect("BlankChoice don't contains 182 options");
             question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os.title.expect("StepByStepQA title is none"),
+                title: os.title.clone().expect("StepByStepQA title is none"),
                 word_count: os.word_count,
-                material_ids: os.material_indexes,
+                material_ids: os.material_indexes.clone(),
             })
         } else {
-            Err(anyhow::anyhow!(""))?
+            Err(anyhow::anyhow!("ty#{ty} is not defined"))?
         };
-        todo!()
+        let html = Html::parse_fragment(&format!("{content}\n{options_string}"));
+        let txt: String = html.root_element().text().collect();
+        let mut embedding = model.embed(vec![txt], None)?;
+        let embedding = embedding.remove(0);
+        Ok(question::ActiveModel {
+            content: Set(content.into()),
+            extra: Set(serde_json::to_value(extra)?),
+            embedding: Set(embedding),
+            ..Default::default()
+        })
     }
 
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
-        todo!()
-    }
-
-    fn to_material(&self) -> anyhow::Result<material::ActiveModel> {
-        todo!()
+        let Self {
+            ty,
+            solution,
+            solution_accessories,
+            ..
+        } = self;
+        let extra = if SINGLE_CHOICE.contains(ty) {
+            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
+            let os = list
+                .last()
+                .expect("SingleChoice don't contains 101/102 options");
+            question::QuestionExtra::SingleChoice(
+                os.options
+                    .clone()
+                    .expect("SingleChoice 101/102 options is none"),
+            )
+        } else if MULTI_CHOICE.contains(ty) {
+            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
+            let os = list
+                .last()
+                .expect("MultiChoice don't contains 101/102 options");
+            question::QuestionExtra::MultiChoice(
+                os.options
+                    .clone()
+                    .expect("MultiChoice 101/102 options is none"),
+            )
+        } else if INDEFINITE_CHOICE.contains(ty) {
+            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
+            let os = list
+                .last()
+                .expect("IndefiniteChoice don't contains 101/102 options");
+            question::QuestionExtra::IndefiniteChoice(
+                os.options
+                    .clone()
+                    .expect("IndefiniteChoice 101/102 options is none"),
+            )
+        } else if BLANK_CHOICE.contains(ty) {
+            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
+            let os = list
+                .last()
+                .expect("BlankChoice don't contains 101/102 options");
+            question::QuestionExtra::BlankChoice(
+                os.options
+                    .clone()
+                    .expect("BlankChoice 101/102 options is none"),
+            )
+        } else if TRUE_FALSE.contains(ty) {
+            question::QuestionExtra::TrueFalse
+        } else if STEP_BY_STEP_ANSWER.contains(ty) {
+            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
+            let os = list.last().expect("BlankChoice don't contains 182 options");
+            question::QuestionExtra::StepByStepQA(question::QA {
+                title: os.title.clone().expect("StepByStepQA title is none"),
+                word_count: os.word_count,
+                material_ids: os.material_indexes.clone(),
+            })
+        } else if CLOSED_ENDED_ANSWER.contains(ty) {
+            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
+            let os = list
+                .last()
+                .expect("ClosedEndedQA don't contains 182 options");
+            question::QuestionExtra::ClosedEndedQA(question::QA {
+                title: os.title.clone().expect("StepByStepQA title is none"),
+                word_count: os.word_count,
+                material_ids: os.material_indexes.clone(),
+            })
+        } else if OPEN_ENDED_ANSWER.contains(ty) {
+            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
+            let os = list.last().expect("BlankChoice don't contains 182 options");
+            question::QuestionExtra::ClosedEndedQA(question::QA {
+                title: os.title.clone().expect("StepByStepQA title is none"),
+                word_count: os.word_count,
+                material_ids: os.material_indexes.clone(),
+            })
+        } else if FILL_BLANK.contains(ty) {
+            let vec = self.filter_accessory(|a| [182i16].contains(&a.ty));
+            let os = vec.last().expect("BlankChoice don't contains 182 options");
+            question::QuestionExtra::ClosedEndedQA(question::QA {
+                title: os.title.clone().expect("StepByStepQA title is none"),
+                word_count: os.word_count,
+                material_ids: os.material_indexes.clone(),
+            })
+        } else {
+            Err(anyhow::anyhow!("ty#{ty} is not defined"))?
+        };
+        Ok(solution::ActiveModel {
+            extra: Set(serde_json::to_value(extra)?),
+            ..Default::default()
+        })
     }
 
     fn filter_accessory<F>(&self, filter: F) -> Vec<&QuestionAccessory>

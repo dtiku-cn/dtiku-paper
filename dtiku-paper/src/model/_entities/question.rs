@@ -3,7 +3,7 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "question")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -15,7 +15,7 @@ pub struct Model {
     #[sea_orm(column_type = "JsonBinary")]
     pub extra: Json,
     #[sea_orm(column_type = "custom(\"vector\")")]
-    pub embedding: String,
+    pub embedding: Vec<f32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

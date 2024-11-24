@@ -70,6 +70,9 @@ pub enum QuestionExtra {
     // 听力题
     #[serde(rename = "lq")]
     ListenQuestion(String),
+    // 选词题
+    #[serde(rename = "ws")]
+    WordSelection(Vec<QuestionChoice>),
     // 复合型
     #[serde(rename = "c")]
     Compose(Vec<QuestionExtra>),
