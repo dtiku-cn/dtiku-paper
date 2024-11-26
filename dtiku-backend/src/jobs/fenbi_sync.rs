@@ -13,6 +13,7 @@ use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
 use dtiku_paper::model::question;
 use dtiku_paper::model::solution;
+use dtiku_paper::model::solution::SingleChoice;
 use dtiku_paper::model::Label;
 use futures::StreamExt;
 use itertools::Itertools;
@@ -622,6 +623,7 @@ impl OriginQuestion {
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
         let Self {
             ty,
+            correct_answer,
             solution,
             solution_accessories,
             ..
@@ -631,11 +633,13 @@ impl OriginQuestion {
             let os = list
                 .last()
                 .expect("SingleChoice don't contains 101/102 options");
-            question::QuestionExtra::SingleChoice(
-                os.options
-                    .clone()
-                    .expect("SingleChoice 101/102 options is none"),
-            )
+            solution::SolutionExtra::SingleChoice(SingleChoice {
+                answer: correct_answer
+                    .expect("correct_answer is none")
+                    .parse()
+                    .expect("correct_answer parse failed"),
+                analysis: solution.expect("solution is none"),
+            })
         } else if MULTI_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
             let os = list
