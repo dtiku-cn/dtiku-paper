@@ -1,8 +1,8 @@
 pub use super::_entities::paper::*;
 use anyhow::Context;
 use sea_orm::{
-    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
-    FromQueryResult, QueryFilter,
+    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr,
+    DerivePartialModel, EntityTrait, FromQueryResult, QueryFilter,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

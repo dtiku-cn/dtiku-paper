@@ -11,12 +11,16 @@ use dtiku_paper::model::paper::Chapters;
 use dtiku_paper::model::paper::EssayCluster;
 use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
+use dtiku_paper::model::paper_material;
+use dtiku_paper::model::paper_question;
 use dtiku_paper::model::question;
 use dtiku_paper::model::solution;
 use dtiku_paper::model::Label;
+use dtiku_paper::model::Question;
 use futures::StreamExt;
 use itertools::Itertools;
 use scraper::Html;
+use sea_orm::ActiveModelTrait;
 use sea_orm::ConnectionTrait;
 use sea_orm::Set;
 use serde::Deserialize;
@@ -226,7 +230,7 @@ impl FenbiSyncService {
         .with_context(|| format!("find question_ids({source_paper_id}) failed"))?;
 
         let qids = question_ids.iter().map(|q| q.question_id).collect_vec();
-        let qid_map: HashMap<_, _> = question_ids
+        let qid_num_map: HashMap<_, _> = question_ids
             .into_iter()
             .map(|q| (q.question_id, q.number))
             .collect();
@@ -272,7 +276,7 @@ impl FenbiSyncService {
         .with_context(|| format!("find material_ids({source_paper_id}) failed"))?;
 
         let mids = material_ids.iter().map(|m| m.material_id).collect_vec();
-        let mid_map: HashMap<_, _> = material_ids
+        let mid_num_map: HashMap<_, _> = material_ids
             .into_iter()
             .map(|m| (m.material_id, m.number))
             .collect();
@@ -295,7 +299,7 @@ impl FenbiSyncService {
         .await
         .with_context(|| format!("find material failed"))?;
 
-        self.save_questions_and_materials(questions, materials, paper, &qid_map, &mid_map)
+        self.save_questions_and_materials(questions, materials, paper, &qid_num_map, &mid_num_map)
             .await?;
         todo!()
     }
@@ -305,18 +309,60 @@ impl FenbiSyncService {
         questions: Vec<OriginQuestion>,
         materials: Vec<OriginMaterial>,
         paper: &paper::Model,
-        qid_map: &HashMap<i64, i32>,
-        mid_map: &HashMap<i64, i32>,
+        qid_num_map: &HashMap<i64, i32>,
+        mid_num_map: &HashMap<i64, i32>,
     ) -> anyhow::Result<()> {
         for q in questions {
+            let correct_ratio = q.correct_ratio.expect("correct_ratio is none");
+            let num = qid_num_map
+                .get(&q.id)
+                .expect("qid is not exists in qid_num_map");
             let mut question = q.to_question(&self.txt_embedding)?;
             question.exam_id = Set(paper.exam_id);
             question.paper_type = Set(paper.paper_type);
+            let q_in_db = question
+                .insert(&self.target_db)
+                .await
+                .context("insert question failed")?;
             let mut solution = q.to_solution()?;
+            solution.question_id = Set(q_in_db.id);
+            solution
+                .insert(&self.target_db)
+                .await
+                .context("insert solution failed")?;
+
+            paper_question::ActiveModel {
+                paper_id: Set(paper.id),
+                question_id: Set(q_in_db.id),
+                sort: Set(num.clone() as i16),
+                // category: Set(), TODO
+                correct_ratio: Set(correct_ratio),
+                ..Default::default()
+            }
+            .insert(&self.target_db)
+            .await
+            .context("insert paper_question failed")?;
         }
 
         for m in materials {
+            let num = mid_num_map
+                .get(&m.id)
+                .expect("mid is not exists in qid_num_map");
             let material = TryInto::<material::ActiveModel>::try_into(m)?;
+
+            let m_in_db = material
+                .insert(&self.target_db)
+                .await
+                .context("insert paper_material failed")?;
+
+            paper_material::ActiveModel {
+                paper_id: Set(paper.id),
+                material_id: Set(m_in_db.id),
+                sort: Set(num.clone() as i16),
+            }
+            .insert(&self.target_db)
+            .await
+            .context("insert paper_material failed")?;
         }
 
         todo!()
