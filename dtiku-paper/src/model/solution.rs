@@ -60,39 +60,39 @@ pub enum SolutionExtra {
 
 #[derive(Serialize, Deserialize)]
 pub struct SingleChoice {
-    answer: u16,
-    analysis: String,
+    pub answer: u16,
+    pub analysis: String,
 }
 
 #[serde_as]
 #[derive(Serialize, Deserialize)]
 pub struct MultiChoice {
     #[serde_as(as = "StringWithSeparator::<CommaSeparator, u16>")]
-    answer: Vec<u16>,
-    analysis: String,
+    pub answer: Vec<u16>,
+    pub analysis: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TrueFalseChoice {
-    answer: bool,
-    analysis: String,
+    pub answer: bool,
+    pub analysis: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct StepByStepAnswer {
-    analysis: Vec<StepAnalysis>,
+    pub analysis: Vec<StepAnalysis>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct StepAnalysis {
-    label: String,
-    content: String,
+    pub label: String,
+    pub content: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct AnswerAnalysis {
-    answer: String,
-    analysis: String,
+    pub answer: String,
+    pub analysis: String,
 }
 
 impl Entity {
