@@ -15,7 +15,11 @@ use dtiku_paper::model::paper_material;
 use dtiku_paper::model::paper_question;
 use dtiku_paper::model::question;
 use dtiku_paper::model::solution;
+use dtiku_paper::model::solution::AnswerAnalysis;
+use dtiku_paper::model::solution::MultiChoice;
 use dtiku_paper::model::solution::SingleChoice;
+use dtiku_paper::model::solution::StepAnalysis;
+use dtiku_paper::model::solution::TrueFalseChoice;
 use dtiku_paper::model::Label;
 use dtiku_paper::model::Question;
 use futures::StreamExt;
@@ -675,82 +679,89 @@ impl OriginQuestion {
             ..
         } = self;
         let extra = if SINGLE_CHOICE.contains(ty) {
-            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("SingleChoice don't contains 101/102 options");
             solution::SolutionExtra::SingleChoice(SingleChoice {
                 answer: correct_answer
+                    .clone()
                     .expect("correct_answer is none")
                     .parse()
                     .expect("correct_answer parse failed"),
-                analysis: solution.expect("solution is none"),
+                analysis: solution.clone().expect("solution is none"),
             })
         } else if MULTI_CHOICE.contains(ty) {
-            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("MultiChoice don't contains 101/102 options");
-            question::QuestionExtra::MultiChoice(
-                os.options
-                    .clone()
-                    .expect("MultiChoice 101/102 options is none"),
-            )
+            let answer: Result<Vec<u16>, std::num::ParseIntError> = correct_answer
+                .clone()
+                .expect("correct_answer is none")
+                .split(",")
+                .map(|a| a.parse())
+                .collect();
+            solution::SolutionExtra::MultiChoice(MultiChoice {
+                answer: answer?,
+                analysis: solution.clone().expect("solution is none"),
+            })
         } else if INDEFINITE_CHOICE.contains(ty) {
-            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("IndefiniteChoice don't contains 101/102 options");
-            question::QuestionExtra::IndefiniteChoice(
-                os.options
-                    .clone()
-                    .expect("IndefiniteChoice 101/102 options is none"),
-            )
+            let answer: Result<Vec<u16>, std::num::ParseIntError> = correct_answer
+                .clone()
+                .expect("correct_answer is none")
+                .split(",")
+                .map(|a| a.parse())
+                .collect();
+            solution::SolutionExtra::IndefiniteChoice(MultiChoice {
+                answer: answer?,
+                analysis: solution.clone().expect("solution is none"),
+            })
         } else if BLANK_CHOICE.contains(ty) {
-            let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("BlankChoice don't contains 101/102 options");
-            question::QuestionExtra::BlankChoice(
-                os.options
+            solution::SolutionExtra::BlankChoice(SingleChoice {
+                answer: correct_answer
                     .clone()
-                    .expect("BlankChoice 101/102 options is none"),
-            )
+                    .expect("correct_answer is none")
+                    .parse()
+                    .expect("correct_answer parse failed"),
+                analysis: solution.clone().expect("solution is none"),
+            })
         } else if TRUE_FALSE.contains(ty) {
-            question::QuestionExtra::TrueFalse
+            solution::SolutionExtra::TrueFalse(TrueFalseChoice {
+                answer: correct_answer
+                    .clone()
+                    .expect("correct_answer is none")
+                    .parse()
+                    .expect("correct_answer parse failed"),
+                analysis: solution.clone().expect("solution is none"),
+            })
         } else if STEP_BY_STEP_ANSWER.contains(ty) {
-            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list.last().expect("BlankChoice don't contains 182 options");
-            question::QuestionExtra::StepByStepQA(question::QA {
-                title: os.title.clone().expect("StepByStepQA title is none"),
-                word_count: os.word_count,
-                material_ids: os.material_indexes.clone(),
+            solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
+                answer: correct_answer
+                    .clone()
+                    .expect("correct_answer is none")
+                    .parse()
+                    .expect("correct_answer parse failed"),
+                analysis: solution.clone().expect("solution is none"),
             })
         } else if CLOSED_ENDED_ANSWER.contains(ty) {
-            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("ClosedEndedQA don't contains 182 options");
-            question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os.title.clone().expect("StepByStepQA title is none"),
-                word_count: os.word_count,
-                material_ids: os.material_indexes.clone(),
+            solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
+                answer: correct_answer
+                    .clone()
+                    .expect("correct_answer is none")
+                    .parse()
+                    .expect("correct_answer parse failed"),
+                analysis: solution.clone().expect("solution is none"),
             })
         } else if OPEN_ENDED_ANSWER.contains(ty) {
-            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list.last().expect("BlankChoice don't contains 182 options");
-            question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os.title.clone().expect("StepByStepQA title is none"),
-                word_count: os.word_count,
-                material_ids: os.material_indexes.clone(),
+            solution::SolutionExtra::OpenEndedQA(AnswerAnalysis {
+                answer: correct_answer
+                    .clone()
+                    .expect("correct_answer is none")
+                    .parse()
+                    .expect("correct_answer parse failed"),
+                analysis: solution.clone().expect("solution is none"),
             })
         } else if FILL_BLANK.contains(ty) {
-            let vec = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = vec.last().expect("BlankChoice don't contains 182 options");
-            question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os.title.clone().expect("StepByStepQA title is none"),
-                word_count: os.word_count,
-                material_ids: os.material_indexes.clone(),
+            solution::SolutionExtra::SingleChoice(SingleChoice {
+                answer: correct_answer
+                    .clone()
+                    .expect("correct_answer is none")
+                    .parse()
+                    .expect("correct_answer parse failed"),
+                analysis: solution.clone().expect("solution is none"),
             })
         } else {
             Err(anyhow::anyhow!("ty#{ty} is not defined"))?
@@ -855,6 +866,12 @@ impl TryInto<material::MaterialExtra> for MaterialAccessory {
                 "unknown material accessory type:{_unknown}"
             )),
         }
+    }
+}
+
+impl Into<StepAnalysis> for SolutionAccessory {
+    fn into(self) -> StepAnalysis {
+        todo!()
     }
 }
 
