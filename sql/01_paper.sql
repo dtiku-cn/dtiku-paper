@@ -89,7 +89,7 @@ create table if not exists solution (
 );
 create type src_type as enum('question', 'material', 'solution');
 --  图片,可能包含音频
-create table if not exists assets{
+create table if not exists assets(
     id serial primary key,
     src_type src_type not null,
     src_id integer not null,
@@ -98,4 +98,4 @@ create table if not exists assets{
     created timestamp not null,
     modified timestamp not null,
     unique(src_type, src_id)
-}
+);
