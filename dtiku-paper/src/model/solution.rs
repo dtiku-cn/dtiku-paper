@@ -40,19 +40,16 @@ pub enum SolutionExtra {
     BlankChoice(SingleChoice),
     // 填空题
     #[serde(rename = "fb")]
-    FillBlank(Vec<String>),
+    FillBlank(FillBlank),
     // 是非判断题
     #[serde(rename = "tf")]
     TrueFalse(TrueFalseChoice),
-    // 分步式解答题
-    #[serde(rename = "sa")]
-    StepByStepQA(StepByStepAnswer),
     // 封闭式解答题
     #[serde(rename = "ce")]
     ClosedEndedQA(AnswerAnalysis),
     // 开放式解答题
     #[serde(rename = "oe")]
-    OpenEndedQA(AnswerAnalysis),
+    OpenEndedQA(StepByStepAnswer),
     // 其他
     #[serde(rename = "o")]
     Other(Value),
@@ -75,6 +72,12 @@ pub struct MultiChoice {
 #[derive(Serialize, Deserialize)]
 pub struct TrueFalseChoice {
     pub answer: bool,
+    pub analysis: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct FillBlank {
+    pub blanks: Vec<String>,
     pub analysis: String,
 }
 

@@ -16,9 +16,11 @@ use dtiku_paper::model::paper_question;
 use dtiku_paper::model::question;
 use dtiku_paper::model::solution;
 use dtiku_paper::model::solution::AnswerAnalysis;
+use dtiku_paper::model::solution::FillBlank;
 use dtiku_paper::model::solution::MultiChoice;
 use dtiku_paper::model::solution::SingleChoice;
 use dtiku_paper::model::solution::StepAnalysis;
+use dtiku_paper::model::solution::StepByStepAnswer;
 use dtiku_paper::model::solution::TrueFalseChoice;
 use dtiku_paper::model::Label;
 use dtiku_paper::model::Question;
@@ -45,10 +47,10 @@ static MULTI_CHOICE: [i16; 1] = [2];
 static INDEFINITE_CHOICE: [i16; 1] = [3];
 static BLANK_CHOICE: [i16; 2] = [4, 6];
 static TRUE_FALSE: [i16; 1] = [5];
+static FILL_BLANK: [i16; 2] = [61, 64];
 static STEP_BY_STEP_ANSWER: [i16; 13] = [11, 12, 16, 21, 22, 23, 24, 25, 26, 101, 102, 301, 302];
 static CLOSED_ENDED_ANSWER: [i16; 1] = [13];
 static OPEN_ENDED_ANSWER: [i16; 3] = [14, 15, 303];
-static FILL_BLANK: [i16; 2] = [61, 64];
 
 #[derive(Clone, Service)]
 pub struct FenbiSyncService {
@@ -727,45 +729,34 @@ impl OriginQuestion {
                     .expect("correct_answer parse failed"),
                 analysis: solution.clone().expect("solution is none"),
             })
-        } else if STEP_BY_STEP_ANSWER.contains(ty) {
-            solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
-                answer: correct_answer
-                    .clone()
-                    .expect("correct_answer is none")
-                    .parse()
-                    .expect("correct_answer parse failed"),
-                analysis: solution.clone().expect("solution is none"),
-            })
-        } else if CLOSED_ENDED_ANSWER.contains(ty) {
-            solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
-                answer: correct_answer
-                    .clone()
-                    .expect("correct_answer is none")
-                    .parse()
-                    .expect("correct_answer parse failed"),
-                analysis: solution.clone().expect("solution is none"),
-            })
-        } else if OPEN_ENDED_ANSWER.contains(ty) {
-            solution::SolutionExtra::OpenEndedQA(AnswerAnalysis {
-                answer: correct_answer
-                    .clone()
-                    .expect("correct_answer is none")
-                    .parse()
-                    .expect("correct_answer parse failed"),
-                analysis: solution.clone().expect("solution is none"),
-            })
         } else if FILL_BLANK.contains(ty) {
-            solution::SolutionExtra::SingleChoice(SingleChoice {
-                answer: correct_answer
-                    .clone()
-                    .expect("correct_answer is none")
-                    .parse()
-                    .expect("correct_answer parse failed"),
+            let blanks = vec![];// TOOD:
+            solution::SolutionExtra::FillBlank(FillBlank {
+                blanks: blanks,
                 analysis: solution.clone().expect("solution is none"),
             })
         } else {
-            Err(anyhow::anyhow!("ty#{ty} is not defined"))?
-        };
+            if solution_accessories.len() < 1 {
+                solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
+                    analysis: solution.clone().expect("solution is none"),
+                    answer: correct_answer.clone().expect("correct_answer is none"),
+                })
+            } else if solution_accessories.len() > 1 && correct_answer.is_none() {
+                let analysis = solution_accessories
+                    .0
+                    .into_iter()
+                    .map(|a| a.into())
+                    .collect();
+                solution::SolutionExtra::OpenEndedQA(StepByStepAnswer { analysis: analysis })
+            } else {
+                let analysis = solution_accessories
+                    .0
+                    .into_iter()
+                    .map(|a| a.into())
+                    .collect();
+                solution::SolutionExtra::OpenEndedQA(StepByStepAnswer { analysis: analysis })
+            }
+        } 
         Ok(solution::ActiveModel {
             extra: Set(serde_json::to_value(extra)?),
             ..Default::default()
