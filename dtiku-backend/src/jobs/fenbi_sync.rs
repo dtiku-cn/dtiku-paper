@@ -569,7 +569,7 @@ struct OriginQuestion {
     material: Json<OriginMaterial>,
     keypoints: Json<Vec<OriginKeyPoint>>,
     correct_ratio: Option<f32>,
-    correct_answer: Option<String>,
+    correct_answer: Option<CorrectAnswer>,
     solution: Option<String>,
     solution_accessories: Json<Vec<SolutionAccessory>>,
 }
@@ -686,30 +686,29 @@ impl OriginQuestion {
                 answer: correct_answer
                     .clone()
                     .expect("correct_answer is none")
-                    .parse()
-                    .expect("correct_answer parse failed"),
+                    .choice
+                    .expect("correct_answer.choice is none")
+                    .remove(0),
                 analysis: solution.clone().expect("solution is none"),
             })
         } else if MULTI_CHOICE.contains(ty) {
-            let answer: Result<Vec<u16>, std::num::ParseIntError> = correct_answer
+            let answer = correct_answer
                 .clone()
                 .expect("correct_answer is none")
-                .split(",")
-                .map(|a| a.parse())
-                .collect();
+                .choice
+                .expect("correct_answer.choice is none");
             solution::SolutionExtra::MultiChoice(MultiChoice {
-                answer: answer?,
+                answer,
                 analysis: solution.clone().expect("solution is none"),
             })
         } else if INDEFINITE_CHOICE.contains(ty) {
-            let answer: Result<Vec<u16>, std::num::ParseIntError> = correct_answer
+            let answer = correct_answer
                 .clone()
                 .expect("correct_answer is none")
-                .split(",")
-                .map(|a| a.parse())
-                .collect();
+                .choice
+                .expect("correct_answer.choice is none");
             solution::SolutionExtra::IndefiniteChoice(MultiChoice {
-                answer: answer?,
+                answer,
                 analysis: solution.clone().expect("solution is none"),
             })
         } else if BLANK_CHOICE.contains(ty) {
@@ -717,8 +716,9 @@ impl OriginQuestion {
                 answer: correct_answer
                     .clone()
                     .expect("correct_answer is none")
-                    .parse()
-                    .expect("correct_answer parse failed"),
+                    .choice
+                    .expect("correct_answer.choice is none")
+                    .remove(0),
                 analysis: solution.clone().expect("solution is none"),
             })
         } else if TRUE_FALSE.contains(ty) {
@@ -726,14 +726,20 @@ impl OriginQuestion {
                 answer: correct_answer
                     .clone()
                     .expect("correct_answer is none")
-                    .parse()
-                    .expect("correct_answer parse failed"),
+                    .choice
+                    .expect("correct_answer.choice is none")
+                    .remove(0)
+                    == 0,
                 analysis: solution.clone().expect("solution is none"),
             })
         } else if FILL_BLANK.contains(ty) {
-            let blanks = vec![]; // TOOD:
+            let blanks = correct_answer
+                .clone()
+                .expect("correct_answer is none")
+                .blanks
+                .expect("correct_answer.blanks is none");
             solution::SolutionExtra::FillBlank(FillBlank {
-                blanks: blanks,
+                blanks,
                 analysis: solution.clone().expect("solution is none"),
             })
         } else {
