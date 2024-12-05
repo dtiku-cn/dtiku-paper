@@ -744,19 +744,19 @@ impl OriginQuestion {
             } else if solution_accessories.len() > 1 && correct_answer.is_none() {
                 let analysis = solution_accessories
                     .0
-                    .into_iter()
-                    .map(|a| a.into())
+                    .iter()
+                    .map(|a| a.convert_into())
                     .collect();
                 solution::SolutionExtra::OpenEndedQA(StepByStepAnswer { analysis: analysis })
             } else {
                 let analysis = solution_accessories
                     .0
-                    .into_iter()
-                    .map(|a| a.into())
+                    .iter()
+                    .map(|a| a.convert_into())
                     .collect();
                 solution::SolutionExtra::OpenEndedQA(StepByStepAnswer { analysis: analysis })
             }
-        } 
+        };
         Ok(solution::ActiveModel {
             extra: Set(serde_json::to_value(extra)?),
             ..Default::default()
@@ -860,8 +860,8 @@ impl TryInto<material::MaterialExtra> for MaterialAccessory {
     }
 }
 
-impl Into<StepAnalysis> for SolutionAccessory {
-    fn into(self) -> StepAnalysis {
+impl SolutionAccessory {
+    fn convert_into(&self) -> StepAnalysis {
         todo!()
     }
 }
