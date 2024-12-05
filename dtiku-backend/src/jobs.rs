@@ -7,8 +7,8 @@ use spring::App;
 use spring_sea_orm::DbConn;
 use spring_stream::{extractor::Json, stream_listener};
 
-#[stream_listener("task")]
-async fn refresh_cache(Json(mut task): Json<schedule_task::Model>) {
+// #[stream_listener("task")]
+pub async fn refresh_cache(Json(mut task): Json<schedule_task::Model>) {
     let result = match task.ty {
         ScheduleTaskType::FenbiSync => {
             App::global()
