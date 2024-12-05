@@ -50,9 +50,9 @@ pub enum SolutionExtra {
     // 开放式解答题
     #[serde(rename = "oe")]
     OpenEndedQA(StepByStepAnswer),
-    // 其他
+    // 其他问答题
     #[serde(rename = "o")]
-    Other(Value),
+    OtherQA(OtherAnswer),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -83,6 +83,14 @@ pub struct FillBlank {
 
 #[derive(Serialize, Deserialize)]
 pub struct StepByStepAnswer {
+    pub solution: Option<String>,
+    pub analysis: Vec<StepAnalysis>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct OtherAnswer {
+    pub answer: Option<String>,
+    pub solution: Option<String>,
     pub analysis: Vec<StepAnalysis>,
 }
 

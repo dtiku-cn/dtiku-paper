@@ -84,3 +84,14 @@ SELECT
 FROM ranked_samples
 WHERE row_num <= 10
 ORDER BY correct_answer_type, row_num;
+
+select 
+extra->'solution',
+extra->'correctAnswer',
+ extra->'solutionAccessories',
+extra
+from question
+where from_ty = 'fenbi'
+and extra->'correctAnswer' != 'null'
+and (extra->>'type')::int > 10
+and extra->'solutionAccessories' != '[]'

@@ -18,6 +18,7 @@ use dtiku_paper::model::solution;
 use dtiku_paper::model::solution::AnswerAnalysis;
 use dtiku_paper::model::solution::FillBlank;
 use dtiku_paper::model::solution::MultiChoice;
+use dtiku_paper::model::solution::OtherAnswer;
 use dtiku_paper::model::solution::SingleChoice;
 use dtiku_paper::model::solution::StepAnalysis;
 use dtiku_paper::model::solution::StepByStepAnswer;
@@ -685,6 +686,7 @@ impl OriginQuestion {
             solution::SolutionExtra::SingleChoice(SingleChoice {
                 answer: correct_answer
                     .choice
+                    .clone()
                     .expect("correct_answer.choice is none")
                     .remove(0),
                 analysis: solution.clone().expect("solution is none"),
@@ -692,6 +694,7 @@ impl OriginQuestion {
         } else if MULTI_CHOICE.contains(ty) {
             let answer = correct_answer
                 .choice
+                .clone()
                 .expect("correct_answer.choice is none");
             solution::SolutionExtra::MultiChoice(MultiChoice {
                 answer,
@@ -700,6 +703,7 @@ impl OriginQuestion {
         } else if INDEFINITE_CHOICE.contains(ty) {
             let answer = correct_answer
                 .choice
+                .clone()
                 .expect("correct_answer.choice is none");
             solution::SolutionExtra::IndefiniteChoice(MultiChoice {
                 answer,
@@ -709,6 +713,7 @@ impl OriginQuestion {
             solution::SolutionExtra::BlankChoice(SingleChoice {
                 answer: correct_answer
                     .choice
+                    .clone()
                     .expect("correct_answer.choice is none")
                     .remove(0),
                 analysis: solution.clone().expect("solution is none"),
@@ -717,6 +722,7 @@ impl OriginQuestion {
             solution::SolutionExtra::TrueFalse(TrueFalseChoice {
                 answer: correct_answer
                     .choice
+                    .clone()
                     .expect("correct_answer.choice is none")
                     .remove(0)
                     == 0,
@@ -725,6 +731,7 @@ impl OriginQuestion {
         } else if FILL_BLANK.contains(ty) {
             let blanks = correct_answer
                 .blanks
+                .clone()
                 .expect("correct_answer.blanks is none");
             solution::SolutionExtra::FillBlank(FillBlank {
                 blanks,
@@ -734,22 +741,32 @@ impl OriginQuestion {
             if solution_accessories.len() < 1 {
                 solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
                     analysis: solution.clone().expect("solution is none"),
-                    answer: correct_answer.answer.expect("correct_answer.answer is none"),
+                    answer: correct_answer
+                        .answer
+                        .clone()
+                        .expect("correct_answer.answer is none"),
                 })
-            } else if solution_accessories.len() > 1 && correct_answer.is_none() {
+            } else if solution_accessories.len() > 1 && correct_answer.answer.is_none() {
                 let analysis = solution_accessories
                     .0
                     .iter()
                     .map(|a| a.convert_into())
                     .collect();
-                solution::SolutionExtra::OpenEndedQA(StepByStepAnswer { analysis: analysis })
+                solution::SolutionExtra::OpenEndedQA(StepByStepAnswer {
+                    solution: solution.clone(),
+                    analysis,
+                })
             } else {
                 let analysis = solution_accessories
                     .0
                     .iter()
                     .map(|a| a.convert_into())
                     .collect();
-                solution::SolutionExtra::OpenEndedQA(StepByStepAnswer { analysis: analysis })
+                solution::SolutionExtra::OtherQA(OtherAnswer {
+                    answer: correct_answer.answer.clone(),
+                    solution: solution.clone(),
+                    analysis,
+                })
             }
         };
         Ok(solution::ActiveModel {
