@@ -33,6 +33,7 @@ use sea_orm::Set;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
+use serde_with::{formats::CommaSeparator, serde_as, StringWithSeparator};
 use spring::plugin::service::Service;
 use spring::tracing;
 use spring_sea_orm::DbConn;
@@ -730,7 +731,7 @@ impl OriginQuestion {
                 analysis: solution.clone().expect("solution is none"),
             })
         } else if FILL_BLANK.contains(ty) {
-            let blanks = vec![];// TOOD:
+            let blanks = vec![]; // TOOD:
             solution::SolutionExtra::FillBlank(FillBlank {
                 blanks: blanks,
                 analysis: solution.clone().expect("solution is none"),
@@ -799,6 +800,18 @@ struct QuestionAccessory {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SolutionAccessory {}
+
+#[serde_as]
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CorrectAnswer {
+    #[serde(rename = "type")]
+    pub ty: i16,
+    #[serde_as(as = "Option<StringWithSeparator::<CommaSeparator, u16>>")]
+    pub choice: Option<Vec<u16>>,
+    pub blanks: Option<Vec<String>>,
+    pub answer: Option<String>,
+}
 
 #[derive(Debug, Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]

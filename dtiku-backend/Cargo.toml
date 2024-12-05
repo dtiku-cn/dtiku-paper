@@ -25,6 +25,7 @@ strum = { workspace = true, features = ["derive"] }
 derive_more = { workspace = true, features = ["deref"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_with = { workspace = true }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 sqlx = { workspace = true, features = ["postgres"] }
 anyhow = { workspace = true }
