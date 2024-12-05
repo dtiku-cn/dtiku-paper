@@ -87,7 +87,7 @@ create table if not exists solution (
     question_id integer not null,
     extra jsonb not null
 );
-create type src_type as enum(question, material, solution);
+create type src_type as enum('question', 'material', 'solution');
 --  图片,可能包含音频
 create table if not exists assets{
     id serial primary key,
