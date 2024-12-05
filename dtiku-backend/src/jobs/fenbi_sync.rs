@@ -569,7 +569,7 @@ struct OriginQuestion {
     material: Json<OriginMaterial>,
     keypoints: Json<Vec<OriginKeyPoint>>,
     correct_ratio: Option<f32>,
-    correct_answer: Option<CorrectAnswer>,
+    correct_answer: Json<CorrectAnswer>,
     solution: Option<String>,
     solution_accessories: Json<Vec<SolutionAccessory>>,
 }
@@ -684,8 +684,6 @@ impl OriginQuestion {
         let extra = if SINGLE_CHOICE.contains(ty) {
             solution::SolutionExtra::SingleChoice(SingleChoice {
                 answer: correct_answer
-                    .clone()
-                    .expect("correct_answer is none")
                     .choice
                     .expect("correct_answer.choice is none")
                     .remove(0),
@@ -693,8 +691,6 @@ impl OriginQuestion {
             })
         } else if MULTI_CHOICE.contains(ty) {
             let answer = correct_answer
-                .clone()
-                .expect("correct_answer is none")
                 .choice
                 .expect("correct_answer.choice is none");
             solution::SolutionExtra::MultiChoice(MultiChoice {
@@ -703,8 +699,6 @@ impl OriginQuestion {
             })
         } else if INDEFINITE_CHOICE.contains(ty) {
             let answer = correct_answer
-                .clone()
-                .expect("correct_answer is none")
                 .choice
                 .expect("correct_answer.choice is none");
             solution::SolutionExtra::IndefiniteChoice(MultiChoice {
@@ -714,8 +708,6 @@ impl OriginQuestion {
         } else if BLANK_CHOICE.contains(ty) {
             solution::SolutionExtra::BlankChoice(SingleChoice {
                 answer: correct_answer
-                    .clone()
-                    .expect("correct_answer is none")
                     .choice
                     .expect("correct_answer.choice is none")
                     .remove(0),
@@ -724,8 +716,6 @@ impl OriginQuestion {
         } else if TRUE_FALSE.contains(ty) {
             solution::SolutionExtra::TrueFalse(TrueFalseChoice {
                 answer: correct_answer
-                    .clone()
-                    .expect("correct_answer is none")
                     .choice
                     .expect("correct_answer.choice is none")
                     .remove(0)
@@ -734,8 +724,6 @@ impl OriginQuestion {
             })
         } else if FILL_BLANK.contains(ty) {
             let blanks = correct_answer
-                .clone()
-                .expect("correct_answer is none")
                 .blanks
                 .expect("correct_answer.blanks is none");
             solution::SolutionExtra::FillBlank(FillBlank {
@@ -746,7 +734,7 @@ impl OriginQuestion {
             if solution_accessories.len() < 1 {
                 solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
                     analysis: solution.clone().expect("solution is none"),
-                    answer: correct_answer.clone().expect("correct_answer is none"),
+                    answer: correct_answer.answer.expect("correct_answer.answer is none"),
                 })
             } else if solution_accessories.len() > 1 && correct_answer.is_none() {
                 let analysis = solution_accessories
