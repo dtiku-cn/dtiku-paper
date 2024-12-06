@@ -6,7 +6,7 @@ use sea_orm::{
     DbErr, EntityTrait, IntoActiveModel, QueryFilter, Set,
 };
 use serde::{Deserialize, Serialize};
-use spring::{async_trait, App};
+use spring::{async_trait, plugin::ComponentRegistry, App};
 use spring_stream::Producer;
 
 #[derive(Debug, Serialize, Deserialize)]

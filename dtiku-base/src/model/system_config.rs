@@ -6,7 +6,7 @@ use sea_orm::{
     EntityTrait, QueryFilter, Set,
 };
 use serde::de::DeserializeOwned;
-use spring::{async_trait, tracing, App};
+use spring::{async_trait, plugin::ComponentRegistry, tracing, App};
 use spring_redis::{
     redis::{AsyncCommands, RedisError},
     Redis,

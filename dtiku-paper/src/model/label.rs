@@ -3,7 +3,7 @@ use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
 };
-use spring::{tracing, App};
+use spring::{plugin::ComponentRegistry, tracing, App};
 use spring_redis::{
     redis::{AsyncCommands, RedisError},
     Redis,

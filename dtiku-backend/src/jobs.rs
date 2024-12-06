@@ -3,7 +3,7 @@ mod fenbi_sync;
 use dtiku_base::model::{enums::ScheduleTaskType, schedule_task};
 use fenbi_sync::FenbiSyncService;
 use sea_orm::{IntoActiveModel, Set};
-use spring::App;
+use spring::{plugin::ComponentRegistry, App};
 use spring_sea_orm::DbConn;
 use spring_stream::{extractor::Json, stream_listener};
 

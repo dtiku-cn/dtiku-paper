@@ -3,7 +3,7 @@ use spring::plugin::service::Service;
 
 #[derive(Clone, Service)]
 pub struct PaperService {
-    #[component]
+    #[inject(component)]
     db: DbConn,
 }
 

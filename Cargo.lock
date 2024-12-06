@@ -1041,7 +1041,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
- "spring",
+ "spring 0.3.0",
  "spring-job",
  "spring-redis",
  "spring-sea-orm",
@@ -1062,7 +1062,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
- "spring",
+ "spring 0.3.0",
  "spring-redis",
  "spring-stream",
  "strum",
@@ -1077,7 +1077,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
- "spring",
+ "spring 0.2.9",
  "strum",
 ]
 
@@ -1093,7 +1093,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
- "spring",
+ "spring 0.3.0",
  "spring-redis",
  "strum",
 ]
@@ -1112,7 +1112,7 @@ dependencies = [
  "askama",
  "askama_axum",
  "dtiku-paper",
- "spring",
+ "spring 0.3.0",
  "spring-redis",
  "spring-sea-orm",
  "spring-web",
@@ -4397,7 +4397,33 @@ dependencies = [
  "schemars",
  "serde",
  "serde-toml-merge",
- "spring-macros",
+ "spring-macros 0.2.0",
+ "thiserror 1.0.69",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "spring"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3519e1af9bcc15d726c8cc91680246a4adfaf23e407ef08ebec9041763575d0e"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "dashmap",
+ "dotenvy",
+ "inventory",
+ "log",
+ "nu-ansi-term",
+ "once_cell",
+ "schemars",
+ "serde",
+ "serde-toml-merge",
+ "spring-macros 0.3.0",
  "thiserror 1.0.69",
  "tokio",
  "toml",
@@ -4408,16 +4434,16 @@ dependencies = [
 
 [[package]]
 name = "spring-job"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a1ad3c12405ec04e2624e16b9cddf36a9fdb5b8c1997206cab960d385d2d7ba"
+checksum = "4d5f85458dfbb22d9a9b4a677b6e5b426b3159bbe8feb4f7e6a80183c130b5ae"
 dependencies = [
  "anyhow",
  "chrono",
  "inventory",
  "serde",
- "spring",
- "spring-macros",
+ "spring 0.3.0",
+ "spring-macros 0.3.0",
  "tokio-cron-scheduler",
  "tracing",
  "uuid",
@@ -4435,53 +4461,64 @@ dependencies = [
 ]
 
 [[package]]
-name = "spring-redis"
-version = "0.2.2"
+name = "spring-macros"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81db46fb1e8e4161272e9be199dce8b6c5a1673fc678b4fc841b39f05529e59e"
+checksum = "2be39622935154e89ec2e5bc355caa98848727217abf8400f9fadc02ca0d9c4f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
+name = "spring-redis"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db4e87884ef41ef6c01600e1001be5a45f97dfe58c9ccbd6ed2ddaf50bb72c3e"
 dependencies = [
  "anyhow",
  "redis 0.27.5",
  "schemars",
  "serde",
- "spring",
+ "spring 0.3.0",
  "tracing",
 ]
 
 [[package]]
 name = "spring-sea-orm"
-version = "0.2.3"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "405a7a55baf733bb6bcafa4a9e855fa51137a63923cfdd4393adcacc999afb06"
+checksum = "d2a743c7cfd79114f72165c73b39665f07cd064569794f497c5509760089d940"
 dependencies = [
  "anyhow",
  "schemars",
  "sea-orm",
  "serde",
- "spring",
+ "spring 0.3.0",
  "thiserror 1.0.69",
  "tracing",
 ]
 
 [[package]]
 name = "spring-sqlx"
-version = "0.2.3"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71fc6dff792f83c5382ab129a1543640c8cc4deaa8efd6638878ffd98376ab37"
+checksum = "241d7c40293158316962d7a116972a7b37b2f25999b42bcb7f9455f247453098"
 dependencies = [
  "anyhow",
  "schemars",
  "serde",
- "spring",
+ "spring 0.3.0",
  "sqlx",
  "tracing",
 ]
 
 [[package]]
 name = "spring-stream"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "732a1dc434098c32a92a4be9fc4c508e7477e5b6c319164b37fedc2440e413a7"
+checksum = "0268e716a6d90ea190697706cafeb5d89092e06a69220cfc13bf95b0ff0f7663"
 dependencies = [
  "anyhow",
  "inventory",
@@ -4489,16 +4526,16 @@ dependencies = [
  "sea-streamer",
  "serde",
  "serde_json",
- "spring",
- "spring-macros",
+ "spring 0.3.0",
+ "spring-macros 0.3.0",
  "tracing",
 ]
 
 [[package]]
 name = "spring-web"
-version = "0.2.4"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5b7b688b811580b298ff65d77441ef546e9d27faeccf3c398db02e7870eeffe"
+checksum = "42696b65f28f069237d8d079ec0a4359f746041724fdc2eadc218b173576d4a2"
 dependencies = [
  "anyhow",
  "axum",
@@ -4506,8 +4543,8 @@ dependencies = [
  "inventory",
  "schemars",
  "serde",
- "spring",
- "spring-macros",
+ "spring 0.3.0",
+ "spring-macros 0.3.0",
  "thiserror 1.0.69",
  "tokio",
  "tower",

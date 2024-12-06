@@ -56,8 +56,11 @@ static OPEN_ENDED_ANSWER: [i16; 3] = [14, 15, 303];
 
 #[derive(Clone, Service)]
 pub struct FenbiSyncService {
+    #[inject(component)]
     source_db: ConnectPool,
+    #[inject(component)]
     target_db: DbConn,
+    #[inject(component)]
     txt_embedding: TxtEmbedding,
 }
 

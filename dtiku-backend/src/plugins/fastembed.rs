@@ -3,7 +3,7 @@ use fastembed::{
     EmbeddingModel, ImageEmbedding, ImageEmbeddingModel, ImageInitOptions, InitOptions,
     TextEmbedding,
 };
-use spring::{app::AppBuilder, async_trait, plugin::Plugin};
+use spring::{app::AppBuilder, async_trait, plugin::{MutableComponentRegistry as _, Plugin}};
 use std::sync::Arc;
 
 pub struct EmbeddingPlugin;
