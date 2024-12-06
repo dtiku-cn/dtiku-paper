@@ -5,6 +5,9 @@ graceful = true
 [web.middlewares]
 static = { enable = true }
 
+[logger]
+pretty_backtrace = true
+
 [sqlx]
 uri = "postgres://postgres:12345@localhost:5432/dtiku"
 

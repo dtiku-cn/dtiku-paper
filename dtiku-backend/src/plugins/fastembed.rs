@@ -13,12 +13,15 @@ impl Plugin for EmbeddingPlugin {
     async fn build(&self, app: &mut AppBuilder) {
         let text_embedding = TextEmbedding::try_new(
             InitOptions::new(EmbeddingModel::ParaphraseMLMpnetBaseV2)
-                .with_show_download_progress(true),
+                .with_show_download_progress(true)
+                .with_cache_dir("./hf-cache".into()),
         )
         .expect("text embedding init failed");
 
         let image_embedding = ImageEmbedding::try_new(
-            ImageInitOptions::new(ImageEmbeddingModel::Resnet50).with_show_download_progress(true),
+            ImageInitOptions::new(ImageEmbeddingModel::Resnet50)
+                .with_show_download_progress(true)
+                .with_cache_dir("./hf-cache".into()),
         )
         .expect("image embedding init failed");
 
