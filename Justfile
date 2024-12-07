@@ -17,3 +17,9 @@ build-bk:
 ## build web
 build-web:
     docker build --tag holmofy/dtiku-web:latest -f web.Dockerfile .
+
+## download hugging_face model
+hf_download:
+    export HF_ENDPOINT="https://hf-mirror.com"
+    huggingface-cli download sentence-transformers/paraphrase-mpnet-base-v2 --local-dir ./.hf-cache/sentence-transformers/paraphrase-mpnet-base-v2
+    huggingface-cli download Qdrant/resnet50-onnx --local-dir ./.hf-cache/Qdrant/resnet50-onnx

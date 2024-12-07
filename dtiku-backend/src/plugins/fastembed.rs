@@ -3,25 +3,38 @@ use fastembed::{
     EmbeddingModel, ImageEmbedding, ImageEmbeddingModel, ImageInitOptions, InitOptions,
     TextEmbedding,
 };
-use spring::{app::AppBuilder, async_trait, plugin::{MutableComponentRegistry as _, Plugin}};
+use spring::{
+    app::AppBuilder,
+    async_trait,
+    config::ConfigRegistry,
+    plugin::{MutableComponentRegistry as _, Plugin},
+};
 use std::sync::Arc;
+
+use crate::config::hf_config::HfConfig;
 
 pub struct EmbeddingPlugin;
 
 #[async_trait]
 impl Plugin for EmbeddingPlugin {
     async fn build(&self, app: &mut AppBuilder) {
+        let hf_config = app
+            .get_config::<HfConfig>()
+            .expect("load huggingface config failed");
+        let cache_dir = hf_config.cache_dir;
         let text_embedding = TextEmbedding::try_new(
             InitOptions::new(EmbeddingModel::ParaphraseMLMpnetBaseV2)
                 .with_show_download_progress(true)
-                .with_cache_dir("./hf-cache".into()),
+                .with_cache_dir(
+                    format!("${cache_dir}/sentence-transformers/paraphrase-mpnet-base-v2").into(),
+                ),
         )
         .expect("text embedding init failed");
 
         let image_embedding = ImageEmbedding::try_new(
             ImageInitOptions::new(ImageEmbeddingModel::Resnet50)
                 .with_show_download_progress(true)
-                .with_cache_dir("./hf-cache".into()),
+                .with_cache_dir(format!("${cache_dir}/Qdrant/resnet50-onnx").into()),
         )
         .expect("image embedding init failed");
 

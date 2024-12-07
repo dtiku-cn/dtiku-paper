@@ -19,3 +19,6 @@ uri = "redis://localhost"
 
 [redis]
 uri = "redis://localhost"
+
+[huggingface]
+cache_dir = "../.hf-cache"
