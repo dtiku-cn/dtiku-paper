@@ -26,7 +26,7 @@ impl Plugin for EmbeddingPlugin {
             InitOptions::new(EmbeddingModel::ParaphraseMLMpnetBaseV2)
                 .with_show_download_progress(true)
                 .with_cache_dir(
-                    format!("${cache_dir}/sentence-transformers/paraphrase-mpnet-base-v2").into(),
+                    format!("{cache_dir}/sentence-transformers/paraphrase-mpnet-base-v2").into(),
                 ),
         )
         .expect("text embedding init failed");
@@ -34,7 +34,7 @@ impl Plugin for EmbeddingPlugin {
         let image_embedding = ImageEmbedding::try_new(
             ImageInitOptions::new(ImageEmbeddingModel::Resnet50)
                 .with_show_download_progress(true)
-                .with_cache_dir(format!("${cache_dir}/Qdrant/resnet50-onnx").into()),
+                .with_cache_dir(format!("{cache_dir}/Qdrant/resnet50-onnx").into()),
         )
         .expect("image embedding init failed");
 
