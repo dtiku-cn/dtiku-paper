@@ -1,4 +1,6 @@
 mod fenbi_sync;
+mod huatu_sync;
+mod offcn_sync;
 
 use dtiku_base::model::{enums::ScheduleTaskType, schedule_task};
 use fenbi_sync::FenbiSyncService;
