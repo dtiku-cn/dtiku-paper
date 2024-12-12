@@ -2,8 +2,8 @@ pub use super::_entities::schedule_task::*;
 use crate::error::Error;
 use anyhow::Context;
 use sea_orm::{
-    sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue, ColumnTrait, ConnectionTrait,
-    DbErr, EntityTrait, IntoActiveModel, QueryFilter, Set,
+    prelude::DateTime, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue, ColumnTrait,
+    ConnectionTrait, DbErr, EntityTrait, IntoActiveModel, QueryFilter, Set,
 };
 use serde::{Deserialize, Serialize};
 use spring::{async_trait, plugin::ComponentRegistry, App};
@@ -23,6 +23,13 @@ impl Progress<i64> {
         let new_percent = self.current * 100 / self.total;
         old_percent != new_percent
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TaskInstance {
+    id: String,
+    start_time: DateTime,
+    end_time: DateTime,
 }
 
 #[async_trait]
@@ -85,12 +92,15 @@ impl Model {
         T: Serialize,
         C: ConnectionTrait,
     {
-        let mut active_model = self.clone().into_active_model();
-        active_model.context = Set(serde_json::to_value(progress)?);
-        let model = active_model
-            .optimistic_update(db)
-            .await
-            .context("update progress failed")?;
+        let model = ActiveModel {
+            id: Set(self.id),
+            version: Set(self.version + 1),
+            context: Set(serde_json::to_value(progress)?),
+            ..Default::default()
+        }
+        .optimistic_update(db)
+        .await
+        .context("update progress failed")?;
         Ok(model)
     }
 }

@@ -36,3 +36,4 @@ fastembed = { workspace = true }
 scraper = { workspace = true }
 hnsw = { workspace = true }
 hnsw_rs = { workspace = true }
+dashmap = { workspace = true }

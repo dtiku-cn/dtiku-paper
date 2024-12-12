@@ -12,8 +12,8 @@ create table if not exists schedule_task(
     ty varchar(32) not null,
     active bool not null,
     context jsonb not null,
-    error_count integer not null,
-    error_cause text not null,
+    run_count integer not null,
+    instance_ids jsonb not null,
     created timestamp not null,
     modified timestamp not null
 );

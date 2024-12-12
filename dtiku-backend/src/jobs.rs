@@ -2,19 +2,32 @@ mod fenbi_sync;
 mod huatu_sync;
 mod offcn_sync;
 
+use crate::plugins::jobs::RunningJobs;
 use dtiku_base::model::{enums::ScheduleTaskType, schedule_task};
 use fenbi_sync::FenbiSyncService;
 use sea_orm::{IntoActiveModel, Set};
-use spring::{plugin::ComponentRegistry, App};
+use spring::{plugin::ComponentRegistry, tracing, App};
 use spring_sea_orm::DbConn;
-use spring_stream::{extractor::Json, stream_listener};
+use spring_stream::{
+    extractor::{Component, Json},
+    stream_listener,
+};
 
-// #[stream_listener("task")]
-pub async fn refresh_cache(Json(mut task): Json<schedule_task::Model>) {
+#[stream_listener("task")]
+pub async fn refresh_cache(
+    Json(mut task): Json<schedule_task::Model>,
+    Component(running_jobs): Component<RunningJobs>,
+) {
+    if running_jobs.is_running(task.ty) {
+        return;
+    }
+    running_jobs.register_task_if_not_running(task.ty);
+    
+    let app = App::global();
+
     let result = match task.ty {
         ScheduleTaskType::FenbiSync => {
-            App::global()
-                .get_component::<FenbiSyncService>()
+            app.get_component::<FenbiSyncService>()
                 .expect("fenbi sync service not found")
                 .start(&mut task)
                 .await
@@ -22,17 +35,18 @@ pub async fn refresh_cache(Json(mut task): Json<schedule_task::Model>) {
     };
 
     if let Err(e) = result {
-        let db = App::global()
+        tracing::error!("task schedule error:{:?}", e);
+        let db = app
             .get_component::<DbConn>()
             .expect("fenbi sync service not found");
-        let error_count = task.error_count;
-        let mut active_model = task.into_active_model();
-        active_model.active = Set(false);
-        active_model.error_cause = Set(format!("{:?}", e));
-        active_model.error_count = Set(error_count + 1);
-        active_model
-            .optimistic_update(&db)
-            .await
-            .expect("update error task failed");
+        schedule_task::ActiveModel {
+            id: Set(task.id),
+            version: Set(task.version + 1),
+            active: Set(false),
+            ..Default::default()
+        }
+        .optimistic_update(&db)
+        .await
+        .expect("update error task failed");
     }
 }

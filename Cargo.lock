@@ -1026,6 +1026,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "chrono",
+ "dashmap",
  "derive_more 1.0.0",
  "dtiku-base",
  "dtiku-paper",
@@ -4431,9 +4432,9 @@ dependencies = [
 
 [[package]]
 name = "spring-job"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d5f85458dfbb22d9a9b4a677b6e5b426b3159bbe8feb4f7e6a80183c130b5ae"
+checksum = "c839ab329c08568518f54dea09be9b00d064be978f130529ff3912b3c0b25476"
 dependencies = [
  "anyhow",
  "chrono",

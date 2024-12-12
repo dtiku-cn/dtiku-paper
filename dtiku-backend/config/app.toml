@@ -6,13 +6,14 @@ graceful = true
 static = { enable = true }
 
 [logger]
+# level = "debug"
 pretty_backtrace = true
 
 [sqlx]
-uri = "postgres://postgres:12345@localhost:5432/dtiku"
+uri = "postgres://postgres:12345@localhost:5432/postgres?options=-c%20search_path%3Dpublic"
 
 [sea-orm]
-uri = "postgres://postgres:12345@localhost:5432/postgres"
+uri = "postgres://postgres:12345@localhost:5432/postgres?options=-c%20search_path%3Ddtiku"
 
 [stream]
 uri = "redis://localhost"
