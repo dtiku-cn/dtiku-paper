@@ -28,7 +28,7 @@ derive_more = "1"
 itertools = "0.13"
 thiserror = "2"
 anyhow = "1"
-fastembed = { git = "https://github.com/dtiku-cn/fastembed-rs.git", rev = "ac6bd934943e7fc6073d895ccd2a3bbf61dea0e1", features = [
+fastembed = { git = "https://github.com/dtiku-cn/fastembed-rs.git", rev = "83fb118cd7c74e19d408b725ba345b62d3c78ecb", features = [
     "online",
 ] }
 # rust-bert = "0.23"

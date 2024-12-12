@@ -23,18 +23,16 @@ impl Plugin for EmbeddingPlugin {
             .expect("load huggingface config failed");
         let cache_dir = hf_config.cache_dir;
         let text_embedding = TextEmbedding::try_new(
-            InitOptions::new(EmbeddingModel::ParaphraseMLMpnetBaseV2)
+            InitOptions::new(EmbeddingModel::ParaphraseMLMiniLML12V2Q)
                 .with_show_download_progress(true)
-                .with_cache_dir(
-                    format!("{cache_dir}/sentence-transformers/paraphrase-mpnet-base-v2").into(),
-                ),
+                .with_cache_dir(format!("{cache_dir}/sentence-transformers").into()),
         )
         .expect("text embedding init failed");
 
         let image_embedding = ImageEmbedding::try_new(
             ImageInitOptions::new(ImageEmbeddingModel::Resnet50)
                 .with_show_download_progress(true)
-                .with_cache_dir(format!("{cache_dir}/Qdrant/resnet50-onnx").into()),
+                .with_cache_dir(format!("{cache_dir}/resnet").into()),
         )
         .expect("image embedding init failed");
 
