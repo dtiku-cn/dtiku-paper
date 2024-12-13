@@ -26,7 +26,7 @@ pub struct TaskInstanceRegistry(DashMap<ScheduleTaskType, TaskInstance>);
 
 impl TaskInstanceRegistry {
     pub fn register_task_if_not_running(&self, task_type: ScheduleTaskType) -> TaskInstance {
-        todo!()
+        self.0.entry(task_type).or_insert_with(Default::default).clone()
     }
 
     #[inline]

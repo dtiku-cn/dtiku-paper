@@ -29,7 +29,22 @@ impl Progress<i64> {
 pub struct TaskInstance {
     id: String,
     start_time: DateTime,
-    end_time: DateTime,
+    end_time: Option<DateTime>,
+}
+
+impl Default for TaskInstance {
+    fn default() -> Self {
+        let now = Local::now().naive_local();
+        Self {
+            id: now
+                .format("%Y%m%d%H%M%S")
+                .to_string()
+                .parse()
+                .expect("task instance id format parse failed"),
+            start_time: now,
+            end_time: None,
+        }
+    }
 }
 
 #[async_trait]
@@ -68,9 +83,9 @@ impl ActiveModel {
         let old_version = match self.version {
             ActiveValue::Set(v) => v - 1,
             ActiveValue::Unchanged(v) => v,
-            _ => Err(Error::OptimisticLockErr(format!(
-                "schedule_task version not set"
-            )))?,
+            _ => Err(Error::OptimisticLockErr(
+                "schedule_task version not set".to_string(),
+            ))?,
         };
         self.version = Set(old_version + 1);
         let am = ActiveModelBehavior::before_save(self, db, false).await?;

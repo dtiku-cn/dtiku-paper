@@ -1,3 +1,4 @@
+use crate::config::hf_config::HfConfig;
 use derive_more::derive::Deref;
 use fastembed::{
     EmbeddingModel, ImageEmbedding, ImageEmbeddingModel, ImageInitOptions, InitOptions,
@@ -10,8 +11,6 @@ use spring::{
     plugin::{MutableComponentRegistry as _, Plugin},
 };
 use std::sync::Arc;
-
-use crate::config::hf_config::HfConfig;
 
 pub struct EmbeddingPlugin;
 
