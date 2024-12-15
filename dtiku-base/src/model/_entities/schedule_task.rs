@@ -16,7 +16,7 @@ pub struct Model {
     pub context: Json,
     pub run_count: i32,
     #[sea_orm(column_type = "JsonBinary")]
-    pub instance_ids: Json,
+    pub instances: Json,
     pub created: DateTime,
     pub modified: DateTime,
 }

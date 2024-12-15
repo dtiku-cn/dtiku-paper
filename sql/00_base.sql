@@ -13,7 +13,7 @@ create table if not exists schedule_task(
     active bool not null,
     context jsonb not null,
     run_count integer not null,
-    instance_ids jsonb not null,
+    instances jsonb not null,
     created timestamp not null,
     modified timestamp not null
 );

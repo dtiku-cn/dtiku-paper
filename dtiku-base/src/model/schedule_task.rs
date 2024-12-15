@@ -1,11 +1,14 @@
 pub use super::_entities::schedule_task::*;
 use crate::error::Error;
+use crate::model::enums::ScheduleTaskType;
+use crate::model::schedule_task::Column::Ty;
 use anyhow::Context;
 use sea_orm::{
     prelude::DateTime, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue, ColumnTrait,
-    ConnectionTrait, DbErr, EntityTrait, IntoActiveModel, QueryFilter, Set,
+    ConnectionTrait, DbErr, EntityTrait, QueryFilter, Set,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use spring::{async_trait, plugin::ComponentRegistry, App};
 use spring_stream::Producer;
 
@@ -64,10 +67,8 @@ impl ActiveModelBehavior for ActiveModel {
     where
         C: ConnectionTrait,
     {
-        if model.active {
-            let producer = App::global()
-                .get_component::<Producer>()
-                .expect("stream producer component don't exists");
+        if model.active && model.context == Value::Null {
+            let producer = App::global().get_expect_component::<Producer>();
             let _ = producer.send_json("task", &model).await;
         }
         Ok(model)
@@ -117,5 +118,26 @@ impl Model {
         .await
         .context("update progress failed")?;
         Ok(model)
+    }
+}
+
+impl Entity {
+    pub async fn find_all<C>(db: &C) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        let all = Entity::find()
+            .all(db)
+            .await
+            .context("find all task failed")?;
+
+        Ok(all)
+    }
+
+    pub async fn find_by_type<C>(db: &C, ty: ScheduleTaskType) -> anyhow::Result<Option<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        Ok(Entity::find().filter(Ty.eq(ty)).one(db).await?)
     }
 }

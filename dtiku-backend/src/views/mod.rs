@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 pub mod config;
+pub mod task;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

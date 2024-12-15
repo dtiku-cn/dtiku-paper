@@ -10,7 +10,7 @@ use spring::{auto_config, App};
 use spring_redis::RedisPlugin;
 use spring_sea_orm::SeaOrmPlugin;
 use spring_sqlx::SqlxPlugin;
-use spring_stream::StreamPlugin;
+use spring_stream::{StreamConfigurator, StreamPlugin};
 use spring_web::{WebConfigurator, WebPlugin};
 
 #[auto_config(WebConfigurator)]
@@ -24,6 +24,7 @@ async fn main() {
         .add_plugin(RedisPlugin)
         .add_plugin(EmbeddingPlugin)
         .add_plugin(RunningJobsPlugin)
+        .add_consumer(jobs::consumer())
         .run()
         .await
 }

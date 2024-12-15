@@ -10,10 +10,10 @@ static = { enable = true }
 pretty_backtrace = true
 
 [sqlx]
-uri = "postgres://postgres:12345@localhost:5432/postgres?options=-c%20search_path%3Dpublic"
+uri = "${SRC_DATABASE_URL}"
 
 [sea-orm]
-uri = "postgres://postgres:12345@localhost:5432/postgres?options=-c%20search_path%3Ddtiku"
+uri = "${DATABASE_URL}"
 
 [stream]
 uri = "redis://localhost"

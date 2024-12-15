@@ -13,13 +13,14 @@ use spring::plugin::service::Service;
 use spring::{async_trait, plugin::ComponentRegistry, tracing, App};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
+use spring_stream::handler::TypedConsumer;
 use spring_stream::{
     extractor::{Component, Json},
-    stream_listener,
+    stream_listener, Consumers,
 };
 
 #[stream_listener("task")]
-pub async fn refresh_cache(
+async fn task_schedule(
     Json(mut task): Json<schedule_task::Model>,
     Component(running_jobs): Component<RunningJobs>,
 ) {
@@ -60,4 +61,8 @@ trait JobScheduler {
     fn current_task(&mut self) -> &mut schedule_task::Model;
 
     async fn inner_start(&mut self) -> anyhow::Result<()>;
+}
+
+pub(crate) fn consumer() -> Consumers {
+    Consumers::new().typed_consumer(task_schedule)
 }
