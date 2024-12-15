@@ -1,8 +1,10 @@
+use crate::jobs::JobScheduler;
 use crate::plugins::fastembed::TxtEmbedding;
+use crate::plugins::jobs::RunningJobs;
 use crate::utils::regex::pick_year;
 use anyhow::Context;
 use dtiku_base::model::schedule_task;
-use dtiku_base::model::schedule_task::Progress;
+use dtiku_base::model::schedule_task::{Progress, TaskInstance};
 use dtiku_paper::model::exam_category;
 use dtiku_paper::model::label;
 use dtiku_paper::model::material;
@@ -36,7 +38,7 @@ use serde::Serialize;
 use serde_json::Value;
 use serde_with::{formats::CommaSeparator, serde_as, StringWithSeparator};
 use spring::plugin::service::Service;
-use spring::tracing;
+use spring::{async_trait, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::sqlx;
 use spring_sqlx::ConnectPool;
@@ -55,6 +57,7 @@ static CLOSED_ENDED_ANSWER: [i16; 1] = [13];
 static OPEN_ENDED_ANSWER: [i16; 3] = [14, 15, 303];
 
 #[derive(Clone, Service)]
+#[prototype]
 pub struct FenbiSyncService {
     #[inject(component)]
     source_db: ConnectPool,
@@ -62,11 +65,18 @@ pub struct FenbiSyncService {
     target_db: DbConn,
     #[inject(component)]
     txt_embedding: TxtEmbedding,
+    task: schedule_task::Model,
+    instance: TaskInstance,
 }
 
-impl FenbiSyncService {
-    pub async fn start(&self, task: &mut schedule_task::Model) -> anyhow::Result<()> {
-        let mut progress = match task.context {
+#[async_trait]
+impl JobScheduler for FenbiSyncService {
+    fn current_task(&mut self) -> &mut schedule_task::Model {
+        &mut self.task
+    }
+
+    async fn inner_start(&mut self) -> anyhow::Result<()> {
+        let mut progress = match &self.task.context {
             Value::Null => {
                 let total = self
                     .total("select count(*) as total from label where from_ty='fenbi'")
@@ -76,13 +86,16 @@ impl FenbiSyncService {
                     total,
                     current: 0,
                 };
-                *task = task.update_progress(&progress, &self.target_db).await?;
+                self.task = self
+                    .task
+                    .update_progress(&progress, &self.target_db)
+                    .await?;
                 progress
             }
-            _ => serde_json::from_value(task.context.clone())?,
+            _ => serde_json::from_value(self.task.context.clone())?,
         };
         if progress.name == "sync_label" {
-            self.sync_label(task, &mut progress).await?;
+            self.sync_label(&mut progress).await?;
 
             let total = self
                 .total("select max(id) as total from paper where from_ty='fenbi'")
@@ -92,14 +105,19 @@ impl FenbiSyncService {
                 total,
                 current: 0,
             };
-            *task = task.update_progress(&progress, &self.target_db).await?;
+            self.task = self
+                .task
+                .update_progress(&progress, &self.target_db)
+                .await?;
         }
         if progress.name == "sync_paper" {
-            self.sync_paper(task, &mut progress).await?;
+            self.sync_paper(&mut progress).await?;
         }
         Ok(())
     }
+}
 
+impl FenbiSyncService {
     async fn total(&self, sql: &str) -> anyhow::Result<i64> {
         Ok(sqlx::query(&sql)
             .fetch_one(&self.source_db)
@@ -109,13 +127,9 @@ impl FenbiSyncService {
             .context("get total failed")?)
     }
 
-    async fn sync_label(
-        &self,
-        task: &mut schedule_task::Model,
-        progress: &mut Progress<i64>,
-    ) -> anyhow::Result<()> {
+    async fn sync_label(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
         let mut stream = sqlx::query_as::<_,OriginLabel>(r##"
-        select 
+        select
             jsonb_extract_path_text(extra,'course_set','liveConfigItem','name') as exam_root,
             jsonb_extract_path_text(extra,'course_set','liveConfigItem','prefix') as exam_root_prefix,
             jsonb_extract_path_text(extra,'course_set','courseSet','name') as exam_name,
@@ -144,7 +158,10 @@ impl FenbiSyncService {
                         .context("update source db label target_id failed")?;
 
                     if progress.increase(1) {
-                        *task = task.update_progress(&progress, &self.target_db).await?;
+                        self.task = self
+                            .task
+                            .update_progress(&progress, &self.target_db)
+                            .await?;
                     }
                 }
                 Err(e) => tracing::error!("find label failed: {:?}", e),
@@ -154,17 +171,13 @@ impl FenbiSyncService {
         Ok(())
     }
 
-    async fn sync_paper(
-        &self,
-        task: &mut schedule_task::Model,
-        progress: &mut Progress<i64>,
-    ) -> anyhow::Result<()> {
+    async fn sync_paper(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
         while progress.current < progress.total {
             let current = progress.current;
             let next_step_id: i64 = current + 1000;
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
-                    select 
+                    select
                         jsonb_extract_path_text(extra,'name') as name,
                         jsonb_extract_path_text(extra,'date') as date,
                         jsonb_extract_path_text(extra,'topic') as topic,
@@ -194,7 +207,10 @@ impl FenbiSyncService {
                             .context("update source db label target_id failed")?;
 
                         progress.current = source_id;
-                        *task = task.update_progress(&progress, &self.target_db).await?;
+                        self.task = self
+                            .task
+                            .update_progress(&progress, &self.target_db)
+                            .await?;
                     }
                     Err(e) => tracing::error!("find label failed: {:?}", e),
                 };
@@ -269,7 +285,7 @@ impl FenbiSyncService {
         .bind(qids)
         .fetch_all(&self.source_db)
         .await
-        .with_context(|| format!("find question failed"))?;
+        .with_context(|| format!("find question_ids({source_paper_id}) failed"))?;
 
         let material_ids: Vec<MaterialIdNumber> = sqlx::query_as(
             r##"
@@ -309,7 +325,7 @@ impl FenbiSyncService {
         .bind(mids)
         .fetch_all(&self.source_db)
         .await
-        .with_context(|| format!("find material failed"))?;
+        .with_context(|| format!("find material({source_paper_id}) failed"))?;
 
         self.save_questions_and_materials(questions, materials, paper, &qid_num_map, &mid_num_map)
             .await?;

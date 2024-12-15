@@ -16,4 +16,3 @@ strum = { workspace = true, features = ["derive"] }
 itertools = { workspace = true }
 anyhow = { workspace = true }
 fastembed = { workspace = true }
-# rust-bert = "0.23"
