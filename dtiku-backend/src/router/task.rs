@@ -8,12 +8,11 @@ use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
 use serde_json::json;
 use spring_sea_orm::DbConn;
-use spring_stream::Producer;
 use spring_web::axum::response::IntoResponse;
 use spring_web::axum::Json;
 use spring_web::error::Result;
 use spring_web::extractor::{Component, Path};
-use spring_web::get;
+use spring_web::{get, post};
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
@@ -33,10 +32,34 @@ async fn list_tasks(Component(db): Component<DbConn>) -> Result<impl IntoRespons
 }
 
 #[get("/api/tasks/:ty")]
+async fn get_task(
+    Path(ty): Path<ScheduleTaskType>,
+    Component(db): Component<DbConn>,
+) -> Result<impl IntoResponse> {
+    let task = ScheduleTask::find_by_type(&db, ty).await?;
+    let model = match task {
+        Some(task) => task,
+        None => schedule_task::ActiveModel {
+            version: Set(1),
+            ty: Set(ty),
+            run_count: Set(0),
+            context: Set(json!(null)),
+            instances: Set(json!([])),
+            active: Set(false),
+            ..Default::default()
+        }
+        .insert(&db)
+        .await
+        .context("insert task failed")?,
+    };
+
+    Ok(Json(ScheduleTaskView::from(model)))
+}
+
+#[post("/api/tasks/:ty")]
 async fn start_task(
     Path(ty): Path<ScheduleTaskType>,
     Component(db): Component<DbConn>,
-    Component(p): Component<Producer>,
 ) -> Result<impl IntoResponse> {
     let task = ScheduleTask::find_by_type(&db, ty).await?;
     let model = match task {
@@ -47,9 +70,9 @@ async fn start_task(
             version: Set(task.version + 1),
             ..Default::default()
         }
-        .insert(&db)
+        .update(&db)
         .await
-        .context("insert task failed")?,
+        .context("update task failed")?,
         None => schedule_task::ActiveModel {
             version: Set(1),
             ty: Set(ty),
@@ -59,9 +82,9 @@ async fn start_task(
             active: Set(true),
             ..Default::default()
         }
-        .update(&db)
+        .insert(&db)
         .await
-        .context("update task failed")?,
+        .context("insert task failed")?,
     };
     Ok(Json(model))
 }
