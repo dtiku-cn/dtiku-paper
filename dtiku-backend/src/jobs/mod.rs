@@ -24,10 +24,11 @@ async fn task_schedule(
     Json(mut task): Json<schedule_task::Model>,
     Component(running_jobs): Component<RunningJobs>,
 ) {
-    if running_jobs.is_running(task.ty) {
+    let ty = task.ty;
+    if running_jobs.is_running(ty) {
         return;
     }
-    let instance = running_jobs.register_task_if_not_running(task.ty);
+    let instance = running_jobs.register_task_if_not_running(ty);
 
     match task.ty {
         ScheduleTaskType::FenbiSync => {
@@ -37,6 +38,7 @@ async fn task_schedule(
                 .await
         }
     };
+    running_jobs.remove(&ty);
 }
 
 #[async_trait]

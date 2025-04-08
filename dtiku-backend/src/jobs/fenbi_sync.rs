@@ -141,7 +141,7 @@ impl FenbiSyncService {
             id
         from label
         where from_ty = 'fenbi'
-        order by exam_root,exam_name,paper_type,parent_label,label_name
+        order by exam_root,exam_name,paper_type,parent_label asc NULLS FIRST,label_name
         "##).fetch(&self.source_db);
 
         while let Some(row) = stream.next().await {
@@ -150,7 +150,7 @@ impl FenbiSyncService {
                     let source_id = row.id;
                     let label = row.save_to(&self.target_db).await?;
 
-                    sqlx::query("update label set target_id=? where id=?")
+                    sqlx::query("update label set target_id=$1 where id=$2")
                         .bind(label.id)
                         .bind(source_id)
                         .execute(&self.source_db)
@@ -186,7 +186,7 @@ impl FenbiSyncService {
                         id,
                         label_id
                     from paper
-                    where from_ty = 'fenbi' and id > ? and id <= ?
+                    where from_ty = 'fenbi' and id > $1 and id <= $2
                     "##,
             )
             .bind(current)
@@ -199,7 +199,7 @@ impl FenbiSyncService {
                         let source_id = row.id;
                         let paper = self.save_paper(row).await?;
 
-                        sqlx::query("update paper set target_id=? where id=?")
+                        sqlx::query("update paper set target_id=$1 where id=$2")
                             .bind(paper.id)
                             .bind(source_id)
                             .execute(&self.source_db)
@@ -221,7 +221,7 @@ impl FenbiSyncService {
 
     async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
         let source_paper_id = paper.id;
-        let target_label_id: i32 = sqlx::query("select target_id from label where id = ?")
+        let target_label_id: i32 = sqlx::query("select target_id from label where id = $1")
             .bind(paper.label_id)
             .fetch_one(&self.source_db)
             .await
@@ -248,7 +248,7 @@ impl FenbiSyncService {
                 number
             from paper_question
             where from_ty = 'fenbi'
-            and paper_id = ?
+            and paper_id = $1
             order by number
             "##,
         )
@@ -279,7 +279,7 @@ impl FenbiSyncService {
                 jsonb_extract_path(extra,'keypoints') as keypoints
             from question
             where from_ty = 'fenbi'
-            and id in (?)
+            and id in ($1)
         "##,
         )
         .bind(qids)
@@ -294,7 +294,7 @@ impl FenbiSyncService {
                 number
             from paper_material
             where from_ty = 'fenbi'
-            and paper_id = ?
+            and paper_id = $1
             order by number
             "##,
         )
@@ -319,7 +319,7 @@ impl FenbiSyncService {
                 jsonb_extract_path(extra,'accessories') as accessories
             from material
             where from_ty = 'fenbi'
-            and id in (?)
+            and id in ($1)
         "##,
         )
         .bind(mids)
@@ -397,7 +397,7 @@ impl FenbiSyncService {
     }
 }
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 struct OriginLabel {
     exam_root: Option<String>,
     exam_root_prefix: Option<String>,
@@ -412,6 +412,9 @@ struct OriginLabel {
 
 impl OriginLabel {
     async fn save_to<C: ConnectionTrait>(self, db: &C) -> anyhow::Result<label::Model> {
+        let id = self.id;
+        let name = self.label_name.clone();
+
         let root = exam_category::ActiveModel {
             pid: Set(0),
             name: Set(self.exam_root.expect("exam_root is none")),
@@ -420,7 +423,9 @@ impl OriginLabel {
         }
         .insert_on_conflict(db)
         .await
-        .context("insert root exam_category failed")?;
+        .context(format!(
+            "insert root exam_category failed:#{id:?}--->{name:?}"
+        ))?;
 
         let second = exam_category::ActiveModel {
             pid: Set(root.id),
@@ -430,7 +435,9 @@ impl OriginLabel {
         }
         .insert_on_conflict(db)
         .await
-        .context("insert second exam_category failed")?;
+        .context(format!(
+            "insert second exam_category failed:#{id:?}--->{name:?}"
+        ))?;
 
         let leaf = exam_category::ActiveModel {
             pid: Set(second.id),
@@ -440,7 +447,9 @@ impl OriginLabel {
         }
         .insert_on_conflict(db)
         .await
-        .context("insert leaf exam_category failed")?;
+        .context(format!(
+            "insert leaf exam_category failed:#{id:?}--->{name:?}"
+        ))?;
 
         let label_name = self.label_name.expect("label_name is none");
         let label = match self.parent_label {
@@ -465,7 +474,7 @@ impl OriginLabel {
                     }
                     .insert_on_conflict(db)
                     .await
-                    .context("insert parent label failed")?,
+                    .context(format!("insert parent label failed:#{id:?}--->{name:?}"))?,
                     Some(parent_label) => parent_label,
                 };
                 label::ActiveModel {
@@ -477,11 +486,10 @@ impl OriginLabel {
                 }
             }
         };
-
         let label = label
             .insert_on_conflict(db)
             .await
-            .context("insert label failed")?;
+            .context(format!("insert label failed:#{id:?}--->{name:?}"))?;
         Ok(label)
     }
 }
