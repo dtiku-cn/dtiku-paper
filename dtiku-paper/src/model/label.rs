@@ -14,7 +14,7 @@ impl ActiveModel {
         Entity::insert(self)
             .on_conflict(
                 OnConflict::columns([Column::PaperType, Column::Pid, Column::Name])
-                    .do_nothing()
+                    .update_column(Column::ExamId)
                     .to_owned(),
             )
             .exec_with_returning(db)

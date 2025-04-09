@@ -24,7 +24,8 @@ create table if not exists paper(
     exam_id int2 not null,
     paper_type int2 not null,
     label_id integer not null,
-    extra jsonb not null
+    extra jsonb not null,
+    unique(label_id, title)
 );
 -- 类别
 create table if not exists chapter_category(

@@ -181,7 +181,7 @@ impl FenbiSyncService {
                         jsonb_extract_path_text(extra,'name') as name,
                         jsonb_extract_path_text(extra,'date') as date,
                         jsonb_extract_path_text(extra,'topic') as topic,
-                        jsonb_extract_path_text(extra,'type') as ty,
+                        (jsonb_extract_path(extra,'type'))::int as ty,
                         jsonb_extract_path_text(extra,'chapters') as chapters,
                         id,
                         label_id
@@ -268,18 +268,18 @@ impl FenbiSyncService {
             select
                 id,
                 target_id,
-                jsonb_extract_path(extra,'type') as ty,
-                jsonb_extract_path(extra,'content') as content,
+                (jsonb_extract_path(extra,'type'))::int2 as ty,
+                jsonb_extract_path_text(extra,'content') as content,
                 jsonb_extract_path(extra,'accessories') as accessories,
-                jsonb_extract_path(extra,'questionMeta','correctRatio') as correct_ratio,
+                (jsonb_extract_path(extra,'questionMeta','correctRatio'))::real as correct_ratio,
                 jsonb_extract_path(extra,'correctAnswer') as correct_answer,
-                jsonb_extract_path(extra,'solution') as solution,
+                jsonb_extract_path_text(extra,'solution') as solution,
                 jsonb_extract_path(extra,'solutionAccessories') as solution_accessories,
                 jsonb_extract_path(extra,'material') as material,
                 jsonb_extract_path(extra,'keypoints') as keypoints
             from question
             where from_ty = 'fenbi'
-            and id in ($1)
+            and id = any($1)
         "##,
         )
         .bind(qids)
@@ -314,12 +314,12 @@ impl FenbiSyncService {
             select
                 id,
                 target_id,
-                jsonb_extract_path(extra,'type') as ty,
-                jsonb_extract_path(extra,'content') as content,
+                (jsonb_extract_path(extra,'type'))::int2 as ty,
+                jsonb_extract_path_text(extra,'content') as content,
                 jsonb_extract_path(extra,'accessories') as accessories
             from material
             where from_ty = 'fenbi'
-            and id in ($1)
+            and id = any($1)
         "##,
         )
         .bind(mids)
@@ -499,7 +499,7 @@ struct OriginPaper {
     name: Option<String>,
     date: Option<String>,
     topic: Option<String>,
-    ty: Option<i64>,
+    ty: Option<i32>,
     chapters: Option<String>,
     id: i64,
     label_id: i64,
@@ -594,7 +594,7 @@ struct OriginQuestion {
     ty: i16,
     content: String,
     accessories: Json<Vec<QuestionAccessory>>,
-    material: Json<OriginMaterial>,
+    material: Option<Json<OriginMaterial>>,
     keypoints: Json<Vec<OriginKeyPoint>>,
     correct_ratio: Option<f32>,
     correct_answer: Json<CorrectAnswer>,
@@ -856,6 +856,7 @@ struct CorrectAnswer {
 struct OriginMaterial {
     pub id: i64,
     pub target_id: Option<i32>,
+    pub ty: i16,
     pub content: String,
     pub accessories: Json<Vec<MaterialAccessory>>,
 }
