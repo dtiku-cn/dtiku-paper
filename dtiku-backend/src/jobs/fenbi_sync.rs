@@ -272,11 +272,11 @@ impl FenbiSyncService {
                 jsonb_extract_path_text(extra,'content') as content,
                 jsonb_extract_path(extra,'accessories') as accessories,
                 (jsonb_extract_path(extra,'questionMeta','correctRatio'))::real as correct_ratio,
-                jsonb_extract_path(extra,'correctAnswer') as correct_answer,
+                nullif(jsonb_extract_path(extra,'correctAnswer'), 'null') as correct_answer,
                 jsonb_extract_path_text(extra,'solution') as solution,
                 jsonb_extract_path(extra,'solutionAccessories') as solution_accessories,
-                jsonb_extract_path(extra,'material') as material,
-                jsonb_extract_path(extra,'keypoints') as keypoints
+                nullif(jsonb_extract_path(extra,'material'), 'null') as material,
+                nullif(jsonb_extract_path(extra,'keypoints'), 'null') as keypoints
             from question
             where from_ty = 'fenbi'
             and id = any($1)
@@ -285,7 +285,7 @@ impl FenbiSyncService {
         .bind(qids)
         .fetch_all(&self.source_db)
         .await
-        .with_context(|| format!("find question_ids({source_paper_id}) failed"))?;
+        .with_context(|| format!("find questions({source_paper_id}) failed"))?;
 
         let material_ids: Vec<MaterialIdNumber> = sqlx::query_as(
             r##"
@@ -314,7 +314,6 @@ impl FenbiSyncService {
             select
                 id,
                 target_id,
-                (jsonb_extract_path(extra,'type'))::int2 as ty,
                 jsonb_extract_path_text(extra,'content') as content,
                 jsonb_extract_path(extra,'accessories') as accessories
             from material
@@ -587,7 +586,7 @@ struct QuestionIdNumber {
     number: i32,
 }
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 struct OriginQuestion {
     id: i64,
     target_id: Option<i32>,
@@ -595,9 +594,9 @@ struct OriginQuestion {
     content: String,
     accessories: Json<Vec<QuestionAccessory>>,
     material: Option<Json<OriginMaterial>>,
-    keypoints: Json<Vec<OriginKeyPoint>>,
+    keypoints: Option<Json<Vec<OriginKeyPoint>>>,
     correct_ratio: Option<f32>,
-    correct_answer: Json<CorrectAnswer>,
+    correct_answer: Option<Json<CorrectAnswer>>,
     solution: Option<String>,
     solution_accessories: Json<Vec<SolutionAccessory>>,
 }
@@ -709,9 +708,11 @@ impl OriginQuestion {
             solution_accessories,
             ..
         } = self;
+        let correct_answer = correct_answer.clone();
         let extra = if SINGLE_CHOICE.contains(ty) {
             solution::SolutionExtra::SingleChoice(SingleChoice {
                 answer: correct_answer
+                    .expect("correct_answer is none")
                     .choice
                     .clone()
                     .expect("correct_answer.choice is none")
@@ -720,6 +721,7 @@ impl OriginQuestion {
             })
         } else if MULTI_CHOICE.contains(ty) {
             let answer = correct_answer
+                .expect("correct_answer is none")
                 .choice
                 .clone()
                 .expect("correct_answer.choice is none");
@@ -729,6 +731,7 @@ impl OriginQuestion {
             })
         } else if INDEFINITE_CHOICE.contains(ty) {
             let answer = correct_answer
+                .expect("correct_answer is none")
                 .choice
                 .clone()
                 .expect("correct_answer.choice is none");
@@ -739,6 +742,7 @@ impl OriginQuestion {
         } else if BLANK_CHOICE.contains(ty) {
             solution::SolutionExtra::BlankChoice(SingleChoice {
                 answer: correct_answer
+                    .expect("correct_answer is none")
                     .choice
                     .clone()
                     .expect("correct_answer.choice is none")
@@ -748,6 +752,7 @@ impl OriginQuestion {
         } else if TRUE_FALSE.contains(ty) {
             solution::SolutionExtra::TrueFalse(TrueFalseChoice {
                 answer: correct_answer
+                    .expect("correct_answer is none")
                     .choice
                     .clone()
                     .expect("correct_answer.choice is none")
@@ -757,6 +762,7 @@ impl OriginQuestion {
             })
         } else if FILL_BLANK.contains(ty) {
             let blanks = correct_answer
+                .expect("correct_answer is none")
                 .blanks
                 .clone()
                 .expect("correct_answer.blanks is none");
@@ -769,11 +775,14 @@ impl OriginQuestion {
                 solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
                     analysis: solution.clone().expect("solution is none"),
                     answer: correct_answer
+                        .expect("correct_answer is none")
                         .answer
                         .clone()
                         .expect("correct_answer.answer is none"),
                 })
-            } else if solution_accessories.len() > 1 && correct_answer.answer.is_none() {
+            } else if solution_accessories.len() > 1
+                && correct_answer.clone().is_none_or(|c| c.answer.is_none())
+            {
                 let analysis = solution_accessories
                     .0
                     .iter()
@@ -790,7 +799,10 @@ impl OriginQuestion {
                     .map(|a| a.convert_into())
                     .collect();
                 solution::SolutionExtra::OtherQA(OtherAnswer {
-                    answer: correct_answer.answer.clone(),
+                    answer: correct_answer
+                        .expect("correct_answer is none")
+                        .answer
+                        .clone(),
                     solution: solution.clone(),
                     analysis,
                 })
@@ -814,7 +826,7 @@ impl OriginQuestion {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct QuestionAccessory {
     #[serde(rename = "type")]
@@ -835,12 +847,12 @@ struct QuestionAccessory {
     pub duration: Option<i64>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SolutionAccessory {}
 
 #[serde_as]
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CorrectAnswer {
     #[serde(rename = "type")]
@@ -851,12 +863,11 @@ struct CorrectAnswer {
     pub answer: Option<String>,
 }
 
-#[derive(Debug, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 struct OriginMaterial {
     pub id: i64,
     pub target_id: Option<i32>,
-    pub ty: i16,
     pub content: String,
     pub accessories: Json<Vec<MaterialAccessory>>,
 }
@@ -918,7 +929,7 @@ impl SolutionAccessory {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MaterialAccessory {
     #[serde(rename = "type")]
@@ -929,7 +940,7 @@ pub struct MaterialAccessory {
     pub url: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct OriginKeyPoint {
     pub id: i64,
     pub name: String,
