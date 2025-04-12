@@ -128,7 +128,7 @@ impl FenbiSyncService {
     }
 
     async fn sync_label(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
-        let mut stream = sqlx::query_as::<_,OriginLabel>(r##"
+        let mut stream = sqlx::query_as::<_, OriginLabel>(r##"
         select
             jsonb_extract_path_text(extra,'course_set','liveConfigItem','name') as exam_root,
             jsonb_extract_path_text(extra,'course_set','liveConfigItem','prefix') as exam_root_prefix,
@@ -315,7 +315,7 @@ impl FenbiSyncService {
                 id,
                 target_id,
                 jsonb_extract_path_text(extra,'content') as content,
-                jsonb_extract_path(extra,'accessories') as accessories
+                nullif(jsonb_extract_path(extra,'accessories'), 'null') as accessories
             from material
             where from_ty = 'fenbi'
             and id = any($1)
@@ -603,13 +603,15 @@ struct OriginQuestion {
 
 impl OriginQuestion {
     fn to_question(&self, model: &TxtEmbedding) -> anyhow::Result<question::ActiveModel> {
-        let Self { ty, content, .. } = self;
+        let Self {
+            id, ty, content, ..
+        } = self;
         let mut options_string = String::new();
         let extra = if SINGLE_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("SingleChoice don't contains 101/102 options");
+            let os = list.last().expect(&format!(
+                "q#{id} SingleChoice don't contains 101/102 options:{list:?}"
+            ));
             let options = os
                 .options
                 .clone()
@@ -618,70 +620,82 @@ impl OriginQuestion {
             question::QuestionExtra::SingleChoice(options)
         } else if MULTI_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("MultiChoice don't contains 101/102 options");
-            let options = os
-                .options
-                .clone()
-                .expect("MultiChoice 101/102 options is none");
+            let os = list.last().expect(&format!(
+                "q#{id} MultiChoice don't contains 101/102 options:{list:?}"
+            ));
+            let options = os.options.clone().expect(&format!(
+                "q#{id} MultiChoice 101/102 options is none:{list:?}"
+            ));
             options_string = options.iter().join("\n");
             question::QuestionExtra::MultiChoice(options)
         } else if INDEFINITE_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("IndefiniteChoice don't contains 101/102 options");
-            let options = os
-                .options
-                .clone()
-                .expect("IndefiniteChoice 101/102 options is none");
+            let os = list.last().expect(&format!(
+                "q#{id} IndefiniteChoice don't contains 101/102 options:{list:?}"
+            ));
+            let options = os.options.clone().expect(&format!(
+                "q#{id} IndefiniteChoice 101/102 options is none:{list:?}"
+            ));
             options_string = options.iter().join("\n");
             question::QuestionExtra::IndefiniteChoice(options)
         } else if BLANK_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("BlankChoice don't contains 101/102 options");
-            let options = os
-                .options
-                .clone()
-                .expect("BlankChoice 101/102 options is none");
+            let os = list.last().expect(&format!(
+                "q#{id} BlankChoice don't contains 101/102 options:{list:?}"
+            ));
+            let options = os.options.clone().expect(&format!(
+                "q#{id} BlankChoice 101/102 options is none:{list:?}"
+            ));
             options_string = options.iter().join("\n");
             question::QuestionExtra::BlankChoice(options)
         } else if TRUE_FALSE.contains(ty) {
             question::QuestionExtra::TrueFalse
         } else if STEP_BY_STEP_ANSWER.contains(ty) {
             let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list.last().expect("BlankChoice don't contains 182 options");
+            let os = list.last().expect(&format!(
+                "q#{id} BlankChoice don't contains 182 options:{list:?}"
+            ));
             question::QuestionExtra::StepByStepQA(question::QA {
-                title: os.title.clone().expect("StepByStepQA title is none"),
+                title: content.clone(),
                 word_count: os.word_count,
                 material_ids: os.material_indexes.clone(),
             })
         } else if CLOSED_ENDED_ANSWER.contains(ty) {
             let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list
-                .last()
-                .expect("ClosedEndedQA don't contains 182 options");
+            let os = list.last().expect(&format!(
+                "q#{id} ClosedEndedQA don't contains 182 options:{list:?}"
+            ));
             question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os.title.clone().expect("StepByStepQA title is none"),
+                title: os
+                    .title
+                    .clone()
+                    .expect(&format!("q#{id} StepByStepQA title is none:{list:?}")),
                 word_count: os.word_count,
                 material_ids: os.material_indexes.clone(),
             })
         } else if OPEN_ENDED_ANSWER.contains(ty) {
             let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list.last().expect("BlankChoice don't contains 182 options");
+            let os = list.last().expect(&format!(
+                "q#{id} BlankChoice don't contains 182 options:{list:?}"
+            ));
             question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os.title.clone().expect("StepByStepQA title is none"),
+                title: os
+                    .title
+                    .clone()
+                    .expect(&format!("q#{id} StepByStepQA title is none:{list:?}")),
                 word_count: os.word_count,
                 material_ids: os.material_indexes.clone(),
             })
         } else if FILL_BLANK.contains(ty) {
-            let vec = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = vec.last().expect("BlankChoice don't contains 182 options");
+            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
+            let os = list.last().expect(&format!(
+                "q#{id} BlankChoice don't contains 182 options:{list:?}"
+            ));
             question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os.title.clone().expect("StepByStepQA title is none"),
+                title: os
+                    .title
+                    .clone()
+                    .expect(&format!("q#{id} StepByStepQA title is none:{list:?}")),
                 word_count: os.word_count,
                 material_ids: os.material_indexes.clone(),
             })
@@ -702,6 +716,7 @@ impl OriginQuestion {
 
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
         let Self {
+            id,
             ty,
             correct_answer,
             solution,
@@ -712,73 +727,73 @@ impl OriginQuestion {
         let extra = if SINGLE_CHOICE.contains(ty) {
             solution::SolutionExtra::SingleChoice(SingleChoice {
                 answer: correct_answer
-                    .expect("correct_answer is none")
+                    .expect(&format!("q#{id} correct_answer is none"))
                     .choice
                     .clone()
-                    .expect("correct_answer.choice is none")
+                    .expect(&format!("q#{id} correct_answer.choice is none"))
                     .remove(0),
-                analysis: solution.clone().expect("solution is none"),
+                analysis: solution.clone().expect(&format!("q#{id} solution is none")),
             })
         } else if MULTI_CHOICE.contains(ty) {
             let answer = correct_answer
-                .expect("correct_answer is none")
+                .expect(&format!("q#{id} correct_answer is none"))
                 .choice
                 .clone()
-                .expect("correct_answer.choice is none");
+                .expect(&format!("q#{id} correct_answer.choice is none"));
             solution::SolutionExtra::MultiChoice(MultiChoice {
                 answer,
-                analysis: solution.clone().expect("solution is none"),
+                analysis: solution.clone().expect(&format!("q#{id} solution is none")),
             })
         } else if INDEFINITE_CHOICE.contains(ty) {
             let answer = correct_answer
-                .expect("correct_answer is none")
+                .expect(&format!("q#{id} correct_answer is none"))
                 .choice
                 .clone()
-                .expect("correct_answer.choice is none");
+                .expect(&format!("q#{id} correct_answer.choice is none"));
             solution::SolutionExtra::IndefiniteChoice(MultiChoice {
                 answer,
-                analysis: solution.clone().expect("solution is none"),
+                analysis: solution.clone().expect(&format!("q#{id} solution is none")),
             })
         } else if BLANK_CHOICE.contains(ty) {
             solution::SolutionExtra::BlankChoice(SingleChoice {
                 answer: correct_answer
-                    .expect("correct_answer is none")
+                    .expect(&format!("q#{id} correct_answer is none"))
                     .choice
                     .clone()
-                    .expect("correct_answer.choice is none")
+                    .expect(&format!("q#{id} correct_answer.choice is none"))
                     .remove(0),
-                analysis: solution.clone().expect("solution is none"),
+                analysis: solution.clone().expect(&format!("q#{id} solution is none")),
             })
         } else if TRUE_FALSE.contains(ty) {
             solution::SolutionExtra::TrueFalse(TrueFalseChoice {
                 answer: correct_answer
-                    .expect("correct_answer is none")
+                    .expect(&format!("q#{id} correct_answer is none"))
                     .choice
                     .clone()
-                    .expect("correct_answer.choice is none")
+                    .expect(&format!("q#{id} correct_answer.choice is none"))
                     .remove(0)
                     == 0,
-                analysis: solution.clone().expect("solution is none"),
+                analysis: solution.clone().expect(&format!("q#{id} solution is none")),
             })
         } else if FILL_BLANK.contains(ty) {
             let blanks = correct_answer
-                .expect("correct_answer is none")
+                .expect(&format!("q#{id} correct_answer is none"))
                 .blanks
                 .clone()
-                .expect("correct_answer.blanks is none");
+                .expect(&format!("q#{id} correct_answer.blanks is none"));
             solution::SolutionExtra::FillBlank(FillBlank {
                 blanks,
-                analysis: solution.clone().expect("solution is none"),
+                analysis: solution.clone().expect(&format!("q#{id} solution is none")),
             })
         } else {
             if solution_accessories.len() < 1 {
                 solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
-                    analysis: solution.clone().expect("solution is none"),
+                    analysis: solution.clone().expect(&format!("q#{id} solution is none")),
                     answer: correct_answer
-                        .expect("correct_answer is none")
+                        .expect(&format!("q#{id} correct_answer is none"))
                         .answer
                         .clone()
-                        .expect("correct_answer.answer is none"),
+                        .expect(&format!("q#{id} correct_answer.answer is none")),
                 })
             } else if solution_accessories.len() > 1
                 && correct_answer.clone().is_none_or(|c| c.answer.is_none())
@@ -800,7 +815,7 @@ impl OriginQuestion {
                     .collect();
                 solution::SolutionExtra::OtherQA(OtherAnswer {
                     answer: correct_answer
-                        .expect("correct_answer is none")
+                        .expect(&format!("q#{id} correct_answer is none"))
                         .answer
                         .clone(),
                     solution: solution.clone(),
@@ -869,7 +884,7 @@ struct OriginMaterial {
     pub id: i64,
     pub target_id: Option<i32>,
     pub content: String,
-    pub accessories: Json<Vec<MaterialAccessory>>,
+    pub accessories: Option<Json<Vec<MaterialAccessory>>>,
 }
 
 impl TryInto<material::ActiveModel> for OriginMaterial {
@@ -878,6 +893,7 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
     fn try_into(self) -> Result<material::ActiveModel, Self::Error> {
         let extra = self
             .accessories
+            .expect("material accessories is none")
             .0
             .into_iter()
             .map(|a| a.try_into())
