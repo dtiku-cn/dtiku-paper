@@ -30,6 +30,7 @@ use dtiku_paper::model::Question;
 use futures::StreamExt;
 use itertools::Itertools;
 use scraper::Html;
+use sea_orm::prelude::PgVector;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ConnectionTrait;
 use sea_orm::Set;
@@ -361,10 +362,9 @@ impl FenbiSyncService {
             paper_question::ActiveModel {
                 paper_id: Set(paper.id),
                 question_id: Set(q_in_db.id),
-                sort: Set(num.clone() as i16),
-                // category: Set(), TODO
+                sort: Set(*num as i16),
+                keypoint_path: Set("A".to_string()), // TODO: key_point
                 correct_ratio: Set(correct_ratio),
-                ..Default::default()
             }
             .insert(&self.target_db)
             .await
@@ -385,7 +385,7 @@ impl FenbiSyncService {
             paper_material::ActiveModel {
                 paper_id: Set(paper.id),
                 material_id: Set(m_in_db.id),
-                sort: Set(num.clone() as i16),
+                sort: Set(*num as i16),
             }
             .insert(&self.target_db)
             .await
@@ -709,7 +709,7 @@ impl OriginQuestion {
         Ok(question::ActiveModel {
             content: Set(content.into()),
             extra: Set(serde_json::to_value(extra)?),
-            embedding: Set(embedding),
+            embedding: Set(PgVector::from(embedding)),
             ..Default::default()
         })
     }
@@ -786,7 +786,7 @@ impl OriginQuestion {
                 analysis: solution.clone().expect(&format!("q#{id} solution is none")),
             })
         } else {
-            if solution_accessories.len() < 1 {
+            if solution_accessories.len() < 1 && correct_answer.is_some() {
                 solution::SolutionExtra::ClosedEndedQA(AnswerAnalysis {
                     analysis: solution.clone().expect(&format!("q#{id} solution is none")),
                     answer: correct_answer
@@ -814,10 +814,7 @@ impl OriginQuestion {
                     .map(|a| a.convert_into())
                     .collect();
                 solution::SolutionExtra::OtherQA(OtherAnswer {
-                    answer: correct_answer
-                        .expect(&format!("q#{id} correct_answer is none"))
-                        .answer
-                        .clone(),
+                    answer: correct_answer.and_then(|ca| ca.answer.clone()),
                     solution: solution.clone(),
                     analysis,
                 })

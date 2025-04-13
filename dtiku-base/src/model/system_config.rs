@@ -25,7 +25,7 @@ impl ActiveModelBehavior for ActiveModel {
             let mut redis = App::global()
                 .get_component::<Redis>()
                 .expect("redis component don't exists");
-            let _: () = redis.del(&format!("config:{cache_key}")).await.unwrap();
+            let _: () = redis.del(format!("config:{cache_key}")).await.unwrap();
         }
         self.modified = Set(Local::now().naive_local());
         Ok(self)

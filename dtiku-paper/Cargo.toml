@@ -7,11 +7,10 @@ publish = ["crates-io"]
 [dependencies]
 spring = { workspace = true }
 spring-redis = { workspace = true }
-sea-orm = { workspace = true, features = ["sqlx-postgres"] }
+sea-orm = { workspace = true, features = ["sqlx-postgres", "postgres-vector"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_with = { workspace = true }
-pgvector = { workspace = true, features = ["postgres"] }
 strum = { workspace = true, features = ["derive"] }
 itertools = { workspace = true }
 anyhow = { workspace = true }

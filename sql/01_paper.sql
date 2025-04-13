@@ -1,4 +1,5 @@
 create extension if not exists vector;
+create extension if not exists ltree;
 -- 考试类型：root_id为exam_id; leaf_id为paper_type
 create table if not exists exam_category(
     id serial2 primary key,
@@ -27,21 +28,13 @@ create table if not exists paper(
     extra jsonb not null,
     unique(label_id, title)
 );
--- 类别
-create table if not exists chapter_category(
-    id serial primary key,
-    name varchar(32) not null,
-    exam_id int2 not null,
-    paper_type int2 not null
-);
 -- 知识点
 create table if not exists key_point(
     id serial primary key,
     name varchar(32) not null,
     pid integer not null,
     exam_id int2 not null,
-    paper_type int2 not null,
-    category integer not null
+    paper_type int2 not null
 );
 -- 问题
 create table if not exists question(
@@ -50,7 +43,7 @@ create table if not exists question(
     exam_id int2 not null,
     paper_type int2 not null,
     extra jsonb not null,
-    embedding vector(512) not null
+    embedding vector(768) not null
 );
 create table if not exists question_key_point(
     question_id integer not null,
@@ -61,7 +54,7 @@ create table if not exists paper_question (
     paper_id integer not null,
     question_id integer not null,
     sort smallint not null,
-    category integer not null,
+    keypoint_path ltree not null,
     correct_ratio float4 not null,
     primary key (paper_id, question_id)
 );

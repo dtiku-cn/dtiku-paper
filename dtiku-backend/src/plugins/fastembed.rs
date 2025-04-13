@@ -22,7 +22,7 @@ impl Plugin for EmbeddingPlugin {
             .expect("load huggingface config failed");
         let cache_dir = hf_config.cache_dir;
         let text_embedding = TextEmbedding::try_new(
-            InitOptions::new(EmbeddingModel::ParaphraseMLMiniLML12V2Q)
+            InitOptions::new(EmbeddingModel::MultilingualE5Base)
                 .with_show_download_progress(true)
                 .with_cache_dir(format!("{cache_dir}/sentence-transformers").into()),
         )
@@ -55,5 +55,25 @@ pub struct TxtEmbedding(Arc<TextEmbedding>);
 impl TxtEmbedding {
     fn new(model: TextEmbedding) -> Self {
         Self(Arc::new(model))
+    }
+}
+
+mod tests {
+    use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
+    use std::env;
+
+    #[test]
+    fn test_embed() {
+        env::set_var("HF_ENDPOINT", "https://hf-mirror.com");
+        let cache_dir = "/Users/holmofy/rust/dtiku-paper/.hf-cache";
+        let text_embedding = TextEmbedding::try_new(
+            InitOptions::new(EmbeddingModel::MultilingualE5Base)
+                .with_show_download_progress(true)
+                .with_cache_dir(format!("{cache_dir}/sentence-transformers").into()),
+        )
+        .expect("text embedding init failed");
+
+        let r = text_embedding.embed(vec!["hello world"], None);
+        println!("{r:?}")
     }
 }
