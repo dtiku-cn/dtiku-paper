@@ -9,10 +9,10 @@ use dtiku_paper::model::exam_category;
 use dtiku_paper::model::label;
 use dtiku_paper::model::material;
 use dtiku_paper::model::paper;
-use dtiku_paper::model::paper::Chapters;
 use dtiku_paper::model::paper::EssayCluster;
 use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
+use dtiku_paper::model::paper::{Chapters, PaperExtra};
 use dtiku_paper::model::paper_material;
 use dtiku_paper::model::paper_question;
 use dtiku_paper::model::question;
@@ -534,13 +534,13 @@ impl OriginPaper {
                 desc: None,
                 chapters: chapters.into_iter().map(|m| m.into()).collect(),
             };
-            serde_json::to_value(cs).context("Chapters to_value failed")?
+            PaperExtra::Chapters(cs)
         } else {
             let ec = EssayCluster {
                 topic: self.topic,
                 blocks: chapters.into_iter().map(|m| m.into()).collect(),
             };
-            serde_json::to_value(ec).context("EssayCluster to_value failed")?
+            PaperExtra::EssayCluster(ec)
         };
         active_model.extra = Set(extra_value);
 
@@ -861,7 +861,12 @@ struct QuestionAccessory {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct SolutionAccessory {}
+struct SolutionAccessory {
+    #[serde(rename = "type")]
+    pub ty: i64,
+    pub label: String,
+    pub content: String,
+}
 
 #[serde_as]
 #[derive(Debug, Clone, Deserialize)]
@@ -938,7 +943,10 @@ impl TryInto<material::MaterialExtra> for MaterialAccessory {
 
 impl SolutionAccessory {
     fn convert_into(&self) -> StepAnalysis {
-        todo!()
+        StepAnalysis {
+            label: self.label.clone(),
+            content: self.content.clone(),
+        }
     }
 }
 

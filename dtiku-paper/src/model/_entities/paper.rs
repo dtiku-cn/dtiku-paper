@@ -2,6 +2,7 @@
 
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::model::paper::PaperExtra;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "paper")]
@@ -14,7 +15,7 @@ pub struct Model {
     pub paper_type: i16,
     pub label_id: i32,
     #[sea_orm(column_type = "JsonBinary")]
-    pub extra: Json,
+    pub extra: PaperExtra,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

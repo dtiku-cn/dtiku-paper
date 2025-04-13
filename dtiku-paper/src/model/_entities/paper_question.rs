@@ -11,7 +11,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub question_id: i32,
     pub sort: i16,
-    #[sea_orm(column_type = "custom(\"ltree\")")]
+    #[sea_orm(column_type = "LTree")]
     pub keypoint_path: String,
     #[sea_orm(column_type = "Float")]
     pub correct_ratio: f32,
