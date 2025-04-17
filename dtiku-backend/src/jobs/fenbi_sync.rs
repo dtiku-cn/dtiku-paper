@@ -329,7 +329,7 @@ impl FenbiSyncService {
 
         self.save_questions_and_materials(questions, materials, paper, &qid_num_map, &mid_num_map)
             .await?;
-        
+
         Ok(())
     }
 
@@ -626,7 +626,7 @@ impl OriginQuestion {
                 .clone()
                 .expect("SingleChoice 101/102 options is none");
             options_string = options.iter().join("\n");
-            question::QuestionExtra::SingleChoice(options)
+            question::QuestionExtra::SingleChoice { options }
         } else if MULTI_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
             let os = list.last().expect(&format!(
@@ -636,7 +636,7 @@ impl OriginQuestion {
                 "q#{id} MultiChoice 101/102 options is none:{list:?}"
             ));
             options_string = options.iter().join("\n");
-            question::QuestionExtra::MultiChoice(options)
+            question::QuestionExtra::MultiChoice { options }
         } else if INDEFINITE_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
             let os = list.last().expect(&format!(
@@ -646,7 +646,7 @@ impl OriginQuestion {
                 "q#{id} IndefiniteChoice 101/102 options is none:{list:?}"
             ));
             options_string = options.iter().join("\n");
-            question::QuestionExtra::IndefiniteChoice(options)
+            question::QuestionExtra::IndefiniteChoice { options }
         } else if BLANK_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
             let os = list.last().expect(&format!(
@@ -656,7 +656,7 @@ impl OriginQuestion {
                 "q#{id} BlankChoice 101/102 options is none:{list:?}"
             ));
             options_string = options.iter().join("\n");
-            question::QuestionExtra::BlankChoice(options)
+            question::QuestionExtra::BlankChoice { options }
         } else if TRUE_FALSE.contains(ty) {
             question::QuestionExtra::TrueFalse
         } else if STEP_BY_STEP_ANSWER.contains(ty) {
@@ -903,11 +903,11 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
 
     fn try_into(self) -> Result<material::ActiveModel, Self::Error> {
         let extra = match self.accessories {
-            Some(a) => {
-                Some(a.0.into_iter()
+            Some(a) => Some(
+                a.0.into_iter()
                     .map(|a| a.try_into())
-                    .collect::<anyhow::Result<Vec<material::MaterialExtra>>>()?)
-            }
+                    .collect::<anyhow::Result<Vec<material::MaterialExtra>>>()?,
+            ),
             None => None,
         };
         let mut am = material::ActiveModel {
