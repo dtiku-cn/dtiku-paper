@@ -42,16 +42,16 @@ impl TryFrom<QuestionSelect> for Question {
 pub enum QuestionExtra {
     // 单选题
     #[serde(rename = "sc")]
-    SingleChoice(Vec<QuestionChoice>),
+    SingleChoice { options: Vec<QuestionChoice> },
     // 多选题
     #[serde(rename = "mc")]
-    MultiChoice(Vec<QuestionChoice>),
+    MultiChoice { options: Vec<QuestionChoice> },
     // 不定项选择题
     #[serde(rename = "ic")]
-    IndefiniteChoice(Vec<QuestionChoice>),
+    IndefiniteChoice { options: Vec<QuestionChoice> },
     // 完形填空选择题
     #[serde(rename = "bc")]
-    BlankChoice(Vec<QuestionChoice>),
+    BlankChoice { options: Vec<QuestionChoice> },
     // 填空题
     #[serde(rename = "fb")]
     FillBlank,
@@ -72,10 +72,10 @@ pub enum QuestionExtra {
     ListenQuestion(String),
     // 选词题
     #[serde(rename = "ws")]
-    WordSelection(Vec<QuestionChoice>),
+    WordSelection { options: Vec<QuestionChoice> },
     // 复合型
     #[serde(rename = "c")]
-    Compose(Vec<QuestionExtra>),
+    Compose { options: Vec<QuestionChoice> },
 }
 
 #[derive(Serialize, Deserialize)]

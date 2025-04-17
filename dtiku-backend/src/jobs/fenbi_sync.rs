@@ -32,7 +32,7 @@ use itertools::Itertools;
 use scraper::Html;
 use sea_orm::prelude::PgVector;
 use sea_orm::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter, Statement};
 use sea_orm::{ConnectionTrait, EntityTrait};
 use serde::Deserialize;
 use serde::Serialize;
@@ -401,7 +401,8 @@ impl FenbiSyncService {
 
         self.save_questions_and_materials(questions, materials, paper, &qid_num_map, &mid_num_map)
             .await?;
-        todo!()
+
+        Ok(())
     }
 
     async fn save_questions_and_materials(
@@ -431,16 +432,24 @@ impl FenbiSyncService {
                 .await
                 .context("insert solution failed")?;
 
-            paper_question::ActiveModel {
-                paper_id: Set(paper.id),
-                question_id: Set(q_in_db.id),
-                sort: Set(*num as i16),
-                keypoint_path: Set("A".to_string()), // TODO: key_point
-                correct_ratio: Set(correct_ratio),
-            }
-            .insert(&self.target_db)
-            .await
-            .context("insert paper_question failed")?;
+            // ltree
+            let stmt = Statement::from_sql_and_values(
+                sea_orm::DatabaseBackend::Postgres,
+                r#"INSERT INTO paper_question (paper_id, question_id, sort, keypoint_path, correct_ratio)
+                VALUES ($1, $2, $3, CAST($4 AS ltree), $5)"#,
+                vec![
+                    paper.id.into(),
+                    q_in_db.id.into(),
+                    (*num as i16).into(),
+                    "A".into(),
+                    correct_ratio.into(),
+                ],
+            );
+
+            self.target_db
+                .execute(stmt)
+                .await
+                .context("insert paper_question failed")?;
         }
 
         for m in materials {
@@ -464,7 +473,7 @@ impl FenbiSyncService {
             .context("insert paper_material failed")?;
         }
 
-        todo!()
+        Ok(())
     }
 }
 
@@ -689,7 +698,7 @@ impl OriginQuestion {
                 .clone()
                 .expect("SingleChoice 101/102 options is none");
             options_string = options.iter().join("\n");
-            question::QuestionExtra::SingleChoice(options)
+            question::QuestionExtra::SingleChoice { options }
         } else if MULTI_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
             let os = list.last().expect(&format!(
@@ -699,7 +708,7 @@ impl OriginQuestion {
                 "q#{id} MultiChoice 101/102 options is none:{list:?}"
             ));
             options_string = options.iter().join("\n");
-            question::QuestionExtra::MultiChoice(options)
+            question::QuestionExtra::MultiChoice { options }
         } else if INDEFINITE_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
             let os = list.last().expect(&format!(
@@ -709,7 +718,7 @@ impl OriginQuestion {
                 "q#{id} IndefiniteChoice 101/102 options is none:{list:?}"
             ));
             options_string = options.iter().join("\n");
-            question::QuestionExtra::IndefiniteChoice(options)
+            question::QuestionExtra::IndefiniteChoice { options }
         } else if BLANK_CHOICE.contains(ty) {
             let list = self.filter_accessory(|a| [101i16, 102i16].contains(&a.ty));
             let os = list.last().expect(&format!(
@@ -719,7 +728,7 @@ impl OriginQuestion {
                 "q#{id} BlankChoice 101/102 options is none:{list:?}"
             ));
             options_string = options.iter().join("\n");
-            question::QuestionExtra::BlankChoice(options)
+            question::QuestionExtra::BlankChoice { options }
         } else if TRUE_FALSE.contains(ty) {
             question::QuestionExtra::TrueFalse
         } else if STEP_BY_STEP_ANSWER.contains(ty) {
@@ -965,13 +974,14 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
     type Error = anyhow::Error;
 
     fn try_into(self) -> Result<material::ActiveModel, Self::Error> {
-        let extra = self
-            .accessories
-            .expect("material accessories is none")
-            .0
-            .into_iter()
-            .map(|a| a.try_into())
-            .collect::<anyhow::Result<Vec<material::MaterialExtra>>>()?;
+        let extra = match self.accessories {
+            Some(a) => Some(
+                a.0.into_iter()
+                    .map(|a| a.try_into())
+                    .collect::<anyhow::Result<Vec<material::MaterialExtra>>>()?,
+            ),
+            None => None,
+        };
         let mut am = material::ActiveModel {
             content: Set(self.content),
             extra: Set(serde_json::to_value(extra).context("serde encode failed")?),
