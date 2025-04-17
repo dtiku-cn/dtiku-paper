@@ -27,7 +27,7 @@ derive_more = "1"
 itertools = "0.13"
 thiserror = "2"
 anyhow = "1"
-fastembed = { git = "https://github.com/Anush008/fastembed-rs", branch = "HF_ENDPONT-HF_HOME", version = "4.6.0" }
+fastembed = "4.7.0"
 # rust-bert = "0.23"
 hnsw = "0.11"
 hnsw_rs = "0.3"
