@@ -31,9 +31,9 @@ use futures::StreamExt;
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::prelude::PgVector;
-use sea_orm::ActiveModelTrait;
 use sea_orm::ConnectionTrait;
 use sea_orm::Set;
+use sea_orm::{ActiveModelTrait, Statement};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
@@ -359,16 +359,24 @@ impl FenbiSyncService {
                 .await
                 .context("insert solution failed")?;
 
-            paper_question::ActiveModel {
-                paper_id: Set(paper.id),
-                question_id: Set(q_in_db.id),
-                sort: Set(*num as i16),
-                keypoint_path: Set("A".to_string()), // TODO: key_point
-                correct_ratio: Set(correct_ratio),
-            }
-            .insert(&self.target_db)
-            .await
-            .context("insert paper_question failed")?;
+            // ltree
+            let stmt = Statement::from_sql_and_values(
+                sea_orm::DatabaseBackend::Postgres,
+                r#"INSERT INTO paper_question (paper_id, question_id, sort, keypoint_path, correct_ratio) 
+                VALUES ($1, $2, $3, CAST($4 AS ltree), $5)"#,
+                vec![
+                    paper.id.into(),
+                    q_in_db.id.into(),
+                    (*num as i16).into(),
+                    "A".into(),
+                    correct_ratio.into(),
+                ],
+            );
+
+            self.target_db
+                .execute(stmt)
+                .await
+                .context("insert paper_question failed")?;
         }
 
         for m in materials {
@@ -893,13 +901,14 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
     type Error = anyhow::Error;
 
     fn try_into(self) -> Result<material::ActiveModel, Self::Error> {
-        let extra = self
-            .accessories
-            .expect("material accessories is none")
-            .0
-            .into_iter()
-            .map(|a| a.try_into())
-            .collect::<anyhow::Result<Vec<material::MaterialExtra>>>()?;
+        let extra = match self.accessories {
+            Some(a) => {
+                Some(a.0.into_iter()
+                    .map(|a| a.try_into())
+                    .collect::<anyhow::Result<Vec<material::MaterialExtra>>>()?)
+            }
+            None => None,
+        };
         let mut am = material::ActiveModel {
             content: Set(self.content),
             extra: Set(serde_json::to_value(extra).context("serde encode failed")?),
