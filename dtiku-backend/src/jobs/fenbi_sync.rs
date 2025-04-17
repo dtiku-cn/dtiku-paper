@@ -5,9 +5,6 @@ use crate::utils::regex::pick_year;
 use anyhow::Context;
 use dtiku_base::model::schedule_task;
 use dtiku_base::model::schedule_task::{Progress, TaskInstance};
-use dtiku_paper::model::exam_category;
-use dtiku_paper::model::label;
-use dtiku_paper::model::material;
 use dtiku_paper::model::paper;
 use dtiku_paper::model::paper::EssayCluster;
 use dtiku_paper::model::paper::PaperBlock;
@@ -27,13 +24,16 @@ use dtiku_paper::model::solution::StepByStepAnswer;
 use dtiku_paper::model::solution::TrueFalseChoice;
 use dtiku_paper::model::Label;
 use dtiku_paper::model::Question;
+use dtiku_paper::model::{exam_category, KeyPoint};
+use dtiku_paper::model::{key_point, material};
+use dtiku_paper::model::{label, ExamCategory};
 use futures::StreamExt;
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::prelude::PgVector;
-use sea_orm::ActiveModelTrait;
-use sea_orm::ConnectionTrait;
 use sea_orm::Set;
+use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter};
+use sea_orm::{ConnectionTrait, EntityTrait};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
@@ -95,8 +95,26 @@ impl JobScheduler for FenbiSyncService {
             }
             _ => serde_json::from_value(self.task.context.clone())?,
         };
+
         if progress.name == "sync_label" {
             self.sync_label(&mut progress).await?;
+
+            let total = self
+                .total("select count(*) as total from categories where from_ty='fenbi'")
+                .await?;
+            let progress = Progress {
+                name: "sync_categories".to_string(),
+                total,
+                current: 0,
+            };
+            self.task = self
+                .task
+                .update_progress(&progress, &self.target_db)
+                .await?;
+        }
+
+        if progress.name == "sync_categories" {
+            self.sync_categories(&mut progress).await?;
 
             let total = self
                 .total("select max(id) as total from paper where from_ty='fenbi'")
@@ -126,6 +144,60 @@ impl FenbiSyncService {
             .with_context(|| format!("{sql} execute failed"))?
             .try_get("total")
             .context("get total failed")?)
+    }
+
+    async fn sync_categories(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
+        let mut stream = sqlx::query_as::<_, OriginCategory>(
+            r##"
+                select
+                    prefix,
+                    extra,
+                    id
+                from label
+                where from_ty = 'fenbi'
+                "##,
+        )
+        .fetch(&self.source_db);
+
+        while let Some(row) = stream.next().await {
+            match row {
+                Ok(c) => {
+                    Self::save_category(&c.name, c.extra.0, 0, &self.target_db).await?;
+                }
+                Err(e) => tracing::error!("find label failed: {:?}", e),
+            }
+        }
+        Ok(())
+    }
+
+    async fn save_category(
+        prefix: &str,
+        c: Category,
+        parent_id: i32,
+        target_db: &DbConn,
+    ) -> anyhow::Result<()> {
+        let ec = ExamCategory::find()
+            .filter(exam_category::Column::Prefix.eq(prefix))
+            .one(target_db)
+            .await?;
+
+        match ec {
+            Some(ec) => {
+                key_point::ActiveModel {
+                    name: Set(c.name),
+                    pid: Set(parent_id),
+                    paper_type: Set(ec.id),
+                    // exam_id: Set(),
+                    ..Default::default()
+                }
+                .insert_on_conflict(target_db);
+            }
+            None => {
+                tracing::info!("");
+            }
+        }
+
+        Ok(())
     }
 
     async fn sync_label(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
@@ -971,4 +1043,32 @@ pub struct OriginKeyPoint {
 struct MaterialIdNumber {
     material_id: i64,
     number: i32,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct OriginCategory {
+    pub id: i64,
+    pub name: String,
+    pub extra: Json<Category>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Category {
+    pub id: i64,
+    pub name: String,
+    pub count: i64,
+    #[serde(rename = "type")]
+    pub type_field: Option<i64>,
+    pub ptype: Option<i64>,
+    pub optional: bool,
+    pub children: Option<Vec<Category>>,
+    pub request_num: i64,
+    pub request_type: i64,
+    pub additional: bool,
+    pub keypoint_type: i64,
+    pub capacity: i64,
+    pub answer_count: i64,
+    pub giant_only: bool,
+    pub choice_only: bool,
 }
