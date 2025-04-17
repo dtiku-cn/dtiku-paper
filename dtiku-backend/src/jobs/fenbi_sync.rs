@@ -329,7 +329,8 @@ impl FenbiSyncService {
 
         self.save_questions_and_materials(questions, materials, paper, &qid_num_map, &mid_num_map)
             .await?;
-        todo!()
+        
+        Ok(())
     }
 
     async fn save_questions_and_materials(
@@ -400,7 +401,7 @@ impl FenbiSyncService {
             .context("insert paper_material failed")?;
         }
 
-        todo!()
+        Ok(())
     }
 }
 
