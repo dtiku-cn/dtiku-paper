@@ -5,7 +5,7 @@ use sea_orm::{
 };
 use spring::{plugin::ComponentRegistry, tracing, App};
 use spring_redis::{
-    redis::{AsyncCommands, RedisError},
+    redis::{self, AsyncCommands, RedisError},
     Redis,
 };
 
@@ -41,7 +41,7 @@ impl Entity {
                     .await
                     .with_context(|| format!("Label::find_by_id({id}) failed"))?;
                 if let Some(label) = &label {
-                    let _: () = redis
+                    let _: redis::Value = redis
                         .set(
                             &cache_key,
                             serde_json::to_string(label).context("label json encode failed")?,
