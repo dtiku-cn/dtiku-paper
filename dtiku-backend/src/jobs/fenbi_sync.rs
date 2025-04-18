@@ -47,6 +47,8 @@ use sqlx::types::Json;
 use sqlx::Row;
 use std::collections::HashMap;
 
+use super::PaperSyncer;
+
 static SINGLE_CHOICE: [i16; 1] = [1];
 static MULTI_CHOICE: [i16; 1] = [2];
 static INDEFINITE_CHOICE: [i16; 1] = [3];
@@ -70,6 +72,8 @@ pub struct FenbiSyncService {
     instance: TaskInstance,
 }
 
+impl PaperSyncer for FenbiSyncService {}
+
 #[async_trait]
 impl JobScheduler for FenbiSyncService {
     fn current_task(&mut self) -> &mut schedule_task::Model {
@@ -80,7 +84,10 @@ impl JobScheduler for FenbiSyncService {
         let mut progress = match &self.task.context {
             Value::Null => {
                 let total = self
-                    .total("select count(*) as total from label where from_ty='fenbi'")
+                    .total(
+                        "select count(*) as total from label where from_ty='fenbi'",
+                        &self.source_db,
+                    )
                     .await?;
                 let progress = Progress {
                     name: "sync_label".to_string(),
@@ -100,7 +107,10 @@ impl JobScheduler for FenbiSyncService {
             self.sync_label(&mut progress).await?;
 
             let total = self
-                .total("select count(*) as total from categories where from_ty='fenbi'")
+                .total(
+                    "select count(*) as total from categories where from_ty='fenbi'",
+                    &self.source_db,
+                )
                 .await?;
             progress = Progress {
                 name: "sync_categories".to_string(),
@@ -117,7 +127,10 @@ impl JobScheduler for FenbiSyncService {
             self.sync_categories(&mut progress).await?;
 
             let total = self
-                .total("select max(id) as total from paper where from_ty='fenbi'")
+                .total(
+                    "select max(id) as total from paper where from_ty='fenbi'",
+                    &self.source_db,
+                )
                 .await?;
             progress = Progress {
                 name: "sync_paper".to_string(),
@@ -137,15 +150,6 @@ impl JobScheduler for FenbiSyncService {
 }
 
 impl FenbiSyncService {
-    async fn total(&self, sql: &str) -> anyhow::Result<i64> {
-        Ok(sqlx::query(&sql)
-            .fetch_one(&self.source_db)
-            .await
-            .with_context(|| format!("{sql} execute failed"))?
-            .try_get("total")
-            .context("get total failed")?)
-    }
-
     async fn sync_categories(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
         if progress.total <= 0 {
             return Ok(());
@@ -285,12 +289,14 @@ impl FenbiSyncService {
                         let source_id = row.id;
                         let paper = self.save_paper(row).await?;
 
-                        sqlx::query("update paper set target_id=$1 where id=$2 and from_type='fenbi")
-                            .bind(paper.id)
-                            .bind(source_id)
-                            .execute(&self.source_db)
-                            .await
-                            .context("update source db label target_id failed")?;
+                        sqlx::query(
+                            "update paper set target_id=$1 where id=$2 and from_type='fenbi",
+                        )
+                        .bind(paper.id)
+                        .bind(source_id)
+                        .execute(&self.source_db)
+                        .await
+                        .context("update source db label target_id failed")?;
 
                         progress.current = source_id;
                         self.task = self
@@ -307,13 +313,14 @@ impl FenbiSyncService {
 
     async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
         let source_paper_id = paper.id;
-        let target_label_id: i32 = sqlx::query("select target_id from label where id = $1 and from_type='fenbi'")
-            .bind(paper.label_id)
-            .fetch_one(&self.source_db)
-            .await
-            .with_context(|| format!("find target_id for label#{}", paper.label_id))?
-            .try_get("target_id")
-            .context("get target_id failed")?;
+        let target_label_id: i32 =
+            sqlx::query("select target_id from label where id = $1 and from_type='fenbi'")
+                .bind(paper.label_id)
+                .fetch_one(&self.source_db)
+                .await
+                .with_context(|| format!("find target_id for label#{}", paper.label_id))?
+                .try_get("target_id")
+                .context("get target_id failed")?;
         let paper = paper.save_to(&self.target_db, target_label_id).await?;
 
         self.sync_questions_and_materials(source_paper_id, &paper)

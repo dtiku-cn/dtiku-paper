@@ -19,6 +19,8 @@ use spring_stream::{
     extractor::{Component, Json},
     stream_listener, Consumers,
 };
+use sqlx::Database;
+use sqlx::Row;
 
 #[stream_listener("task")]
 async fn task_schedule(
@@ -74,6 +76,21 @@ trait JobScheduler {
     fn current_task(&mut self) -> &mut schedule_task::Model;
 
     async fn inner_start(&mut self) -> anyhow::Result<()>;
+}
+
+trait PaperSyncer {
+    /**
+     * 查询表的总数量
+     */
+    async fn total(&self, sql: &str, db: &ConnectPool) -> anyhow::Result<i64>
+    {
+        Ok(sqlx::query(&sql)
+            .fetch_one(db)
+            .await
+            .with_context(|| format!("{sql} execute failed"))?
+            .try_get("total")
+            .context("get total failed")?)
+    }
 }
 
 pub(crate) fn consumer() -> Consumers {
