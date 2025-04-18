@@ -147,6 +147,9 @@ impl FenbiSyncService {
     }
 
     async fn sync_categories(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
+        if progress.total <= 0 {
+            return Ok(());
+        }
         let mut stream = sqlx::query_as::<_, OriginCategory>(
             r##"
                 select
@@ -163,6 +166,13 @@ impl FenbiSyncService {
             match row {
                 Ok(c) => {
                     Self::save_category(&c.name, c.extra.0, 0, &self.target_db).await?;
+
+                    if progress.increase(1) {
+                        self.task = self
+                            .task
+                            .update_progress(&progress, &self.target_db)
+                            .await?;
+                    }
                 }
                 Err(e) => tracing::error!("find categories failed: {:?}", e),
             }
@@ -201,6 +211,9 @@ impl FenbiSyncService {
     }
 
     async fn sync_label(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
+        if progress.total <= 0 {
+            return Ok(());
+        }
         let mut stream = sqlx::query_as::<_, OriginLabel>(r##"
         select
             jsonb_extract_path_text(extra,'course_set','liveConfigItem','name') as exam_root,
