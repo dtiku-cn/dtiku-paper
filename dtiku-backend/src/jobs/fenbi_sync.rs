@@ -102,7 +102,7 @@ impl JobScheduler for FenbiSyncService {
             let total = self
                 .total("select count(*) as total from categories where from_ty='fenbi'")
                 .await?;
-            let progress = Progress {
+            progress = Progress {
                 name: "sync_categories".to_string(),
                 total,
                 current: 0,
