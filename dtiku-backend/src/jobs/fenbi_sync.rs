@@ -153,7 +153,7 @@ impl FenbiSyncService {
                     prefix,
                     extra,
                     id
-                from label
+                from categories
                 where from_ty = 'fenbi'
                 "##,
         )
@@ -164,7 +164,7 @@ impl FenbiSyncService {
                 Ok(c) => {
                     Self::save_category(&c.name, c.extra.0, 0, &self.target_db).await?;
                 }
-                Err(e) => tracing::error!("find label failed: {:?}", e),
+                Err(e) => tracing::error!("find categories failed: {:?}", e),
             }
         }
         Ok(())
