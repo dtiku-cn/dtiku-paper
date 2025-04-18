@@ -1,7 +1,7 @@
 use crate::plugins::fastembed::TxtEmbedding;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
-use dtiku_paper::model::label;
+use dtiku_paper::model::{label, paper};
 use futures::StreamExt as _;
 use sea_orm::ConnectionTrait;
 use serde_json::Value;
@@ -206,7 +206,7 @@ struct OriginPaper {
 }
 
 impl OriginPaper {
-    async fn save_to<C: ConnectionTrait>(
+    async fn save_paper<C: ConnectionTrait>(
         self,
         db: &C,
         label_id: i32,
