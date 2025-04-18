@@ -6,9 +6,10 @@ use crate::plugins::fastembed::TxtEmbedding;
 use crate::plugins::jobs::RunningJobs;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::TaskInstance;
+use dtiku_base::model::ScheduleTask;
 use dtiku_base::model::{enums::ScheduleTaskType, schedule_task};
 use fenbi_sync::FenbiSyncService;
-use sea_orm::{IntoActiveModel, Set};
+use sea_orm::{EntityTrait as _, IntoActiveModel, Set};
 use spring::plugin::service::Service;
 use spring::{async_trait, plugin::ComponentRegistry, tracing, App};
 use spring_sea_orm::DbConn;
@@ -45,18 +46,28 @@ async fn task_schedule(
 trait JobScheduler {
     async fn start(&mut self) {
         let result = self.inner_start().await;
-        if let Err(e) = result {
+        let success = if let Err(e) = result {
             tracing::error!("task schedule error:{:?}", e);
             let task = self.current_task();
-            schedule_task::ActiveModel {
+            ScheduleTask::update(schedule_task::ActiveModel {
                 id: Set(task.id),
                 version: Set(task.version + 1),
                 active: Set(false),
                 ..Default::default()
-            }
-            .optimistic_update(&App::global().get_expect_component::<DbConn>())
+            })
+            .exec(&App::global().get_expect_component::<DbConn>())
             .await
-            .expect("update error task failed");
+            .is_err_and(|e| {
+                tracing::error!("update task error: {:?}", e);
+                false
+            })
+        } else {
+            true
+        };
+        if success {
+            tracing::info!("task schedule success");
+        } else {
+            tracing::error!("task schedule failed");
         }
     }
 
