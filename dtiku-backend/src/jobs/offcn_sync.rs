@@ -90,7 +90,7 @@ impl OffcnSyncService {
         let mut stream = sqlx::query_as::<_, OriginLabel>(
             r##"
             select 
-                jsonb_extract_path(extra,'id') as id,
+                id,
                 jsonb_extract_path_text(extra,'name') as name,
                 jsonb_extract_path(extra,'type') as ty,
                 jsonb_extract_path(extra,'parent_id') as parent_id,
