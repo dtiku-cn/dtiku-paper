@@ -107,7 +107,7 @@ impl OffcnSyncService {
                     let source_id = row.id;
                     let label = row.save_to(&self.target_db).await?;
 
-                    sqlx::query("update label set target_id=$1 where id=$2 and from_type='offcn'")
+                    sqlx::query("update label set target_id=$1 where id=$2 and from_ty='offcn'")
                         .bind(label.id)
                         .bind(source_id)
                         .execute(&self.source_db)
@@ -157,7 +157,7 @@ impl OffcnSyncService {
                         let paper = self.save_paper(row).await?;
 
                         sqlx::query(
-                            "update paper set target_id=$1 where id=$2 and from_type='fenbi",
+                            "update paper set target_id=$1 where id=$2 and from_ty='fenbi",
                         )
                         .bind(paper.id)
                         .bind(source_id)

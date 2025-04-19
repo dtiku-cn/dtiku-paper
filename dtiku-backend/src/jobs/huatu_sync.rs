@@ -1,14 +1,14 @@
+use super::{JobScheduler, PaperSyncer};
+use crate::plugins::fastembed::TxtEmbedding;
 use anyhow::Context;
+use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
+use dtiku_paper::model::{label, paper};
 use futures::StreamExt;
 use sea_orm::ConnectionTrait;
-use crate::plugins::fastembed::TxtEmbedding;
-use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
-use dtiku_paper::model::{label, paper};
-use super::{JobScheduler, PaperSyncer};
 
 #[derive(Clone, Service)]
 #[prototype]
@@ -81,8 +81,7 @@ impl JobScheduler for HuatuSyncService {
     }
 }
 
-impl HuatuSyncService{
-
+impl HuatuSyncService {
     async fn sync_label(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
         if progress.total <= 0 {
             return Ok(());
@@ -97,7 +96,7 @@ impl HuatuSyncService{
                 where from_ty ='huatu'
         "##,
         )
-            .fetch(&self.source_db);
+        .fetch(&self.source_db);
 
         while let Some(row) = stream.next().await {
             match row {
@@ -105,7 +104,7 @@ impl HuatuSyncService{
                     let source_id = row.id;
                     let label = row.save_to(&self.target_db).await?;
 
-                    sqlx::query("update label set target_id=$1 where id=$2 and from_type='huatu'")
+                    sqlx::query("update label set target_id=$1 where id=$2 and from_ty='huatu'")
                         .bind(label.id)
                         .bind(source_id)
                         .execute(&self.source_db)
@@ -156,13 +155,13 @@ impl HuatuSyncService{
                         let paper = self.save_paper(row).await?;
 
                         sqlx::query(
-                            "update paper set target_id=$1 where id=$2 and from_type='huatu",
+                            "update paper set target_id=$1 where id=$2 and from_ty='huatu",
                         )
-                            .bind(paper.id)
-                            .bind(source_id)
-                            .execute(&self.source_db)
-                            .await
-                            .context("update source db label target_id failed")?;
+                        .bind(paper.id)
+                        .bind(source_id)
+                        .execute(&self.source_db)
+                        .await
+                        .context("update source db label target_id failed")?;
 
                         progress.current = source_id;
                         self.task = self
@@ -194,7 +193,6 @@ impl OriginLabel {
         todo!()
     }
 }
-
 
 #[derive(Debug, sqlx::FromRow)]
 struct OriginPaper {

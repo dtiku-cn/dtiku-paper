@@ -240,7 +240,7 @@ impl FenbiSyncService {
                     let source_id = row.id;
                     let label = row.save_to(&self.target_db).await?;
 
-                    sqlx::query("update label set target_id=$1 where id=$2 and from_type='fenbi'")
+                    sqlx::query("update label set target_id=$1 where id=$2 and from_ty='fenbi'")
                         .bind(label.id)
                         .bind(source_id)
                         .execute(&self.source_db)
@@ -290,7 +290,7 @@ impl FenbiSyncService {
                         let paper = self.save_paper(row).await?;
 
                         sqlx::query(
-                            "update paper set target_id=$1 where id=$2 and from_type='fenbi",
+                            "update paper set target_id=$1 where id=$2 and from_ty='fenbi",
                         )
                         .bind(paper.id)
                         .bind(source_id)
@@ -314,7 +314,7 @@ impl FenbiSyncService {
     async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
         let source_paper_id = paper.id;
         let target_label_id: i32 =
-            sqlx::query("select target_id from label where id = $1 and from_type='fenbi'")
+            sqlx::query("select target_id from label where id = $1 and from_ty='fenbi'")
                 .bind(paper.label_id)
                 .fetch_one(&self.source_db)
                 .await
