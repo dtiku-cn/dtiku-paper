@@ -231,7 +231,7 @@ impl FenbiSyncService {
             id
         from label
         where from_ty = 'fenbi'
-        order by exam_root,exam_name,paper_type,parent_label asc NULLS FIRST,label_name
+        order by exam_root,exam_name,paper_type,jsonb_extract_path_text(extra,'parent','name') is not null,id,label_name
         "##).fetch(&self.source_db);
 
         while let Some(row) = stream.next().await {

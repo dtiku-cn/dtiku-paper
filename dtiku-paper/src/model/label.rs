@@ -1,4 +1,5 @@
 pub use super::_entities::label::*;
+use super::query::label::LabelQuery;
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
@@ -47,7 +48,7 @@ impl Entity {
                             serde_json::to_string(label).context("label json encode failed")?,
                         )
                         .await
-                        .unwrap_or_else(|e| tracing::error!("cache error:{:?}", e));
+                        .context("cache error")?;
                 }
                 label
             }
@@ -56,15 +57,15 @@ impl Entity {
         Ok(label)
     }
 
-    pub async fn find_all_by_pid<C>(db: &C, pid: i32) -> anyhow::Result<Vec<Model>>
+    pub async fn find_all_by_query<C>(db: &C, query: LabelQuery) -> anyhow::Result<Vec<Model>>
     where
         C: ConnectionTrait,
     {
         Entity::find()
-            .filter(Column::Pid.eq(pid))
+            .filter(query.clone())
             .all(db)
             .await
-            .with_context(|| format!("find_by_pid({pid}) failed"))
+            .with_context(|| format!("find_all_by_query({query:?}) failed"))
     }
 
     pub async fn find_by_exam_id_and_paper_type_and_name<C, S>(

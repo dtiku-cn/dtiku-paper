@@ -177,6 +177,10 @@ impl OffcnSyncService {
         }
         Ok(())
     }
+
+    async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
+        todo!()
+    }
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]

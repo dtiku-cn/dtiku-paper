@@ -32,7 +32,7 @@ async fn list_all_config(Component(db): Component<DbConn>) -> Result<impl IntoRe
     Ok(Json(GetListResult::from(result)))
 }
 
-#[put("/api/configs/:key")]
+#[put("/api/configs/{key}")]
 async fn save_config(
     Component(db): Component<DbConn>,
     Path(key): Path<SystemConfigKey>,

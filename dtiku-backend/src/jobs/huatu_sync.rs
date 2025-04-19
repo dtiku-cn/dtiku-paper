@@ -92,8 +92,7 @@ impl HuatuSyncService{
                 select 
                     id,
                     jsonb_extract_path_text(extra,'name') as name,
-                    jsonb_extract_path_text(extra,'parent_name') as parent_name,
-                    extra
+                    jsonb_extract_path_text(extra,'parent_name') as parent_name
                 from "label" l 
                 where from_ty ='huatu'
         "##,
@@ -133,16 +132,17 @@ impl HuatuSyncService{
             let next_step_id: i64 = current + 1000;
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
-                    select
-                        jsonb_extract_path_text(extra,'name') as name,
-                        jsonb_extract_path_text(extra,'date') as date,
-                        jsonb_extract_path_text(extra,'topic') as topic,
-                        (jsonb_extract_path(extra,'type'))::int as ty,
-                        jsonb_extract_path_text(extra,'chapters') as chapters,
-                        id,
-                        label_id
-                    from paper
-                    where from_ty = 'fenbi' and id > $1 and id <= $2
+                    select 
+                            id,
+                            label_id,
+                            coalesce(jsonb_extract_path_text(extra,'area'), jsonb_extract_path_text(extra,'areaName')) as area,
+                            coalesce(jsonb_extract_path_text(extra,'name'), jsonb_extract_path_text(extra,'paperName')) as name,
+                            coalesce(jsonb_extract_path_text(extra,'type'), '-1') as ty,
+                            coalesce(jsonb_extract_path_text(extra,'year'), jsonb_extract_path_text(extra,'paperYear')) as year,
+                            coalesce(jsonb_extract_path_text(extra,'modules'), jsonb_extract_path_text(extra,'topicNameList')) as modules,
+                            extra
+                    from paper p 
+                    where from_ty ='huatu' and id > $1 and id <= $2
                     "##,
             )
                 .bind(current)
@@ -156,7 +156,7 @@ impl HuatuSyncService{
                         let paper = self.save_paper(row).await?;
 
                         sqlx::query(
-                            "update paper set target_id=$1 where id=$2 and from_type='fenbi",
+                            "update paper set target_id=$1 where id=$2 and from_type='huatu",
                         )
                             .bind(paper.id)
                             .bind(source_id)
@@ -175,6 +175,10 @@ impl HuatuSyncService{
             }
         }
         Ok(())
+    }
+
+    async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
+        todo!()
     }
 }
 

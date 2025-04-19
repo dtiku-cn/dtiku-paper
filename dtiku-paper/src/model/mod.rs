@@ -1,4 +1,5 @@
 mod _entities;
+pub mod query;
 pub mod label;
 pub mod material;
 pub mod paper;

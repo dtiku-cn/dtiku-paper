@@ -31,7 +31,7 @@ async fn list_tasks(Component(db): Component<DbConn>) -> Result<impl IntoRespons
     Ok(Json(GetListResult::from(result)))
 }
 
-#[get("/api/tasks/:ty")]
+#[get("/api/tasks/{ty}")]
 async fn get_task(
     Path(ty): Path<ScheduleTaskType>,
     Component(db): Component<DbConn>,
@@ -56,7 +56,7 @@ async fn get_task(
     Ok(Json(ScheduleTaskView::from(model)))
 }
 
-#[post("/api/tasks/:ty")]
+#[post("/api/tasks/{ty}")]
 async fn start_task(
     Path(ty): Path<ScheduleTaskType>,
     Component(db): Component<DbConn>,

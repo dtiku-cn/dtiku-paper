@@ -10,8 +10,8 @@ members = [
 
 [workspace.dependencies]
 tokio = "1"
-spring = "0.3.1"
-spring-web = "0.3"
+spring = "0.3"
+spring-web = "0.4"
 spring-sea-orm = "0.3"
 spring-redis = "0.3"
 spring-stream = "0.3"
