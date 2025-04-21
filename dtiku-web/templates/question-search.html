@@ -59,7 +59,7 @@
     </div>
     <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
     {% call general::footer() %}
-    <script src="/webjars/mark.js/8.11.1/dist/jquery.mark.min.js"></script>
+    <script src="/static/vendor/mark.js/8.11.1/dist/jquery.mark.min.js"></script>
     <th:block th:replace="fragments/painter::painter" />
     <script th:replace="fragments/question::answer-collapse-action"></script>
     <script th:replace="fragments/indent::solution-indent"></script>
