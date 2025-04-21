@@ -9,9 +9,17 @@ services:
       - ./docker/postgresql:/var/lib/postgresql/data
     environment:
       - POSTGRES_PASSWORD=xudjf23adj213
+    networks:
+      - db
     ports:
       - 5432:5432
   redis:
     image: redis:7.4.0-alpine
+    networks:
+      - db
     ports:
       - 6379:6379
+
+networks:
+  db:
+    driver: bridge
