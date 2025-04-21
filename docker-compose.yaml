@@ -8,7 +8,7 @@ services:
       - ./sql/:/docker-entrypoint-initdb.d/
       - ./docker/postgresql:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=12345
+      - POSTGRES_PASSWORD=xudjf23adj213
     ports:
       - 5432:5432
   redis:
