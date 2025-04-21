@@ -1,7 +1,10 @@
 use crate::data::bbs::ListIssueTemplate;
-use spring_web::get;
+use anyhow::Context;
+use askama::Template;
+use spring_web::{axum::response::IntoResponse, get, error::Result};
 
 #[get("/bbs")]
-async fn list_issue() -> ListIssueTemplate {
-    ListIssueTemplate {}
+async fn list_issue() -> Result<impl IntoResponse> {
+    let t = ListIssueTemplate {};
+    Ok(t.render().context("render failed")?)
 }

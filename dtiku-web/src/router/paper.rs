@@ -1,14 +1,18 @@
 use crate::data::paper::{ListPaperTemplate, PaperTemplate};
-use spring_web::{extractor::Path, get};
+use anyhow::Context;
+use askama::Template;
+use spring_web::{axum::response::IntoResponse, error::Result, extractor::Path, get};
 
 #[get("/paper")]
-async fn list_paper() -> ListPaperTemplate {
+async fn list_paper() -> Result<impl IntoResponse> {
     println!("index");
-    ListPaperTemplate { papers: vec![] }
+    let t = ListPaperTemplate { papers: vec![] };
+    Ok(t.render().context("render failed")?)
 }
 
-#[get("/paper/:id")]
-async fn paper_by_id(Path(id): Path<i32>) -> PaperTemplate {
+#[get("/paper/{id}")]
+async fn paper_by_id(Path(id): Path<i32>) -> Result<impl IntoResponse> {
     println!("paper: {id}");
-    PaperTemplate {}
+    let t = PaperTemplate {};
+    Ok(t.render().context("render failed")?)
 }

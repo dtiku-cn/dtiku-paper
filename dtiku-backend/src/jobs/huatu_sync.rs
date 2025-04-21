@@ -214,3 +214,17 @@ impl OriginPaper {
         todo!()
     }
 }
+
+
+enum Modules{
+    Blocks(Vec<PaperBlock>),
+    Topics(Vec<String>),
+}
+
+#[derive(Debug)]
+struct PaperBlock {
+    name: String,
+    qcount: i32,
+    category: i32,
+    judgeFlag: i32,
+}

@@ -135,15 +135,15 @@ impl OffcnSyncService {
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
                     select
-                        jsonb_extract_path_text(extra,'name') as name,
-                        jsonb_extract_path_text(extra,'date') as date,
-                        jsonb_extract_path_text(extra,'topic') as topic,
-                        (jsonb_extract_path(extra,'type'))::int as ty,
-                        jsonb_extract_path_text(extra,'chapters') as chapters,
-                        id,
-                        label_id
-                    from paper
-                    where from_ty = 'fenbi' and id > $1 and id <= $2
+                            id,
+                            label_id,
+                            jsonb_extract_path_text(extra,'list') as list,
+                            jsonb_extract_path_text(extra,'title') as title,
+                            jsonb_extract_path_text(extra,'content') as content,
+            jsonb_extract_path_text(extra,'paper_pattern') as paper_pattern,
+                            extra
+                    from paper p
+                    where  from_ty ='offcn' and id > $1 and id <= $2
                     "##,
             )
             .bind(current)
@@ -156,14 +156,12 @@ impl OffcnSyncService {
                         let source_id = row.id;
                         let paper = self.save_paper(row).await?;
 
-                        sqlx::query(
-                            "update paper set target_id=$1 where id=$2 and from_ty='fenbi",
-                        )
-                        .bind(paper.id)
-                        .bind(source_id)
-                        .execute(&self.source_db)
-                        .await
-                        .context("update source db label target_id failed")?;
+                        sqlx::query("update paper set target_id=$1 where id=$2 and from_ty='fenbi")
+                            .bind(paper.id)
+                            .bind(source_id)
+                            .execute(&self.source_db)
+                            .await
+                            .context("update source db label target_id failed")?;
 
                         progress.current = source_id;
                         self.task = self
@@ -217,4 +215,11 @@ impl OriginPaper {
     ) -> anyhow::Result<paper::Model> {
         todo!()
     }
+}
+
+struct PaperBlock {
+    name: String,
+    blockId: i32,
+    doneCount: i32,
+    totalCount: i32,
 }

@@ -24,3 +24,27 @@ pub enum SrcType {
     #[sea_orm(string_value = "solution")]
     Solution,
 }
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    EnumIter,
+    DeriveActiveEnum,
+    Serialize,
+    Deserialize,
+    strum :: EnumString,
+)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "from_type")]
+#[serde(rename_all = "snake_case")]
+pub enum FromType {
+    #[sea_orm(string_value = "fenbi")]
+    Fenbi,
+    #[sea_orm(string_value = "huatu")]
+    Huatu,
+    #[sea_orm(string_value = "offcn")]
+    Offcn,
+    #[sea_orm(string_value = "chinagwy")]
+    Chinagwy,
+}

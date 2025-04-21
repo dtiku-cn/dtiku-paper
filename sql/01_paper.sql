@@ -1,12 +1,19 @@
 create extension if not exists vector;
 create extension if not exists ltree;
+CREATE TYPE from_type AS ENUM (
+	'fenbi',
+	'huatu',
+	'offcn',
+	'chinagwy'
+);
 -- 考试类型：root_id为exam_id; leaf_id为paper_type
 create table if not exists exam_category(
     id serial2 primary key,
     name varchar(16) not null,
     prefix varchar(16) not null,
     pid int2 not null,
-    unique(pid, prefix)
+    from_ty from_type not null,
+    unique(from_ty, pid, prefix)
 );
 -- 试卷标签：比如省、市；
 create table if not exists label(

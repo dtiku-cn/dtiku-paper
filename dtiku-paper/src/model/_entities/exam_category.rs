@@ -2,6 +2,7 @@
 
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::model::_entities::sea_orm_active_enums::FromType;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "exam_category")]
@@ -11,6 +12,7 @@ pub struct Model {
     pub name: String,
     pub prefix: String,
     pub pid: i16,
+    pub from_ty: FromType,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

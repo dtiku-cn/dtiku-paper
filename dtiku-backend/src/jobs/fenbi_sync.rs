@@ -46,6 +46,7 @@ use spring_sqlx::ConnectPool;
 use sqlx::types::Json;
 use sqlx::Row;
 use std::collections::HashMap;
+use dtiku_paper::model::FromType;
 
 use super::PaperSyncer;
 
@@ -519,6 +520,7 @@ impl OriginLabel {
             pid: Set(0),
             name: Set(self.exam_root.expect("exam_root is none")),
             prefix: Set(self.exam_root_prefix.expect("exam_root_prefix is none")),
+            from_ty: Set(FromType::Fenbi),
             ..Default::default()
         }
         .insert_on_conflict(db)
@@ -531,6 +533,7 @@ impl OriginLabel {
             pid: Set(root.id),
             name: Set(self.exam_name.expect("exam_name is none")),
             prefix: Set(self.exam_prefix.expect("exam_prefix is none")),
+            from_ty: Set(FromType::Fenbi),
             ..Default::default()
         }
         .insert_on_conflict(db)
@@ -543,6 +546,7 @@ impl OriginLabel {
             pid: Set(second.id),
             name: Set(self.paper_type.expect("paper_type is none")),
             prefix: Set(self.paper_prefix.expect("paper_prefix is none")),
+            from_ty: Set(FromType::Fenbi),
             ..Default::default()
         }
         .insert_on_conflict(db)
