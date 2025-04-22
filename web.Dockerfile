@@ -19,6 +19,7 @@ WORKDIR /runner
 COPY --from=builder /build/target/release/web ./app
 
 COPY ./dtiku-web/config ./config
+COPY ./dtiku-web/static ./static
 
 EXPOSE 8080
 
