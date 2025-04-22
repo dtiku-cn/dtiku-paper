@@ -22,4 +22,4 @@ uri = "redis://localhost"
 uri = "redis://localhost"
 
 [huggingface]
-cache_dir = "../.hf-cache"
+cache_dir = "${HF_HOME../.hf-cache}"
