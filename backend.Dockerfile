@@ -3,12 +3,12 @@ FROM node:20 as frontend_builder
 
 WORKDIR /build
 
-COPY frontend/package.json frontend/package-lock.json ./
+COPY dtiku-backend/frontend/package.json dtiku-backend/frontend/package-lock.json ./
 
 # cache node_modules dependencies
 RUN npm install
 
-COPY frontend /build/
+COPY dtiku-backend/frontend /build/
 
 RUN npm run build
 
