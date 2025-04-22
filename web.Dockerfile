@@ -16,11 +16,11 @@ ENV RUST_LOG=info
 
 WORKDIR /runner
 
-COPY --from=builder /build/target/release/web ./app
+COPY --from=builder /build/target/release/web ./dtiku-web
 
 COPY ./dtiku-web/config ./config
 COPY ./dtiku-web/static ./static
 
 EXPOSE 8080
 
-ENTRYPOINT ["/runner/app"]
+ENTRYPOINT ["/runner/dtiku-web"]

@@ -32,10 +32,10 @@ WORKDIR /runner
 
 COPY --from=frontend_builder /build/dist/ ./static
 
-COPY --from=builder /build/target/release/backend ./app
+COPY --from=builder /build/target/release/backend ./dtiku-backend
 
 COPY ./dtiku-backend/config ./config
 
-EXPOSE 8080
+EXPOSE 8000
 
-ENTRYPOINT ["/runner/app"]
+ENTRYPOINT ["/runner/dtiku-backend"]
