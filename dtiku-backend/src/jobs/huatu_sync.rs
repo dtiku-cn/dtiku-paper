@@ -1,5 +1,5 @@
 use super::{JobScheduler, PaperSyncer};
-use crate::plugins::fastembed::TxtEmbedding;
+use crate::plugins::embedding::Embedding;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::{label, paper};
@@ -18,7 +18,7 @@ pub struct HuatuSyncService {
     #[inject(component)]
     target_db: DbConn,
     #[inject(component)]
-    txt_embedding: TxtEmbedding,
+    embedding: Embedding,
     task: schedule_task::Model,
     instance: TaskInstance,
 }

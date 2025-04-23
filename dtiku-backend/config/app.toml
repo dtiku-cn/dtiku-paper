@@ -20,6 +20,3 @@ uri = "${REDIS_URL:redis://localhost}"
 
 [redis]
 uri = "${REDIS_URL:redis://localhost}"
-
-[huggingface]
-cache_dir = "${HF_HOME../.hf-cache}"

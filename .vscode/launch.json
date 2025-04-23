@@ -32,6 +32,24 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug executable 'ai'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=ai",
+                    "--package=dtiku-ai"
+                ],
+                "filter": {
+                    "name": "ai",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}/dtiku-backend"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug executable 'web'",
             "cargo": {
                 "args": [

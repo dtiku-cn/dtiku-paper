@@ -1,3 +1,4 @@
+mod config;
 mod jobs;
 mod plugins;
 mod router;

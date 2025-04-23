@@ -1,5 +1,5 @@
 use crate::jobs::JobScheduler;
-use crate::plugins::fastembed::TxtEmbedding;
+use crate::plugins::embedding::Embedding;
 use crate::plugins::jobs::RunningJobs;
 use crate::utils::regex::pick_year;
 use anyhow::Context;
@@ -22,6 +22,7 @@ use dtiku_paper::model::solution::SingleChoice;
 use dtiku_paper::model::solution::StepAnalysis;
 use dtiku_paper::model::solution::StepByStepAnswer;
 use dtiku_paper::model::solution::TrueFalseChoice;
+use dtiku_paper::model::FromType;
 use dtiku_paper::model::Label;
 use dtiku_paper::model::Question;
 use dtiku_paper::model::{exam_category, KeyPoint};
@@ -46,7 +47,6 @@ use spring_sqlx::ConnectPool;
 use sqlx::types::Json;
 use sqlx::Row;
 use std::collections::HashMap;
-use dtiku_paper::model::FromType;
 
 use super::PaperSyncer;
 
@@ -68,7 +68,7 @@ pub struct FenbiSyncService {
     #[inject(component)]
     target_db: DbConn,
     #[inject(component)]
-    txt_embedding: TxtEmbedding,
+    embedding: Embedding,
     task: schedule_task::Model,
     instance: TaskInstance,
 }
@@ -290,14 +290,12 @@ impl FenbiSyncService {
                         let source_id = row.id;
                         let paper = self.save_paper(row).await?;
 
-                        sqlx::query(
-                            "update paper set target_id=$1 where id=$2 and from_ty='fenbi",
-                        )
-                        .bind(paper.id)
-                        .bind(source_id)
-                        .execute(&self.source_db)
-                        .await
-                        .context("update source db label target_id failed")?;
+                        sqlx::query("update paper set target_id=$1 where id=$2 and from_ty='fenbi")
+                            .bind(paper.id)
+                            .bind(source_id)
+                            .execute(&self.source_db)
+                            .await
+                            .context("update source db label target_id failed")?;
 
                         progress.current = source_id;
                         self.task = self
@@ -439,7 +437,7 @@ impl FenbiSyncService {
             let num = qid_num_map
                 .get(&q.id)
                 .expect("qid is not exists in qid_num_map");
-            let mut question = q.to_question(&self.txt_embedding)?;
+            let mut question = q.to_question(self.embedding.clone()).await?;
             question.exam_id = Set(paper.exam_id);
             question.paper_type = Set(paper.paper_type);
             let q_in_db = question
@@ -707,7 +705,7 @@ struct OriginQuestion {
 }
 
 impl OriginQuestion {
-    fn to_question(&self, model: &TxtEmbedding) -> anyhow::Result<question::ActiveModel> {
+    async fn to_question(&self, mut model: Embedding) -> anyhow::Result<question::ActiveModel> {
         let Self {
             id, ty, content, ..
         } = self;
@@ -809,8 +807,7 @@ impl OriginQuestion {
         };
         let html = Html::parse_fragment(&format!("{content}\n{options_string}"));
         let txt: String = html.root_element().text().collect();
-        let mut embedding = model.embed(vec![txt], None)?;
-        let embedding = embedding.remove(0);
+        let embedding = model.text_embedding(&txt).await?;
         Ok(question::ActiveModel {
             content: Set(content.into()),
             extra: Set(serde_json::to_value(extra)?),

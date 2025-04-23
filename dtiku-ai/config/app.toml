@@ -1,0 +1,3 @@
+[huggingface]
+cache_dir = "${HF_HOME../.hf-cache}"
+port = 9090

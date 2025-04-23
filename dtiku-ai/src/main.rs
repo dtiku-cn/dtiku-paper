@@ -1,17 +1,11 @@
 mod config;
 mod plugins;
-mod router;
+mod service;
 
 use plugins::fastembed::EmbeddingPlugin;
-use spring::{auto_config, App};
-use spring_web::{WebConfigurator, WebPlugin};
+use spring::App;
 
-#[auto_config(WebConfigurator)]
 #[tokio::main]
 async fn main() {
-    App::new()
-        .add_plugin(WebPlugin)
-        .add_plugin(EmbeddingPlugin)
-        .run()
-        .await
+    App::new().add_plugin(EmbeddingPlugin).run().await
 }

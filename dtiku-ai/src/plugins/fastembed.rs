@@ -1,16 +1,17 @@
 use crate::config::hf_config::HfConfig;
-use derive_more::derive::Deref;
+use crate::service::embedding::{
+    proto::embedding_service_server::EmbeddingServiceServer, EmbeddingServiceImpl,
+};
+use anyhow::Context;
 use fastembed::{
     EmbeddingModel, ImageEmbedding, ImageEmbeddingModel, ImageInitOptions, InitOptions,
     TextEmbedding,
 };
-use spring::{
-    app::AppBuilder,
-    async_trait,
-    config::ConfigRegistry,
-    plugin::{MutableComponentRegistry as _, Plugin},
-};
+use spring::App;
+use spring::{app::AppBuilder, async_trait, config::ConfigRegistry, error::Result, plugin::Plugin};
+use std::net::SocketAddr;
 use std::sync::Arc;
+use tonic::transport::Server;
 
 pub struct EmbeddingPlugin;
 
@@ -20,6 +21,13 @@ impl Plugin for EmbeddingPlugin {
         let hf_config = app
             .get_config::<HfConfig>()
             .expect("load huggingface config failed");
+
+        app.add_scheduler(move |app: Arc<App>| Box::new(Self::schedule(app, hf_config)));
+    }
+}
+
+impl EmbeddingPlugin {
+    async fn schedule(_app: Arc<App>, hf_config: HfConfig) -> Result<String> {
         let cache_dir = hf_config.cache_dir;
         let text_embedding = TextEmbedding::try_new(
             InitOptions::new(EmbeddingModel::MultilingualE5Base)
@@ -35,26 +43,18 @@ impl Plugin for EmbeddingPlugin {
         )
         .expect("image embedding init failed");
 
-        app.add_component(TxtEmbedding::new(text_embedding));
-        app.add_component(ImgEmbedding::new(image_embedding));
-    }
-}
+        let addr = SocketAddr::new(hf_config.binding, hf_config.port);
 
-#[derive(Clone, Deref)]
-pub struct ImgEmbedding(Arc<ImageEmbedding>);
+        Server::builder()
+            .add_service(EmbeddingServiceServer::new(EmbeddingServiceImpl {
+                text_embedding,
+                image_embedding,
+            }))
+            .serve(addr)
+            .await
+            .with_context(|| format!("bind tcp listener failed:{}", addr))?;
 
-impl ImgEmbedding {
-    fn new(model: ImageEmbedding) -> Self {
-        Self(Arc::new(model))
-    }
-}
-
-#[derive(Clone, Deref)]
-pub struct TxtEmbedding(Arc<TextEmbedding>);
-
-impl TxtEmbedding {
-    fn new(model: TextEmbedding) -> Self {
-        Self(Arc::new(model))
+        Ok("embedding tonic server schedule finished".to_string())
     }
 }
 
