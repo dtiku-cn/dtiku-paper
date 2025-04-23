@@ -16,10 +16,10 @@ uri = "${SRC_DATABASE_URL}"
 uri = "${DATABASE_URL}"
 
 [stream]
-uri = "redis://localhost"
+uri = "${REDIS_URL:redis://localhost}"
 
 [redis]
-uri = "redis://localhost"
+uri = "${REDIS_URL:redis://localhost}"
 
 [huggingface]
 cache_dir = "${HF_HOME../.hf-cache}"
