@@ -1,0 +1,21 @@
+[package]
+name = "dtiku-ai"
+version = "0.0.1"
+edition = "2021"
+publish = ["crates-io"]
+
+[[bin]]
+name = "ai"
+path = "src/main.rs"
+
+[dependencies]
+spring = { workspace = true }
+spring-web = { workspace = true }
+spring-redis = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_with = { workspace = true }
+anyhow = { workspace = true }
+fastembed = { workspace = true }
+derive_more = { workspace = true, features = ["deref"] }

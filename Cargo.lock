@@ -1010,6 +1010,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
+name = "dtiku-ai"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "derive_more 1.0.0",
+ "fastembed",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "spring",
+ "spring-redis",
+ "spring-web",
+ "tokio",
+]
+
+[[package]]
 name = "dtiku-backend"
 version = "0.0.1"
 dependencies = [

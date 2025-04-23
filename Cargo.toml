@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "dtiku-ai",
     "dtiku-backend",
     "dtiku-web",
     "dtiku-paper",

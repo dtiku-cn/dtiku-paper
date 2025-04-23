@@ -2,7 +2,6 @@ mod fenbi_sync;
 mod huatu_sync;
 mod offcn_sync;
 
-use crate::plugins::fastembed::TxtEmbedding;
 use crate::plugins::jobs::RunningJobs;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::TaskInstance;

@@ -1,11 +1,10 @@
-mod config;
 mod jobs;
 mod plugins;
 mod router;
 mod utils;
 mod views;
 
-use plugins::{fastembed::EmbeddingPlugin, jobs::RunningJobsPlugin};
+use plugins::jobs::RunningJobsPlugin;
 use spring::{auto_config, App};
 use spring_redis::RedisPlugin;
 use spring_sea_orm::SeaOrmPlugin;
@@ -22,7 +21,6 @@ async fn main() {
         .add_plugin(SqlxPlugin)
         .add_plugin(StreamPlugin)
         .add_plugin(RedisPlugin)
-        .add_plugin(EmbeddingPlugin)
         .add_plugin(RunningJobsPlugin)
         .add_consumer(jobs::consumer())
         .run()
