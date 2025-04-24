@@ -3,8 +3,13 @@ use anyhow::Context;
 use derive_more::derive::{Deref, DerefMut};
 use dtiku_ai::embedding_service_client::EmbeddingServiceClient;
 use dtiku_ai::TextReq;
-use spring::{app::AppBuilder, async_trait, config::ConfigRegistry, error::Result, plugin::Plugin};
-use std::sync::Arc;
+use spring::{
+    app::AppBuilder,
+    async_trait,
+    config::ConfigRegistry,
+    error::Result,
+    plugin::{MutableComponentRegistry, Plugin},
+};
 use tonic::transport::Channel;
 
 pub struct EmbeddingPlugin;
@@ -19,6 +24,8 @@ impl Plugin for EmbeddingPlugin {
         let client = EmbeddingServiceClient::connect(embedding_config.url)
             .await
             .expect("embedding service connect failed");
+
+        app.add_component(Embedding(client));
     }
 }
 
@@ -26,9 +33,10 @@ impl Plugin for EmbeddingPlugin {
 pub struct Embedding(EmbeddingServiceClient<Channel>);
 
 impl Embedding {
-    pub async fn text_embedding(&mut self, text: &str) -> Result<Vec<f32>> {
+    pub async fn text_embedding<S: Into<String>>(&self, text: S) -> Result<Vec<f32>> {
         let resp = self
             .0
+            .clone()
             .text_embedding(TextReq { text: text.into() })
             .await
             .context("embedding service call failed")?;

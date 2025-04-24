@@ -437,7 +437,7 @@ impl FenbiSyncService {
             let num = qid_num_map
                 .get(&q.id)
                 .expect("qid is not exists in qid_num_map");
-            let mut question = q.to_question(self.embedding.clone()).await?;
+            let mut question = q.to_question(&self.embedding).await?;
             question.exam_id = Set(paper.exam_id);
             question.paper_type = Set(paper.paper_type);
             let q_in_db = question
@@ -705,7 +705,7 @@ struct OriginQuestion {
 }
 
 impl OriginQuestion {
-    async fn to_question(&self, mut model: Embedding) -> anyhow::Result<question::ActiveModel> {
+    async fn to_question(&self, model: &Embedding) -> anyhow::Result<question::ActiveModel> {
         let Self {
             id, ty, content, ..
         } = self;
@@ -805,8 +805,12 @@ impl OriginQuestion {
         } else {
             Err(anyhow::anyhow!("ty#{ty} is not defined"))?
         };
-        let html = Html::parse_fragment(&format!("{content}\n{options_string}"));
-        let txt: String = html.root_element().text().collect();
+        let txt = {
+            // scraper::Html 底层用了 tendril::NonAtomic 和 Cell 类型，而这些类型不是线程安全的，所以它 不实现 Send。
+            // 用代码块，让html 变量在这里作用域结束，释放掉 Cell 的引用。
+            let html = Html::parse_fragment(&format!("{content}\n{options_string}"));
+            html.root_element().text().collect::<String>()
+        };
         let embedding = model.text_embedding(&txt).await?;
         Ok(question::ActiveModel {
             content: Set(content.into()),
