@@ -40,3 +40,4 @@ dashmap = { workspace = true }
 strsim = { workspace = true }
 textdistance = { workspace = true }
 tonic = { workspace = true }
+search-api = { workspace = true }

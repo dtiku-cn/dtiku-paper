@@ -1,7 +1,6 @@
-use std::net::{IpAddr, Ipv4Addr};
-
 use serde::Deserialize;
 use spring::config::Configurable;
+use std::net::{IpAddr, Ipv4Addr};
 
 #[derive(Debug, Deserialize, Configurable)]
 #[config_prefix = "huggingface"]
