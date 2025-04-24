@@ -7,8 +7,9 @@ use fastembed::{
     EmbeddingModel, ImageEmbedding, ImageEmbeddingModel, ImageInitOptions, InitOptions,
     TextEmbedding,
 };
-use spring::{tracing, App};
+use ort::execution_providers::{CPUExecutionProvider, CUDAExecutionProvider};
 use spring::{app::AppBuilder, async_trait, config::ConfigRegistry, error::Result, plugin::Plugin};
+use spring::{tracing, App};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tonic::transport::Server;
@@ -29,17 +30,26 @@ impl Plugin for EmbeddingPlugin {
 impl EmbeddingPlugin {
     async fn schedule(_app: Arc<App>, hf_config: HfConfig) -> Result<String> {
         let cache_dir = hf_config.cache_dir;
+
+        let execution_providers = vec![
+            CUDAExecutionProvider::default().build(),
+            CPUExecutionProvider::default().build(),
+        ];
+
+        tracing::info!("load huggingface model");
         let text_embedding = TextEmbedding::try_new(
             InitOptions::new(EmbeddingModel::MultilingualE5Base)
                 .with_show_download_progress(true)
-                .with_cache_dir(format!("{cache_dir}/sentence-transformers").into()),
+                .with_cache_dir(format!("{cache_dir}/sentence-transformers").into())
+                .with_execution_providers(execution_providers.clone()),
         )
         .expect("text embedding init failed");
 
         let image_embedding = ImageEmbedding::try_new(
             ImageInitOptions::new(ImageEmbeddingModel::Resnet50)
                 .with_show_download_progress(true)
-                .with_cache_dir(format!("{cache_dir}/resnet").into()),
+                .with_cache_dir(format!("{cache_dir}/resnet").into())
+                .with_execution_providers(execution_providers.clone()),
         )
         .expect("image embedding init failed");
 

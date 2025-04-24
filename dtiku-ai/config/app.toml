@@ -1,3 +1,7 @@
 [huggingface]
 cache_dir = "${HF_HOME:../.hf-cache}"
 port = 9090
+
+[logger]
+# level = "debug"
+pretty_backtrace = true

@@ -16,7 +16,7 @@ message BatchTextReq{
 }
 
 message TensorResp{
-    repeated Embedding embedding=1;
+    repeated Embedding embeddings=1;
 }
 
 message Embedding{

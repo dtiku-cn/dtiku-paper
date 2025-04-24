@@ -1016,6 +1016,7 @@ dependencies = [
  "anyhow",
  "derive_more 1.0.0",
  "fastembed",
+ "ort",
  "prost",
  "serde",
  "serde_json",
@@ -2373,6 +2374,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libloading"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
+dependencies = [
+ "cfg-if",
+ "windows-targets 0.48.5",
+]
+
+[[package]]
 name = "libm"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3033,6 +3044,8 @@ version = "2.0.0-rc.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52afb44b6b0cffa9bf45e4d37e5a4935b0334a51570658e279e9e3e6cf324aa5"
 dependencies = [
+ "half",
+ "libloading",
  "ndarray",
  "ort-sys",
  "tracing",
