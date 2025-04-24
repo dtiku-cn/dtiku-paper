@@ -7,7 +7,7 @@ use fastembed::{
     EmbeddingModel, ImageEmbedding, ImageEmbeddingModel, ImageInitOptions, InitOptions,
     TextEmbedding,
 };
-use spring::App;
+use spring::{tracing, App};
 use spring::{app::AppBuilder, async_trait, config::ConfigRegistry, error::Result, plugin::Plugin};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -45,6 +45,7 @@ impl EmbeddingPlugin {
 
         let addr = SocketAddr::new(hf_config.binding, hf_config.port);
 
+        tracing::info!("tonic grpc service bind tcp listener: {}", addr);
         Server::builder()
             .add_service(EmbeddingServiceServer::new(EmbeddingServiceImpl {
                 text_embedding,

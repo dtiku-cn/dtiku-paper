@@ -45,7 +45,7 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}/dtiku-backend"
+            "cwd": "${workspaceFolder}/dtiku-ai"
         },
         {
             "type": "lldb",
