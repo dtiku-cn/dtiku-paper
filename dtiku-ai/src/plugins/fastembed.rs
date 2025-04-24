@@ -7,7 +7,9 @@ use fastembed::{
     EmbeddingModel, ImageEmbedding, ImageEmbeddingModel, ImageInitOptions, InitOptions,
     TextEmbedding,
 };
-use ort::execution_providers::{CPUExecutionProvider, CUDAExecutionProvider};
+use ort::execution_providers::{
+    CPUExecutionProvider, CUDAExecutionProvider, ROCmExecutionProvider, TensorRTExecutionProvider,
+};
 use spring::{app::AppBuilder, async_trait, config::ConfigRegistry, error::Result, plugin::Plugin};
 use spring::{tracing, App};
 use std::net::SocketAddr;
@@ -33,6 +35,8 @@ impl EmbeddingPlugin {
 
         let execution_providers = vec![
             CUDAExecutionProvider::default().build(),
+            TensorRTExecutionProvider::default().build(),
+            ROCmExecutionProvider::default().build(),
             CPUExecutionProvider::default().build(),
         ];
 
