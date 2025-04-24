@@ -73,6 +73,7 @@ impl EmbeddingPlugin {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
     use std::env;
