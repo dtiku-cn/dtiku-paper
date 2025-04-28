@@ -1,4 +1,4 @@
-use crate::data::home::HomeTemplate;
+use crate::views::home::HomeTemplate;
 use anyhow::Context;
 use askama::Template;
 use spring_web::{axum::response::{Html, IntoResponse}, error::Result, get};

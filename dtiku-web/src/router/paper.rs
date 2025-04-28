@@ -1,4 +1,4 @@
-use crate::data::paper::{ListPaperTemplate, PaperTemplate};
+use crate::views::paper::{ListPaperTemplate, PaperTemplate};
 use anyhow::Context;
 use askama::Template;
 use spring_web::{axum::response::{Html, IntoResponse}, error::Result, extractor::Path, get};
