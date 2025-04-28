@@ -3,7 +3,7 @@ graceful = true
 
 [web.middlewares]
 static = { enable = true, uri = "/static", path = "static", precompressed = true }
-logger = { enable = true, level = "info" }
+logger = { enable = true, level = "${WEB_LOG_LEVEL:info}" }
 
 [sea-orm]
 uri = "${DATABASE_URL:postgres://postgres:xudjf23adj213@localhost:5432/postgres}"

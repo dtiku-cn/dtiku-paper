@@ -1147,6 +1147,7 @@ dependencies = [
  "serde_with",
  "spring",
  "spring-job",
+ "spring-opentelemetry",
  "spring-redis",
  "spring-sea-orm",
  "spring-sqlx",

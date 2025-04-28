@@ -16,6 +16,7 @@ spring-job = { workspace = true }
 spring-sea-orm = { workspace = true }
 spring-sqlx = { workspace = true, features = ["postgres"] }
 spring-redis = { workspace = true }
+spring-opentelemetry = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
 dtiku-base = { path = "../dtiku-base", version = "0.0.1" }
