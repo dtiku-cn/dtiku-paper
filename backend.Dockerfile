@@ -15,6 +15,15 @@ RUN npm run build
 ############### rust builder
 FROM rust:latest AS builder
 
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libxml2 libxml2-dev \
+    openssl libssl-dev ca-certificates \
+    clang \
+    build-essential \
+    &&\
+    apt-get clean
+
 COPY . /build
 
 WORKDIR /build/dtiku-backend
@@ -24,7 +33,7 @@ RUN cargo build --release
 ############### runner container
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y libssl3 ca-certificates && apt-get clean
+RUN apt-get update && apt-get install -y libxml2 openssl libssl3 ca-certificates && apt-get clean
 
 ENV RUST_LOG=info
 
