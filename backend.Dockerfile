@@ -17,6 +17,7 @@ FROM rust:latest AS builder
 
 RUN apt-get update && apt-get install -y \
     pkg-config \
+    protobuf-compiler \
     libxml2 libxml2-dev \
     openssl libssl-dev ca-certificates \
     clang \

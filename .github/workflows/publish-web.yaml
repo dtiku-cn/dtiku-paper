@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: A job to build gwy-spider image.
+    name: A job to build dtiku-web image.
     steps:
       - name: Checkout
         uses: actions/checkout@v2

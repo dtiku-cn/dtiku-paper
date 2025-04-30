@@ -1,6 +1,11 @@
 ####################### rust builder
 FROM rust:latest AS builder
 
+RUN apt-get update && apt-get install -y \
+    protobuf-compiler \
+    &&\
+    apt-get clean
+
 COPY . /build
 
 WORKDIR /build/dtiku-ai
