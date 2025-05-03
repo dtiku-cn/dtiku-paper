@@ -47,16 +47,16 @@ impl EmbeddingPlugin {
         let text_embedding = TextEmbedding::try_new(
             InitOptions::new(EmbeddingModel::MultilingualE5Base)
                 .with_show_download_progress(true)
-                .with_cache_dir(format!("{cache_dir}/sentence-transformers").into())
-                .with_execution_providers(execution_providers.clone()),
+                .with_execution_providers(execution_providers.clone())
+                .with_cache_dir(format!("{cache_dir}/sentence-transformers").into()),
         )
         .expect("text embedding init failed");
 
         let image_embedding = ImageEmbedding::try_new(
             ImageInitOptions::new(ImageEmbeddingModel::Resnet50)
                 .with_show_download_progress(true)
-                .with_cache_dir(format!("{cache_dir}/resnet").into())
-                .with_execution_providers(execution_providers.clone()),
+                .with_execution_providers(execution_providers.clone())
+                .with_cache_dir(format!("{cache_dir}/resnet").into()),
         )
         .expect("image embedding init failed");
 
