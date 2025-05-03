@@ -12,6 +12,7 @@ path = "src/main.rs"
 spring = { workspace = true }
 spring-web = { workspace = true }
 spring-redis = { workspace = true }
+spring-opentelemetry = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

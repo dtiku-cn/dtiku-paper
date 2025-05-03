@@ -10,8 +10,11 @@ use fastembed::{
 use ort::execution_providers::{
     CPUExecutionProvider, CUDAExecutionProvider, ROCmExecutionProvider, TensorRTExecutionProvider,
 };
+use spring::tracing::Level;
 use spring::{app::AppBuilder, async_trait, config::ConfigRegistry, error::Result, plugin::Plugin};
 use spring::{tracing, App};
+use spring_opentelemetry::trace;
+use spring_web::middleware::trace::{DefaultMakeSpan, DefaultOnRequest, TraceLayer};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tonic::transport::Server;
@@ -61,6 +64,12 @@ impl EmbeddingPlugin {
 
         tracing::info!("tonic grpc service bind tcp listener: {}", addr);
         Server::builder()
+            .layer(
+                TraceLayer::new_for_grpc()
+                    .make_span_with(DefaultMakeSpan::default().level(Level::INFO))
+                    .on_request(DefaultOnRequest::default().level(Level::INFO)),
+            )
+            .layer(trace::GrpcLayer::server(Level::INFO))
             .add_service(EmbeddingServiceServer::new(EmbeddingServiceImpl {
                 text_embedding,
                 image_embedding,

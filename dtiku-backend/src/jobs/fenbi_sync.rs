@@ -219,6 +219,8 @@ impl FenbiSyncService {
         if progress.total <= 0 {
             return Ok(());
         }
+        self.save_exam_category().await?;
+
         let mut stream = sqlx::query_as::<_, OriginLabel>(r##"
         select
             jsonb_extract_path_text(extra,'course_set','liveConfigItem','name') as exam_root,
@@ -258,6 +260,21 @@ impl FenbiSyncService {
                 Err(e) => tracing::error!("find label failed: {:?}", e),
             };
         }
+
+        Ok(())
+    }
+
+    async fn save_exam_category(&mut self) -> anyhow::Result<()> {
+        let category = sqlx::query_as::<_, OriginExamCategory>(
+            r##"
+                select extra
+                from exam_category_tree
+                where from_ty = 'fenbi'
+                "##,
+        )
+        .fetch_one(&self.source_db)
+        .await
+        .context("fetch fenbi exam_category_tree failed")?;
 
         Ok(())
     }
@@ -1106,4 +1123,54 @@ struct Category {
     pub answer_count: i64,
     pub giant_only: bool,
     pub choice_only: bool,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct OriginExamCategory {
+    pub extra: Json<Vec<CourseCategory>>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CourseCategory {
+    pub icon: String,
+    pub courses: Vec<Course>,
+    pub course_set: CourseSet,
+    pub live_config_item: LiveConfigItem,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Course {
+    pub id: i64,
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_field: i64,
+    pub hidden: bool,
+    pub prefix: String,
+    pub modules: Vec<Value>,
+    pub printable: bool,
+    pub scannable: bool,
+    pub top_column: i64,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CourseSet {
+    pub id: i64,
+    pub name: String,
+    pub prefix: String,
+    pub ordinal: i64,
+    pub course_ids: Vec<i64>,
+    pub multi_quiz: bool,
+    pub created_time: i64,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveConfigItem {
+    pub id: i64,
+    pub name: String,
+    pub prefix: String,
 }

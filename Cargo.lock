@@ -1060,6 +1060,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "spring",
+ "spring-opentelemetry",
  "spring-redis",
  "spring-web",
  "tokio",
@@ -4929,14 +4930,15 @@ dependencies = [
 
 [[package]]
 name = "spring-opentelemetry"
-version = "0.3.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "035c9f522437ccd36e903ac15f886540ded58845f377a51ef74fd5a4b925eaa6"
+checksum = "fce57202e3068b05272a28537c8d3cb9ffb7e2097b9cc86b916ec5fb2a4f133a"
 dependencies = [
  "anyhow",
  "axum",
  "futures-util",
  "http",
+ "http-body",
  "opentelemetry",
  "opentelemetry-appender-tracing",
  "opentelemetry-http",
@@ -4949,6 +4951,8 @@ dependencies = [
  "spring",
  "tonic 0.13.0",
  "tower 0.5.2",
+ "tower-layer",
+ "tower-service",
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
@@ -6715,9 +6719,9 @@ checksum = "271414315aff87387382ec3d271b52d7ae78726f5d44ac98b4f4030c91880486"
 
 [[package]]
 name = "winnow"
-version = "0.7.8"
+version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e27d6ad3dac991091e4d35de9ba2d2d00647c5d0fc26c5496dee55984ae111b"
+checksum = "d9fb597c990f03753e08d3c29efbfcf2019a003b4bf4ba19225c158e1549f0f3"
 dependencies = [
  "memchr",
 ]
