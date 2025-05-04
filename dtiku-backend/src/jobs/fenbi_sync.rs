@@ -170,7 +170,7 @@ impl FenbiSyncService {
         while let Some(row) = stream.next().await {
             match row {
                 Ok(c) => {
-                    Self::save_category(&c.name, c.extra.0, 0, &self.target_db).await?;
+                    Self::save_question_category_to_keypoint(&c.name, c.extra.0, 0, &self.target_db).await?;
 
                     if progress.increase(1) {
                         self.task = self
@@ -185,7 +185,7 @@ impl FenbiSyncService {
         Ok(())
     }
 
-    async fn save_category(
+    async fn save_question_category_to_keypoint(
         prefix: &str,
         c: Category,
         parent_id: i32,
@@ -198,17 +198,21 @@ impl FenbiSyncService {
 
         match ec {
             Some(ec) => {
+                let root = ExamCategory::find_root_by_id(target_db, ec.pid)
+                    .await
+                    .context("find root exam category failed")?;
                 key_point::ActiveModel {
                     name: Set(c.name),
                     pid: Set(parent_id),
                     paper_type: Set(ec.id),
-                    // exam_id: Set(),
+                    exam_id: Set(root.expect("root exam category").id),
                     ..Default::default()
                 }
-                .insert_on_conflict(target_db);
+                .insert_on_conflict(target_db)
+                .await?;
             }
             None => {
-                tracing::info!("");
+                tracing::info!("find exam_category failed for {c:?}");
             }
         }
 
@@ -275,6 +279,31 @@ impl FenbiSyncService {
         .fetch_one(&self.source_db)
         .await
         .context("fetch fenbi exam_category_tree failed")?;
+
+        for c in category.extra.0 {
+            let root_category = c
+                .live_config_item
+                .to_exam_category()
+                .insert_on_conflict(&self.target_db)
+                .await
+                .context("insert exam category failed")?;
+
+            let second_category = c
+                .course_set
+                .to_exam_category(root_category.id)
+                .insert_on_conflict(&self.target_db)
+                .await
+                .context("insert exam category failed")?;
+
+            for c in c.courses {
+                if c.prefix != second_category.prefix {
+                    c.to_exam_category(second_category.id)
+                        .insert_on_conflict(&self.target_db)
+                        .await
+                        .context("insert exam category failed")?;
+                }
+            }
+        }
 
         Ok(())
     }
@@ -547,7 +576,7 @@ impl OriginLabel {
         let second = exam_category::ActiveModel {
             pid: Set(root.id),
             name: Set(self.exam_name.expect("exam_name is none")),
-            prefix: Set(self.exam_prefix.expect("exam_prefix is none")),
+            prefix: Set(self.exam_prefix.clone().expect("exam_prefix is none")),
             from_ty: Set(FromType::Fenbi),
             ..Default::default()
         }
@@ -557,18 +586,22 @@ impl OriginLabel {
             "insert second exam_category failed:#{id:?}--->{name:?}"
         ))?;
 
-        let leaf = exam_category::ActiveModel {
-            pid: Set(second.id),
-            name: Set(self.paper_type.expect("paper_type is none")),
-            prefix: Set(self.paper_prefix.expect("paper_prefix is none")),
-            from_ty: Set(FromType::Fenbi),
-            ..Default::default()
-        }
-        .insert_on_conflict(db)
-        .await
-        .context(format!(
-            "insert leaf exam_category failed:#{id:?}--->{name:?}"
-        ))?;
+        let leaf = if self.exam_prefix != self.paper_prefix {
+            exam_category::ActiveModel {
+                pid: Set(second.id),
+                name: Set(self.paper_type.expect("paper_type is none")),
+                prefix: Set(self.paper_prefix.expect("paper_prefix is none")),
+                from_ty: Set(FromType::Fenbi),
+                ..Default::default()
+            }
+            .insert_on_conflict(db)
+            .await
+            .context(format!(
+                "insert leaf exam_category failed:#{id:?}--->{name:?}"
+            ))?
+        } else {
+            second
+        };
 
         let label_name = self.label_name.expect("label_name is none");
         let label = match self.parent_label {
@@ -1173,4 +1206,40 @@ pub struct LiveConfigItem {
     pub id: i64,
     pub name: String,
     pub prefix: String,
+}
+
+impl LiveConfigItem {
+    fn to_exam_category(self) -> exam_category::ActiveModel {
+        exam_category::ActiveModel {
+            name: Set(self.name),
+            prefix: Set(self.prefix),
+            pid: Set(0),
+            from_ty: Set(FromType::Fenbi),
+            ..Default::default()
+        }
+    }
+}
+
+impl CourseSet {
+    fn to_exam_category(self, pid: i16) -> exam_category::ActiveModel {
+        exam_category::ActiveModel {
+            name: Set(self.name),
+            prefix: Set(self.prefix),
+            pid: Set(pid),
+            from_ty: Set(FromType::Fenbi),
+            ..Default::default()
+        }
+    }
+}
+
+impl Course {
+    fn to_exam_category(self, pid: i16) -> exam_category::ActiveModel {
+        exam_category::ActiveModel {
+            name: Set(self.name),
+            prefix: Set(self.prefix),
+            pid: Set(pid),
+            from_ty: Set(FromType::Fenbi),
+            ..Default::default()
+        }
+    }
 }
