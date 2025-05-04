@@ -61,8 +61,9 @@ create table if not exists paper_question (
     paper_id integer not null,
     question_id integer not null,
     sort smallint not null,
-    keypoint_path ltree not null,
-    correct_ratio float4 not null,
+    paper_type int2 not null,
+    keypoint_path ltree default null,
+    correct_ratio float4 default null,
     primary key (paper_id, question_id)
 );
 -- 材料

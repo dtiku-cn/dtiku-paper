@@ -12,9 +12,11 @@ pub struct Model {
     pub question_id: i32,
     pub sort: i16,
     #[sea_orm(column_type = "LTree")]
-    pub keypoint_path: String,
+    pub paper_type: i16,
+    #[sea_orm(column_type = "LTree")]
+    pub keypoint_path: Option<String>,
     #[sea_orm(column_type = "Float")]
-    pub correct_ratio: f32,
+    pub correct_ratio: Option<f32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

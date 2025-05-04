@@ -5,12 +5,10 @@ use crate::utils::regex::pick_year;
 use anyhow::Context;
 use dtiku_base::model::schedule_task;
 use dtiku_base::model::schedule_task::{Progress, TaskInstance};
-use dtiku_paper::model::paper;
 use dtiku_paper::model::paper::EssayCluster;
 use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
 use dtiku_paper::model::paper::{Chapters, PaperExtra};
-use dtiku_paper::model::paper_material;
 use dtiku_paper::model::paper_question;
 use dtiku_paper::model::question;
 use dtiku_paper::model::solution;
@@ -28,6 +26,8 @@ use dtiku_paper::model::Question;
 use dtiku_paper::model::{exam_category, KeyPoint};
 use dtiku_paper::model::{key_point, material};
 use dtiku_paper::model::{label, ExamCategory};
+use dtiku_paper::model::{paper, question_material};
+use dtiku_paper::model::{paper_material, question_keypoint};
 use futures::StreamExt;
 use itertools::Itertools;
 use scraper::Html;
@@ -44,6 +44,7 @@ use spring::{async_trait, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::sqlx;
 use spring_sqlx::ConnectPool;
+use sqlx::postgres::PgRow;
 use sqlx::types::Json;
 use sqlx::Row;
 use std::collections::HashMap;
@@ -170,7 +171,13 @@ impl FenbiSyncService {
         while let Some(row) = stream.next().await {
             match row {
                 Ok(c) => {
-                    Self::save_question_category_to_keypoint(&c.name, c.extra.0, 0, &self.target_db).await?;
+                    Self::save_question_category_to_keypoint(
+                        &c.name,
+                        c.extra.0,
+                        0,
+                        &self.target_db,
+                    )
+                    .await?;
 
                     if progress.increase(1) {
                         self.task = self
@@ -341,7 +348,7 @@ impl FenbiSyncService {
                             .bind(source_id)
                             .execute(&self.source_db)
                             .await
-                            .context("update source db label target_id failed")?;
+                            .context("update source db paper target_id failed")?;
 
                         progress.current = source_id;
                         self.task = self
@@ -478,6 +485,35 @@ impl FenbiSyncService {
         qid_num_map: &HashMap<i64, i32>,
         mid_num_map: &HashMap<i64, i32>,
     ) -> anyhow::Result<()> {
+        for m in materials {
+            let source_material_id = m.id;
+            let num = mid_num_map
+                .get(&m.id)
+                .expect("mid is not exists in mid_num_map");
+            let material = TryInto::<material::ActiveModel>::try_into(m)?;
+
+            let m_in_db = material
+                .insert(&self.target_db)
+                .await
+                .context("insert paper_material failed")?;
+
+            paper_material::ActiveModel {
+                paper_id: Set(paper.id),
+                material_id: Set(m_in_db.id),
+                sort: Set(*num as i16),
+            }
+            .insert(&self.target_db)
+            .await
+            .context("insert paper_material failed")?;
+
+            sqlx::query("update material set target_id=$1 where id=$2 and from_ty='fenbi")
+                .bind(m_in_db.id)
+                .bind(source_material_id)
+                .execute(&self.source_db)
+                .await
+                .context("update source db paper target_id failed")?;
+        }
+
         for q in questions {
             let correct_ratio = q.correct_ratio.expect("correct_ratio is none");
             let num = qid_num_map
@@ -497,6 +533,89 @@ impl FenbiSyncService {
                 .await
                 .context("insert solution failed")?;
 
+            if let Some(m) = q.material {
+                let origin_m_id = m.id;
+                let target_id: Option<i32> = sqlx::query_scalar(
+                    "select target_id from material where from_ty = 'fenbi' and id = $1",
+                )
+                .bind(origin_m_id)
+                .fetch_optional(&self.source_db)
+                .await
+                .with_context(|| format!("select material target_id by id#{origin_m_id}"))?;
+
+                if let Some(target_m_id) = target_id {
+                    question_material::ActiveModel {
+                        question_id: Set(q_in_db.id),
+                        material_id: Set(target_m_id),
+                    }
+                    .insert(&self.target_db)
+                    .await
+                    .context("insert question_material failed")?;
+                } else {
+                    tracing::error!(
+                        "origin_question#{} ==> question#{}: material not exists",
+                        q.id,
+                        q_in_db.id
+                    );
+                }
+            }
+
+            let keypoint_path = match q.keypoints {
+                Some(keypoints) => {
+                    let mut keypoint_ids = vec![];
+                    for kp in keypoints.0 {
+                        let paper_type = paper.paper_type;
+                        let keypoint_name = kp.name;
+                        let kp = KeyPoint::find_by_paper_type_and_name(
+                            &self.target_db,
+                            paper_type,
+                            &keypoint_name,
+                        )
+                        .await
+                        .with_context(|| {
+                            format!("find paper_type#{paper_type} keypoint({keypoint_name}) failed")
+                        })?;
+
+                        if let Some(keypoint) = kp {
+                            question_keypoint::ActiveModel {
+                                question_id: Set(q_in_db.id),
+                                key_point_id: Set(keypoint.id),
+                            }
+                            .insert(&self.target_db)
+                            .await
+                            .context("insert question_keypoint failed")?;
+                            keypoint_ids.push(keypoint.id);
+                        }
+                    }
+                    KeyPoint::query_common_keypoint_path(&self.target_db, &keypoint_ids).await?
+                }
+                None => {
+                    let paper_type = paper.paper_type;
+                    if let Some(chapter_name) = paper.extra.compute_chapter(*num) {
+                        let kp = KeyPoint::find_by_paper_type_and_name(
+                            &self.target_db,
+                            paper_type,
+                            &chapter_name,
+                        )
+                        .await
+                        .with_context(|| {
+                            format!("find paper_type#{paper_type} keypoint({chapter_name}) failed")
+                        })?;
+                        if let Some(keypoint) = kp {
+                            KeyPoint::query_common_keypoint_path(
+                                &self.target_db,
+                                &vec![keypoint.id],
+                            )
+                            .await?
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                }
+            };
+
             // ltree
             let stmt = Statement::from_sql_and_values(
                 sea_orm::DatabaseBackend::Postgres,
@@ -515,27 +634,6 @@ impl FenbiSyncService {
                 .execute(stmt)
                 .await
                 .context("insert paper_question failed")?;
-        }
-
-        for m in materials {
-            let num = mid_num_map
-                .get(&m.id)
-                .expect("mid is not exists in qid_num_map");
-            let material = TryInto::<material::ActiveModel>::try_into(m)?;
-
-            let m_in_db = material
-                .insert(&self.target_db)
-                .await
-                .context("insert paper_material failed")?;
-
-            paper_material::ActiveModel {
-                paper_id: Set(paper.id),
-                material_id: Set(m_in_db.id),
-                sort: Set(*num as i16),
-            }
-            .insert(&self.target_db)
-            .await
-            .context("insert paper_material failed")?;
         }
 
         Ok(())

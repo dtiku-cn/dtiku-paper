@@ -1,6 +1,5 @@
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
-    QuerySelect,
 };
 
 pub use super::_entities::exam_category::*;

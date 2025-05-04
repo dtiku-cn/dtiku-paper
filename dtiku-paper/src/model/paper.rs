@@ -15,10 +15,33 @@ pub enum PaperExtra {
     EssayCluster(EssayCluster),
 }
 
+impl PaperExtra {
+    pub fn compute_chapter(&self, num: i32) -> Option<String> {
+        match self {
+            Self::Chapters(cs) => cs.compute_chapter(num),
+            Self::EssayCluster(_) => None,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct Chapters {
     pub desc: Option<String>,
     pub chapters: Vec<PaperChapter>,
+}
+
+impl Chapters {
+    fn compute_chapter(&self, num: i32) -> Option<String> {
+        let mut num_adder = 0;
+        for c in &self.chapters {
+            let prev_num_adder = num_adder;
+            num_adder += c.count as i32;
+            if num > prev_num_adder && num <= num_adder {
+                return Some(c.name.clone());
+            }
+        }
+        None
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
