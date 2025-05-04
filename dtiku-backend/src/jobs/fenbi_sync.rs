@@ -515,7 +515,7 @@ impl FenbiSyncService {
         }
 
         for q in questions {
-            let correct_ratio = q.correct_ratio.expect("correct_ratio is none");
+            let correct_ratio = q.correct_ratio;
             let num = qid_num_map
                 .get(&q.id)
                 .expect("qid is not exists in qid_num_map");
@@ -617,18 +617,31 @@ impl FenbiSyncService {
             };
 
             // ltree
-            let stmt = Statement::from_sql_and_values(
-                sea_orm::DatabaseBackend::Postgres,
-                r#"INSERT INTO paper_question (paper_id, question_id, sort, keypoint_path, correct_ratio)
-                VALUES ($1, $2, $3, CAST($4 AS ltree), $5)"#,
-                vec![
-                    paper.id.into(),
-                    q_in_db.id.into(),
-                    (*num as i16).into(),
-                    "A".into(),
-                    correct_ratio.into(),
-                ],
-            );
+            let stmt = match keypoint_path {
+                Some(path) => Statement::from_sql_and_values(
+                    sea_orm::DatabaseBackend::Postgres,
+                    r#"INSERT INTO paper_question (paper_id, question_id, sort, keypoint_path, correct_ratio)
+                        VALUES ($1, $2, $3, CAST($4 AS ltree), $5)"#,
+                    vec![
+                        paper.id.into(),
+                        q_in_db.id.into(),
+                        (*num as i16).into(),
+                        path.into(),
+                        correct_ratio.into(),
+                    ],
+                ),
+                None => Statement::from_sql_and_values(
+                    sea_orm::DatabaseBackend::Postgres,
+                    r#"INSERT INTO paper_question (paper_id, question_id, sort, correct_ratio)
+                        VALUES ($1, $2, $3, $4)"#,
+                    vec![
+                        paper.id.into(),
+                        q_in_db.id.into(),
+                        (*num as i16).into(),
+                        correct_ratio.into(),
+                    ],
+                ),
+            };
 
             self.target_db
                 .execute(stmt)
