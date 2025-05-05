@@ -1,3 +1,4 @@
+use super::PaperSyncer;
 use crate::jobs::JobScheduler;
 use crate::plugins::embedding::Embedding;
 use crate::plugins::jobs::RunningJobs;
@@ -9,7 +10,6 @@ use dtiku_paper::model::paper::EssayCluster;
 use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
 use dtiku_paper::model::paper::{Chapters, PaperExtra};
-use dtiku_paper::model::paper_question;
 use dtiku_paper::model::question;
 use dtiku_paper::model::solution;
 use dtiku_paper::model::solution::AnswerAnalysis;
@@ -22,7 +22,6 @@ use dtiku_paper::model::solution::StepByStepAnswer;
 use dtiku_paper::model::solution::TrueFalseChoice;
 use dtiku_paper::model::FromType;
 use dtiku_paper::model::Label;
-use dtiku_paper::model::Question;
 use dtiku_paper::model::{exam_category, KeyPoint};
 use dtiku_paper::model::{key_point, material};
 use dtiku_paper::model::{label, ExamCategory};
@@ -44,12 +43,9 @@ use spring::{async_trait, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::sqlx;
 use spring_sqlx::ConnectPool;
-use sqlx::postgres::PgRow;
 use sqlx::types::Json;
 use sqlx::Row;
 use std::collections::HashMap;
-
-use super::PaperSyncer;
 
 static SINGLE_CHOICE: [i16; 1] = [1];
 static MULTI_CHOICE: [i16; 1] = [2];

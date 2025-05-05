@@ -1134,10 +1134,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "dtiku-macros"
+version = "0.0.1"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
+]
+
+[[package]]
 name = "dtiku-paper"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "dtiku-macros",
  "fastembed",
  "itertools 0.14.0",
  "sea-orm",

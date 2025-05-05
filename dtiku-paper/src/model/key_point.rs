@@ -1,4 +1,5 @@
 pub use super::_entities::key_point::*;
+use dtiku_macros::cached;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
 };
@@ -18,8 +19,19 @@ impl Entity {
     pub async fn query_common_keypoint_path<C: ConnectionTrait>(
         db: &C,
         keypoint_ids: &[i32],
-    ) -> Result<Option<String>, DbErr> {
+    ) -> anyhow::Result<Option<String>> {
         todo!()
+    }
+
+    #[cached(key = "keypoint:{id}")]
+    pub async fn find_by_id_with_cache<C: ConnectionTrait>(
+        db: &C,
+        id: i32,
+    ) -> anyhow::Result<Option<Model>> {
+        Entity::find_by_id(id)
+            .one(db)
+            .await
+            .with_context(|| format!("KeyPoint::find_by_id_with_cache({id}) failed"))
     }
 }
 
