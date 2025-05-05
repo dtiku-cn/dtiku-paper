@@ -23,6 +23,13 @@ impl Entity {
         todo!()
     }
 
+    pub async fn query_keypoint_path<C: ConnectionTrait>(
+        db: &C,
+        keypoint_ids: i32,
+    ) -> anyhow::Result<Option<String>> {
+        todo!()
+    }
+
     #[cached(key = "keypoint:{id}")]
     pub async fn find_by_id_with_cache<C: ConnectionTrait>(
         db: &C,
