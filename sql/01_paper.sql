@@ -37,7 +37,7 @@ create table if not exists paper(
 );
 -- 知识点
 create table if not exists key_point(
-    id serial primary key,
+    id int4 primary key,
     name varchar(32) not null,
     pid integer not null,
     exam_id int2 not null,

@@ -167,10 +167,32 @@ impl FenbiSyncService {
         while let Some(row) = stream.next().await {
             match row {
                 Ok(c) => {
+                    let OriginCategory { name, id, extra } = c;
+                    let paper_type = ExamCategory::find()
+                        .filter(exam_category::Column::Prefix.eq(&name))
+                        .one(&self.target_db)
+                        .await?;
+
+                    let (paper_type, exam_id) = match paper_type {
+                        Some(p) => {
+                            let root_exam_type =
+                                ExamCategory::find_root_by_id(&self.target_db, p.pid)
+                                    .await
+                                    .context("find root exam category failed")?
+                                    .expect("root_exam category not found");
+                            (p.id, root_exam_type.id)
+                        }
+                        None => {
+                            tracing::info!("find exam_category failed for {name}#{id}");
+                            continue;
+                        }
+                    };
+
                     Self::save_question_category_to_keypoint(
-                        &c.name,
-                        c.extra.0,
+                        extra.0,
                         0,
+                        paper_type,
+                        exam_id,
                         &self.target_db,
                     )
                     .await?;
@@ -189,33 +211,34 @@ impl FenbiSyncService {
     }
 
     async fn save_question_category_to_keypoint(
-        prefix: &str,
         c: Category,
         parent_id: i32,
+        paper_type: i16,
+        exam_id: i16,
         target_db: &DbConn,
     ) -> anyhow::Result<()> {
-        let ec = ExamCategory::find()
-            .filter(exam_category::Column::Prefix.eq(prefix))
-            .one(target_db)
-            .await?;
+        let kp = key_point::ActiveModel {
+            id: Set(c.id as i32),
+            name: Set(c.name),
+            pid: Set(parent_id),
+            paper_type: Set(paper_type),
+            exam_id: Set(exam_id),
+            ..Default::default()
+        }
+        .insert_on_conflict(target_db)
+        .await?;
 
-        match ec {
-            Some(ec) => {
-                let root = ExamCategory::find_root_by_id(target_db, ec.pid)
+        let parent_id = kp.id;
+
+        if let Some(cs) = c.children {
+            for c in cs {
+                Box::pin(async move {
+                    Self::save_question_category_to_keypoint(
+                        c, parent_id, paper_type, exam_id, target_db,
+                    )
                     .await
-                    .context("find root exam category failed")?;
-                key_point::ActiveModel {
-                    name: Set(c.name),
-                    pid: Set(parent_id),
-                    paper_type: Set(ec.id),
-                    exam_id: Set(root.expect("root exam category").id),
-                    ..Default::default()
-                }
-                .insert_on_conflict(target_db)
+                })
                 .await?;
-            }
-            None => {
-                tracing::info!("find exam_category failed for {c:?}");
             }
         }
 
