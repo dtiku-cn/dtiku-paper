@@ -1,3 +1,5 @@
+use crate::util;
+
 pub use super::_entities::key_point::*;
 use dtiku_macros::cached;
 use sea_orm::{
@@ -20,14 +22,35 @@ impl Entity {
         db: &C,
         keypoint_ids: &[i32],
     ) -> anyhow::Result<Option<String>> {
-        todo!()
+        let mut paths = vec![];
+        for kp_id in keypoint_ids {
+            let path = Self::query_keypoint_path(db, *kp_id).await?;
+            if let Some(path) = path {
+                paths.push(path);
+            }
+        }
+        let paths: Vec<&str> = paths.iter().map(|s| s.as_str()).collect();
+        Ok(Some(util::str::common_prefix_all(&paths)))
     }
 
     pub async fn query_keypoint_path<C: ConnectionTrait>(
         db: &C,
-        keypoint_ids: i32,
+        mut keypoint_id: i32,
     ) -> anyhow::Result<Option<String>> {
-        todo!()
+        let mut path = keypoint_id.to_string();
+        loop {
+            let kp = Self::find_by_id_with_cache(db, keypoint_id).await?;
+            if let Some(kp) = kp {
+                if kp.pid == 0 {
+                    return Ok(Some(path));
+                } else {
+                    keypoint_id = kp.pid;
+                    path.insert_str(0, &format!("{keypoint_id}."));
+                }
+            } else {
+                return Ok(None);
+            }
+        }
     }
 
     #[cached(key = "keypoint:{id}")]
