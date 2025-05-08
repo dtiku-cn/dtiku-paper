@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 设置版本
-ENV ORT_VERSION=1.21.0
+ENV ORT_VERSION=1.20.1
 
 # 下载、解压、安装并清理
 RUN curl -sL https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERSION}/onnxruntime-linux-x64-${ORT_VERSION}.tgz \
