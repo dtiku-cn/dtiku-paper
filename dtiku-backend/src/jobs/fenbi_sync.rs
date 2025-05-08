@@ -992,12 +992,17 @@ impl OriginQuestion {
             html.root_element().text().collect::<String>()
         };
         let embedding = model.text_embedding(&txt).await?;
-        Ok(question::ActiveModel {
+
+        let mut m = question::ActiveModel {
             content: Set(content.into()),
             extra: Set(serde_json::to_value(extra)?),
             embedding: Set(PgVector::from(embedding)),
             ..Default::default()
-        })
+        };
+        if let Some(target_id) = self.target_id {
+            m.id = Set(target_id);
+        }
+        Ok(m)
     }
 
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
