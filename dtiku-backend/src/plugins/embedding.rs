@@ -1,8 +1,11 @@
+pub mod proto {
+    tonic::include_proto!("embedding");
+}
+
 use crate::config::embedding::EmbeddingConfig;
 use anyhow::Context;
 use derive_more::derive::{Deref, DerefMut};
-use dtiku_ai::embedding_service_client::EmbeddingServiceClient;
-use dtiku_ai::TextReq;
+use proto::{embedding_service_client::EmbeddingServiceClient, TextReq};
 use spring::{
     app::AppBuilder,
     async_trait,

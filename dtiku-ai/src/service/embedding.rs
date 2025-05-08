@@ -3,14 +3,19 @@ pub mod proto {
 }
 
 use super::AnyhowToStatus;
-use fastembed::{ImageEmbedding, TextEmbedding};
-use proto::embedding_service_server::EmbeddingService;
+use crate::plugins::fastembed::{ImgEmbedding, TxtEmbedding};
+use proto::embedding_service_server::{EmbeddingService, EmbeddingServiceServer};
 use proto::{BatchTextReq, Embedding, TensorResp, TextReq};
+use spring::plugin::service::Service;
 use tonic::{Code, Request, Response, Status};
 
+#[derive(Clone, Service)]
+#[service(grpc = "EmbeddingServiceServer")]
 pub struct EmbeddingServiceImpl {
-    pub text_embedding: TextEmbedding,
-    pub image_embedding: ImageEmbedding,
+    #[inject(component)]
+    pub text_embedding: TxtEmbedding,
+    #[inject(component)]
+    pub image_embedding: ImgEmbedding,
 }
 
 #[tonic::async_trait]

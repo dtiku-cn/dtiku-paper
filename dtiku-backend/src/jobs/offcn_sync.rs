@@ -12,7 +12,7 @@ use spring_sqlx::ConnectPool;
 use super::{JobScheduler, PaperSyncer};
 
 #[derive(Clone, Service)]
-#[prototype]
+#[service(prototype)]
 pub struct OffcnSyncService {
     #[inject(component)]
     source_db: ConnectPool,

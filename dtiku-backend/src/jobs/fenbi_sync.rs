@@ -58,7 +58,7 @@ static CLOSED_ENDED_ANSWER: [i16; 1] = [13];
 static OPEN_ENDED_ANSWER: [i16; 3] = [14, 15, 303];
 
 #[derive(Clone, Service)]
-#[prototype]
+#[service(prototype)]
 pub struct FenbiSyncService {
     #[inject(component)]
     source_db: ConnectPool,

@@ -11,7 +11,7 @@ use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
 
 #[derive(Clone, Service)]
-#[prototype]
+#[service(prototype)]
 pub struct HuatuSyncService {
     #[inject(component)]
     source_db: ConnectPool,
