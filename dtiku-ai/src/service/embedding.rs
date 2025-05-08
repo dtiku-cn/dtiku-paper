@@ -14,8 +14,8 @@ use tonic::{Code, Request, Response, Status};
 pub struct EmbeddingServiceImpl {
     #[inject(component)]
     pub text_embedding: TxtEmbedding,
-    #[inject(component)]
-    pub image_embedding: ImgEmbedding,
+    // #[inject(component)]
+    // pub image_embedding: ImgEmbedding,
 }
 
 #[tonic::async_trait]

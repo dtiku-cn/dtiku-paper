@@ -39,16 +39,16 @@ impl Plugin for EmbeddingPlugin {
         )
         .expect("text embedding init failed");
 
-        let image_embedding = ImageEmbedding::try_new(
-            ImageInitOptions::new(ImageEmbeddingModel::Resnet50)
-                .with_show_download_progress(true)
-                .with_execution_providers(execution_providers.clone())
-                .with_cache_dir(format!("{cache_dir}/resnet").into()),
-        )
-        .expect("image embedding init failed");
+        // let image_embedding = ImageEmbedding::try_new(
+        //     ImageInitOptions::new(ImageEmbeddingModel::Resnet50)
+        //         .with_show_download_progress(true)
+        //         .with_execution_providers(execution_providers.clone())
+        //         .with_cache_dir(format!("{cache_dir}/resnet").into()),
+        // )
+        // .expect("image embedding init failed");
 
-        app.add_component(TxtEmbedding(Arc::new(text_embedding)))
-            .add_component(ImgEmbedding(Arc::new(image_embedding)));
+        app.add_component(TxtEmbedding(Arc::new(text_embedding)));
+            // .add_component(ImgEmbedding(Arc::new(image_embedding)));
     }
 }
 
