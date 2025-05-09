@@ -6,7 +6,9 @@ CREATE TYPE from_type AS ENUM (
 	'offcn',
 	'chinagwy'
 );
+create type src_type as enum('question', 'material', 'solution');
 -- 考试类型：root_id为exam_id; leaf_id为paper_type
+drop table if exists exam_category;
 create table if not exists exam_category(
     id serial2 primary key,
     name varchar(32) not null,
@@ -16,6 +18,7 @@ create table if not exists exam_category(
     unique(from_ty, pid, prefix)
 );
 -- 试卷标签：比如省、市；
+drop table if exists label;
 create table if not exists label(
     id serial primary key,
     name varchar(32) not null,
@@ -25,6 +28,7 @@ create table if not exists label(
     unique(paper_type, pid, name)
 );
 -- 试卷
+drop table if exists paper;
 create table if not exists paper(
     id serial primary key,
     title varchar(255) not null,
@@ -36,6 +40,7 @@ create table if not exists paper(
     unique(label_id, title)
 );
 -- 知识点
+drop table if exists key_point;
 create table if not exists key_point(
     id int4 primary key,
     name varchar(32) not null,
@@ -44,6 +49,7 @@ create table if not exists key_point(
     paper_type int2 not null
 );
 -- 问题
+drop table if exists question;
 create table if not exists question(
     id serial primary key,
     content text not null,
@@ -52,11 +58,13 @@ create table if not exists question(
     extra jsonb not null,
     embedding vector(768) not null
 );
+drop table if exists question_key_point;
 create table if not exists question_key_point(
     question_id integer not null,
     key_point_id integer not null,
     primary key (question_id, key_point_id)
 );
+drop table if exists paper_question;
 create table if not exists paper_question (
     paper_id integer not null,
     question_id integer not null,
@@ -67,30 +75,34 @@ create table if not exists paper_question (
     primary key (paper_id, question_id)
 );
 -- 材料
+drop table if exists material;
 create table if not exists material (
     id serial primary key,
     content text not null,
     extra jsonb not null
 );
+drop table if exists paper_material;
 create table if not exists paper_material (
     paper_id integer not null,
     material_id integer not null,
     sort smallint not null,
     primary key (paper_id, material_id)
 );
+drop table if exists question_material;
 create table if not exists question_material (
     question_id integer not null,
     material_id integer not null,
     primary key (question_id, material_id)
 );
 -- 解答
+drop table if exists solution;
 create table if not exists solution (
     id serial primary key,
     question_id integer not null,
     extra jsonb not null
 );
-create type src_type as enum('question', 'material', 'solution');
 --  图片,可能包含音频
+drop table if exists assets;
 create table if not exists assets(
     id serial primary key,
     src_type src_type not null,
