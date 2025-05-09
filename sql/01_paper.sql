@@ -9,8 +9,8 @@ CREATE TYPE from_type AS ENUM (
 -- 考试类型：root_id为exam_id; leaf_id为paper_type
 create table if not exists exam_category(
     id serial2 primary key,
-    name varchar(16) not null,
-    prefix varchar(16) not null,
+    name varchar(32) not null,
+    prefix varchar(32) not null,
     pid int2 not null,
     from_ty from_type not null,
     unique(from_ty, pid, prefix)
