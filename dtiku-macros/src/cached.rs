@@ -61,14 +61,19 @@ pub fn cached(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             let cache_key = format!(#cache_key_fmt);
 
-            let cached: Result<String, redis::RedisError> = redis.get(&cache_key).await;
+            let cached = match redis.get::<_, Option<String>>(&cache_key).await {
+                Ok(val) => val,
+                Err(err) => {
+                    tracing::error!("cache error:{:?}", err);
+                    None
+                }
+            };
 
             let value = match cached {
-                Ok(json) => {
+                Some(json) => {
                     Some(serde_json::from_str(&json).with_context(||format!("cache for '{cache_key}' json decode failed"))?)
                 },
-                Err(e) => {
-                    tracing::error!("cache error:{:?}", e);
+                None => {
                     let result = (|| async #user_block)().await?;
                     if let Some(ref val) = result {
                         let json = serde_json::to_string(val).with_context(||format!("cache for '{cache_key}' json encode failed"))?;

@@ -554,13 +554,14 @@ impl FenbiSyncService {
 
             if let Some(m) = q.material {
                 let origin_m_id = m.id;
-                let target_id: Option<i32> = sqlx::query_scalar(
+                let target_id: Option<i32> = sqlx::query_scalar::<_, Option<i32>>(
                     "select target_id from material where from_ty = 'fenbi' and id = $1",
                 )
                 .bind(origin_m_id)
                 .fetch_optional(&self.source_db)
                 .await
-                .with_context(|| format!("select material target_id by id#{origin_m_id}"))?;
+                .with_context(|| format!("select material target_id by id#{origin_m_id}"))?
+                .flatten();
 
                 if let Some(target_m_id) = target_id {
                     question_material::ActiveModel {
