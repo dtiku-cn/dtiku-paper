@@ -1,7 +1,6 @@
 use super::PaperSyncer;
 use crate::jobs::JobScheduler;
 use crate::plugins::embedding::Embedding;
-use crate::plugins::jobs::RunningJobs;
 use crate::utils::regex::pick_year;
 use anyhow::Context;
 use dtiku_base::model::schedule_task;
@@ -152,12 +151,11 @@ impl FenbiSyncService {
         if progress.total <= 0 {
             return Ok(());
         }
-        let mut stream = sqlx::query_as::<_, OriginCategory>(
+        let mut stream = sqlx::query_as::<_, OriginQuestionCategory>(
             r##"
                 select
                     prefix,
-                    extra,
-                    id
+                    extra
                 from question_category
                 where from_ty = 'fenbi'
                 "##,
@@ -167,7 +165,7 @@ impl FenbiSyncService {
         while let Some(row) = stream.next().await {
             match row {
                 Ok(c) => {
-                    let OriginCategory { name, id, extra } = c;
+                    let OriginQuestionCategory { name, extra } = c;
                     let paper_type = ExamCategory::find()
                         .filter(exam_category::Column::Prefix.eq(&name))
                         .one(&self.target_db)
@@ -183,7 +181,7 @@ impl FenbiSyncService {
                             (p.id, root_exam_type.id)
                         }
                         None => {
-                            tracing::info!("find exam_category failed for {name}#{id}");
+                            tracing::info!("find exam_category failed for fenbi#{name}");
                             continue;
                         }
                     };
@@ -362,12 +360,14 @@ impl FenbiSyncService {
                         let source_id = row.id;
                         let paper = self.save_paper(row).await?;
 
-                        sqlx::query("update paper set target_id=$1 where id=$2 and from_ty='fenbi'")
-                            .bind(paper.id)
-                            .bind(source_id)
-                            .execute(&self.source_db)
-                            .await
-                            .context("update source db paper target_id failed")?;
+                        sqlx::query(
+                            "update paper set target_id=$1 where id=$2 and from_ty='fenbi'",
+                        )
+                        .bind(paper.id)
+                        .bind(source_id)
+                        .execute(&self.source_db)
+                        .await
+                        .context("update source db paper target_id failed")?;
 
                         progress.current = source_id;
                         self.task = self
@@ -1266,8 +1266,7 @@ struct MaterialIdNumber {
 }
 
 #[derive(Debug, sqlx::FromRow)]
-struct OriginCategory {
-    pub id: i64,
+struct OriginQuestionCategory {
     pub name: String,
     pub extra: Json<Category>,
 }
