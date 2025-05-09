@@ -22,4 +22,4 @@ uri = "${REDIS_URL:redis://localhost}"
 uri = "${REDIS_URL:redis://localhost}"
 
 [embedding]
-url = ${EMBEDDING_URL:http://localhost:9090}"
+url = "${EMBEDDING_URL:http://localhost:9090}"
