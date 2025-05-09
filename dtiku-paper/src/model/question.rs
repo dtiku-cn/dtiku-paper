@@ -2,7 +2,8 @@ pub use super::_entities::question::*;
 use super::{PaperQuestion, _entities::paper_question};
 use itertools::Itertools;
 use sea_orm::{
-    ColumnTrait, ConnectionTrait, DerivePartialModel, EntityTrait, FromQueryResult, QueryFilter,
+    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
+    FromQueryResult, QueryFilter,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -112,5 +113,21 @@ impl Entity {
             .sorted_by_key(|m| id_sort.get(&m.id))
             .map(|m| m.try_into())
             .collect()
+    }
+}
+
+impl ActiveModel {
+    pub async fn insert_on_conflict<C>(self, db: &C) -> Result<Model, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::insert(self)
+            .on_conflict(
+                OnConflict::columns([Column::Id])
+                    .update_columns([Column::Content, Column::Extra, Column::Embedding])
+                    .to_owned(),
+            )
+            .exec_with_returning(db)
+            .await
     }
 }

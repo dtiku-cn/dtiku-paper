@@ -512,7 +512,7 @@ impl FenbiSyncService {
             let material = TryInto::<material::ActiveModel>::try_into(m)?;
 
             let m_in_db = material
-                .insert(&self.target_db)
+                .insert_on_conflict(&self.target_db)
                 .await
                 .context("insert paper_material failed")?;
 
@@ -542,7 +542,7 @@ impl FenbiSyncService {
             question.exam_id = Set(paper.exam_id);
             question.paper_type = Set(paper.paper_type);
             let q_in_db = question
-                .insert(&self.target_db)
+                .insert_on_conflict(&self.target_db)
                 .await
                 .context("insert question failed")?;
             let mut solution = q.to_solution()?;
@@ -639,24 +639,26 @@ impl FenbiSyncService {
             let stmt = match keypoint_path {
                 Some(path) => Statement::from_sql_and_values(
                     sea_orm::DatabaseBackend::Postgres,
-                    r#"INSERT INTO paper_question (paper_id, question_id, sort, keypoint_path, correct_ratio)
-                        VALUES ($1, $2, $3, CAST($4 AS ltree), $5)"#,
+                    r#"INSERT INTO paper_question (paper_id, question_id, sort, paper_type, keypoint_path, correct_ratio)
+                        VALUES ($1, $2, $3, $4, CAST($5 AS ltree), $6)"#,
                     vec![
                         paper.id.into(),
                         q_in_db.id.into(),
                         (*num as i16).into(),
+                        q_in_db.paper_type.into(),
                         path.into(),
                         correct_ratio.into(),
                     ],
                 ),
                 None => Statement::from_sql_and_values(
                     sea_orm::DatabaseBackend::Postgres,
-                    r#"INSERT INTO paper_question (paper_id, question_id, sort, correct_ratio)
-                        VALUES ($1, $2, $3, $4)"#,
+                    r#"INSERT INTO paper_question (paper_id, question_id, sort, paper_type, correct_ratio)
+                        VALUES ($1, $2, $3, $4, $5)"#,
                     vec![
                         paper.id.into(),
                         q_in_db.id.into(),
                         (*num as i16).into(),
+                        q_in_db.paper_type.into(),
                         correct_ratio.into(),
                     ],
                 ),

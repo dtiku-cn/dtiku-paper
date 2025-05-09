@@ -32,7 +32,7 @@ async fn main() {
         .add_plugin(StreamPlugin)
         .add_plugin(RedisPlugin)
         .add_plugin(RunningJobsPlugin)
-        .add_plugin(OpenTelemetryPlugin)
+        // .add_plugin(OpenTelemetryPlugin)
         .add_plugin(EmbeddingPlugin)
         .run()
         .await
