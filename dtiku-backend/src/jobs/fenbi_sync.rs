@@ -362,7 +362,7 @@ impl FenbiSyncService {
                         let source_id = row.id;
                         let paper = self.save_paper(row).await?;
 
-                        sqlx::query("update paper set target_id=$1 where id=$2 and from_ty='fenbi")
+                        sqlx::query("update paper set target_id=$1 where id=$2 and from_ty='fenbi'")
                             .bind(paper.id)
                             .bind(source_id)
                             .execute(&self.source_db)
