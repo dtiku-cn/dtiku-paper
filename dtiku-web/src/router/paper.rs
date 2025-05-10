@@ -4,7 +4,10 @@ use crate::views::{
 };
 use anyhow::Context;
 use askama::Template;
-use dtiku_paper::{query::paper::ListPaperQuery, service::paper::PaperService};
+use dtiku_paper::{
+    query::paper::ListPaperQuery,
+    service::{exam_category::ExamCategoryService, paper::PaperService},
+};
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
@@ -18,10 +21,15 @@ use spring_web::{
 #[get("/paper")]
 async fn list_paper(
     Query(query): Query<ListPaperQuery>,
+    Component(ecs): Component<ExamCategoryService>,
     Component(ps): Component<PaperService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    
+    let p = ecs
+        .find_by_id_with_cache(query.paper_type)
+        .await?
+        .ok_or_else(|| KnownWebError::bad_request(format!("试卷类型不存在:{}", query.paper_type)))?;
+
     if query.label_id == 0 { // 默认值
         
     }

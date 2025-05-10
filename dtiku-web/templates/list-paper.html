@@ -22,9 +22,15 @@
                     <strong th:text="|${cls.category.text} / ${cls.text}|"></strong>
                 </a>
                 <div class="dropdown-menu shadow-sm" aria-labelledby="clsDropdown">
-                    <a class="dropdown-item" th:each="cls:${allPaperTypes}"
-                        th:href="|?category=${cls.category}&cls=${cls.text}|"
-                        th:text="|${cls.category.text} / ${cls.text}|"></a>
+                    {% for p in global.paper_types %}
+                    {% if let Some(paper_types) = p.children %}
+                        {% for sub_type in paper_types %}
+                        <a class="dropdown-item" href="?ty={{p.id}}">{{p.name ~ '/' ~ sub_type.name}}</a>
+                        {% endfor %}
+                    {% else %}
+                    <a class="dropdown-item" href="?ty={{p.id}}">{{p.name}}</a>
+                    {% endif %}
+                    {% endfor %}
                 </div>
             </div>
         </header>

@@ -1,0 +1,239 @@
+{%- import "macros/general.html" as general -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>真题分类打印 | '+${system_siteTitle}</title>
+    {% call general::headerfiles() %}
+    <style media="print">
+        #printcontent .solution {
+            display: block !important;
+        }
+
+        #printcontent .carousel-item {
+            display: block;
+            float: none;
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <div class="d-print-none">
+        <div class="d-flex justify-content-center mb-3">
+            <svg class="icon-svg">
+                <use xlink:href="#ic-printer"></use>
+            </svg>
+        </div>
+        <h1 class="text-center mb-4">模块真题打印</h1>
+        <form method="post" action="/question/section">
+            <div class="form-group mb-2 mx-n1">
+                <select id="paperIds" name="paperIds" class="form-control" multiple="multiple" required
+                    data-placeholder="输入省份或年份等关键词搜索试卷,最多可选20张试卷">
+                    <option selected th:each="p:${papers}" th:value="${p.id}" th:text="${p.title}"
+                        th:data-type="${p.fromType}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group row mx-n2">
+                <div class="input-group col-12 col-md-6 mb-2 px-1">
+                    <div class="input-group-prepend">
+                        <label for="questionType" class="input-group-text">题型</label>
+                    </div>
+                    <select id="questionType" name="questionType" class="custom-select">
+                        <option th:each="t:${allQuestionType}" th:value="${t.name()}" th:text="${t.showText}"
+                            th:selected="${questionType==t}"></option>
+                    </select>
+                    <select th:if="${questionType!=null&&categoriesMap.get(questionType) != null}" id="category"
+                        name="category" class="custom-select">
+                        <option value="">-全部-</option>
+                        <option th:each="c:${categoriesMap.get(questionType)}" th:value="${c.name()}"
+                            th:text="${c.text}" th:selected="${category==c}"></option>
+                    </select>
+                </div>
+                <div class="input-group col-12 col-md-6 mb-2 px-1">
+                    <div class="input-group-prepend">
+                        <label for="sectionType" class="input-group-text">题目/答案</label>
+                    </div>
+                    <select id="sectionType" name="sectionType" class="custom-select">
+                        <option th:each="s:${allSections}" th:value="${s.name()}" th:text="${s.text}"
+                            th:selected="${sectionType==s}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary">查询</button>
+                <button id="exam" type="button" class="btn btn-link"
+                    th:if="${user!=null && sectionType?.name()=='together'}"
+                    th:classappend="${sets.isEmpty(paperIds)?'disabled':''}">练习
+                </button>
+                <a id="duplicate" class="btn btn-link" th:if="${duplicate!=null}" data-toggle="tooltip"
+                    th:classappend="${duplicate.size()<=0?'disabled':''}"
+                    th:title="${duplicate.size()<=0?'没有重复题目':questions.size()+'中有'+duplicate.size()+'个重复题目'}">去重</a>
+                <a class="btn btn-link" th:href="${user==null?'#loginModal':'javascript:window.print()'}"
+                    th:data-toggle="${user==null?'modal':''}"
+                    th:classappend="${sets.isEmpty(paperIds)?'disabled':''}">打印</a>
+            </div>
+        </form>
+    </div>
+
+    <div id="printcontent" class="paper slide" data-interval="false" th:classappend="${user==null?'d-print-none':''}">
+        <div class="exam-operator d-none justify-content-center my-2 d-print-none">
+            <div class="btn-group">
+                <button class="btn btn-primary" type="button" data-target="#printcontent" data-slide="prev">上一题</button>
+                <div class="timer btn btn-outline-primary" style="width:10em" data-toggle="tooltip" data-html="true"
+                    title="">
+                    时间：00:00.0
+                </div>
+                <button class="btn btn-primary" type="button" data-target="#printcontent" data-slide="next">下一题</button>
+            </div>
+        </div>
+        <div class="carousel-inner">
+            <div th:each="q,iter : ${questions}" th:class="${iter.index==0?'active':''}">
+                <div th:if="${q.material!=null}" class="material" th:each="m:${q.material}">
+                    <h4 class="text-center mt-2" th:text="${m.chineseNumber()}"></h4>
+                    <div th:utext="${m.html}"></div>
+                </div>
+                <div th:id="${'q-'+q.id}" class="clearfix mt-3 p-1">
+                    <b class="q-number float-left" th:text="|${iter.index+1}、|"></b>
+                    <a class="q-number float-left text-reset" th:href="'/paper/'+${q.paper.id}+'#'+${q.number}">
+                        <b th:text="|(${q.paper.year}${q.paper.area}第${q.number}题)|"></b>
+                    </a>
+                    <div class="question-wrapper" th:include="${sectionType.name()=='question'}?
+                        ~{fragments/question::xingce_question(${q})}:(
+                        ${sectionType.name()=='explain'}?~{fragments/question::raw_question_solution(${q})}:
+                        ~{fragments/question::xingce_exercise_question(${q},null)})"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
+    {% call general::footer() %}
+    <script th:src="@{/webjars/select2/4.0.13/js/select2.full.min.js}"></script>
+    <script th:src="@{/webjars/select2/4.0.13/js/i18n/zh-CN.js}"></script>
+    <th:block th:replace="fragments/painter::painter" />
+    <script th:replace="fragments/question::answer-collapse-action"></script>
+    <script src='/dist/js/speech.js'></script>
+    <script>
+        // var categoriesMap = [(${@thymeleafUtils.toJSON(categoriesDetailMap) })];
+        // var duplicate = [(${@thymeleafUtils.toJSON(duplicate) })];
+
+        function renderPaper(p) {
+            const icon = p.type ? ([[{ system_showVendor }]] ? "https://www." + p.type + ".com/favicon.ico" : '') : window.loadingGif;
+            const vendorIcon = icon ? "<img class='mr-2 vendor-icon' src='" + icon + "'/>" : icon;
+            return $(
+                "<span class='d-flex align-items-center'>" + vendorIcon +
+                "<b>" + p.text + "</b>" +
+                "</span>"
+            );
+        }
+
+        $(function () {
+            $("#paperIds").select2({
+                minimumInputLength: 2,
+                maximumSelectionLength: 20,
+                language: "zh-CN",
+                closeOnSelect: false,
+                tokenSeparators: [','],
+                ajax: {
+                    url: '/paper/like',
+                    dataType: 'json',
+                    delay: 250,
+                    cache: true,
+                    data: function (param) {
+                        return { q: param.term }
+                    },
+                    processResults: function (data, page) {
+                        console.log("results", arguments);
+                        return {
+                            results: data.map(function (p) {
+                                return { id: p.id, type: p.fromType, text: p.title };
+                            })
+                        };
+                    }
+                },
+                templateResult: renderPaper,
+                // templateSelection: p => p.text,
+            });
+            $("#questionType").change(function () {
+                $(this).siblings("#category").remove();
+                var categories = categoriesMap[$(this).val()];
+                if (categories) {
+                    $(this).after(
+                        "<select id=\"category\" name=\"category\" class=\"custom-select\">\n" +
+                        "<option value=\"\">-全部-</option>\n" +
+                        categories.map(c => "<option value='" + c.name + "'>" + c.text + "</option>").join("") +
+                        "</select>");
+                }
+            });
+            $("#duplicate").click(function () {
+                var val = Boolean($(this).data("show-duplicate"));
+                for (var qid of duplicate) {
+                    $("#q-" + qid).toggleClass('d-none', !val);
+                }
+                $("b.q-number").toggleClass('d-none', !val);
+                $(this).data("show-duplicate", !val).text(val ? '去重' : '不去重');
+            });
+
+            var $printcontent = $("#printcontent");
+            var $carouselItems = $printcontent.find(".carousel-inner>div");
+            var $examOperator = $printcontent.find(".exam-operator");
+            var $timer = $printcontent.find(".timer");
+
+            function ms2String(n) {
+                var s = Math.floor(n / 1000), ms = Math.floor(n % 1000 / 100), m = Math.floor(s / 60);
+                return String(m).padStart(2, '0') + ":" + String(s % 60).padStart(2, '0') + "." + ms;
+            }
+
+            function refreshTimer(refresh) {
+                var $activeItem = $printcontent.find(".carousel-item.active");
+                var timerMs = $activeItem.data("timer-ms") || 0;
+                if (refresh === undefined || refresh) {
+                    $activeItem.data('timer-ms', timerMs + 100);
+                }
+                $timer.text("时间：" + ms2String(timerMs));
+            }
+
+            $timer.click(function () {
+                var timer = $timer.data('timer');
+                $timer.data('timer', timer ? clearInterval(timer) || false : setInterval(refreshTimer, 100));
+                var totalMs = 0, maxMs = 0, minMs = Number.MAX_VALUE, indexOfMaxMs = 0, indexOfMinMs = 0;
+                $printcontent.find(".carousel-item").each(function (i) {
+                    var ms = $(this).data("timer-ms") || 0;
+                    totalMs += ms;
+                    if (maxMs < ms) {
+                        maxMs = ms;
+                        indexOfMaxMs = i;
+                    }
+                    if (minMs > ms) {
+                        minMs = ms;
+                        indexOfMinMs = i;
+                    }
+                });
+                var totalMsEle = "<div>总耗时：" + ms2String(totalMs) + "</div>";
+                var maxMsEle = "<div>耗时最长：" + ms2String(maxMs) + "</div>";
+                var minMsEle = "<div>耗时最短：" + ms2String(minMs) + "</div>";
+                $timer.tooltip('hide').attr("data-original-title", "<div class='p-1'>" + totalMsEle + maxMsEle + minMsEle + "</div>").tooltip("show");
+            });
+
+            $("#exam").click(function () {
+                $carouselItems.toggleClass('carousel-item');
+                var has = $printcontent.toggleClass("carousel").carousel().on('slid.bs.carousel', function () {
+                    refreshTimer(false);
+                }).hasClass("carousel");
+                $examOperator.toggleClass('d-flex', has).toggleClass('d-none', !has);
+
+                var timer = $timer.data('timer');
+                $timer.data('timer', timer && clearInterval(timer));
+
+                if (has) {
+                    $timer.data('timer', setInterval(refreshTimer, 100));
+                }
+            });
+        })
+    </script>
+</body>
+
+</html>

@@ -7,3 +7,9 @@ use super::GlobalVariables;
 pub struct QuestionSearchTemplate {
     pub global: GlobalVariables,
 }
+
+#[derive(Template)]
+#[template(path = "question-section.html")]
+pub struct QuestionSectionTemplate {
+    pub global: GlobalVariables,
+}
