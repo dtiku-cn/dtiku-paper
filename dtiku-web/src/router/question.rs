@@ -4,12 +4,14 @@ use crate::views::{
 };
 use anyhow::Context;
 use askama::Template;
+use dtiku_paper::query::question::PaperQuestionQuery;
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
         Extension,
     },
     error::Result,
+    extractor::Query,
     get,
 };
 
@@ -23,6 +25,7 @@ async fn search_question(
 
 #[get("/question/section")]
 async fn question_section(
+    Query(query): Query<PaperQuestionQuery>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     let t = QuestionSectionTemplate { global };

@@ -1,5 +1,8 @@
 use anyhow::Context;
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
+use itertools::Itertools;
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QuerySelect};
+
+use crate::query::question::PaperQuestionQuery;
 
 pub use super::_entities::paper_question::*;
 
@@ -13,5 +16,27 @@ impl Entity {
             .all(db)
             .await
             .with_context(|| format!("paper_question::find_by_paper_id({paper_id}) failed"))
+    }
+
+    pub async fn find_by_query<C>(db: &C, query: &PaperQuestionQuery) -> anyhow::Result<Vec<i32>>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .select_only()
+            .column(Column::QuestionId)
+            .filter(
+                Column::PaperType
+                    .eq(query.paper_type)
+                    .and(Column::PaperId.is_in(query.paper_ids.clone()))
+                    .and(
+                        Column::CorrectRatio
+                            .between(query.correct_ratio_start, query.correct_ratio_end),
+                    ),
+            )
+            .all(db)
+            .await
+            .with_context(|| format!("paper_question::find_by_query failed"))
+            .map(|ms| ms.into_iter().map(|m| m.question_id).collect_vec())
     }
 }
