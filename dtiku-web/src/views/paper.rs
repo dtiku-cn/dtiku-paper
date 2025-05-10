@@ -1,12 +1,17 @@
 use super::{GlobalVariables, IntoTemplate};
 use askama::Template;
-use dtiku_paper::{domain::paper::FullPaper, model::paper};
+use dtiku_paper::{
+    domain::{label::LabelTree, paper::FullPaper},
+    model::{exam_category, paper},
+};
 use spring_sea_orm::pagination::Page;
 
 #[derive(Template)]
 #[template(path = "list-paper.html")]
 pub struct ListPaperTemplate {
     pub global: GlobalVariables,
+    pub label_tree: LabelTree,
+    pub current_paper_type: exam_category::Model,
     pub papers: Vec<paper::Model>,
     pub size: u64,
     pub page: u64,
@@ -15,24 +20,30 @@ pub struct ListPaperTemplate {
     /// the number of total pages.
     pub total_pages: u64,
 }
+impl ListPaperTemplate {
+    pub(crate) fn new(
+        global: GlobalVariables,
+        label_tree: LabelTree,
+        current_paper_type: exam_category::Model,
+        list: Page<paper::Model>,
+    ) -> Self {
+        Self {
+            global,
+            label_tree,
+            current_paper_type,
+            papers: list.content,
+            size: list.size,
+            page: list.page,
+            total_elements: list.total_elements,
+            total_pages: list.total_pages,
+        }
+    }
+}
 
 #[derive(Template)]
 #[template(path = "paper.html")]
 pub struct PaperTemplate {
     pub global: GlobalVariables,
-}
-
-impl IntoTemplate<ListPaperTemplate> for Page<paper::Model> {
-    fn to_template(self, global: GlobalVariables) -> ListPaperTemplate {
-        ListPaperTemplate {
-            global,
-            papers: self.content,
-            size: self.size,
-            page: self.page,
-            total_elements: self.total_elements,
-            total_pages: self.total_pages,
-        }
-    }
 }
 
 impl IntoTemplate<PaperTemplate> for FullPaper {

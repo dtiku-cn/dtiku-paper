@@ -4,7 +4,7 @@ use crate::{
 };
 use dtiku_macros::cached;
 use itertools::Itertools;
-use sea_orm::{DbConn, EntityTrait, QuerySelect};
+use sea_orm::{DbConn, EntityTrait};
 use spring::plugin::service::Service;
 
 #[derive(Clone, Service)]
@@ -22,7 +22,7 @@ impl ExamCategoryService {
         ExamCategory::find_by_root_prefix(&self.db, prefix).await
     }
 
-    #[cached(key = "paper_type_name:{paper_type}")]
+    #[cached(key = "leaf_paper_type:{paper_type}")]
     pub async fn find_by_id_with_cache(
         &self,
         paper_type: i16,
@@ -30,7 +30,7 @@ impl ExamCategoryService {
         ExamCategory::find_by_id(paper_type)
             .one(&self.db)
             .await
-            .with_context(|| format!("find_name_by_id({paper_type}) failed"))
+            .with_context(|| format!("find_by_id_with_cache({paper_type}) failed"))
     }
 
     // #[cached(key = "paper_types:{prefix}")]

@@ -6,7 +6,7 @@ use anyhow::Context;
 use askama::Template;
 use dtiku_paper::{
     query::paper::ListPaperQuery,
-    service::{exam_category::ExamCategoryService, paper::PaperService},
+    service::{exam_category::ExamCategoryService, label::LabelService, paper::PaperService},
 };
 use spring_web::{
     axum::{
@@ -20,22 +20,28 @@ use spring_web::{
 
 #[get("/paper")]
 async fn list_paper(
-    Query(query): Query<ListPaperQuery>,
+    Query(mut query): Query<ListPaperQuery>,
     Component(ecs): Component<ExamCategoryService>,
     Component(ps): Component<PaperService>,
+    Component(ls): Component<LabelService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    let p = ecs
-        .find_by_id_with_cache(query.paper_type)
+    let paper_type = query.paper_type;
+    let current_paper_type = ecs
+        .find_by_id_with_cache(paper_type)
         .await?
-        .ok_or_else(|| KnownWebError::bad_request(format!("试卷类型不存在:{}", query.paper_type)))?;
+        .ok_or_else(|| {
+            KnownWebError::bad_request(format!("试卷类型不存在:{}", query.paper_type))
+        })?;
 
-    if query.label_id == 0 { // 默认值
-        
+    let label_tree = ls.find_all_label_by_paper_type(paper_type).await?;
+
+    if query.label_id == 0 {
+        // 默认值
+        query.label_id = label_tree.default_label_id();
     }
-    println!("index");
     let list = ps.find_paper_by_query(query).await?;
-    let t: ListPaperTemplate = list.to_template(global);
+    let t = ListPaperTemplate::new(global, label_tree, current_paper_type, list);
     Ok(Html(t.render().context("render failed")?))
 }
 

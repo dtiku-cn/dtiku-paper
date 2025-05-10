@@ -4,8 +4,8 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct LabelQuery {
-    pid: i32,
-    paper_type: i16,
+    pub(crate) pid: i32,
+    pub(crate) paper_type: i16,
 }
 
 impl IntoCondition for LabelQuery {

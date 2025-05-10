@@ -68,4 +68,23 @@ impl Entity {
                 )
             })
     }
+
+    pub async fn find_by_paper_type_and_pids<C>(
+        db: &C,
+        paper_type: i16,
+        pids: Vec<i32>,
+    ) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .filter(
+                Column::PaperType
+                    .eq(paper_type)
+                    .and(Column::Pid.is_in(pids)),
+            )
+            .all(db)
+            .await
+            .context("find_by_paper_type_and_pids() failed")
+    }
 }
