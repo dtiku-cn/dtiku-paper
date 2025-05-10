@@ -19,3 +19,4 @@ dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
 askama = { workspace = true, features = ["serde_json"] }
 anyhow = { workspace = true }
 serde = { workspace = true }
+chrono = { workspace = true }

@@ -5,7 +5,7 @@
 
 <head>
     {% call general::meta() %}
-    <title>${province}+${cls.category.text}+${cls.text}+'真题库 | '+${system_siteTitle}</title>
+    <title>${province}{{root_exam_category.name}}{{current_paper_type.name}}真题库 | ${system_siteTitle}</title>
     {% call general::headerfiles() %}
 </head>
 
@@ -19,14 +19,14 @@
                     <svg class="icon-svg icon-svg-sm mr-2">
                         <use xlink:href="#ic-library"></use>
                     </svg>
-                    <strong th:text="|${cls.category.text} / ${cls.text}|"></strong>
+                    <strong>{{root_exam_category.name ~ " / " ~ current_paper_type.name}}</strong>
                 </a>
                 <div class="dropdown-menu shadow-sm" aria-labelledby="clsDropdown">
                     {% for p in global.paper_types %}
                     {% if let Some(paper_types) = p.children %}
-                        {% for sub_type in paper_types %}
-                        <a class="dropdown-item" href="?ty={{p.id}}">{{p.name ~ '/' ~ sub_type.name}}</a>
-                        {% endfor %}
+                    {% for sub_type in paper_types %}
+                    <a class="dropdown-item" href="?ty={{p.id}}">{{p.name ~ " / " ~ sub_type.name}}</a>
+                    {% endfor %}
                     {% else %}
                     <a class="dropdown-item" href="?ty={{p.id}}">{{p.name}}</a>
                     {% endif %}
@@ -35,8 +35,10 @@
             </div>
         </header>
         <div id="allProvinces" class="card-body d-flex flex-wrap">
-            <a class="btn btn-link" th:each="p : ${allProvinces}" th:classappend="${province==p?'active':''}"
-                th:href="|?category=${cls.category}&cls=${cls.text}&province=${p}|" th:text="${p}"></a>
+            {% for l in label_tree.labels %}
+            <a class="btn btn-link ${province==p?'active':''}"
+                href="?ty={{current_paper_type.id}}&lid={{l.id}}">{{l.name}}</a>
+            {% endfor %}
         </div>
     </div>
 
@@ -45,7 +47,7 @@
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-list"></use>
             </svg>
-            <strong th:text="|${province}${cls.text}试卷列表|"></strong>
+            <strong>${province}{{current_paper_type.name}}试卷列表</strong>
         </header>
         <div id="fromType" class="text-center">
             <a class="btn btn-link" th:href="@{/paper(category=${cls.category},cls=${cls.text},province=${province})}"

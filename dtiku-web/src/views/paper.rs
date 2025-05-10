@@ -12,6 +12,7 @@ pub struct ListPaperTemplate {
     pub global: GlobalVariables,
     pub label_tree: LabelTree,
     pub current_paper_type: exam_category::Model,
+    pub root_exam_category: exam_category::Model,
     pub papers: Vec<paper::Model>,
     pub size: u64,
     pub page: u64,
@@ -25,12 +26,14 @@ impl ListPaperTemplate {
         global: GlobalVariables,
         label_tree: LabelTree,
         current_paper_type: exam_category::Model,
+        root_exam_category: exam_category::Model,
         list: Page<paper::Model>,
     ) -> Self {
         Self {
             global,
             label_tree,
             current_paper_type,
+            root_exam_category,
             papers: list.content,
             size: list.size,
             page: list.page,

@@ -25,6 +25,13 @@ impl PaperExtra {
             Self::EssayCluster(_) => None,
         }
     }
+
+    pub fn topic(&self) -> Option<String> {
+        match self {
+            Self::Chapters(_) => None,
+            Self::EssayCluster(ec) => ec.topic.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]

@@ -33,6 +33,12 @@ async fn list_paper(
         .ok_or_else(|| {
             KnownWebError::bad_request(format!("试卷类型不存在:{}", query.paper_type))
         })?;
+    let root_exam_category = ecs
+        .find_root_exam_by_id(current_paper_type.pid)
+        .await?
+        .ok_or_else(|| {
+            KnownWebError::bad_request(format!("试卷类型不存在:{}", query.paper_type))
+        })?;
 
     let label_tree = ls.find_all_label_by_paper_type(paper_type).await?;
 
@@ -41,7 +47,13 @@ async fn list_paper(
         query.label_id = label_tree.default_label_id();
     }
     let list = ps.find_paper_by_query(query).await?;
-    let t = ListPaperTemplate::new(global, label_tree, current_paper_type, list);
+    let t = ListPaperTemplate::new(
+        global,
+        label_tree,
+        current_paper_type,
+        root_exam_category,
+        list,
+    );
     Ok(Html(t.render().context("render failed")?))
 }
 

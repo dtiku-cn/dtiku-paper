@@ -22,6 +22,14 @@ impl ExamCategoryService {
         ExamCategory::find_by_root_prefix(&self.db, prefix).await
     }
 
+    #[cached(key = "root_exam:id:{id}")]
+    pub async fn find_root_exam_by_id(
+        &self,
+        id: i16,
+    ) -> anyhow::Result<Option<exam_category::Model>> {
+        ExamCategory::find_root_by_id(&self.db, id).await
+    }
+
     #[cached(key = "leaf_paper_type:{paper_type}")]
     pub async fn find_by_id_with_cache(
         &self,

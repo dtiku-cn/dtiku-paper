@@ -7,18 +7,24 @@
 
 {% macro paper_table(papers)%}
 <table id="paper-table" class="table table-hover">
-    <tr th:each="p : ${papers}">
+    {% for p in papers %}
+    <tr>
         <td class="p-2">
             <img class="vendor-icon" rel="external nofollow noreferrer" th:if="${bools.isTrue(system_showVendor)}"
                 th:src="${p.fromType.iconUrl()}" th:alt="${p.fromType.name()}" />
-            <a target="_blank" th:href="'/paper/'+${p.id}" th:text="${p.title}"></a>
-            <b th:if="${!#strings.isEmpty(p.tag)}" class="badge badge-info" th:text="${p.tag}"></b>
-            <b th:if="${p.year==#temporals.year(#temporals.createNow())}" class="badge badge-success">New</b>
+            <a target="_blank" href="/paper/{{p.id}}">{{p.title}}</a>
+            {% if let Some(topic) = p.extra.topic() %}
+            <b class="badge badge-info">{{topic}}</b>
+            {%~ endif %}
+            {% if p.year==global.now_year() ~%}
+            <b class="badge badge-success">New</b>
+            {%~ endif %}
         </td>
         <td th:if="${bools.isTrue(system_showVendor)}" class="py-2 d-none d-sm-table-cell" width="75"
             th:title="${p.fromType.domain}">
             <div class="text-truncate" style="max-width:70px" th:text="${p.fromType.domain}"></div>
         </td>
     </tr>
+    {% endfor %}
 </table>
 {% endmacro paper_table%}
