@@ -7,4 +7,7 @@ static = { enable = true, uri = "/static", path = "static", precompressed = true
 logger = { enable = false, level = "${WEB_LOG_LEVEL:info}" }
 
 [sea-orm]
-uri = "${DATABASE_URL:postgres://postgres:xudjf23adj213@localhost:5432/postgres}"
+uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/postgres}"
+
+[redis]
+uri = "${REDIS_URL:redis://localhost}"

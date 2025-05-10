@@ -1,0 +1,36 @@
+use crate::{
+    domain::exam_category::ExamPaperType,
+    model::{exam_category, ExamCategory},
+};
+use dtiku_macros::cached;
+use itertools::Itertools;
+use sea_orm::DbConn;
+use spring::plugin::service::Service;
+
+#[derive(Clone, Service)]
+pub struct ExamCategoryService {
+    #[inject(component)]
+    db: DbConn,
+}
+
+impl ExamCategoryService {
+    #[cached(key = "root_exam:{prefix}")]
+    pub async fn find_root_exam(
+        &self,
+        prefix: &str,
+    ) -> anyhow::Result<Option<exam_category::Model>> {
+        ExamCategory::find_by_root_prefix(&self.db, prefix).await
+    }
+
+    // #[cached(key = "paper_types:{prefix}")]
+    pub async fn find_leaf_paper_types(&self, root_id: i16) -> anyhow::Result<Vec<ExamPaperType>> {
+        let ecs = ExamCategory::find_all_by_pid(&self.db, root_id).await?;
+        let pids: Vec<i16> = ecs.iter().map(|ec| ec.id).collect();
+        let leaf = ExamCategory::find_all_by_pids(&self.db, pids).await?;
+        let mut grouped = leaf.into_iter().into_group_map_by(|m| m.pid);
+        Ok(ecs
+            .into_iter()
+            .map(|m| ExamPaperType::new(grouped.remove(&m.id), m))
+            .collect())
+    }
+}

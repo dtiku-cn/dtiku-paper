@@ -1,3 +1,5 @@
+use crate::query::paper::ListPaperQuery;
+
 pub use super::_entities::paper::*;
 use anyhow::Context;
 use sea_orm::{
@@ -5,6 +7,7 @@ use sea_orm::{
     QueryFilter,
 };
 use serde::{Deserialize, Serialize};
+use spring_sea_orm::pagination::{Page, PaginationExt};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(tag = "type")]
@@ -64,15 +67,19 @@ pub struct PaperBlock {
 }
 
 impl Entity {
-    pub async fn find_by_label_id<C>(db: &C, label_id: i32) -> anyhow::Result<Vec<Model>>
+    pub async fn find_by_query<C>(db: &C, query: &ListPaperQuery) -> anyhow::Result<Page<Model>>
     where
         C: ConnectionTrait,
     {
         Entity::find()
-            .filter(Column::LabelId.eq(label_id))
-            .all(db)
+            .filter(
+                Column::LabelId
+                    .eq(query.label_id)
+                    .and(Column::PaperType.eq(query.paper_type)),
+            )
+            .page(db, &query.page)
             .await
-            .with_context(|| format!("find_by_label_id({label_id}) failed"))
+            .with_context(|| format!("find_by_query({query:?}) failed"))
     }
 }
 

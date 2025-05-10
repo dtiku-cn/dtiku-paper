@@ -1,7 +1,12 @@
-use crate::model::paper;
+use crate::domain::paper::FullPaper;
+use crate::model::{paper, Material, Question, Solution};
+use crate::query::paper::ListPaperQuery;
+use anyhow::Context;
+use itertools::Itertools;
 use sea_orm::ColumnTrait;
 use sea_orm::{DbConn, EntityTrait, QueryFilter};
 use spring::plugin::service::Service;
+use spring_sea_orm::pagination::Page;
 
 use crate::model::Paper;
 
@@ -12,6 +17,34 @@ pub struct PaperService {
 }
 
 impl PaperService {
+    pub async fn find_paper_by_id(&self, id: i32) -> anyhow::Result<Option<FullPaper>> {
+        let paper = Paper::find_by_id(id)
+            .one(&self.db)
+            .await
+            .with_context(|| format!("Paper::find_by_id({id}) failed"))?;
+
+        let p = match paper {
+            Some(paper) => {
+                let qs = Question::find_by_paper_id(&self.db, id).await?;
+                let ms = Material::find_by_paper_id(&self.db, id).await?;
+                let question_ids = qs.iter().map(|q| q.id).collect_vec();
+                let ss = Solution::find_by_question_ids(&self.db, question_ids).await?;
+
+                Some(FullPaper::new(paper, qs, ms, ss))
+            }
+            None => None,
+        };
+
+        Ok(p)
+    }
+
+    pub async fn find_paper_by_query(
+        &self,
+        query: ListPaperQuery,
+    ) -> anyhow::Result<Page<paper::Model>> {
+        Paper::find_by_query(&self.db, &query).await
+    }
+
     pub async fn search_by_name(&self, name: &str) {
         let _ = Paper::find()
             .filter(paper::Column::Title.contains(name))

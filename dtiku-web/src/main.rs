@@ -5,6 +5,7 @@ use spring::App;
 use spring_opentelemetry::{
     KeyValue, OpenTelemetryPlugin, ResourceConfigurator, SERVICE_NAME, SERVICE_VERSION,
 };
+use spring_redis::RedisPlugin;
 use spring_sea_orm::SeaOrmPlugin;
 use spring_web::{WebConfigurator, WebPlugin};
 
@@ -17,8 +18,9 @@ async fn main() {
         ])
         .add_router(router::routers())
         .add_plugin(WebPlugin)
+        .add_plugin(RedisPlugin)
         .add_plugin(SeaOrmPlugin)
-        .add_plugin(OpenTelemetryPlugin)
+        // .add_plugin(OpenTelemetryPlugin)
         .run()
         .await
 }

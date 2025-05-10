@@ -18,3 +18,4 @@ tokio = { workspace = true, features = ["full"] }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
 askama = { workspace = true }
 anyhow = { workspace = true }
+serde = { workspace = true }

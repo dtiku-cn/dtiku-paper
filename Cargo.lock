@@ -153,9 +153,9 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 
 [[package]]
 name = "askama"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d4744ed2eef2645831b441d8f5459689ade2ab27c854488fbab1fbe94fce1a7"
+checksum = "f75363874b771be265f4ffe307ca705ef6f3baa19011c149da8674a87f1b75c4"
 dependencies = [
  "askama_derive",
  "itoa",
@@ -166,9 +166,9 @@ dependencies = [
 
 [[package]]
 name = "askama_derive"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d661e0f57be36a5c14c48f78d09011e67e0cb618f269cca9f2fd8d15b68c46ac"
+checksum = "129397200fe83088e8a68407a8e2b1f826cf0086b21ccdb866a722c8bcd3a94f"
 dependencies = [
  "askama_parser",
  "basic-toml",
@@ -183,9 +183,9 @@ dependencies = [
 
 [[package]]
 name = "askama_parser"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf315ce6524c857bb129ff794935cf6d42c82a6cff60526fe2a63593de4d0d4f"
+checksum = "d6ab5630b3d5eaf232620167977f95eb51f3432fc76852328774afbd242d4358"
 dependencies = [
  "memchr",
  "serde",
@@ -1113,6 +1113,7 @@ name = "dtiku-base"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "dtiku-macros",
  "itertools 0.14.0",
  "sea-orm",
  "serde",
@@ -1158,6 +1159,7 @@ dependencies = [
  "serde_with",
  "spring",
  "spring-redis",
+ "spring-sea-orm",
  "strum",
 ]
 
@@ -1175,6 +1177,7 @@ dependencies = [
  "anyhow",
  "askama",
  "dtiku-paper",
+ "serde",
  "spring",
  "spring-opentelemetry",
  "spring-redis",
@@ -4208,9 +4211,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.2"
+version = "0.103.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7149975849f1abb3832b246010ef62ccc80d3a76169517ada7188252b9cfb437"
+checksum = "e4a72fe2bcf7a6ac6fd7d0b9e5cb68aeb7d4c0a0271730218b3e92d43b4eb435"
 dependencies = [
  "ring",
  "rustls-pki-types",
@@ -4987,15 +4990,16 @@ dependencies = [
 
 [[package]]
 name = "spring-sea-orm"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47e517165a990be5da232f3ea0406cad0676385baafc7ed85f99de80dfd2ca4c"
+checksum = "c44979c022465b87d5a49b471bdd450a41e0b4ae802644c5a12d75563e278979"
 dependencies = [
  "anyhow",
  "schemars",
  "sea-orm",
  "serde",
  "spring",
+ "spring-web",
  "thiserror 2.0.12",
  "tracing",
 ]

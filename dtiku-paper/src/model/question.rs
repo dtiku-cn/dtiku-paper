@@ -1,5 +1,5 @@
+use super::PaperQuestion;
 pub use super::_entities::question::*;
-use super::{PaperQuestion, _entities::paper_question};
 use itertools::Itertools;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
@@ -93,10 +93,7 @@ impl Entity {
     where
         C: ConnectionTrait,
     {
-        let pms = PaperQuestion::find()
-            .filter(paper_question::Column::PaperId.eq(paper_id))
-            .all(db)
-            .await?;
+        let pms = PaperQuestion::find_by_paper_id(db, paper_id).await?;
 
         let id_sort: HashMap<i32, i16> = pms.iter().map(|pm| (pm.question_id, pm.sort)).collect();
 

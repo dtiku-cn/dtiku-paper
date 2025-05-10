@@ -1,11 +1,18 @@
-use crate::views::home::HomeTemplate;
+use crate::views::{home::HomeTemplate, GlobalVariables};
 use anyhow::Context;
 use askama::Template;
-use spring_web::{axum::response::{Html, IntoResponse}, error::Result, get};
+use spring_web::{
+    axum::{
+        response::{Html, IntoResponse},
+        Extension,
+    },
+    error::Result,
+    get,
+};
 
 #[get("/")]
-async fn home() -> Result<impl IntoResponse> {
+async fn home(Extension(global): Extension<GlobalVariables>) -> Result<impl IntoResponse> {
     println!("index");
-    let t = HomeTemplate {};
+    let t = HomeTemplate { global };
     Ok(Html(t.render().context("render failed")?))
 }
