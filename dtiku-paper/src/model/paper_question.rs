@@ -12,6 +12,13 @@ impl Entity {
         C: ConnectionTrait,
     {
         Entity::find()
+            .select_only()
+            .columns([
+                Column::PaperId,
+                Column::QuestionId,
+                Column::Sort,
+                Column::PaperType,
+            ])
             .filter(Column::PaperId.eq(paper_id))
             .all(db)
             .await

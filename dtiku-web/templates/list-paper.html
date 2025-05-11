@@ -1,5 +1,6 @@
 {%- import "macros/general.html" as general -%}
 {%- import "macros/paper.html" as paper -%}
+{%- import "macros/artalk.html" as artalk -%}
 <!doctype html>
 <html lang="zh">
 
@@ -60,6 +61,7 @@
         </div>
         {% call paper::paper_table(papers) %}
     </div>
+    {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
 </body>
 

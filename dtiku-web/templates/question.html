@@ -1,3 +1,4 @@
+{%- import "macros/artalk.html" as artalk -%}
 <!doctype html>
 <html lang="zh">
 <head>
@@ -26,8 +27,8 @@
              th:include="fragments/question::question_card(${q})"></div>
     </div>
 </div>
-<th:block th:replace="fragments/waline-comment::waline_comments(true,true,true,true,'快来参与讨论吧')"/>
-<th:block th:replace="fragments/general::footer"/>
+{% call artalk::comment(true,true,true,"快来参与讨论吧")%}
+{% call general::footer() %}
 <th:block th:replace="fragments/painter::painter"/>
 <script th:replace="fragments/indent::solution-indent"></script>
 <script th:replace="fragments/question::solution-comment-script"></script>

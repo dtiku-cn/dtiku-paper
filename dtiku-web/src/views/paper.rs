@@ -5,7 +5,11 @@ use dtiku_paper::{
         label::{LabelNode, LabelTree},
         paper::FullPaper,
     },
-    model::{paper, FromType},
+    model::{
+        self,
+        paper::{self, PaperExtra},
+        FromType,
+    },
     query::paper::ListPaperQuery,
 };
 use spring_sea_orm::pagination::Page;
@@ -63,10 +67,20 @@ impl ListPaperTemplate {
 #[template(path = "paper.html")]
 pub struct PaperTemplate {
     pub global: GlobalVariables,
+    pub paper: model::paper::Model,
+    pub qs: Vec<model::question::Question>,
+    pub ms: Vec<model::material::Material>,
+    pub ss: Vec<model::solution::Solution>,
 }
 
 impl IntoTemplate<PaperTemplate> for FullPaper {
     fn to_template(self, global: GlobalVariables) -> PaperTemplate {
-        todo!()
+        PaperTemplate {
+            global,
+            paper: self.p,
+            qs: self.qs,
+            ms: self.ms,
+            ss: self.ss,
+        }
     }
 }

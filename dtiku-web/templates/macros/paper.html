@@ -2,7 +2,8 @@
 <span th:if="${bools.isTrue(system_showVendor)}" th:text="|数据来源：${p.paper.fromType.domain}|"></span>
 <span>分类：<b th:text="|${p.paper.type.text}/${p.paper.area}|"></b></span>
 <a th:each="m:${p.modes}" th:href="'/paper/'+${p.paper.id}+'?mode='+${m.name()}" th:text="${m.text}"></a>
-<a th:href="${user==null?'#loginModal':'javascript:window.print()'}" th:data-toggle="${user==null?'modal':''}">打印试卷</a>
+<a href="{% if global.user.is_none() %}#loginModal{%else%}javascript:window.print(){%endif%}"
+    data-toggle="{% if global.user.is_none() %}modal{%endif%}">打印试卷</a>
 {% endmacro paper_meta %}
 
 {% macro paper_table(papers)%}
@@ -10,8 +11,10 @@
     {% for p in papers %}
     <tr>
         <td class="p-2">
-            <img class="vendor-icon" rel="external nofollow noreferrer" th:if="${bools.isTrue(system_showVendor)}"
-                th:src="${p.fromType.iconUrl()}" th:alt="${p.fromType.name()}" />
+            {% if global.config.show_vendor ~%}
+            <img class="vendor-icon" rel="external nofollow noreferrer" src="${p.fromType.iconUrl()}"
+                alt="${p.fromType.name()}" />
+            {%~ endif %}
             <a target="_blank" href="/paper/{{p.id}}">{{p.title}}</a>
             {% if let Some(topic) = p.extra.topic() %}
             <b class="badge badge-info">{{topic}}</b>
@@ -20,10 +23,11 @@
             <b class="badge badge-success">New</b>
             {%~ endif %}
         </td>
-        <td th:if="${bools.isTrue(system_showVendor)}" class="py-2 d-none d-sm-table-cell" width="75"
-            th:title="${p.fromType.domain}">
-            <div class="text-truncate" style="max-width:70px" th:text="${p.fromType.domain}"></div>
+        {% if global.config.show_vendor ~%}
+        <td class="py-2 d-none d-sm-table-cell" width="75" title="${p.fromType.domain}">
+            <div class="text-truncate" style="max-width:70px">${p.fromType.domain}</div>
         </td>
+        {%~ endif %}
     </tr>
     {% endfor %}
 </table>

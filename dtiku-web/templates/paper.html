@@ -1,12 +1,13 @@
 {%- import "macros/general.html" as general -%}
 {%- import "macros/paper.html" as paper -%}
 {%- import "macros/question.html" as question -%}
+{%- import "macros/artalk.html" as artalk -%}
 <!doctype html>
 <html lang="zh">
 
 <head>
     {% call general::meta() %}
-    <title>${paper.paper.title}+${strings.equals(paper.mode.name(),'show_answer')?'答案':''} | +{{global.config.site_title}}
+    <title>{{paper.title}}${strings.equals(paper.mode.name(),'show_answer')?'答案':''} | {{global.config.site_title}}
     </title>
     {% call general::headerfiles() %}
     <style th:if="${strings.equals(paper.mode.name(),'exercise')}">
@@ -76,13 +77,13 @@
             width: 20%;
         }
     </style>
-    <script src="/vendor/utif/3.1.0/UTIF.js"></script>
+    <script src="/static/vendor/utif/3.1.0/UTIF.js"></script>
 </head>
 
 <body class="container" onload="UTIF.replaceIMG()">
     {% call general::header() %}
-    <div id="printcontent" th:class="${user==null?'d-print-none':''}">
-        <h1 class="text-center" th:text="${paper.paper.title}"></h1>
+    <div id="printcontent" class="{% if global.user.is_none() %}d-print-none{% endif %}">
+        <h1 class="text-center">{{paper.title}}</h1>
         <p class="text-center d-print-none">{% call paper::paper_meta(paper) %}</p>
 
         <div id="answer-list" class="show-answer row" th:if="${strings.equals(paper.mode.name(),'show_answer')}">
@@ -171,8 +172,8 @@
             </form>
         </div>
     </div>
-    <th:block th:include="fragments/waline-comment::waline_comments(false,true,false,true,'来这里吐槽一下试卷😁')" />
-    <th:block th:include="fragments/general::footer" />
+    {% call artalk::comment(false,true,true,"来这里吐槽一下试卷😁")%}
+    {% call general::footer() %}
     <script th:if="${strings.equals('exercise',paper.mode.name()) && #maps.isEmpty(answer)}">
         window.floatButtonAddon = [{
             style: 'always',
@@ -189,7 +190,7 @@
     <th:block th:replace="fragments/painter::painter" />
     <script th:replace="fragments/question::solution-comment-script"></script>
     <script th:replace="fragments/question::answer-collapse-action"></script>
-    <script src='/dist/js/speech.js'></script>
+    <script src='/static/dist/js/speech.js'></script>
     <script th:if="${strings.equals('exercise',paper.mode.name()) && #maps.isEmpty(answer)}">
         $(function () {
             var $clickTimer = $("#click_timer");

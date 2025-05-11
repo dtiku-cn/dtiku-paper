@@ -26,8 +26,13 @@ pub struct GlobalVariables {
 
 impl GlobalVariables {
     pub fn now_year(&self) -> i16 {
-        let now = chrono::Utc::now();
+        let now = chrono::Local::now();
         now.year() as i16
+    }
+
+    pub fn date_now(&self) -> String {
+        let now = chrono::Local::now();
+        now.format("%Y-%m-%d").to_string()
     }
 
     pub fn uri_starts_with(&self, prefix: &str) -> bool {

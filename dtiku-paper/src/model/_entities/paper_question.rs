@@ -11,7 +11,6 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub question_id: i32,
     pub sort: i16,
-    #[sea_orm(column_type = "LTree")]
     pub paper_type: i16,
     #[sea_orm(column_type = "LTree")]
     pub keypoint_path: Option<String>,

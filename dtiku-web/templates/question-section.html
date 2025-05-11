@@ -111,11 +111,11 @@
     </div>
     <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
     {% call general::footer() %}
-    <script th:src="@{/webjars/select2/4.0.13/js/select2.full.min.js}"></script>
-    <script th:src="@{/webjars/select2/4.0.13/js/i18n/zh-CN.js}"></script>
+    <script src="/static/vendor/select2/4.0.13/js/select2.full.min.js"></script>
+    <script src="/static/vendor/select2/4.0.13/js/i18n/zh-CN.js"></script>
     <th:block th:replace="fragments/painter::painter" />
     <script th:replace="fragments/question::answer-collapse-action"></script>
-    <script src='/dist/js/speech.js'></script>
+    <script src='/static/dist/js/speech.js'></script>
     <script>
         // var categoriesMap = [(${@thymeleafUtils.toJSON(categoriesDetailMap) })];
         // var duplicate = [(${@thymeleafUtils.toJSON(duplicate) })];
