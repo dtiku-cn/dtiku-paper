@@ -12,7 +12,6 @@ use spring_web::{
 
 #[get("/")]
 async fn home(Extension(global): Extension<GlobalVariables>) -> Result<impl IntoResponse> {
-    println!("index");
     let t = HomeTemplate { global };
     Ok(Html(t.render().context("render failed")?))
 }

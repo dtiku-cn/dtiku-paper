@@ -7,7 +7,7 @@ members = [
     "dtiku-bbs",
     "dtiku-stats",
     "dtiku-base",
-    "dtiku-macros"
+    "dtiku-macros",
 ]
 
 [workspace.dependencies]
@@ -48,3 +48,4 @@ prost = "0.13"
 tonic = "0.13"
 ort = "2.0.0-rc.9"
 search-api = "0.1"
+tower-cookies = "0.11"

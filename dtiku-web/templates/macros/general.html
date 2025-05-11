@@ -50,15 +50,15 @@
         }
     }
 </style>
-<style th:utext="${system_globalStyle}"></style>
-<script th:src="${system_iconfontUrl}"></script>
-<th:block th:utext="${system_globalHeadFiles}"></th:block>
+<style>{{global.config.global_style}}</style>
+<script src="{{global.config.iconfont_js_url}}"></script>
+{{global.config.global_head_files}}
 {% endmacro headerfiles %}
 
 {% macro header() %}
 <nav class="navbar navbar-expand-lg p-3 mb-3 shadow-sm rounded"
     th:classappend="${darkTheme?'navbar-dark':'navbar-light'}" th:style="${system_navbarStyle}">
-    <a class="navbar-brand position-relative" href="/" th:utext="${system_navBrand}"></a>
+    <a class="navbar-brand position-relative" href="/">{{global.config.navbar_brand}}</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -70,9 +70,9 @@
                 <div class="dropdown-menu shadow">
                     {% for p in global.paper_types %}
                     {% if let Some(paper_types) = p.children %}
-                        {% for sub_type in paper_types %}
-                        <a class="dropdown-item" href="/paper?ty={{p.id}}">{{p.name ~ '/' ~ sub_type.name}}</a>
-                        {% endfor %}
+                    {% for sub_type in paper_types %}
+                    <a class="dropdown-item" href="/paper?ty={{p.id}}">{{p.name ~ '/' ~ sub_type.name}}</a>
+                    {% endfor %}
                     {% else %}
                     <a class="dropdown-item" href="/paper?ty={{p.id}}">{{p.name}}</a>
                     {% endif %}
@@ -124,23 +124,26 @@
                 </div>
             </form>
             <div class="nav-item dropdown ml-lg-2">
-                <a th:if="${user==null}" class="nav-link d-flex align-items-center"
-                    th:data-toggle="${user==null?'modal':'dropdown'}" href="#loginModal">
+                {% match global.user %}
+                {% when None %}
+                <a class="nav-link d-flex align-items-center" data-toggle="modal" href="#loginModal">
                     <svg class="icon-svg icon-svg-md mr-2">
                         <use id="theme-svg" xlink:href="#ic-user"></use>
                     </svg>
                     <b>登录</b>
                 </a>
-                <a th:if="${user!=null}" class="nav-link d-flex align-items-center" href="#" data-toggle="dropdown">
-                    <img class="rounded-circle" th:src="${user.avatar}" th:alt="${user.name}" style="height:2rem" />
-                    <b class="ml-2 d-md-block d-lg-none align-items-center" th:text="${user.name}"></b>
+                {% endwhen %}
+                {% when Some with (u) %}
+                <a class="nav-link d-flex align-items-center" href="#" data-toggle="dropdown">
+                    <img class="rounded-circle" src="{{u.avatar}}" alt="{{u.name}}" style="height:2rem" />
+                    <b class="ml-2 d-md-block d-lg-none align-items-center">{{u.name}}</b>
                 </a>
-                <div th:if="${user!=null}" class="dropdown-menu dropdown-menu-right shadow">
+                <div class="dropdown-menu dropdown-menu-right shadow">
                     <b class="dropdown-item d-none d-lg-flex align-items-center">
                         <svg th:if="${!user.isExpired()}" class="icon-svg icon-svg-md mr-2">
                             <use id="theme-svg" xlink:href="#ic-diamond"></use>
                         </svg>
-                        <span th:text="${user.name}"></span>
+                        <span>{{u.name}}</span>
                     </b>
                     <b th:if="${!user.isExpired()}" class="dropdown-item"
                         th:text="|有效期：${temporals.format(user.dueTime,'yyyy-MM-dd')}|"></b>
@@ -149,6 +152,8 @@
                     <div class="dropdown-divider"></div>
                     <b class="dropdown-item" id="revoke">撤销授权</b>
                 </div>
+                {% endwhen %}
+                {% endmatch %}
             </div>
             <div class="nav-item ml-lg-2 d-none d-lg-flex align-items-center tooltip-light">
                 <svg class="icon-svg icon-svg-xl" data-toggle="tooltip" data-html="true" data-container=".tooltip-light"
@@ -156,17 +161,12 @@
                     <use id="theme-svg" xlink:href="#ic-qrcode"></use>
                 </svg>
             </div>
-            <a class="nav-item ml-lg-2 d-none d-lg-flex align-items-center text-reset" href="/message">
-                <svg class="icon-svg icon-svg-xl">
-                    <use id="theme-svg" xlink:href="#ic-about"></use>
-                </svg>
-            </a>
         </ul>
     </div>
 </nav>
-<div th:if="${!#strings.equalsIgnoreCase(dismissAlertKey,system_alertMessageKey) && !#strings.isEmpty(system_globalAlertMsg)}"
-    id="main-alert" class="alert alert-primary alert-dismissible d-print-none fade show" role="alert">
-    <th:block th:utext="${system_globalAlertMsg}" />
+{% if global.cookie("dis-alert") == global.config.alert_message_key && !global.config.global_alert_message.is_empty() %}
+<div id="main-alert" class="alert alert-primary alert-dismissible d-print-none fade show" role="alert">
+    {{global.config.global_alert_message}}
     <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
     <script>
         $(function () {
@@ -177,7 +177,10 @@
         });
     </script>
 </div>
-<div th:if="${user==null}" class="modal fade" id="loginModal" tabindex="-1">
+{% endif %}
+{% match global.user %}
+{% when None %}
+<div class="modal fade" id="loginModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -188,7 +191,10 @@
         </div>
     </div>
 </div>
-<div th:if="${user!=null && user.isExpired()}" class="modal fade" id="payModal" tabindex="-1">
+{% endwhen %}
+{% when Some with (u) %}
+{% if u.is_expired() %}
+<div class="modal fade" id="payModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -199,6 +205,9 @@
         </div>
     </div>
 </div>
+{% endif %}
+{% endwhen %}
+{% endmatch %}
 <div class="fixed-top d-flex justify-content-center align-items-center">
     <div id="toast" class="toast fade hide mt-4" role="alert" data-delay="2000" style="flex-basis:auto">
         <div class="toast-body bg-warning"></div>

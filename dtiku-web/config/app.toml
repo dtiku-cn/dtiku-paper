@@ -7,7 +7,29 @@ static = { enable = true, uri = "/static", path = "static", precompressed = true
 logger = { enable = false, level = "${WEB_LOG_LEVEL:info}" }
 
 [sea-orm]
-uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/postgres}"
+uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/empty_tiku}"
 
 [redis]
 uri = "${REDIS_URL:redis://localhost}"
+
+[site]
+navbar_brand = "公考加油站"
+site_title = "公考加油站"
+show_ads = false
+ads_script = ""
+show_comments = true
+comment_config = ""
+show_visitors = true
+show_solution = true
+show_vendor = true
+use_cdn_asset = false
+cdn_assets = ""
+alert_message_key = ""
+global_alert_message = "普通消息"
+analytics_script = ""
+global_style = ""
+global_head_files = ""
+iconfont_js_url = "//at.alicdn.com/t/c/font_3160480_m5a3rixvut.js"
+block_user_agents = ""
+seo_user_agents = ""
+ip_blacklist = ""

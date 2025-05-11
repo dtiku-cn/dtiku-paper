@@ -23,3 +23,25 @@ uri = "${REDIS_URL:redis://localhost}"
 
 [embedding]
 url = "${EMBEDDING_URL:http://localhost:9090}"
+
+[site]
+navbar_brand = "公考加油站"
+site_title = "公考加油站"
+show_ads = false
+ads_script = ""
+show_comments = true
+comment_config = ""
+show_visitors = true
+show_solution = true
+show_vendor = true
+use_cdn_asset = false
+cdn_assets = ""
+alert_message_key = ""
+global_alert_message = "普通消息"
+analytics_script = ""
+global_style = ""
+global_head_files = ""
+iconfont_js_url = "//at.alicdn.com/t/c/font_3160480_m5a3rixvut.js"
+block_user_agents = ""
+seo_user_agents = ""
+ip_blacklist = ""

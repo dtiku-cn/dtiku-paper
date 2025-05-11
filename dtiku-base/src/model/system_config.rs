@@ -7,11 +7,9 @@ use sea_orm::{
     EntityTrait, QueryFilter, Set,
 };
 use serde::de::DeserializeOwned;
+use serde_json::Value;
 use spring::{async_trait, plugin::ComponentRegistry, tracing, App};
-use spring_redis::{
-    redis::{AsyncCommands, RedisError},
-    Redis,
-};
+use spring_redis::{redis::AsyncCommands, Redis};
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -46,7 +44,41 @@ impl Entity {
         Ok(all)
     }
 
+    pub async fn decode_cached_value<C, T>(
+        db: &C,
+        key: SystemConfigKey,
+    ) -> anyhow::Result<Option<T>>
+    where
+        C: ConnectionTrait,
+        T: DeserializeOwned + Default,
+    {
+        let value = Self::find_cached_value_by_key(db, key).await?;
+        let v = match value {
+            Some(v) => Some(
+                serde_json::from_value(v)
+                    .with_context(|| format!("parse json failed for {key:?}"))?,
+            ),
+            None => None,
+        };
+        Ok(v)
+    }
+
     #[cached(key = "config:{key:?}")]
+    pub async fn find_cached_value_by_key<C>(
+        db: &C,
+        key: SystemConfigKey,
+    ) -> anyhow::Result<Option<Value>>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .filter(Column::Key.eq(key))
+            .one(db)
+            .await
+            .with_context(|| format!("system_config::find_by_key({key:?}) failed"))
+            .map(|om| om.map(|m| m.value))
+    }
+
     pub async fn find_by_key<C>(db: &C, key: SystemConfigKey) -> anyhow::Result<Option<Model>>
     where
         C: ConnectionTrait,
