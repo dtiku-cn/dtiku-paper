@@ -21,7 +21,7 @@ async fn main() {
         .add_plugin(WebPlugin)
         .add_plugin(RedisPlugin)
         .add_plugin(SeaOrmPlugin)
-        // .add_plugin(OpenTelemetryPlugin)
+        .add_plugin(OpenTelemetryPlugin)
         .run()
         .await
 }

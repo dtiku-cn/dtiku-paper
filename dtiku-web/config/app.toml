@@ -12,6 +12,9 @@ uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/empty_tiku}"
 [redis]
 uri = "${REDIS_URL:redis://localhost}"
 
+[opentelemetry]
+enable = false
+
 [site]
 navbar_brand = "公考加油站"
 site_title = "公考加油站"

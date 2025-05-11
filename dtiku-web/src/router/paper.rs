@@ -8,6 +8,7 @@ use crate::{
 use anyhow::Context;
 use askama::Template;
 use dtiku_paper::{
+    domain::paper::PaperMode,
     query::paper::ListPaperQuery as PaperListQuery,
     service::{label::LabelService, paper::PaperService},
 };
@@ -18,7 +19,7 @@ use spring_web::{
     },
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
-    get,
+    get, post,
 };
 
 #[get("/paper")]
@@ -62,9 +63,22 @@ async fn paper_by_id(
     Component(ps): Component<PaperService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    println!("paper: {id}");
     let paper = ps
         .find_paper_by_id(id, query.mode.unwrap_or_default())
+        .await?
+        .ok_or_else(|| KnownWebError::not_found("试卷未找到"))?;
+    let t: PaperTemplate = paper.to_template(global);
+    Ok(Html(t.render().context("render failed")?))
+}
+
+#[post("/paper/{id}/report")]
+async fn paper_exercise(
+    Path(id): Path<i32>,
+    Component(ps): Component<PaperService>,
+    Extension(global): Extension<GlobalVariables>,
+) -> Result<impl IntoResponse> {
+    let paper = ps
+        .find_paper_by_id(id, PaperMode::Exercise)
         .await?
         .ok_or_else(|| KnownWebError::not_found("试卷未找到"))?;
     let t: PaperTemplate = paper.to_template(global);

@@ -25,7 +25,7 @@ async fn search_question(
 
 #[get("/question/section")]
 async fn question_section(
-    Query(query): Query<PaperQuestionQuery>,
+    Query(_query): Query<PaperQuestionQuery>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     let t = QuestionSectionTemplate { global };

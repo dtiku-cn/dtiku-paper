@@ -4,7 +4,7 @@ use crate::{
 };
 use dtiku_macros::cached;
 use itertools::Itertools;
-use sea_orm::{DbConn, EntityTrait};
+use sea_orm::DbConn;
 use spring::plugin::service::Service;
 
 #[derive(Clone, Service)]
