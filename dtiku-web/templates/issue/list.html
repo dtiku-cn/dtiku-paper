@@ -4,7 +4,7 @@
 
 <head>
     {% call general::meta() %}
-    <title>${strings.defaultString(search?.topic?.text,'')+' - 论坛交流 | '+system_siteTitle}</title>
+    <title>${strings.defaultString(search?.topic?.text,'')} - 论坛交流 | {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
     <style>
         .issue-list tr>td {

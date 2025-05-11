@@ -1,6 +1,7 @@
 use chrono::Datelike;
 use dtiku_base::service;
 use dtiku_paper::domain::exam_category::ExamPaperType;
+use paper::PaperType;
 use tower_cookies::Cookies;
 use user::CurrentUser;
 
@@ -42,5 +43,29 @@ impl GlobalVariables {
             .get(cookie_name)
             .map(|c| c.value().into())
             .unwrap_or_default()
+    }
+
+    pub fn get_paper_type_by_prefix(&self, prefix: &str) -> Option<PaperType> {
+        Self::inner_get_paper_type_by_prefix(&self.paper_types, prefix)
+    }
+
+    fn inner_get_paper_type_by_prefix(vec: &Vec<ExamPaperType>, prefix: &str) -> Option<PaperType> {
+        for p in vec {
+            if p.prefix == prefix {
+                return Some(PaperType {
+                    id: p.id,
+                    name: p.name.clone(),
+                    prefix: p.prefix.clone(),
+                    pid: p.pid,
+                    from_ty: p.from_ty.clone(),
+                });
+            } else if let Some(children) = &p.children {
+                let c = Self::inner_get_paper_type_by_prefix(children, prefix);
+                if c.is_some() {
+                    return c;
+                }
+            }
+        }
+        None
     }
 }

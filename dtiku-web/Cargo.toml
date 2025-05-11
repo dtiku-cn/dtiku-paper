@@ -19,6 +19,7 @@ dtiku-base = { path = "../dtiku-base", version = "0.0.1" }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
 askama = { workspace = true, features = ["serde_json"] }
 anyhow = { workspace = true }
-serde = { workspace = true }
 chrono = { workspace = true }
 tower-cookies = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

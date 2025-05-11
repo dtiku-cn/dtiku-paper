@@ -71,10 +71,10 @@
                     {% for p in global.paper_types %}
                     {% if let Some(paper_types) = p.children %}
                     {% for sub_type in paper_types %}
-                    <a class="dropdown-item" href="/paper?ty={{p.id}}">{{p.name ~ '/' ~ sub_type.name}}</a>
+                    <a class="dropdown-item" href="/paper?ty={{sub_type.prefix}}">{{p.name ~ '/' ~ sub_type.name}}</a>
                     {% endfor %}
                     {% else %}
-                    <a class="dropdown-item" href="/paper?ty={{p.id}}">{{p.name}}</a>
+                    <a class="dropdown-item" href="/paper?ty={{p.prefix}}">{{p.name}}</a>
                     {% endif %}
                     {% endfor %}
                 </div>

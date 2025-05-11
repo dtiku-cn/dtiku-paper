@@ -5,7 +5,9 @@
 
 <head>
     {% call general::meta() %}
-    <title>${province}{{root_exam_category.name}}{{current_paper_type.name}}真题库 | ${system_siteTitle}</title>
+    <title>
+        {% if let Some(l) = label %}{{ l.name }}{% endif %}{{paper_type.name}}真题库 | {{global.config.site_title}}
+    </title>
     {% call general::headerfiles() %}
 </head>
 
@@ -19,16 +21,16 @@
                     <svg class="icon-svg icon-svg-sm mr-2">
                         <use xlink:href="#ic-library"></use>
                     </svg>
-                    <strong>{{root_exam_category.name ~ " / " ~ current_paper_type.name}}</strong>
+                    <strong>{{paper_type.name}}</strong>
                 </a>
                 <div class="dropdown-menu shadow-sm" aria-labelledby="clsDropdown">
                     {% for p in global.paper_types %}
                     {% if let Some(paper_types) = p.children %}
                     {% for sub_type in paper_types %}
-                    <a class="dropdown-item" href="?ty={{p.id}}">{{p.name ~ " / " ~ sub_type.name}}</a>
+                    <a class="dropdown-item" href="?ty={{sub_type.prefix}}">{{p.name ~ " / " ~ sub_type.name}}</a>
                     {% endfor %}
                     {% else %}
-                    <a class="dropdown-item" href="?ty={{p.id}}">{{p.name}}</a>
+                    <a class="dropdown-item" href="?ty={{p.prefix}}">{{p.name}}</a>
                     {% endif %}
                     {% endfor %}
                 </div>
@@ -36,8 +38,8 @@
         </header>
         <div id="allProvinces" class="card-body d-flex flex-wrap">
             {% for l in label_tree.labels %}
-            <a class="btn btn-link ${province==p?'active':''}"
-                href="?ty={{current_paper_type.id}}&lid={{l.id}}">{{l.name}}</a>
+            <a class="btn btn-link {% if l.id == query.label_id %}active{% endif %}"
+                href="?ty={{paper_type.prefix}}&lid={{l.id}}">{{l.name}}</a>
             {% endfor %}
         </div>
     </div>
@@ -47,7 +49,7 @@
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-list"></use>
             </svg>
-            <strong>${province}{{current_paper_type.name}}试卷列表</strong>
+            <strong>{% if let Some(l) = label %}{{ l.name }}{% endif %}{{paper_type.name}}试卷列表</strong>
         </header>
         <div id="fromType" class="text-center">
             <a class="btn btn-link" th:href="@{/paper(category=${cls.category},cls=${cls.text},province=${province})}"

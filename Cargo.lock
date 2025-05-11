@@ -1191,6 +1191,7 @@ dependencies = [
  "dtiku-base",
  "dtiku-paper",
  "serde",
+ "serde_json",
  "spring",
  "spring-opentelemetry",
  "spring-redis",

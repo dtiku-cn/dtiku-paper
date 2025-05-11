@@ -1,18 +1,31 @@
 use super::{GlobalVariables, IntoTemplate};
 use askama::Template;
 use dtiku_paper::{
-    domain::{label::LabelTree, paper::FullPaper},
-    model::{exam_category, paper},
+    domain::{
+        label::{LabelNode, LabelTree},
+        paper::FullPaper,
+    },
+    model::{paper, FromType},
+    query::paper::ListPaperQuery,
 };
 use spring_sea_orm::pagination::Page;
+
+pub struct PaperType {
+    pub id: i16,
+    pub name: String,
+    pub prefix: String,
+    pub pid: i16,
+    pub from_ty: FromType,
+}
 
 #[derive(Template)]
 #[template(path = "list-paper.html")]
 pub struct ListPaperTemplate {
     pub global: GlobalVariables,
+    pub query: ListPaperQuery,
     pub label_tree: LabelTree,
-    pub current_paper_type: exam_category::Model,
-    pub root_exam_category: exam_category::Model,
+    pub paper_type: PaperType,
+    pub label: Option<LabelNode>,
     pub papers: Vec<paper::Model>,
     pub size: u64,
     pub page: u64,
@@ -21,19 +34,22 @@ pub struct ListPaperTemplate {
     /// the number of total pages.
     pub total_pages: u64,
 }
+
 impl ListPaperTemplate {
     pub(crate) fn new(
         global: GlobalVariables,
+        query: ListPaperQuery,
         label_tree: LabelTree,
-        current_paper_type: exam_category::Model,
-        root_exam_category: exam_category::Model,
+        paper_type: PaperType,
+        label: Option<LabelNode>,
         list: Page<paper::Model>,
     ) -> Self {
         Self {
             global,
+            query,
             label_tree,
-            current_paper_type,
-            root_exam_category,
+            paper_type,
+            label,
             papers: list.content,
             size: list.size,
             page: list.page,

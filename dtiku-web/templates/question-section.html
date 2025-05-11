@@ -4,7 +4,7 @@
 
 <head>
     {% call general::meta() %}
-    <title>真题分类打印 | '+${system_siteTitle}</title>
+    <title>真题分类打印 | {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
     <style media="print">
         #printcontent .solution {

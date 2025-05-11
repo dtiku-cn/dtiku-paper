@@ -1,5 +1,6 @@
 mod router;
 mod views;
+mod query;
 
 use spring::App;
 use spring_opentelemetry::{

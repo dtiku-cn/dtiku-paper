@@ -14,31 +14,12 @@ pub struct ExamCategoryService {
 }
 
 impl ExamCategoryService {
-    #[cached(key = "root_exam:{prefix}")]
+    #[cached(key = "exam_category:root_exam:{prefix}")]
     pub async fn find_root_exam(
         &self,
         prefix: &str,
     ) -> anyhow::Result<Option<exam_category::Model>> {
         ExamCategory::find_by_root_prefix(&self.db, prefix).await
-    }
-
-    #[cached(key = "root_exam:id:{id}")]
-    pub async fn find_root_exam_by_id(
-        &self,
-        id: i16,
-    ) -> anyhow::Result<Option<exam_category::Model>> {
-        ExamCategory::find_root_by_id(&self.db, id).await
-    }
-
-    #[cached(key = "leaf_paper_type:{paper_type}")]
-    pub async fn find_by_id_with_cache(
-        &self,
-        paper_type: i16,
-    ) -> anyhow::Result<Option<exam_category::Model>> {
-        ExamCategory::find_by_id(paper_type)
-            .one(&self.db)
-            .await
-            .with_context(|| format!("find_by_id_with_cache({paper_type}) failed"))
     }
 
     // #[cached(key = "paper_types:{prefix}")]

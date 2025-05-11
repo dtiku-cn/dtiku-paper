@@ -1,12 +1,15 @@
-use crate::views::{
-    paper::{ListPaperTemplate, PaperTemplate},
-    GlobalVariables, IntoTemplate,
+use crate::{
+    query::paper::ListPaperQuery,
+    views::{
+        paper::{ListPaperTemplate, PaperTemplate},
+        GlobalVariables, IntoTemplate,
+    },
 };
 use anyhow::Context;
 use askama::Template;
 use dtiku_paper::{
-    query::paper::ListPaperQuery,
-    service::{exam_category::ExamCategoryService, label::LabelService, paper::PaperService},
+    query::paper::ListPaperQuery as PaperListQuery,
+    service::{label::LabelService, paper::PaperService},
 };
 use spring_web::{
     axum::{
@@ -20,40 +23,35 @@ use spring_web::{
 
 #[get("/paper")]
 async fn list_paper(
-    Query(mut query): Query<ListPaperQuery>,
-    Component(ecs): Component<ExamCategoryService>,
+    Query(query): Query<ListPaperQuery>,
     Component(ps): Component<PaperService>,
     Component(ls): Component<LabelService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    let paper_type = query.paper_type;
-    let current_paper_type = ecs
-        .find_by_id_with_cache(paper_type)
-        .await?
-        .ok_or_else(|| {
-            KnownWebError::bad_request(format!("试卷类型不存在:{}", query.paper_type))
-        })?;
-    let root_exam_category = ecs
-        .find_root_exam_by_id(current_paper_type.pid)
-        .await?
-        .ok_or_else(|| {
-            KnownWebError::bad_request(format!("试卷类型不存在:{}", query.paper_type))
-        })?;
+    let paper_type_prefix = query.paper_type_prefix;
 
-    let label_tree = ls.find_all_label_by_paper_type(paper_type).await?;
+    let paper_type = global
+        .get_paper_type_by_prefix(&paper_type_prefix)
+        .ok_or_else(|| KnownWebError::bad_request("试卷类型不存在"))?;
 
-    if query.label_id == 0 {
-        // 默认值
-        query.label_id = label_tree.default_label_id();
-    }
-    let list = ps.find_paper_by_query(query).await?;
-    let t = ListPaperTemplate::new(
-        global,
-        label_tree,
-        current_paper_type,
-        root_exam_category,
-        list,
-    );
+    let label_tree = ls.find_all_label_by_paper_type(paper_type.id).await?;
+
+    let query = if query.label_id == 0 {
+        PaperListQuery {
+            paper_type: paper_type.id,
+            label_id: label_tree.default_label_id(),
+            page: query.page,
+        }
+    } else {
+        PaperListQuery {
+            paper_type: paper_type.id,
+            label_id: query.label_id,
+            page: query.page,
+        }
+    };
+    let label = label_tree.get_label(query.label_id);
+    let list = ps.find_paper_by_query(&query).await?;
+    let t = ListPaperTemplate::new(global, query, label_tree, paper_type, label, list);
     Ok(Html(t.render().context("render failed")?))
 }
 

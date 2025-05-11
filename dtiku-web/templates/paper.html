@@ -6,7 +6,7 @@
 
 <head>
     {% call general::meta() %}
-    <title>${paper.paper.title}+${strings.equals(paper.mode.name(),'show_answer')?'答案':''}+' | '+${system_siteTitle}
+    <title>${paper.paper.title}+${strings.equals(paper.mode.name(),'show_answer')?'答案':''} | +{{global.config.site_title}}
     </title>
     {% call general::headerfiles() %}
     <style th:if="${strings.equals(paper.mode.name(),'exercise')}">

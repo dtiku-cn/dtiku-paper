@@ -21,7 +21,7 @@ use spring_web::{
     },
     Router,
 };
-use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
+use tower_cookies::{CookieManagerLayer, Cookies};
 
 pub fn routers() -> Router {
     let trace_layer = TraceLayer::new_for_http()

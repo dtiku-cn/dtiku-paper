@@ -40,7 +40,7 @@ impl PaperService {
 
     pub async fn find_paper_by_query(
         &self,
-        query: ListPaperQuery,
+        query: &ListPaperQuery,
     ) -> anyhow::Result<Page<paper::Model>> {
         Paper::find_by_query(&self.db, &query).await
     }
