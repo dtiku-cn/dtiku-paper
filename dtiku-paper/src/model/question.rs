@@ -3,7 +3,7 @@ pub use super::_entities::question::*;
 use itertools::Itertools;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
-    FromQueryResult, QueryFilter,
+    FromJsonQueryResult, FromQueryResult, QueryFilter,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -13,6 +13,7 @@ pub struct Question {
     pub id: i32,
     pub content: String,
     pub extra: QuestionExtra,
+    pub num: i16,
 }
 
 #[derive(DerivePartialModel, FromQueryResult)]
@@ -23,22 +24,21 @@ struct QuestionSelect {
     #[sea_orm(from_col = "content")]
     content: String,
     #[sea_orm(from_col = "extra")]
-    extra: Value,
+    extra: QuestionExtra,
 }
 
-impl TryFrom<QuestionSelect> for Question {
-    type Error = anyhow::Error;
-
-    fn try_from(value: QuestionSelect) -> Result<Self, Self::Error> {
-        Ok(Self {
-            id: value.id,
-            content: value.content,
-            extra: serde_json::from_value(value.extra)?,
-        })
+impl QuestionSelect {
+    fn with_num(self, num_map: &HashMap<i32, i16>) -> Question {
+        Question {
+            id: self.id,
+            content: self.content,
+            extra: self.extra,
+            num: num_map.get(&self.id).cloned().unwrap_or_default(),
+        }
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(tag = "type")]
 pub enum QuestionExtra {
     // 单选题
@@ -79,7 +79,7 @@ pub enum QuestionExtra {
     Compose { options: Vec<QuestionChoice> },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct QA {
     pub title: String,
     pub word_count: Option<i16>,
@@ -105,11 +105,11 @@ impl Entity {
             .all(db)
             .await?;
 
-        questions
+        Ok(questions
             .into_iter()
-            .sorted_by_key(|m| id_sort.get(&m.id))
-            .map(|m| m.try_into())
-            .collect()
+            .map(|m| m.with_num(&id_sort))
+            .sorted_by_key(|m| m.num)
+            .collect())
     }
 }
 

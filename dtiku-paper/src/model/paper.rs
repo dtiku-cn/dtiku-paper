@@ -19,9 +19,13 @@ pub enum PaperExtra {
 }
 
 impl PaperExtra {
-    pub fn compute_chapter(&self, num: i32) -> Option<String> {
+    pub fn compute_chapter_name(&self, num: i32) -> Option<String> {
+        self.compute_chapter(num, false).map(|c| c.name)
+    }
+
+    pub fn compute_chapter(&self, num: i32, only_first: bool) -> Option<PaperChapter> {
         match self {
-            Self::Chapters(cs) => cs.compute_chapter(num),
+            Self::Chapters(cs) => cs.compute_chapter(num, only_first),
             Self::EssayCluster(_) => None,
         }
     }
@@ -41,13 +45,17 @@ pub struct Chapters {
 }
 
 impl Chapters {
-    fn compute_chapter(&self, num: i32) -> Option<String> {
+    fn compute_chapter(&self, num: i32, only_first: bool) -> Option<PaperChapter> {
         let mut num_adder = 0;
         for c in &self.chapters {
             let prev_num_adder = num_adder;
             num_adder += c.count as i32;
-            if num > prev_num_adder && num <= num_adder {
-                return Some(c.name.clone());
+            if only_first {
+                if num == prev_num_adder + 1 {
+                    return Some(c.clone());
+                }
+            } else if num > prev_num_adder && num <= num_adder {
+                return Some(c.clone());
             }
         }
         None

@@ -1,5 +1,5 @@
 use crate::{
-    query::paper::ListPaperQuery,
+    query::paper::{ListPaperQuery, PaperQuery},
     views::{
         paper::{ListPaperTemplate, PaperTemplate},
         GlobalVariables, IntoTemplate,
@@ -58,12 +58,13 @@ async fn list_paper(
 #[get("/paper/{id}")]
 async fn paper_by_id(
     Path(id): Path<i32>,
+    Query(query): Query<PaperQuery>,
     Component(ps): Component<PaperService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     println!("paper: {id}");
     let paper = ps
-        .find_paper_by_id(id)
+        .find_paper_by_id(id, query.mode.unwrap_or_default())
         .await?
         .ok_or_else(|| KnownWebError::not_found("试卷未找到"))?;
     let t: PaperTemplate = paper.to_template(global);

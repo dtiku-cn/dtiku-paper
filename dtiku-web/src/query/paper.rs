@@ -1,3 +1,4 @@
+use dtiku_paper::domain::paper::PaperMode;
 use serde::Deserialize;
 use spring_sea_orm::pagination::Pagination;
 
@@ -9,4 +10,9 @@ pub struct ListPaperQuery {
     pub label_id: i32,
     #[serde(flatten)]
     pub page: Pagination,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PaperQuery {
+    pub mode: Option<PaperMode>,
 }

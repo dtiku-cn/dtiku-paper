@@ -3,14 +3,16 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
+use crate::model::solution::SolutionExtra;
+
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "solution")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub question_id: i32,
     #[sea_orm(column_type = "JsonBinary")]
-    pub extra: Json,
+    pub extra: SolutionExtra,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

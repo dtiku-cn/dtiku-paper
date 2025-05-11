@@ -2,6 +2,7 @@
 
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::model::question::QuestionExtra;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "question")]
@@ -13,7 +14,7 @@ pub struct Model {
     pub exam_id: i16,
     pub paper_type: i16,
     #[sea_orm(column_type = "JsonBinary")]
-    pub extra: Json,
+    pub extra: QuestionExtra,
     pub embedding: PgVector,
 }
 

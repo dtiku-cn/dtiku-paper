@@ -3,16 +3,16 @@ use super::{PaperMaterial, _entities::paper_material};
 use itertools::Itertools;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
-    FromQueryResult, QueryFilter,
+    FromJsonQueryResult, FromQueryResult, QueryFilter,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 
 pub struct Material {
     pub id: i32,
     pub content: String,
     pub extra: Vec<MaterialExtra>,
+    pub num: i16,
 }
 
 #[derive(DerivePartialModel, FromQueryResult)]
@@ -23,10 +23,10 @@ struct MaterialSelect {
     #[sea_orm(from_col = "content")]
     content: String,
     #[sea_orm(from_col = "extra")]
-    extra: Value,
+    extra: Vec<MaterialExtra>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(tag = "type")]
 pub enum MaterialExtra {
     #[serde(rename = "explain")]
@@ -41,15 +41,14 @@ pub enum MaterialExtra {
     Transcript(String),
 }
 
-impl TryFrom<MaterialSelect> for Material {
-    type Error = anyhow::Error;
-
-    fn try_from(value: MaterialSelect) -> Result<Self, Self::Error> {
-        Ok(Self {
-            id: value.id,
-            content: value.content,
-            extra: serde_json::from_value(value.extra)?,
-        })
+impl MaterialSelect {
+    fn with_num(self, num_map: &HashMap<i32, i16>) -> Material {
+        Material {
+            id: self.id,
+            content: self.content,
+            extra: self.extra,
+            num: num_map.get(&self.id).cloned().unwrap_or_default(),
+        }
     }
 }
 
@@ -73,11 +72,11 @@ impl Entity {
             .all(db)
             .await?;
 
-        materials
+        Ok(materials
             .into_iter()
-            .sorted_by_key(|m| id_sort.get(&m.id))
-            .map(|m| m.try_into())
-            .collect()
+            .map(|m| m.with_num(&id_sort))
+            .sorted_by_key(|m| m.num)
+            .collect())
     }
 }
 

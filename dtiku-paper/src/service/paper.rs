@@ -1,5 +1,5 @@
-use crate::domain::paper::FullPaper;
-use crate::model::{paper, Material, Question, Solution};
+use crate::domain::paper::{FullPaper, PaperMode};
+use crate::model::{paper, Material, Question, QuestionMaterial, Solution};
 use crate::query::paper::ListPaperQuery;
 use anyhow::Context;
 use itertools::Itertools;
@@ -17,7 +17,11 @@ pub struct PaperService {
 }
 
 impl PaperService {
-    pub async fn find_paper_by_id(&self, id: i32) -> anyhow::Result<Option<FullPaper>> {
+    pub async fn find_paper_by_id(
+        &self,
+        id: i32,
+        mode: PaperMode,
+    ) -> anyhow::Result<Option<FullPaper>> {
         let paper = Paper::find_by_id(id)
             .one(&self.db)
             .await
@@ -28,9 +32,9 @@ impl PaperService {
                 let qs = Question::find_by_paper_id(&self.db, id).await?;
                 let ms = Material::find_by_paper_id(&self.db, id).await?;
                 let question_ids = qs.iter().map(|q| q.id).collect_vec();
-                let ss = Solution::find_by_question_ids(&self.db, question_ids).await?;
-
-                Some(FullPaper::new(paper, qs, ms, ss))
+                let ss = Solution::find_by_question_ids(&self.db, question_ids.clone()).await?;
+                let id_map = QuestionMaterial::find_by_qids(&self.db, question_ids).await?;
+                Some(FullPaper::new(mode, paper, qs, ms, ss, id_map))
             }
             None => None,
         };

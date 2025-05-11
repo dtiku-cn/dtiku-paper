@@ -1190,6 +1190,7 @@ dependencies = [
  "chrono",
  "dtiku-base",
  "dtiku-paper",
+ "itertools 0.14.0",
  "serde",
  "serde_json",
  "spring",

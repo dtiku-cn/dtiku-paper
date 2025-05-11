@@ -424,7 +424,7 @@ impl FenbiSyncService {
         let qids = question_ids.iter().map(|q| q.question_id).collect_vec();
         let qid_num_map: HashMap<_, _> = question_ids
             .into_iter()
-            .map(|q| (q.question_id, q.number))
+            .map(|q| (q.question_id, q.number + 1))
             .collect();
 
         let questions = sqlx::query_as::<_, OriginQuestion>(
@@ -470,7 +470,7 @@ impl FenbiSyncService {
         let mids = material_ids.iter().map(|m| m.material_id).collect_vec();
         let mid_num_map: HashMap<_, _> = material_ids
             .into_iter()
-            .map(|m| (m.material_id, m.number))
+            .map(|m| (m.material_id, m.number + 1))
             .collect();
 
         let materials = sqlx::query_as::<_, OriginMaterial>(
@@ -611,7 +611,7 @@ impl FenbiSyncService {
                 }
                 None => {
                     let paper_type = paper.paper_type;
-                    if let Some(chapter_name) = paper.extra.compute_chapter(*num) {
+                    if let Some(chapter_name) = paper.extra.compute_chapter_name(*num) {
                         let kp = KeyPoint::find_by_paper_type_and_name(
                             &self.target_db,
                             paper_type,
@@ -998,7 +998,7 @@ impl OriginQuestion {
 
         let mut m = question::ActiveModel {
             content: Set(content.into()),
-            extra: Set(serde_json::to_value(extra)?),
+            extra: Set(extra),
             embedding: Set(PgVector::from(embedding)),
             ..Default::default()
         };
@@ -1115,7 +1115,7 @@ impl OriginQuestion {
             }
         };
         Ok(solution::ActiveModel {
-            extra: Set(serde_json::to_value(extra)?),
+            extra: Set(extra),
             ..Default::default()
         })
     }

@@ -1,18 +1,16 @@
-use super::{GlobalVariables, IntoTemplate};
+use super::{question::FullQuestion, GlobalVariables, IntoTemplate};
 use askama::Template;
 use dtiku_paper::{
     domain::{
         label::{LabelNode, LabelTree},
         paper::FullPaper,
     },
-    model::{
-        self,
-        paper::{self, PaperExtra},
-        FromType,
-    },
+    model::{self, material, paper, solution, FromType},
     query::paper::ListPaperQuery,
 };
+use itertools::Itertools;
 use spring_sea_orm::pagination::Page;
+use std::collections::HashMap;
 
 pub struct PaperType {
     pub id: i16,
@@ -68,19 +66,42 @@ impl ListPaperTemplate {
 pub struct PaperTemplate {
     pub global: GlobalVariables,
     pub paper: model::paper::Model,
-    pub qs: Vec<model::question::Question>,
-    pub ms: Vec<model::material::Material>,
-    pub ss: Vec<model::solution::Solution>,
+    pub mode: String,
+    pub questions: Vec<FullQuestion>,
 }
 
 impl IntoTemplate<PaperTemplate> for FullPaper {
     fn to_template(self, global: GlobalVariables) -> PaperTemplate {
+        let mut qid_mid_map = self.qid_mid_map;
+        let mut id_m_map: HashMap<i32, material::Material> =
+            self.ms.into_iter().map(|m| (m.id, m)).collect();
+        let mut qid_ss_map: HashMap<i32, Vec<solution::Model>> = self
+            .ss
+            .into_iter()
+            .map(|m| (m.question_id, m))
+            .into_group_map();
+        let questions = self
+            .qs
+            .into_iter()
+            .map(|q| {
+                FullQuestion::new(
+                    qid_mid_map.remove(&q.id).map(|mids| {
+                        mids.into_iter()
+                            .map(|mid| id_m_map.remove(&mid))
+                            .flatten()
+                            .collect_vec()
+                    }),
+                    qid_ss_map.remove(&q.id),
+                    self.p.extra.compute_chapter(q.num as i32, true),
+                    q,
+                )
+            })
+            .collect_vec();
         PaperTemplate {
             global,
+            mode: self.mode.to_string(),
             paper: self.p,
-            qs: self.qs,
-            ms: self.ms,
-            ss: self.ss,
+            questions,
         }
     }
 }

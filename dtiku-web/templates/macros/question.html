@@ -7,9 +7,7 @@
     });
 </script>
 {% endmacro img_display_block %}
-{# @see QuestionVo #}
 
-{# @see QuestionVo.solution #}
 {% macro solution_comment_script() %}
 <script>
     $(function () {
@@ -138,8 +136,8 @@
 
 {# 行测 #}
 {% macro xingce_question(q) %}
-<div th:id="'question-'+${q.id}" class="question">
-    <div class="question-content" th:utext="${q.html}"></div>
+<div id="question-{{q.id}}" class="question">
+    <div class="question-content">{{q.content | safe}}</div>
     <div class="option-group d-flex flex-wrap">
         <div class="d-flex" th:each="o : ${q.options}" th:id="${q.id}+'-option-'+${o.caption}"
             th:classappend="${q.answer!=null && q.answer.answer.contains(o.caption)?'-answer-':''}"
