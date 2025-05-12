@@ -86,7 +86,7 @@
 {% endmacro raw_question_solution %}
 
 {% macro answer_collapse_action() %}
-<script th:fragment="answer-collapse-action">
+<script>
     $(function () {
         $('.question-wrapper .collapse').on('hidden.bs.collapse', function () {
             $(this).closest(".question-wrapper").removeClass('show-answer');
@@ -138,14 +138,21 @@
 {% macro xingce_question(q) %}
 <div id="question-{{q.id}}" class="question">
     <div class="question-content">{{q.content | safe}}</div>
+    {% match q.extra %}
+    {% when QuestionExtra::SingleChoice with { options } %}
     <div class="option-group d-flex flex-wrap">
-        <div class="d-flex" th:each="o : ${q.options}" th:id="${q.id}+'-option-'+${o.caption}"
+        {% for o in options %}
+        <div class="d-flex" id="{{q.id}}-option-{{loop.index}}"
             th:classappend="${q.answer!=null && q.answer.answer.contains(o.caption)?'-answer-':''}"
-            th:style="'width:'+${q.optionLength<20&&screenWidth>768?'25%':(q.optionLength<30?'50%':'100%')}">
-            <b th:text="${o.caption}"></b>. &nbsp;
-            <div th:id="${'opt-'+o.id}" class="flex-grow-1" th:utext="${o.html}"></div>
+            style='width:{% if q.option_len()<20&&global.screen_width()>768 %}25%{% else if q.option_len()<30 %}50%{%else%}100%{% endif %}'>
+            <b>{{ global.chars[loop.index0] }} </b>. &nbsp;
+            <div class="flex-grow-1">{{o | safe}}</div>
         </div>
+        {% endfor %}
     </div>
+    {% endwhen %}
+    {% else %}
+    {% endmatch %}
 </div>
 <div class="d-print-none" th:if="${q.answer!=null || !#maps.isEmpty(q.solution)}">
     <a class="btn btn-link" role="button" data-toggle="collapse" th:href="'#answer-'+${q.id}">查看解析</a>

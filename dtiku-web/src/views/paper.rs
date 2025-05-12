@@ -1,4 +1,5 @@
 use super::{question::FullQuestion, GlobalVariables, IntoTemplate};
+use dtiku_paper::model::question::QuestionExtra;
 use askama::Template;
 use dtiku_paper::{
     domain::{
@@ -21,7 +22,7 @@ pub struct PaperType {
 }
 
 #[derive(Template)]
-#[template(path = "list-paper.html")]
+#[template(path = "list-paper.html.jinja")]
 pub struct ListPaperTemplate {
     pub global: GlobalVariables,
     pub query: ListPaperQuery,
@@ -62,7 +63,7 @@ impl ListPaperTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "paper.html")]
+#[template(path = "paper.html.jinja")]
 pub struct PaperTemplate {
     pub global: GlobalVariables,
     pub paper: model::paper::Model,

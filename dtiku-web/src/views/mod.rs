@@ -22,6 +22,7 @@ pub struct GlobalVariables {
     pub(crate) paper_types: Vec<ExamPaperType>,
     pub(crate) config: service::system_config::Config,
     pub(crate) cookies: Cookies,
+    pub(crate) chars: Vec<char>,
 }
 
 impl GlobalVariables {
@@ -50,6 +51,11 @@ impl GlobalVariables {
             .unwrap_or_default()
     }
 
+    pub fn screen_width(&self) -> usize {
+        let sw = self.cookie("sw");
+        sw.parse().unwrap_or(900)
+    }
+
     pub fn get_paper_type_by_prefix(&self, prefix: &str) -> Option<PaperType> {
         Self::inner_get_paper_type_by_prefix(&self.paper_types, prefix)
     }
@@ -72,5 +78,22 @@ impl GlobalVariables {
             }
         }
         None
+    }
+
+    pub(crate) fn new(
+        current_user: Option<CurrentUser>,
+        request_uri: String,
+        paper_types: Vec<ExamPaperType>,
+        config: service::system_config::Config,
+        cookies: Cookies,
+    ) -> Self {
+        Self {
+            user: current_user,
+            request_uri,
+            paper_types,
+            config,
+            cookies,
+            chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".chars().collect(),
+        }
     }
 }

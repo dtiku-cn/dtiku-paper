@@ -1,16 +1,17 @@
-{%- import "macros/general.html" as general -%}
-{%- import "macros/paper.html" as paper -%}
-{%- import "macros/question.html" as question -%}
-{%- import "macros/artalk.html" as artalk -%}
+{%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/paper.html.jinja" as paper -%}
+{%- import "macros/question.html.jinja" as question -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
+{%- import "macros/painter.html.jinja" as painter -%}
 <!doctype html>
 <html lang="zh">
 
 <head>
     {% call general::meta() %}
-    <title>{{paper.title}}${strings.equals(paper.mode.name(),'show_answer')?'答案':''} | {{global.config.site_title}}
-    </title>
+    <title>{{paper.title}}{%if mode == "show_answer"%}答案{%endif%} | {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
-    <style th:if="${strings.equals(paper.mode.name(),'exercise')}">
+    {% if mode == "exercise" %}
+    <style>
         #xc-report tr:last-child {
             border-top: 1px dashed grey;
             font-weight: bold;
@@ -72,11 +73,13 @@
             transform: rotate(90deg);
         }
     </style>
-    <style th:if="${!#strings.equals(paper.mode.name(),'exercise')}">
+    {%else%}
+    <style>
         #answer-list>a {
             width: 20%;
         }
     </style>
+    {%endif%}
     <script src="/static/vendor/utif/3.1.0/UTIF.js"></script>
 </head>
 
@@ -87,10 +90,11 @@
         <p class="text-center d-print-none">{% call paper::paper_meta(paper) %}</p>
         {% if mode == "show_answer" %}
         <div id="answer-list" class="show-answer row">
-            <a th:each="q : ${paper.questions}" th:if="${q.answer!=null}" class="text-reset text-center"
-                th:href="'#q-'+${q.number}">
-                <b>${q.number}</b>、<b class="-answer-">${q.answer?.answer}</b>
+            {%for q in questions %}
+            <a th:if="${q.answer!=null}" class="text-reset text-center" href="#q-{{q.num}}">
+                <b>{{q.num}}</b>、<b class="-answer-">${q.answer?.answer}</b>
             </a>
+            {%endfor%}
         </div>
         {% elif mode == "exercise" %}
         <table id="xc-report" class="mx-auto text-center d-print-none" style="width: 20em" th:if="${report!=null}">
@@ -124,7 +128,7 @@
             {% endif %}
             {% if let Some(materials) = qvo.materials %}
             {% for m in materials %}
-            <h3 class="text-center mt-2" th:text="${m.chineseNumber()}"></h3>
+            <h3 class="text-center mt-2">{{m.chinese_num()}}</h3>
             <div class="material">{{m.content | safe}}</div>
             {% endfor %}
             {% endif %}
@@ -136,17 +140,20 @@
             {% elif mode == "exercise" %}
             <form method="post" action="/paper/{{paper.id}}/report">
                 {% for qvo in questions %}
-                <div th:if="${qvo.chapter!=null}" class="mt-3">
-                    <h2 class="text-center" th:text="${qvo.chapter.header}"></h2>
-                    <p><b th:text="${qvo.chapter.desc}"></b></p>
+                {% if let Some(chapter) = qvo.chapter %}
+                <div class="mt-3">
+                    <h2 class="text-center">{{chapter.name}}</h2>
+                    <p><b>{{chapter.desc}}</b></p>
                 </div>
-                <th:block th:if="${qvo.material!=null}" th:each="m:${qvo.material}">
-                    <h3 class="text-center mt-2" th:text="${m.chineseNumber()}"></h3>
-                    <div class="material" th:utext="${m.html}"></div>
-                </th:block>
+                {% endif %}
+                {% if let Some(materials) = qvo.materials %}
+                {% for m in materials %}
+                <h3 class="text-center mt-2">{{m.chinese_num()}}</h3>
+                <div class="material">{{m.content | safe}}</div>
+                {% endfor %}
+                {% endif %}
                 <div class="d-flex mt-2">
-                    <div th:id="|q-${qvo.number}|" class="q-number flex-shrink-0"><b th:text="${qvo.number}"></b>.
-                    </div>
+                    <div id="q-{{qvo.num}}" class="q-number flex-shrink-0"><b>{{qvo.num}}</b>.</div>
                     <div th:include="fragments/question::xingce_exercise_question(${qvo},${answer})"
                         class="flex-grow-1 question-wrapper show-answer"></div>
                 </div>
@@ -164,8 +171,8 @@
                     <div id="answer-paper" class="collapse">
                         <div class="d-flex flex-wrap justify-content-center">
                             {% for qvo in questions %}
-                            <a class="answer-block" id="answer-for-{{qvo.id}}" href="#q-{qvo.number}"
-                                classappend="${answer==null?'text-muted':(@thymeleafUtils.matchAnswer(answer,qvo.id,qvo.answer.answer)?'text-white bg-success':'text-white bg-danger')}">${qvo.number}</a>
+                            <a class="answer-block" id="answer-for-{{qvo.id}}" href="#q-{{qvo.num}}"
+                                classappend="${answer==null?'text-muted':(@thymeleafUtils.matchAnswer(answer,qvo.id,qvo.answer.answer)?'text-white bg-success':'text-white bg-danger')}">{{qvo.num}}</a>
                             {% endfor %}
                         </div>
                     </div>
@@ -176,6 +183,10 @@
     </div>
     {% call artalk::comment(false,true,true,"来这里吐槽一下试卷😁")%}
     {% call general::footer() %}
+    {% call painter::painter() %}
+    {% call question::solution_comment_script() %}
+    {% call question::answer_collapse_action() %}
+    <script src='/static/dist/js/speech.js'></script>
     <script th:if="${strings.equals('exercise',paper.mode.name()) && #maps.isEmpty(answer)}">
         window.floatButtonAddon = [{
             style: 'always',
@@ -188,12 +199,6 @@
             click: function () {
             }
         }]
-    </script>
-    <th:block th:replace="fragments/painter::painter" />
-    <script th:replace="fragments/question::solution-comment-script"></script>
-    <script th:replace="fragments/question::answer-collapse-action"></script>
-    <script src='/static/dist/js/speech.js'></script>
-    <script th:if="${strings.equals('exercise',paper.mode.name()) && #maps.isEmpty(answer)}">
         $(function () {
             var $clickTimer = $("#click_timer");
 

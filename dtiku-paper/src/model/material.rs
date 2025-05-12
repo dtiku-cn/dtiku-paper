@@ -1,5 +1,6 @@
 pub use super::_entities::material::*;
 use super::{PaperMaterial, _entities::paper_material};
+use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
 use itertools::Itertools;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
@@ -13,6 +14,12 @@ pub struct Material {
     pub content: String,
     pub extra: Vec<MaterialExtra>,
     pub num: i16,
+}
+
+impl Material{
+    pub fn chinese_num(&self)->String{
+        self.num.to_chinese(ChineseVariant::Traditional, ChineseCase::Lower, ChineseCountMethod::TenThousand).unwrap()
+    }
 }
 
 #[derive(DerivePartialModel, FromQueryResult)]

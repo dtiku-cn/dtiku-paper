@@ -65,12 +65,12 @@ async fn with_context(
         name: "holmofy".into(),
         avatar: "https://q1.qlogo.cn/g?b=qq&nk=1938304905@&s=100".into(),
     };
-    req.extensions_mut().insert(GlobalVariables {
-        user: Some(current_user),
+    req.extensions_mut().insert(GlobalVariables::new(
+        Some(current_user),
         request_uri,
         paper_types,
         config,
         cookies,
-    });
+    ));
     Ok(next.run(req).await)
 }

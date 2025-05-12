@@ -3,13 +3,13 @@ use askama::Template;
 use dtiku_paper::model::{self, question::QuestionExtra};
 
 #[derive(Template)]
-#[template(path = "question-search.html")]
+#[template(path = "question-search.html.jinja")]
 pub struct QuestionSearchTemplate {
     pub global: GlobalVariables,
 }
 
 #[derive(Template)]
-#[template(path = "question-section.html")]
+#[template(path = "question-section.html.jinja")]
 pub struct QuestionSectionTemplate {
     pub global: GlobalVariables,
 }
@@ -39,6 +39,16 @@ impl FullQuestion {
             materials,
             solutions,
             chapter,
+        }
+    }
+
+    pub(crate) fn option_len(&self) -> usize {
+        match &self.extra {
+            QuestionExtra::SingleChoice { options }
+            | QuestionExtra::MultiChoice { options }
+            | QuestionExtra::IndefiniteChoice { options }
+            | QuestionExtra::BlankChoice { options } => options.iter().map(|o| o.len()).sum(),
+            _ => 0,
         }
     }
 }
