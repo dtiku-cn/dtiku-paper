@@ -50,7 +50,7 @@
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-list"></use>
             </svg>
-            <strong>{% if let Some(l) = label %}{{ l.name }}{% endif %}{{paper_type.name}}试卷列表</strong>
+            <strong>{%if let Some(l) = label%}{{l.name}}{%endif%}{{paper_type.name}}试卷列表</strong>
         </header>
         <div id="fromType" class="text-center">
             <a class="btn btn-link" th:href="@{/paper(category=${cls.category},cls=${cls.text},province=${province})}"

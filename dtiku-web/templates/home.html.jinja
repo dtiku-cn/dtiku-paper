@@ -56,7 +56,7 @@
                     </svg>
                     <strong>最新行测真题</strong>
                     <div class="flex-grow-1"></div>
-                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper">
+                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper?ty=xingce">
                         <svg class="icon-svg icon-svg-sm mr-2">
                             <use xlink:href="#ic-more"></use>
                         </svg>
@@ -65,7 +65,7 @@
                 </header>
                 <th:block th:include="fragments/paper::paper-table(${xPapers})" />
                 <footer class="card-footer">
-                    <a class="card-link" href="/paper">查看更多</a>
+                    <a class="card-link" href="/paper?ty=xingce">查看更多</a>
                 </footer>
             </div>
             <div class="card mb-3">
@@ -75,7 +75,7 @@
                     </svg>
                     <strong>最新申论真题</strong>
                     <div class="flex-grow-1"></div>
-                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper?cls=申论">
+                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper?ty=shenlun">
                         <svg class="icon-svg icon-svg-sm mr-2">
                             <use xlink:href="#ic-more"></use>
                         </svg>
@@ -84,7 +84,7 @@
                 </header>
                 <th:block th:include="fragments/paper::paper-table(${sPapers})" />
                 <footer class="card-footer">
-                    <a class="card-link" href="/paper?cls=申论">查看更多</a>
+                    <a class="card-link" href="/paper?ty=shenlun">查看更多</a>
                 </footer>
             </div>
         </div>
