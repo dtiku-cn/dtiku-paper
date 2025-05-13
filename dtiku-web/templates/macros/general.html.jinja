@@ -50,14 +50,19 @@
         }
     }
 </style>
-<style>{{ global.config.global_style }}</style>
+<style>
+    {
+            {
+            global.config.global_style
+        }
+    }
+</style>
 <script src="{{global.config.iconfont_js_url}}"></script>
 {{global.config.global_head_files}}
 {% endmacro headerfiles %}
 
 {% macro header() %}
-<nav class="navbar navbar-expand-lg p-3 mb-3 shadow-sm rounded"
-    th:classappend="${darkTheme?'navbar-dark':'navbar-light'}" th:style="${system_navbarStyle}">
+<nav class="navbar navbar-expand-lg p-3 mb-3 shadow-sm rounded navbar-light">
     <a class="navbar-brand position-relative" href="/">{{global.config.navbar_brand}}</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,15 +145,18 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-right shadow">
                     <b class="dropdown-item d-none d-lg-flex align-items-center">
-                        <svg th:if="${!user.isExpired()}" class="icon-svg icon-svg-md mr-2">
+                        {% if !u.is_expired() %}
+                        <svg class="icon-svg icon-svg-md mr-2">
                             <use id="theme-svg" xlink:href="#ic-diamond"></use>
                         </svg>
+                        {% endif %}
                         <span>{{u.name}}</span>
                     </b>
-                    <b th:if="${!user.isExpired()}" class="dropdown-item"
-                        th:text="|有效期：${temporals.format(user.dueTime,'yyyy-MM-dd')}|"></b>
-                    <b class="dropdown-item" th:text="|积分点：${user.point}|"></b>
-                    <b class="dropdown-item" th:text="|声望值：${user.fame}|"></b>
+                    {% if !u.is_expired() %}
+                    <b class="dropdown-item">有效期：{{u.due_time()}}</b>
+                    {% endif %}
+                    {# <b class="dropdown-item" th:text="|积分点：${user.point}|"></b>
+                    <b class="dropdown-item" th:text="|声望值：${user.fame}|"></b> #}
                     <div class="dropdown-divider"></div>
                     <b class="dropdown-item" id="revoke">撤销授权</b>
                 </div>
