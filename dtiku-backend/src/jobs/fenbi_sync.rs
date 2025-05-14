@@ -30,9 +30,9 @@ use futures::StreamExt;
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::prelude::PgVector;
-use sea_orm::Set;
 use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter, Statement};
 use sea_orm::{ConnectionTrait, EntityTrait};
+use sea_orm::{PaginatorTrait, Set};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
@@ -82,7 +82,7 @@ impl JobScheduler for FenbiSyncService {
             Value::Null => {
                 let total = self
                     .total(
-                        "select count(*) as total from label where from_ty='fenbi'",
+                        "select count(*) as total from label where from_ty='fenbi' and target_id is not null",
                         &self.source_db,
                     )
                     .await?;
@@ -105,7 +105,7 @@ impl JobScheduler for FenbiSyncService {
 
             let total = self
                 .total(
-                    "select count(*) as total from question_category where from_ty='fenbi'",
+                    "select count(*) as total from question_category where from_ty='fenbi' and target_id is not null",
                     &self.source_db,
                 )
                 .await?;
@@ -125,7 +125,7 @@ impl JobScheduler for FenbiSyncService {
 
             let total = self
                 .total(
-                    "select max(id) as total from paper where from_ty='fenbi'",
+                    "select max(id) as total from paper where from_ty='fenbi' and target_id is not null",
                     &self.source_db,
                 )
                 .await?;
@@ -261,7 +261,7 @@ impl FenbiSyncService {
             jsonb_extract_path_text(extra,'name') as label_name,
             id
         from label
-        where from_ty = 'fenbi'
+        where from_ty = 'fenbi' and target_id is not null
         order by exam_root,exam_name,paper_type,jsonb_extract_path_text(extra,'parent','name') is not null,id,label_name
         "##).fetch(&self.source_db);
 
@@ -293,6 +293,15 @@ impl FenbiSyncService {
     }
 
     async fn save_exam_category(&mut self) -> anyhow::Result<()> {
+        if ExamCategory::find()
+            .filter(exam_category::Column::FromTy.eq(FromType::Fenbi))
+            .count(&self.target_db)
+            .await?
+            > 0
+        {
+            tracing::info!("exam_category already exists");
+            return Ok(());
+        }
         let category = sqlx::query_as::<_, OriginExamCategory>(
             r##"
                 select extra
@@ -347,7 +356,7 @@ impl FenbiSyncService {
                         id,
                         label_id
                     from paper
-                    where from_ty = 'fenbi' and id > $1 and id <= $2
+                    where from_ty = 'fenbi' and target_id is not null and id > $1 and id <= $2
                     "##,
             )
             .bind(current)
