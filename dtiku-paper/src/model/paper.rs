@@ -82,6 +82,20 @@ pub struct PaperBlock {
 }
 
 impl Entity {
+    pub async fn find_by_ids<C>(db: &C, ids: Vec<i32>) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        if ids.len() <= 0 {
+            return Ok(vec![]);
+        }
+        Entity::find()
+            .filter(Column::Id.is_in(ids))
+            .all(db)
+            .await
+            .context("paper::find_by_ids() failed")
+    }
+
     pub async fn find_by_query<C>(db: &C, query: &ListPaperQuery) -> anyhow::Result<Page<Model>>
     where
         C: ConnectionTrait,

@@ -21,6 +21,7 @@ use spring_web::{
     },
     Router,
 };
+use tokio::task_local;
 use tower_cookies::{CookieManagerLayer, Cookies};
 
 pub fn routers() -> Router {
@@ -37,6 +38,10 @@ pub fn routers() -> Router {
         .layer(http_tracing_layer)
 }
 
+task_local! {
+    pub static EXAM_ID: i16;
+}
+
 async fn with_context(
     Component(ec_service): Component<ExamCategoryService>,
     Component(sc_service): Component<SystemConfigService>,
@@ -48,13 +53,14 @@ async fn with_context(
         .find_root_exam("gwy")
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let paper_types = match root_exam {
-        Some(root_exam) => ec_service
-            .find_leaf_paper_types(root_exam.id)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?,
-        None => vec![],
+    let exam_id = match root_exam {
+        Some(root_exam) => root_exam.id,
+        None => 0,
     };
+    let paper_types = ec_service
+        .find_leaf_paper_types(exam_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let config = sc_service
         .load_config()
         .await
@@ -72,5 +78,5 @@ async fn with_context(
         config,
         cookies,
     ));
-    Ok(next.run(req).await)
+    Ok(EXAM_ID.scope(exam_id, next.run(req)).await)
 }

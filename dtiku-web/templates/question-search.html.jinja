@@ -1,4 +1,7 @@
 {%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/question.html.jinja" as question -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
+{%- import "macros/painter.html.jinja" as painter -%}
 <!doctype html>
 <html lang="zh">
 
@@ -22,12 +25,13 @@
         <a class="nav-link text-center" href="/question/search/image">搜图</a>
     </div>
 
+    {% if global.config.show_vendor %}
     <div id="fromType" class="text-center">
-        <a class="btn btn-link" href="#" th:if="${bools.isTrue(system_showVendor)}"
-            th:classappend="${fromType==null?'active':''}">全部</a>
-        <a class="btn btn-link" href="#" th:if="${bools.isTrue(system_showVendor)}" th:each="type : ${allFromType}"
-            th:data="${type.name()}" th:text="${type.text}" th:classappend="${fromType==type?'active':''}"></a>
+        <a class="btn btn-link" href="#">全部</a>
+        <a class="btn btn-link" href="#" th:each="type : ${allFromType}" th:data="${type.name()}" th:text="${type.text}"
+            th:classappend="${fromType==type?'active':''}"></a>
     </div>
+    {% endif %}
 
     <div class="input-group has-validation border rounded">
         <div id="question-type" class="input-group-prepend border-right">
@@ -40,7 +44,7 @@
                     th:text="${t.showText}"></a>
             </div>
         </div>
-        <input type="text" id="search" placeholder="输入题目关键字就能搜出题目和答案哦！" th:value="${content}"
+        <input type="text" id="search" placeholder="输入题目关键字就能搜出题目和答案哦！" value="{{query.content}}"
             onkeydown='if(event.keyCode==13){search();}' class="form-control border-0 speech-input text-secondary"
             style="background: transparent">
         <div class="input-group-append border-left">
@@ -54,13 +58,15 @@
         <div class="invalid-feedback" style="position: absolute;bottom: -1.5em;">至少输入两个字</div>
     </div>
 
-    <div th:if="${questions!=null}" id="printcontent" class="mt-4">
-        <div class="card mb-3" th:each="q : ${questions}" th:include="fragments/question::question_card(${q})"></div>
+    <div id="printcontent" class="mt-4">
+        {% for q in questions %}
+        {% call question::question_card(q) %}
+        {% endfor %}
     </div>
-    <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
+    {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽")%}
     {% call general::footer() %}
     <script src="/static/vendor/mark.js/8.11.1/dist/jquery.mark.min.js"></script>
-    <th:block th:replace="fragments/painter::painter" />
+    {% call painter::painter() %}
     <script th:replace="fragments/question::answer-collapse-action"></script>
     <script th:replace="fragments/indent::solution-indent"></script>
     <script src='/static/dist/js/speech.js'></script>

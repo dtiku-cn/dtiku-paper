@@ -1,11 +1,19 @@
 use super::GlobalVariables;
 use askama::Template;
-use dtiku_paper::model::{self, question::QuestionExtra};
+use dtiku_paper::{
+    domain::question::QuestionSearch,
+    model::{
+        self,
+        question::{QuestionExtra, QuestionSelect},
+    },
+};
 
 #[derive(Template)]
 #[template(path = "question-search.html.jinja")]
 pub struct QuestionSearchTemplate {
     pub global: GlobalVariables,
+    pub questions: Vec<QuestionSelect>,
+    pub query: QuestionSearch,
 }
 
 #[derive(Template)]

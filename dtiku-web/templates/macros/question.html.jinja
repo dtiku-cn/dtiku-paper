@@ -203,13 +203,17 @@
 {% endmacro controversy_xingce_question %}
 
 {% macro question_card(q) %}
-<div class="card-header d-flex">
-    <a class="mr-auto" th:href="'/paper/'+${q.paper.id}+'#q-'+${q.number}"
-        th:text="|${q.paper.title} 第${q.number}题|"></a>
-    <span th:if="${bools.isTrue(system_showVendor)}" class="d-none d-lg-inline-block text-truncate"
-        th:text="|数据来自于：${q.paper.fromType.domain}|"></span>
+<div class="card mb-3">
+    <div class="card-header d-flex">
+        <a class="mr-auto" th:href="/paper/${q.paper_id}#q-${q.num}">${q.paper.title} 第${q.num}题</a>
+        {% if global.config.show_vendor %}
+        <span class="d-none d-lg-inline-block text-truncate">数据来自于：${q.paper.fromType.domain}</span>
+        {% endif %}
+    </div>
+    <div class="card-body question-wrapper">
+        {# {% if q.type == 'shenlun'%} #}
+        {# {% call shenlun_question(q) %} #}
+        {% call xingce_question(q) %}
+    </div>
 </div>
-<div class="card-body question-wrapper" th:include="${q.type.name()=='shenlun'}?
-          ~{fragments/question::shenlun_question(${q})}:
-          ~{fragments/question::xingce_question(${q})}"></div>
 {% endmacro question_card %}
