@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum::Display;
 
+#[derive(Clone, Debug)]
 pub struct Question {
     pub id: i32,
     pub content: String,
@@ -19,6 +20,7 @@ pub struct Question {
     pub num: i16,
 }
 
+#[derive(Clone, Debug)]
 pub struct QuestionWithPaper {
     pub id: i32,
     pub content: String,
@@ -26,6 +28,13 @@ pub struct QuestionWithPaper {
     pub papers: Vec<PaperWithNum>,
 }
 
+impl QuestionWithPaper {
+    pub fn option_len(&self) -> usize {
+        self.extra.option_len()
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct PaperWithNum {
     pub paper: paper::Model,
     pub num: i16,
@@ -75,23 +84,20 @@ impl QuestionSelect {
         qid_map: &HashMap<i32, Vec<super::paper_question::Model>>,
         id_paper: &HashMap<i32, paper::Model>,
     ) -> QuestionWithPaper {
-        let papers = qid_map
-            .get(&self.id)
-            .map(|pqs| {
-                pqs.into_iter()
-                    .map(|pq| {
-                        id_paper
-                            .get(&pq.paper_id)
-                            .map(|p| PaperWithNum::new(p, pq.sort))
-                    })
-                    .collect()
-            })
-            .collect();
+        let papers = qid_map.get(&self.id).map(|pqs| {
+            pqs.into_iter()
+                .filter_map(|pq| {
+                    id_paper
+                        .get(&pq.paper_id)
+                        .map(|p| PaperWithNum::new(p, pq.sort))
+                })
+                .collect::<Vec<_>>()
+        });
         QuestionWithPaper {
             id: self.id,
             content: self.content,
             extra: self.extra,
-            papers,
+            papers: papers.unwrap_or_default(),
         }
     }
 }
@@ -147,6 +153,18 @@ pub enum QuestionExtra {
     #[serde(rename = "c")]
     #[strum(serialize = "c")]
     Compose { options: Vec<QuestionChoice> },
+}
+
+impl QuestionExtra {
+    pub fn option_len(&self) -> usize {
+        match &self {
+            Self::SingleChoice { options }
+            | Self::MultiChoice { options }
+            | Self::IndefiniteChoice { options }
+            | Self::BlankChoice { options } => options.iter().map(|o| o.len()).sum(),
+            _ => 0,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]

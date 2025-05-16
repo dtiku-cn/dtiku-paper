@@ -4,7 +4,7 @@ use dtiku_paper::{
     domain::question::QuestionSearch,
     model::{
         self,
-        question::{QuestionExtra, QuestionSelect},
+        question::{QuestionExtra, QuestionWithPaper},
     },
 };
 
@@ -12,7 +12,7 @@ use dtiku_paper::{
 #[template(path = "question-search.html.jinja")]
 pub struct QuestionSearchTemplate {
     pub global: GlobalVariables,
-    pub questions: Vec<QuestionSelect>,
+    pub questions: Vec<QuestionWithPaper>,
     pub query: QuestionSearch,
 }
 
@@ -51,12 +51,6 @@ impl FullQuestion {
     }
 
     pub(crate) fn option_len(&self) -> usize {
-        match &self.extra {
-            QuestionExtra::SingleChoice { options }
-            | QuestionExtra::MultiChoice { options }
-            | QuestionExtra::IndefiniteChoice { options }
-            | QuestionExtra::BlankChoice { options } => options.iter().map(|o| o.len()).sum(),
-            _ => 0,
-        }
+        self.extra.option_len()
     }
 }
