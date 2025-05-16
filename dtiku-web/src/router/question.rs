@@ -1,7 +1,7 @@
 use crate::{
     router::EXAM_ID,
     views::{
-        question::{QuestionSearchTemplate, QuestionSectionTemplate},
+        question::{QuestionSearchImgTemplate, QuestionSearchTemplate, QuestionSectionTemplate},
         GlobalVariables,
     },
 };
@@ -35,6 +35,27 @@ async fn search_question(
     };
     println!("{:?}", questions.clone());
     let t = QuestionSearchTemplate {
+        global,
+        questions,
+        query,
+    };
+    Ok(Html(t.render().context("render failed")?))
+}
+
+#[get("/question/search/image")]
+async fn search_question_by_img(
+    Extension(global): Extension<GlobalVariables>,
+    Query(mut query): Query<QuestionSearch>,
+    Component(qs): Component<QuestionService>,
+) -> Result<impl IntoResponse> {
+    let questions = if query.content.is_empty() {
+        vec![]
+    } else {
+        query.exam_id = Some(EXAM_ID.get());
+        qs.search_question(&query).await?
+    };
+    println!("{:?}", questions.clone());
+    let t = QuestionSearchImgTemplate {
         global,
         questions,
         query,

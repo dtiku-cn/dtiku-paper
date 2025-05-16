@@ -17,6 +17,14 @@ pub struct QuestionSearchTemplate {
 }
 
 #[derive(Template)]
+#[template(path = "question-search-img.html.jinja")]
+pub struct QuestionSearchImgTemplate {
+    pub global: GlobalVariables,
+    pub questions: Vec<QuestionWithPaper>,
+    pub query: QuestionSearch,
+}
+
+#[derive(Template)]
 #[template(path = "question-section.html.jinja")]
 pub struct QuestionSectionTemplate {
     pub global: GlobalVariables,

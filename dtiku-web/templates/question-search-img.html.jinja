@@ -1,0 +1,65 @@
+{%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/question.html.jinja" as question -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
+{%- import "macros/painter.html.jinja" as painter -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>题目搜索 | {{global.config.site_title}}</title>
+    {% call general::headerfiles() %}
+    <link rel="stylesheet" href="/static/vendor/bootstrap-fileinput/5.2.5/css/fileinput.min.css">
+    <link rel="stylesheet" href="/static/vendor/bootstrap-icons/1.8.1/font/bootstrap-icons.css">
+    <style>
+        .file-preview-thumbnails {
+            display: flex;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .file-input .input-group-append i[class^="bi-"] {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <div class="d-flex justify-content-center mb-3">
+        <svg class="icon-svg">
+            <use xlink:href="#ic-search"></use>
+        </svg>
+    </div>
+    <h1 class="text-center">题库搜索</h1>
+
+    <div class="nav nav-pills nav-pills-group justify-content-center my-4">
+        <a class="nav-link text-center" href="/question/search">搜题</a>
+        <a class="nav-link active text-center" href="/question/search/image">搜图</a>
+    </div>
+
+    <input name="image" type="file" class="file" data-browse-on-zone-click="true" data-language="zh"
+        data-allowed-file-types='["image"]' data-allowed-file-extensions='["jpg","jpeg","png"]'
+        data-max-file-size="1024" data-upload-url="/question/search/image">
+
+    <div id="printcontent" class="mt-3">
+    </div>
+    {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽")%}
+    {% call general::footer() %}
+    <script src="/static/vendor/bootstrap-fileinput/5.2.5/js/fileinput.min.js"></script>
+    <script src="/static/vendor/bootstrap-fileinput/5.2.5/js/locales/zh.js"></script>
+    <script>
+        $.fn.fileinputLocales['zh'].dropZoneTitle = '拖拽图片到这里 &hellip;';
+        $(function () {
+            $("input[name=\"image\"]").on('fileuploaded', function (e, d) {
+                $("#printcontent").html(d.response.html || '');
+            });
+        })
+    </script>
+    {% call painter::painter() %}
+    <script th:replace="fragments/question::answer-collapse-action"></script>
+    <script th:replace="fragments/indent::solution-indent"></script>
+</body>
+
+</html>
