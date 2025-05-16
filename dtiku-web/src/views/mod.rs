@@ -7,6 +7,7 @@ use user::CurrentUser;
 
 pub mod bbs;
 pub mod home;
+pub mod idiom;
 pub mod paper;
 pub mod question;
 pub mod user;

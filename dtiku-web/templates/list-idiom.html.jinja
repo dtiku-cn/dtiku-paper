@@ -56,7 +56,7 @@
         </header>
         <div id="allProvinces" class="card-body d-flex flex-wrap">
             <a class="btn btn-link" th:each="p : ${allProvinces}"
-                th:href="@{/{t}(t=${modelType.name()},provinces=${#strings.setJoin(@thymeleafUtils.addonSet(provinces,p),',')},fromType=${fromType})}"
+                th:href="@{/{t}(t=${modelType.name()},provinces=${strings.setJoin(@thymeleafUtils.addonSet(provinces,p),',')},fromType=${fromType})}"
                 th:text="${p}" th:classappend="${provinces.contains(p)?'active':''}"></a>
         </div>
     </div>
@@ -77,8 +77,8 @@
             </a>
         </header>
         <div id="fromType" class="text-center">
-            <a th:if="${#bools.isTrue(system_showVendor)}" class="btn btn-link" th:each="type : ${allFromType}"
-                th:href="@{/idiom(provinces=${#strings.setJoin(provinces,',')},fromType=${type})}"
+            <a th:if="${bools.isTrue(system_showVendor)}" class="btn btn-link" th:each="type : ${allFromType}"
+                th:href="@{/idiom(provinces=${strings.setJoin(provinces,',')},fromType=${type})}"
                 th:data="${type.name()}" th:text="${type.text}" th:classappend="${fromType==type?'active':''}"></a>
         </div>
         <div class="input-group">
@@ -89,11 +89,11 @@
                 <button id="submit" type="submit" data-target="#search" class="btn btn-outline-secondary">点我搜索</button>
             </div>
         </div>
-        <p th:if="${#lists.isEmpty(stats)}" class="text-center">没有找到这个成语，尝试换个省份或换个成语进行搜索</p>
+        <p th:if="${lists.isEmpty(stats)}" class="text-center">没有找到这个成语，尝试换个省份或换个成语进行搜索</p>
         <table th:if="${!#lists.isEmpty(stats)}" class="table table-striped idiom-list">
             <thead>
                 <tr>
-                    <th class="text-center px-0 py-2" th:width="${#strings.equals(modelType.name(),'idiom')?100:70}"
+                    <th class="text-center px-0 py-2" th:width="${strings.equals(modelType.name(),'idiom')?100:70}"
                         th:text="${modelType.text}"></th>
                     <th class="py-2">释义</th>
                     <th class="text-center d-none d-md-table-cell px-0 py-2">出现频次</th>
@@ -109,7 +109,7 @@
                     <td th:utext="${s.explain}"></td>
                     <td class="text-center d-none d-md-table-cell" th:text="|共${s.questionFrequency}题|"></td>
                     <td class="text-center">
-                        <a th:href="@{/idiom/{text}(text=${s.text},provinces=${#strings.setJoin(provinces,',')},fromType=${#strings.defaultString(fromType,'')})}"
+                        <a th:href="@{/idiom/{text}(text=${s.text},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})}"
                             th:text="${s.paperFrequency}"></a>
                     </td>
                 </tr>
@@ -117,7 +117,7 @@
         </table>
 
         <th:block
-            th:include="fragments/elements::pagination(${page},@{/{type}(type=${modelType.name()},provinces=${#strings.setJoin(provinces,',')},fromType=${#strings.defaultString(fromType,'')})},true)" />
+            th:include="fragments/elements::pagination(${page},@{/{type}(type=${modelType.name()},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})},true)" />
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
