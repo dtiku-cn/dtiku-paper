@@ -44,7 +44,7 @@
                     th:text="${t.showText}"></a>
             </div>
         </div>
-        <input type="text" id="search" placeholder="输入题目关键字就能搜出题目和答案哦！" value="{% if let Some(content) = query.content %}{{content}}{% endif %}"
+        <input type="text" id="search" placeholder="输入题目关键字就能搜出题目和答案哦！" value="{{query.content}}"
             onkeydown='if(event.keyCode==13){search();}' class="form-control border-0 speech-input text-secondary"
             style="background: transparent">
         <div class="input-group-append border-left">
