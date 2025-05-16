@@ -27,8 +27,15 @@ async fn search_question(
     Query(mut query): Query<QuestionSearch>,
     Component(qs): Component<QuestionService>,
 ) -> Result<impl IntoResponse> {
-    query.exam_id = Some(EXAM_ID.get());
-    let questions = qs.search_question(&query).await?;
+    let questions = match query.content {
+        Some(ref content) if content.is_empty() => {
+            query.exam_id = Some(EXAM_ID.get());
+            qs.search_question(&query).await?
+        }
+        _ => {
+            vec![]
+        }
+    };
     println!("{:?}", questions.clone());
     let t = QuestionSearchTemplate {
         global,
