@@ -39,9 +39,6 @@ pub enum SystemConfigKey {
     #[strum(message = "显示评论")]
     ShowComments,
 
-    #[strum(message = "Artalk评论配置")]
-    CommentConfig,
-
     #[strum(message = "显示页面访问量")]
     ShowVisitors,
 

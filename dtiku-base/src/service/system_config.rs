@@ -59,7 +59,6 @@ gen_config_getters! {
     (show_ads, ShowAds, bool),
     (ads_script, AdsScript, String),
     (show_comments, ShowComments, bool),
-    (comment_config, CommentConfig, serde_json::Value),
     (show_visitors, ShowVisitors, bool),
     (show_solution, ShowSolution, bool),
     (show_vendor, ShowVendor, bool),

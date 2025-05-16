@@ -1,0 +1,142 @@
+{%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>高频${modelType.text}积累 | {{global.config.site_title}}</title>
+    {% call general::headerfiles() %}
+    <style>
+        @media (min-width: 768px) {
+            .idiom-list tr>td:last-child {
+                width: 85px;
+            }
+
+            .idiom-list tr>td:nth-last-child(2) {
+                width: 100px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .idiom-list tr>td:last-child {
+                width: 60px;
+            }
+        }
+
+        .idiom-list td {
+            vertical-align: middle !important;
+        }
+
+        .idiom-list td>p {
+            margin: 0 !important;
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+
+    <div class="card mb-3">
+        <header class="d-flex card-header p-1 align-items-center">
+            <div class="dropdown">
+                <a class="btn btn-link dropdown-toggle d-flex align-items-center" href="#" data-toggle="dropdown"
+                    role="button" aria-expanded="false" id="modelTypeDropdown">
+                    <svg class="icon-svg icon-svg-sm mr-2">
+                        <use xlink:href="#ic-library"></use>
+                    </svg>
+                    <strong>${modelType.text}</strong>
+                </a>
+                <div class="dropdown-menu shadow-sm" aria-labelledby="modelTypeDropdown">
+                    <a class="dropdown-item" th:each="m:${allModelType}" th:href="'/'+${m.name()}"
+                        th:text="${m.text}"></a>
+                </div>
+            </div>
+            <span class="text-muted">（可选择多个省份）</span>
+        </header>
+        <div id="allProvinces" class="card-body d-flex flex-wrap">
+            <a class="btn btn-link" th:each="p : ${allProvinces}"
+                th:href="@{/{t}(t=${modelType.name()},provinces=${#strings.setJoin(@thymeleafUtils.addonSet(provinces,p),',')},fromType=${fromType})}"
+                th:text="${p}" th:classappend="${provinces.contains(p)?'active':''}"></a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <header class="d-flex card-header p-1 pl-3 align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-list"></use>
+            </svg>
+            <strong>高频${modelType.text}解析</strong>
+            <div class="flex-grow-1"></div>
+            <a class="btn card-link d-flex align-items-center"
+                th:href="@{/idiom-print/{t}(t=${modelType},provinces=${provinces},fromType=${fromType})}">
+                <svg class="icon-svg icon-svg-sm mr-2">
+                    <use xlink:href="#ic-print"></use>
+                </svg>
+                <b>打印</b>
+            </a>
+        </header>
+        <div id="fromType" class="text-center">
+            <a th:if="${#bools.isTrue(system_showVendor)}" class="btn btn-link" th:each="type : ${allFromType}"
+                th:href="@{/idiom(provinces=${#strings.setJoin(provinces,',')},fromType=${type})}"
+                th:data="${type.name()}" th:text="${type.text}" th:classappend="${fromType==type?'active':''}"></a>
+        </div>
+        <div class="input-group">
+            <input type="text" id="search" placeholder="输入成语进行搜索" th:value="${text}"
+                onkeydown='if(event.keyCode==13){search();}' class="form-control rounded-0"
+                th:data-filter="'/idiom/like?type='+${modelType.name()}+'&q=#QUERY#'">
+            <div class="input-group-append">
+                <button id="submit" type="submit" data-target="#search" class="btn btn-outline-secondary">点我搜索</button>
+            </div>
+        </div>
+        <p th:if="${#lists.isEmpty(stats)}" class="text-center">没有找到这个成语，尝试换个省份或换个成语进行搜索</p>
+        <table th:if="${!#lists.isEmpty(stats)}" class="table table-striped idiom-list">
+            <thead>
+                <tr>
+                    <th class="text-center px-0 py-2" th:width="${#strings.equals(modelType.name(),'idiom')?100:70}"
+                        th:text="${modelType.text}"></th>
+                    <th class="py-2">释义</th>
+                    <th class="text-center d-none d-md-table-cell px-0 py-2">出现频次</th>
+                    <th class="text-center px-0 py-2">真题<span class="d-none d-md-inline">试卷</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="s : ${stats}">
+                    <td class="text-center">
+                        <a rel="external nofollow" target="_blank" th:href="'https://dict.baidu.com/s?wd='+${s.text}"
+                            th:text="${s.text}"></a>
+                    </td>
+                    <td th:utext="${s.explain}"></td>
+                    <td class="text-center d-none d-md-table-cell" th:text="|共${s.questionFrequency}题|"></td>
+                    <td class="text-center">
+                        <a th:href="@{/idiom/{text}(text=${s.text},provinces=${#strings.setJoin(provinces,',')},fromType=${#strings.defaultString(fromType,'')})}"
+                            th:text="${s.paperFrequency}"></a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <th:block
+            th:include="fragments/elements::pagination(${page},@{/{type}(type=${modelType.name()},provinces=${#strings.setJoin(provinces,',')},fromType=${#strings.defaultString(fromType,'')})},true)" />
+    </div>
+    {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
+    {% call general::footer() %}
+    <script src="/static/vendor/bootstrap-autocomplete.js/bootstrap-autocomplete.min.js"></script>
+    <script th:replace="fragments/elements::pager-select"></script>
+    <script>
+        function search() {
+            const text = $("#search").val();
+            const params = new URLSearchParams(location.search);
+            params.set("text", text);
+            params.set("page", '1');
+            location.search = "?" + params.toString();
+        }
+
+        $(function () {
+            $("#submit").click(search);
+            $("#search").autocomplete();
+        })
+    </script>
+</body>
+
+</html>
