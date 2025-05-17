@@ -205,7 +205,18 @@
 {% macro question_card(q) %}
 <div class="card mb-3">
     <div class="card-header d-flex">
-        <a class="mr-auto" th:href="/paper/${q.paper_id}#q-${q.num}">${q.paper.title} 第${q.num}题</a>
+        {% if q.papers.len() == 1 %}
+        <a class="mr-auto" href="/paper/{{q.papers[0].paper.id}}#q-{{q.papers[0].num}}">
+            {{q.papers[0].paper.title}} 第{{q.papers[0].num}}题
+        </a>
+        {%else%}
+        <a class="mr-auto" data-toggle="dropdown">{{q.papers[0].paper.title}} 第{{q.papers[0].num}}题</a>
+        <div class="dropdown-menu">
+            {% for p in q.papers %}
+            <a class="dropdown-item" href="/paper/{{p.paper.id}}#q-{{p.num}}">{{p.paper.title}}</a>
+            {% endfor %}
+        </div>
+        {%endif%}
         {% if global.config.show_vendor %}
         <span class="d-none d-lg-inline-block text-truncate">数据来自于：${q.paper.fromType.domain}</span>
         {% endif %}
