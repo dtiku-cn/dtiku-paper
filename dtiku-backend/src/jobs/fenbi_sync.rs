@@ -82,7 +82,7 @@ impl JobScheduler for FenbiSyncService {
             Value::Null => {
                 let total = self
                     .total(
-                        "select count(*) as total from label where from_ty='fenbi' and target_id is not null",
+                        "select count(*) as total from label where from_ty='fenbi' and target_id is null",
                         &self.source_db,
                     )
                     .await?;
@@ -125,7 +125,7 @@ impl JobScheduler for FenbiSyncService {
 
             let total = self
                 .total(
-                    "select max(id) as total from paper where from_ty='fenbi' and target_id is not null",
+                    "select max(id) as total from paper where from_ty='fenbi' and target_id is null",
                     &self.source_db,
                 )
                 .await?;
@@ -278,7 +278,7 @@ impl FenbiSyncService {
             jsonb_extract_path_text(extra,'name') as label_name,
             id
         from label
-        where from_ty = 'fenbi' and target_id is not null
+        where from_ty = 'fenbi' and target_id is null
         order by exam_root,exam_name,paper_type,jsonb_extract_path_text(extra,'parent','name') is not null,id,label_name
         "##).fetch(&self.source_db);
 
@@ -373,7 +373,7 @@ impl FenbiSyncService {
                         id,
                         label_id
                     from paper
-                    where from_ty = 'fenbi' and target_id is not null and id > $1 and id <= $2
+                    where from_ty = 'fenbi' and target_id is null and id > $1 and id <= $2
                     "##,
             )
             .bind(current)
