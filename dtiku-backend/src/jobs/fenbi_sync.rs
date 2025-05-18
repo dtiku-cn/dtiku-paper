@@ -176,14 +176,25 @@ impl FenbiSyncService {
 
                     let (paper_type, exam_id) = match paper_type {
                         Some(p) => {
-                            let root_exam_type =
-                                ExamCategory::find_root_by_id(&self.target_db, p.pid)
-                                    .await
-                                    .with_context(|| {
-                                        format!("find root exam category failed:{}", p.pid)
-                                    })?
-                                    .expect(&format!("root_exam category not found:{}", p.pid));
-                            (p.id, root_exam_type.id)
+                            if p.pid != 0 {
+                                let root_exam_type =
+                                    ExamCategory::find_root_by_id(&self.target_db, p.pid)
+                                        .await
+                                        .with_context(|| {
+                                            format!(
+                                                "find root exam category failed:{} > {}",
+                                                p.pid, p.id
+                                            )
+                                        })?
+                                        .expect(&format!(
+                                            "root_exam category not found:{} > {}",
+                                            p.pid, p.id
+                                        ));
+
+                                (p.id, root_exam_type.id)
+                            } else {
+                                (p.id, p.id)
+                            }
                         }
                         None => {
                             tracing::info!("find exam_category failed for fenbi#{name}");
