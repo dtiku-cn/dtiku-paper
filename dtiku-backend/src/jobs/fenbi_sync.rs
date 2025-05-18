@@ -105,7 +105,7 @@ impl JobScheduler for FenbiSyncService {
 
             let total = self
                 .total(
-                    "select count(*) as total from question_category where from_ty='fenbi' and target_id is not null",
+                    "select count(*) as total from question_category where from_ty='fenbi'",
                     &self.source_db,
                 )
                 .await?;
