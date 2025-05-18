@@ -1,5 +1,7 @@
 {%- import "macros/general.html.jinja" as general -%}
 {%- import "macros/question.html.jinja" as question -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
+{%- import "macros/painter.html.jinja" as painter -%}
 <!doctype html>
 <html lang="zh">
 
@@ -110,11 +112,11 @@
             </div>
         </div>
     </div>
-    <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
+    {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽")%}
     {% call general::footer() %}
     <script src="/static/vendor/select2/4.0.13/js/select2.full.min.js"></script>
     <script src="/static/vendor/select2/4.0.13/js/i18n/zh-CN.min.js"></script>
-    <th:block th:replace="fragments/painter::painter" />
+    {% call painter::painter() %}
     {% call question::answer_collapse_action() %}
     <script src='/static/dist/js/speech.js'></script>
     <script>
