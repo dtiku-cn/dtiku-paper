@@ -1,4 +1,5 @@
 {%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/question.html.jinja" as question -%}
 <!doctype html>
 <html lang="zh">
 
@@ -114,7 +115,7 @@
     <script src="/static/vendor/select2/4.0.13/js/select2.full.min.js"></script>
     <script src="/static/vendor/select2/4.0.13/js/i18n/zh-CN.min.js"></script>
     <th:block th:replace="fragments/painter::painter" />
-    <script th:replace="fragments/question::answer-collapse-action"></script>
+    {% call question::answer_collapse_action() %}
     <script src='/static/dist/js/speech.js'></script>
     <script>
         // var categoriesMap = [(${@thymeleafUtils.toJSON(categoriesDetailMap) })];

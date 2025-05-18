@@ -1,5 +1,5 @@
 pub use super::_entities::question::*;
-use super::{paper, Paper, PaperQuestion};
+use super::{paper, Paper, PaperQuestion, _entities::solution};
 use crate::domain::question::QuestionSearch;
 use anyhow::Context;
 use itertools::Itertools;
@@ -26,11 +26,29 @@ pub struct QuestionWithPaper {
     pub content: String,
     pub extra: QuestionExtra,
     pub papers: Vec<PaperWithNum>,
+    pub solutions: Option<Vec<solution::Model>>,
 }
 
 impl QuestionWithPaper {
     pub fn option_len(&self) -> usize {
         self.extra.option_len()
+    }
+
+    pub fn get_answer(&self) -> Option<String> {
+        match &self.solutions {
+            None => None,
+            Some(ss) => ss.first().and_then(|s| s.extra.get_answer()),
+        }
+    }
+
+    pub fn is_answer(&self, index0: &usize) -> bool {
+        match &self.solutions {
+            None => false,
+            Some(ss) => ss
+                .first()
+                .map(|s| s.extra.is_answer(*index0))
+                .unwrap_or_default(),
+        }
     }
 }
 
@@ -97,6 +115,7 @@ impl QuestionSelect {
             id: self.id,
             content: self.content,
             extra: self.extra,
+            solutions: None,
             papers: papers.unwrap_or_default(),
         }
     }

@@ -1,0 +1,272 @@
+{%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/paper.html.jinja" as paper -%}
+{%- import "macros/question.html.jinja" as question -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
+{%- import "macros/painter.html.jinja" as painter -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>{{paper.title}} | 申论答案汇总 | {{global.config.site_title}}</title>
+    {% call general::headerfiles() %}
+    <style media="screen">
+        .resize {
+            display: none;
+        }
+
+        .drawer {
+            position: fixed;
+            z-index: 1;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-radius: 0;
+            touch-action: none;
+            max-height: 80vh;
+            box-shadow: 0 -.5rem 3rem rgba(0, 0, 0, .175) !important;
+        }
+
+        .drawer:before {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            backdrop-filter: drop-shadow(2px 4px 6px black);
+            border-top-color: red;
+        }
+
+        .drawer .card-header {
+            cursor: row-resize;
+        }
+
+        .drawer .resize {
+            display: block;
+        }
+
+        .drawer .card-body {
+            overflow: auto;
+        }
+
+        #collapse-question {
+            display: none;
+        }
+
+        #collapse-question .icon-svg {
+            transform: rotate(90deg);
+        }
+
+        .drawer #collapse-question {
+            display: inline-block;
+        }
+
+        .drawer #collapse-question+b {
+            margin-left: 0 !important;
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <div id="printcontent">
+        <h1 class="text-center">{{paper.title}}</h1>
+        <p class="text-center d-print-none user-select-none">{% call paper::paper_meta(paper) %}</p>
+
+        <button id="collapse" class="btn btn-link btn-block d-print-none" data-toggle="true">展开试卷</button>
+        {% if paper.extra.block_count() == 3 %}
+        <div class="paper paper-shenlun">
+            {% if let Some(b) = paper.extra.compute_block(0)%}
+            <div th:if="${!#strings.isEmpty(paper.chapters.get(0).desc)}">
+                <h2 class="subtitle">{{b.name}}</h2>{{b.desc | safe}}
+            </div>
+            {%endif%}
+            <section id="material-section" class="card mt-4">
+                <h2 class="card-header user-select-none">
+                    {% if let Some(b) = paper.extra.compute_block(1)%}
+                    <b title="{{b.desc}}">{{b.name}}</b>
+                    {%else%}
+                    材料
+                    {%endif%}
+                </h2>
+                <ul class="nav nav-tabs underscore-nav w-100 flex-nowrap flex-shrink-0 d-print-none user-select-none"
+                    role="tablist" style="overflow-x:auto;overflow-y: hidden">
+                    {%for m in materials %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link {%if loop.index==1%}active{%endif%}" data-toggle="tab" role="tab"
+                            href="#material-tab-{{m.id}}">
+                            材料{{m.chinese_num()}}
+                        </a>
+                    </li>
+                    {%endfor%}
+                </ul>
+                <div class="card-body material tab-content">
+                    {%for m in materials %}
+                    <div class="my-2 tab-pane d-print-block {%if loop.index==1%}active{%endif%}" role="tabpanel"
+                        id="material-tab-{{m.id}}">
+                        <h3 class="material-number text-center d-none d-print-block">材料{{m.chinese_num()}}</h3>
+                        <div id="m-{{loop.index}}" class="material-content">{{m.content | safe}}</div>
+                    </div>
+                    {%endfor%}
+                </div>
+            </section>
+            <section id="question-section" class="card mt-4">
+                <h2 class="card-header d-flex align-items-center px-0 py-1 user-select-none d-print-block">
+                    <button id="collapse-question" class="btn d-print-none">
+                        <svg class="icon-svg icon-svg-md">
+                            <use xlink:href="#ic-arrow"></use>
+                        </svg>
+                    </button>
+                    <b class="ml-3 mr-auto">
+                        {% if let Some(b) = paper.extra.compute_block(2)%}
+                        {{b.name}}
+                        {%else%}
+                        题目
+                        {%endif%}
+                    </b>
+                    <svg class="mx-auto resize icon-svg icon-svg-md d-print-none">
+                        <use xlink:href="#ic-arrows-resize-v"></use>
+                    </svg>
+                    <button id="pin-question" class="btn ml-auto d-print-none">
+                        <svg class="icon-svg icon-svg-md">
+                            <use xlink:href="#ic-pin"></use>
+                        </svg>
+                        <span>固定</span>
+                    </button>
+                </h2>
+                <ul class="nav nav-tabs underscore-nav w-100 flex-nowrap flex-shrink-0 d-print-none user-select-none"
+                    role="tablist" style="overflow-x:auto;overflow-y: hidden">
+                    {%for q in questions %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link {%if loop.index==1%}active{%endif%}" data-toggle="tab" role="tab"
+                            href="#question-tab-{{q.id}}">问题{{q.chinese_num()}}</a>
+                    </li>
+                    {%endfor%}
+                </ul>
+                <div class="card-body tab-content">
+                    {%for q in questions %}
+                    <div class="my-2 tab-pane d-print-block {%if loop.index==1%}active{%endif%}" role="tabpanel"
+                        id="question-tab-{{q.id}}">
+                        {% call question::shenlun_question(q) %}
+                    </div>
+                    {%endfor%}
+                </div>
+            </section>
+        </div>
+        {% endif %}
+    </div>
+    {% call artalk::comment(false,true,true,"来这里吐槽一下试卷😁")%}
+    {% call general::footer() %}
+    <script>
+        window.floatButtonAddon = [{
+            style: 'always',
+            render: function () {
+                return "<div id='click_timer' class='d-flex align-items-center'>" +
+                    "<b class='total-timer d-lg-block d-none' style='min-width:4em'>00:00</b>" +
+                    "<svg class='icon-svg'><use xlink:href='#ic-timer'></use></svg>" +
+                    "</div>";
+            },
+            click: function () {
+            }
+        }]
+    </script>
+    {% call painter::painter() %}
+    <script th:replace="fragments/indent::solution-indent"></script>
+    {% call question::solution_comment_script() %}
+    <script src='/dist/js/speech.js'></script>
+    <script>
+        $(function () {
+            $(".question-content").html(function (index, html) {
+                // 将问题提及到的资料，替换为锚点
+                return html.replaceAll(/(?:<\w>["“])?给?定?[资|材]料(?:<\/?[^\u4e00-\u9fa5]+>)*(\d+)["”]?/g, "<a href='#m-$1'>$&</a>");
+            });
+            window.addEventListener('hashchange', function () {
+                if (location.hash.startsWith("#m-")) {
+                    var n = location.hash.slice(3);
+                    var $a = $("#material-section > ul > li:nth-child(" + n + ") > a");
+                    if ($a.is(':visible')) {
+                        $(window).scrollTop($a.click().offset().top);
+                    }
+                }
+            }, false);
+            $(".material-content p").html(function (index, html) {
+                return html.replaceAll(/<\/?span[^>]*>/g, "");
+            });
+            $("#collapse").click(function () {
+                var toggle = $(this).data('toggle');
+                $(".underscore-nav").toggleClass("d-none", toggle);
+                $(".material-number").toggleClass("d-none", !toggle);
+                $("#material-section .card-body").add("#question-section .card-body").toggleClass("tab-content", !toggle);
+                $(this).data('toggle', !toggle).text(toggle ? '折叠试卷' : '展开试卷');
+            });
+            $("#collapse-question").click(function () {
+                var $questionSection = $("#question-section");
+                if ($questionSection.hasClass('drawer')) {
+                    $questionSection.height(95);
+                }
+            });
+
+            function touchToMove(handler) {
+                return function ($e) {
+                    handler($e.originalEvent.touches[0]);
+                };
+            }
+
+            var drawerListener = {
+                mouseDown: function (e) {
+                    $("#question-section").data('last-y', e.screenY);
+                },
+                mouseMove: function (e) {
+                    var $questionSection = $("#question-section");
+                    var lastY = $questionSection.data('last-y');
+                    if (lastY) {
+                        var deltaY = lastY - e.screenY;
+                        var newHeight = Math.min($questionSection.height() + deltaY, screen.availHeight * 0.8);
+                        $questionSection.height(Math.max(newHeight, 95));
+                        $questionSection.data('last-y', e.screenY);
+                    }
+                },
+                mouseUp: function (e) {
+                    $("#question-section").data('last-y', false);
+                }
+            };
+            drawerListener.touchStart = touchToMove(drawerListener.mouseDown);
+            drawerListener.touchMove = touchToMove(drawerListener.mouseMove);
+            drawerListener.touchEnd = touchToMove(drawerListener.mouseUp);
+            $("#pin-question").click(function () {
+                var pin = $("#question-section").toggleClass("drawer").hasClass("drawer");
+                $(this).find("span").text(pin ? '取消固定' : '固定');
+                if (pin) {
+                    $('#question-section .card-header').mousedown(drawerListener.mouseDown).mousemove(drawerListener.mouseMove)
+                        .bind('touchstart', drawerListener.touchStart).bind('touchmove', drawerListener.touchMove);
+                    $(document).mouseup(drawerListener.mouseUp).bind('touchend', drawerListener.touchEnd);
+                } else {
+                    $('#question-section .card-header').unbind('mousedown', drawerListener.mouseDown).unbind('mousemove', drawerListener.mouseMove)
+                        .unbind('touchstart', drawerListener.touchStart).unbind('touchmove', drawerListener.touchMove);
+                    $(document).unbind('mouseup', drawerListener.mouseUp).unbind('touchend', drawerListener.touchEnd);
+                    $('#question-section').css('height', 'auto');
+                }
+            });
+
+            var $clickTimer = $("#click_timer");
+
+            function s2String(s) {
+                m = Math.floor(s / 60);
+                return String(m).padStart(2, '0') + ":" + String(s % 60).padStart(2, '0');
+            }
+
+            function refreshTimer() {
+                var $timer = $clickTimer;
+                var totalTime = $timer.data("total-timer") || 0;
+                $timer.data("total-timer", totalTime + 1).find("b.total-timer").text(s2String(totalTime));
+            }
+
+            var t = setInterval(refreshTimer, 1000);
+            $clickTimer.click(function () {
+                t = t ? clearInterval(t) : setInterval(refreshTimer, 1000);
+                $(this).find(".icon-svg>use").attr('xlink:href', t ? '#ic-timer' : '#ic-rest');
+                $(this).find("b.total-timer").toggleClass('d-none', !!t).toggleClass('d-block', !t);
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -67,7 +67,7 @@
     {% call general::footer() %}
     <script src="/static/vendor/mark.js/8.11.1/dist/jquery.mark.min.js"></script>
     {% call painter::painter() %}
-    <script th:replace="fragments/question::answer-collapse-action"></script>
+    {% call question::answer_collapse_action() %}
     <script th:replace="fragments/indent::solution-indent"></script>
     <script src='/static/dist/js/speech.js'></script>
     <script>

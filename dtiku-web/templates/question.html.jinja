@@ -32,6 +32,6 @@
 <th:block th:replace="fragments/painter::painter"/>
 <script th:replace="fragments/indent::solution-indent"></script>
 <script th:replace="fragments/question::solution-comment-script"></script>
-<script th:replace="fragments/question::answer-collapse-action"></script>
+    {% call question::answer_collapse_action() %}
 </body>
 </html>

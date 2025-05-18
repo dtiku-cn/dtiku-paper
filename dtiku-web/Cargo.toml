@@ -24,3 +24,4 @@ tower-cookies = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 itertools = { workspace = true }
+chinese-number = { workspace = true }

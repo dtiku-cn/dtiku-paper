@@ -1177,8 +1177,8 @@ struct SolutionAccessory {
 struct CorrectAnswer {
     #[serde(rename = "type")]
     pub ty: i16,
-    #[serde_as(as = "Option<StringWithSeparator::<CommaSeparator, u16>>")]
-    pub choice: Option<Vec<u16>>,
+    #[serde_as(as = "Option<StringWithSeparator::<CommaSeparator, u8>>")]
+    pub choice: Option<Vec<u8>>,
     pub blanks: Option<Vec<String>>,
     pub answer: Option<String>,
 }

@@ -58,7 +58,7 @@
         })
     </script>
     {% call painter::painter() %}
-    <script th:replace="fragments/question::answer-collapse-action"></script>
+    {% call question::answer_collapse_action() %}
     <script th:replace="fragments/indent::solution-indent"></script>
 </body>
 

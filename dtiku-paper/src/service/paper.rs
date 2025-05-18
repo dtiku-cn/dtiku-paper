@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::domain::paper::{FullPaper, PaperMode};
 use crate::model::{paper, Material, Question, QuestionMaterial, Solution};
 use crate::query::paper::ListPaperQuery;
@@ -33,7 +35,12 @@ impl PaperService {
                 let ms = Material::find_by_paper_id(&self.db, id).await?;
                 let question_ids = qs.iter().map(|q| q.id).collect_vec();
                 let ss = Solution::find_by_question_ids(&self.db, question_ids.clone()).await?;
-                let id_map = QuestionMaterial::find_by_qids(&self.db, question_ids).await?;
+                let id_map = match paper.extra {
+                    paper::PaperExtra::Chapters(_) => {
+                        QuestionMaterial::find_by_qids(&self.db, question_ids).await?
+                    }
+                    _ => HashMap::new(),
+                };
                 Some(FullPaper::new(mode, paper, qs, ms, ss, id_map))
             }
             None => None,

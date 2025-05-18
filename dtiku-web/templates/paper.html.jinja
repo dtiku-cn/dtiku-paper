@@ -91,9 +91,11 @@
         {% if mode == "show_answer" %}
         <div id="answer-list" class="show-answer row">
             {%for q in questions %}
+            {%if let Some(answer) = q.get_answer() %}
             <a th:if="${q.answer!=null}" class="text-reset text-center" href="#q-{{q.num}}">
-                <b>{{q.num}}</b>、<b class="-answer-">${q.answer?.answer}</b>
+                <b>{{q.num}}</b>、<b class="-answer-">{{answer}}</b>
             </a>
+            {%endif%}
             {%endfor%}
         </div>
         {% elif mode == "exercise" %}

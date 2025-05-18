@@ -23,6 +23,20 @@ impl PaperExtra {
         self.compute_chapter(num, false).map(|c| c.name)
     }
 
+    pub fn compute_block(&self, index: usize) -> Option<PaperBlock> {
+        match self {
+            Self::EssayCluster(ec) => ec.blocks.get(index).cloned(),
+            Self::Chapters(_) => None,
+        }
+    }
+
+    pub fn block_count(&self) -> usize {
+        match self {
+            Self::EssayCluster(ec) => ec.blocks.len(),
+            Self::Chapters(_) => 0,
+        }
+    }
+
     pub fn compute_chapter(&self, num: i32, only_first: bool) -> Option<PaperChapter> {
         match self {
             Self::Chapters(cs) => cs.compute_chapter(num, only_first),

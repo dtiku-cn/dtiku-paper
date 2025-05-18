@@ -1,7 +1,7 @@
 use crate::{
     query::paper::{ListPaperQuery, PaperQuery},
     views::{
-        paper::{ListPaperTemplate, PaperTemplate},
+        paper::{ChapterPaperTemplate, ClusterPaperTemplate, ListPaperTemplate},
         GlobalVariables, IntoTemplate,
     },
 };
@@ -9,6 +9,7 @@ use anyhow::Context;
 use askama::Template;
 use dtiku_paper::{
     domain::paper::PaperMode,
+    model::paper::PaperExtra,
     query::paper::ListPaperQuery as PaperListQuery,
     service::{label::LabelService, paper::PaperService},
 };
@@ -67,8 +68,17 @@ async fn paper_by_id(
         .find_paper_by_id(id, query.mode.unwrap_or_default())
         .await?
         .ok_or_else(|| KnownWebError::not_found("试卷未找到"))?;
-    let t: PaperTemplate = paper.to_template(global);
-    Ok(Html(t.render().context("render failed")?))
+    let html = match paper.p.extra {
+        PaperExtra::Chapters(_) => {
+            let t: ChapterPaperTemplate = paper.to_template(global);
+            t.render().context("render failed")?
+        }
+        _ => {
+            let t: ClusterPaperTemplate = paper.to_template(global);
+            t.render().context("render failed")?
+        }
+    };
+    Ok(Html(html))
 }
 
 #[post("/paper/{id}/report")]
@@ -81,6 +91,6 @@ async fn paper_exercise(
         .find_paper_by_id(id, PaperMode::Exercise)
         .await?
         .ok_or_else(|| KnownWebError::not_found("试卷未找到"))?;
-    let t: PaperTemplate = paper.to_template(global);
+    let t: ChapterPaperTemplate = paper.to_template(global);
     Ok(Html(t.render().context("render failed")?))
 }

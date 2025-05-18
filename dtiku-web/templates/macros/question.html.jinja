@@ -36,15 +36,20 @@
 
 {% macro question_solution(q) %}
 <ul class="nav nav-tabs mt-2" role="tablist">
-    <li th:if="${bools.isFalse(system_showSolution)}" role="presentation" class="nav-item">
-        <a class="nav-link active" role="tab" data-toggle="tab" th:href="|#solution-${q.id}-login|">参考答案</a>
+    {% if !global.config.show_solution %}
+    <li role="presentation" class="nav-item">
+        <a class="nav-link active" role="tab" data-toggle="tab" href="#solution-{{q.id}}-login">参考答案</a>
     </li>
-    <li th:if="${bools.isTrue(system_showSolution)}" role="presentation" class="nav-item"
-        th:each="type,iter:${q.solution.keySet()}">
-        <a class="nav-link" role="tab" data-toggle="tab" th:classappend="${iter.index==0?'active':''}"
-            th:href="'#solution-'+${q.id}+${type}"
-            th:text="${bools.isTrue(system_showVendor)?type.text:'参考解析'+@thymeleafUtils.formatChinese(iter.index+1)}"></a>
+    {%else if let Some(solutions) = q.solutions %}
+    {%for s in solutions%}
+    <li role="presentation" class="nav-item">
+        <a class="nav-link {%if loop.index==1%}active{%endif%}" role="tab" data-toggle="tab"
+            href="#solution-{{q.id}}-{{s.id}}">
+            ${bools.isTrue(system_showVendor)?type.text:'参考解析'+@thymeleafUtils.formatChinese(iter.index+1)}
+        </a>
     </li>
+    {%endfor%}
+    {%endif%}
     <li role="presentation" class="nav-item"
         th:if="${q.hasImage && !#strings.startsWith(#request.requestURI,'/question/detail')}"
         th:classappend="${bools.isTrue(system_showSolution)?'':'active'}">
@@ -57,16 +62,20 @@
     </li>
 </ul>
 <div class="tab-content card">
-    <div th:if="${bools.isFalse(system_showSolution)}" th:id="|solution-${q.id}-login|"
-        class="solution tab-pane card-body bg-light active" role="tabpanel">
-        <a class="btn btn-link btn-block" th:href="|#${user==null?'loginModal':'payModal'}|" data-toggle="modal"
-            th:text="${user==null?'请先登录':'网站赞助'}"></a>
+    {% if !global.config.show_solution %}
+    <div id="solution-{{q.id}}-login|" class="solution tab-pane card-body bg-light active" role="tabpanel">
+        <a class="btn btn-link btn-block" href="#${user==null?'loginModal':'payModal'}" data-toggle="modal">
+            ${user==null?'请先登录':'网站赞助'}
+        </a>
     </div>
-    <div th:if="${bools.isTrue(system_showSolution)}" role="tabpanel" th:each="entry,iter:${q.solution.entrySet()}"
-        th:id="'solution-'+${q.id}+${entry.key}"
-        th:class="${entry.key}+'-solution solution tab-pane card-body bg-light'"
-        th:classappend="${iter.index==0?'active':'fade'}" th:utext="${entry.value?.html}">
+    {%else if let Some(solutions) = q.solutions %}
+    {%for s in solutions%}
+    <div role="tabpanel" id="solution-{{q.id}}-{{s.id}}"
+        class="${entry.key}-solution solution tab-pane card-body bg-light {%if loop.index==1%}active{%else%}fade{%endif%}">
+        ${s.extra}
     </div>
+    {%endfor%}
+    {%endif%}
     <div role="tabpanel" class="tab-pane card-body bg-light px-0"
         th:if="${q.hasImage && !#strings.startsWith(#request.requestURI,'/question/detail')}"
         th:id="|recommend-for-${q.id}|" th:data-href="'/question/recommend/'+${q.id}">
@@ -142,8 +151,7 @@
     {% when QuestionExtra::SingleChoice with { options } %}
     <div class="option-group d-flex flex-wrap">
         {% for o in options %}
-        <div class="d-flex" id="{{q.id}}-option-{{loop.index}}"
-            th:classappend="${q.answer!=null && q.answer.answer.contains(o.caption)?'-answer-':''}"
+        <div class="d-flex {%if q.is_answer(loop.index0)%}-answer-{%endif%}" id="{{q.id}}-option-{{loop.index}}"
             style='width:{% if q.option_len()<20&&global.screen_width()>768 %}25%{% else if q.option_len()<30 %}50%{%else%}100%{% endif %}'>
             <b>{{ global.chars[loop.index0] }} </b>. &nbsp;
             <div class="flex-grow-1">{{o | safe}}</div>
@@ -154,28 +162,35 @@
     {% else %}
     {% endmatch %}
 </div>
-<div class="d-print-none" th:if="${q.answer!=null || !#maps.isEmpty(q.solution)}">
-    <a class="btn btn-link" role="button" data-toggle="collapse" th:href="'#answer-'+${q.id}">查看解析</a>
-    <div class="collapse" th:id="'answer-'+${q.id}">
-        <div th:if="${q.answer!=null}">参考答案：<b class="-answer-" th:text="${q.answer.answer}"></b></div>
+{% if let Some(answer) = q.get_answer()%}
+<div class="d-print-none">
+    <a class="btn btn-link" role="button" data-toggle="collapse" href="#answer-{{q.id}}">查看解析</a>
+    <div class="collapse" id="answer-{{q.id}}">
+        {% if let Some(answer) = q.get_answer()%}
+        <div>参考答案：<b class="-answer-">{{answer}}</b></div>
+        {% endif %}
         <th:block th:include="fragments/question::question_solution(${q})" />
     </div>
 </div>
+{% endif %}
 {% endmacro xingce_question %}
 
 {# 申论 #}
 {% macro shenlun_question(q) %}
-<div th:id="'question-'+${q.id}" class="clearfix question mt-3">
-    <div th:id="${'q-'+q.number}" class="q-number float-left">
-        <b th:text="${@thymeleafUtils.formatChinese(q.number)}"></b>、
+<div id="question-{{q.id}}" class="clearfix question mt-3">
+    <div id="q-{{q.num}}" class="q-number float-left">
+        <b>{{q.chinese_num()}}</b>、
     </div>
-    <div class="question-content" th:utext="${q.html}"></div>
+    <div class="question-content">{{q.content|safe}}</div>
 </div>
-<div th:if="${q.solution!=null && q.solution.size()!=0}" class="d-print-none">
-    <a class="btn btn-link" role="button" data-toggle="collapse" th:href="'#answer-'+${q.id}">参考答案</a>
-    <div class="collapse" th:id="'answer-'+${q.id}" th:include="fragments/question::question_solution(${q})">
+{%if let Some(solutions) = q.solutions%}
+<div class="d-print-none">
+    <a class="btn btn-link" role="button" data-toggle="collapse" href="#answer-{{q.id}}">参考答案</a>
+    <div class="collapse" id="answer-{{q.id}}">
+        {% call question_solution(q) %}
     </div>
 </div>
+{%endif%}
 {% endmacro shenlun_question %}
 
 {% macro controversy_xingce_question(q,controversy) %}

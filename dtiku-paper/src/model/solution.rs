@@ -1,5 +1,6 @@
 pub use super::_entities::solution::*;
 use anyhow::Context;
+use itertools::Itertools;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, FromJsonQueryResult, QueryFilter};
 use serde::{Deserialize, Serialize};
 use serde_with::{formats::CommaSeparator, serde_as, StringWithSeparator};
@@ -36,17 +37,55 @@ pub enum SolutionExtra {
     OtherQA(OtherAnswer),
 }
 
+impl SolutionExtra {
+    pub fn is_answer(&self, index0: usize) -> bool {
+        let answer_index = index0 as u8;
+        match self {
+            Self::SingleChoice(SingleChoice { answer, .. })
+            | Self::BlankChoice(SingleChoice { answer, .. }) => *answer == answer_index,
+            Self::MultiChoice(MultiChoice { answer, .. })
+            | Self::IndefiniteChoice(MultiChoice { answer, .. }) => answer.contains(&answer_index),
+            Self::TrueFalse(TrueFalseChoice { answer, .. }) => *answer && answer_index == 0,
+            _ => false,
+        }
+    }
+
+    pub fn get_answer(&self) -> Option<String> {
+        match self {
+            Self::SingleChoice(SingleChoice { answer, .. })
+            | Self::BlankChoice(SingleChoice { answer, .. }) => Some(Self::convert_answer(*answer)),
+            Self::MultiChoice(MultiChoice { answer, .. })
+            | Self::IndefiniteChoice(MultiChoice { answer, .. }) => {
+                Some(answer.iter().map(|a| Self::convert_answer(*a)).join(", "))
+            }
+            Self::TrueFalse(TrueFalseChoice { answer, .. }) => {
+                if *answer {
+                    Some("T".to_string())
+                } else {
+                    Some("F".to_string())
+                }
+            }
+            _ => None,
+        }
+    }
+
+    fn convert_answer(answer: u8) -> String {
+        let c = (b'A' + answer) as char;
+        c.to_string()
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct SingleChoice {
-    pub answer: u16,
+    pub answer: u8,
     pub analysis: String,
 }
 
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct MultiChoice {
-    #[serde_as(as = "StringWithSeparator::<CommaSeparator, u16>")]
-    pub answer: Vec<u16>,
+    #[serde_as(as = "StringWithSeparator::<CommaSeparator, u8>")]
+    pub answer: Vec<u8>,
     pub analysis: String,
 }
 

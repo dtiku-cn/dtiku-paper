@@ -1,6 +1,6 @@
 use super::{question::FullQuestion, GlobalVariables, IntoTemplate};
-use dtiku_paper::model::question::QuestionExtra;
 use askama::Template;
+use dtiku_paper::model::question::QuestionExtra;
 use dtiku_paper::{
     domain::{
         label::{LabelNode, LabelTree},
@@ -64,15 +64,25 @@ impl ListPaperTemplate {
 
 #[derive(Template)]
 #[template(path = "paper.html.jinja")]
-pub struct PaperTemplate {
+pub struct ChapterPaperTemplate {
     pub global: GlobalVariables,
     pub paper: model::paper::Model,
     pub mode: String,
     pub questions: Vec<FullQuestion>,
 }
 
-impl IntoTemplate<PaperTemplate> for FullPaper {
-    fn to_template(self, global: GlobalVariables) -> PaperTemplate {
+#[derive(Template)]
+#[template(path = "cluster-paper.html.jinja")]
+pub struct ClusterPaperTemplate {
+    pub global: GlobalVariables,
+    pub paper: model::paper::Model,
+    pub mode: String,
+    pub materials: Vec<material::Material>,
+    pub questions: Vec<FullQuestion>,
+}
+
+impl IntoTemplate<ChapterPaperTemplate> for FullPaper {
+    fn to_template(self, global: GlobalVariables) -> ChapterPaperTemplate {
         let mut qid_mid_map = self.qid_mid_map;
         let mut id_m_map: HashMap<i32, material::Material> =
             self.ms.into_iter().map(|m| (m.id, m)).collect();
@@ -98,10 +108,39 @@ impl IntoTemplate<PaperTemplate> for FullPaper {
                 )
             })
             .collect_vec();
-        PaperTemplate {
+        ChapterPaperTemplate {
             global,
             mode: self.mode.to_string(),
             paper: self.p,
+            questions,
+        }
+    }
+}
+
+impl IntoTemplate<ClusterPaperTemplate> for FullPaper {
+    fn to_template(self, global: GlobalVariables) -> ClusterPaperTemplate {
+        let mut qid_ss_map: HashMap<i32, Vec<solution::Model>> = self
+            .ss
+            .into_iter()
+            .map(|m| (m.question_id, m))
+            .into_group_map();
+        let questions = self
+            .qs
+            .into_iter()
+            .map(|q| {
+                FullQuestion::new(
+                    None,
+                    qid_ss_map.remove(&q.id),
+                    self.p.extra.compute_chapter(q.num as i32, true),
+                    q,
+                )
+            })
+            .collect_vec();
+        ClusterPaperTemplate {
+            global,
+            mode: self.mode.to_string(),
+            paper: self.p,
+            materials: self.ms,
             questions,
         }
     }
