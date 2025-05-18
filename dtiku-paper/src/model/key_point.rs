@@ -1,12 +1,24 @@
-use crate::util;
-
 pub use super::_entities::key_point::*;
+use crate::util;
+use anyhow::Context;
 use dtiku_macros::cached;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
 };
 
 impl Entity {
+    pub async fn find_by_pid<C: ConnectionTrait>(
+        db: &C,
+        paper_type: i16,
+        pid: i32,
+    ) -> anyhow::Result<Vec<Model>> {
+        Entity::find()
+            .filter(Column::Pid.eq(pid).and(Column::PaperType.eq(paper_type)))
+            .all(db)
+            .await
+            .with_context(|| format!("key_point::find_by_pid({paper_type},{pid}) failed"))
+    }
+
     pub async fn find_by_paper_type_and_name<C: ConnectionTrait>(
         db: &C,
         paper_type: i16,

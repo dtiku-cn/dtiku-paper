@@ -165,7 +165,10 @@ impl FenbiSyncService {
         while let Some(row) = stream.next().await {
             match row {
                 Ok(c) => {
-                    let OriginQuestionCategory { name, extra } = c;
+                    let OriginQuestionCategory {
+                        prefix: name,
+                        extra,
+                    } = c;
                     let paper_type = ExamCategory::find()
                         .filter(exam_category::Column::Prefix.eq(&name))
                         .one(&self.target_db)
@@ -176,8 +179,10 @@ impl FenbiSyncService {
                             let root_exam_type =
                                 ExamCategory::find_root_by_id(&self.target_db, p.pid)
                                     .await
-                                    .context("find root exam category failed")?
-                                    .expect("root_exam category not found");
+                                    .with_context(|| {
+                                        format!("find root exam category failed:{}", p.pid)
+                                    })?
+                                    .expect(&format!("root_exam category not found:{}", p.pid));
                             (p.id, root_exam_type.id)
                         }
                         None => {
@@ -186,14 +191,16 @@ impl FenbiSyncService {
                         }
                     };
 
-                    Self::save_question_category_to_keypoint(
-                        extra.0,
-                        0,
-                        paper_type,
-                        exam_id,
-                        &self.target_db,
-                    )
-                    .await?;
+                    for c in extra.0 {
+                        Self::save_question_category_to_keypoint(
+                            c,
+                            0,
+                            paper_type,
+                            exam_id,
+                            &self.target_db,
+                        )
+                        .await?;
+                    }
 
                     if progress.increase(1) {
                         self.task = self
@@ -209,14 +216,13 @@ impl FenbiSyncService {
     }
 
     async fn save_question_category_to_keypoint(
-        c: Category,
+        c: QuestionCategory,
         parent_id: i32,
         paper_type: i16,
         exam_id: i16,
         target_db: &DbConn,
     ) -> anyhow::Result<()> {
         let kp = key_point::ActiveModel {
-            id: Set(c.id as i32),
             name: Set(c.name),
             pid: Set(parent_id),
             paper_type: Set(paper_type),
@@ -1279,29 +1285,19 @@ struct MaterialIdNumber {
 
 #[derive(Debug, sqlx::FromRow)]
 struct OriginQuestionCategory {
-    pub name: String,
-    pub extra: Json<Category>,
+    pub prefix: String,
+    pub extra: Json<Vec<QuestionCategory>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Category {
-    pub id: i64,
+struct QuestionCategory {
     pub name: String,
     pub count: i64,
     #[serde(rename = "type")]
     pub type_field: Option<i64>,
     pub ptype: Option<i64>,
-    pub optional: bool,
-    pub children: Option<Vec<Category>>,
-    pub request_num: i64,
-    pub request_type: i64,
-    pub additional: bool,
-    pub keypoint_type: i64,
-    pub capacity: i64,
-    pub answer_count: i64,
-    pub giant_only: bool,
-    pub choice_only: bool,
+    pub children: Option<Vec<QuestionCategory>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, sqlx::FromRow)]

@@ -1,6 +1,7 @@
 mod config;
 mod exam;
 mod task;
+mod keypoint;
 
 use spring::tracing::Level;
 use spring_opentelemetry::trace;

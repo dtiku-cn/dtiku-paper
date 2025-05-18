@@ -42,11 +42,12 @@ create table if not exists paper(
 -- 知识点
 drop table if exists key_point;
 create table if not exists key_point(
-    id int4 primary key,
-    name varchar(32) not null,
+    id serial primary key,
+    name varchar(64) not null,
     pid integer not null,
     exam_id int2 not null,
-    paper_type int2 not null
+    paper_type int2 not null,
+    unique(pid, name)
 );
 -- 问题
 drop table if exists question;
