@@ -42,7 +42,8 @@ impl Entity {
             }
         }
         let paths: Vec<&str> = paths.iter().map(|s| s.as_str()).collect();
-        Ok(Some(util::str::common_prefix_all(&paths)))
+        let common_prefix = util::str::common_prefix_all(&paths);
+        Ok(Some(common_prefix.trim_matches('.').to_string()))
     }
 
     pub async fn query_keypoint_path<C: ConnectionTrait>(
