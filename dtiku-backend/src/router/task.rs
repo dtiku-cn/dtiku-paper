@@ -88,3 +88,35 @@ async fn start_task(
     };
     Ok(Json(model))
 }
+
+#[post("/api/tasks/{ty}/continue")]
+async fn continue_task(
+    Path(ty): Path<ScheduleTaskType>,
+    Component(db): Component<DbConn>,
+) -> Result<impl IntoResponse> {
+    let task = ScheduleTask::find_by_type(&db, ty).await?;
+    let model = match task {
+        Some(task) => schedule_task::ActiveModel {
+            id: Set(task.id),
+            active: Set(true),
+            version: Set(task.version + 1),
+            ..Default::default()
+        }
+        .update(&db)
+        .await
+        .context("update task failed")?,
+        None => schedule_task::ActiveModel {
+            version: Set(1),
+            ty: Set(ty),
+            run_count: Set(0),
+            context: Set(json!(null)),
+            instances: Set(json!([])),
+            active: Set(true),
+            ..Default::default()
+        }
+        .insert(&db)
+        .await
+        .context("insert task failed")?,
+    };
+    Ok(Json(model))
+}
