@@ -8,9 +8,7 @@ use sea_orm::{
     ConnectionTrait, DbErr, EntityTrait, QueryFilter, Set,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use spring::{async_trait, plugin::ComponentRegistry, App};
-use spring_stream::Producer;
+use spring::async_trait;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Progress<T> {
@@ -61,17 +59,6 @@ impl ActiveModelBehavior for ActiveModel {
         }
         self.modified = Set(Local::now().naive_local());
         Ok(self)
-    }
-
-    async fn after_save<C>(model: Model, _db: &C, _insert: bool) -> Result<Model, DbErr>
-    where
-        C: ConnectionTrait,
-    {
-        if model.active && model.context == Value::Null {
-            let producer = App::global().get_expect_component::<Producer>();
-            let _ = producer.send_json("task", &model).await;
-        }
-        Ok(model)
     }
 }
 

@@ -8,6 +8,7 @@ use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
 use serde_json::json;
 use spring_sea_orm::DbConn;
+use spring_stream::Producer;
 use spring_web::axum::response::IntoResponse;
 use spring_web::axum::Json;
 use spring_web::error::Result;
@@ -60,6 +61,7 @@ async fn get_task(
 async fn start_task(
     Path(ty): Path<ScheduleTaskType>,
     Component(db): Component<DbConn>,
+    Component(producer): Component<Producer>,
 ) -> Result<impl IntoResponse> {
     let task = ScheduleTask::find_by_type(&db, ty).await?;
     let model = match task {
@@ -86,6 +88,10 @@ async fn start_task(
         .await
         .context("insert task failed")?,
     };
+    producer
+        .send_json("task", &model)
+        .await
+        .context("send task stream failed")?;
     Ok(Json(model))
 }
 
@@ -93,6 +99,7 @@ async fn start_task(
 async fn continue_task(
     Path(ty): Path<ScheduleTaskType>,
     Component(db): Component<DbConn>,
+    Component(producer): Component<Producer>,
 ) -> Result<impl IntoResponse> {
     let task = ScheduleTask::find_by_type(&db, ty).await?;
     let model = match task {
@@ -118,5 +125,9 @@ async fn continue_task(
         .await
         .context("insert task failed")?,
     };
+    producer
+        .send_json("task", &model)
+        .await
+        .context("send task stream failed")?;
     Ok(Json(model))
 }
