@@ -17,7 +17,8 @@ use spring_web::{
     },
     extractor::{Component, Request},
     middleware::trace::{
-        DefaultMakeSpan, DefaultOnEos, DefaultOnRequest, DefaultOnResponse, TraceLayer,
+        DefaultMakeSpan, DefaultOnEos, DefaultOnFailure, DefaultOnRequest, DefaultOnResponse,
+        TraceLayer,
     },
     Router,
 };
@@ -26,10 +27,11 @@ use tower_cookies::{CookieManagerLayer, Cookies};
 
 pub fn routers() -> Router {
     let trace_layer = TraceLayer::new_for_http()
-        .make_span_with(DefaultMakeSpan::default().level(Level::INFO))
-        .on_request(DefaultOnRequest::default().level(Level::INFO))
-        .on_response(DefaultOnResponse::default().level(Level::INFO))
-        .on_eos(DefaultOnEos::default().level(Level::INFO));
+        .make_span_with(DefaultMakeSpan::default())
+        .on_request(DefaultOnRequest::default())
+        .on_response(DefaultOnResponse::default())
+        .on_failure(DefaultOnFailure::default())
+        .on_eos(DefaultOnEos::default());
     let http_tracing_layer = trace::HttpLayer::server(Level::INFO);
     spring_web::handler::auto_router()
         .route_layer(middleware::from_fn(with_context))
