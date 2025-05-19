@@ -4,12 +4,10 @@ mod offcn_sync;
 
 use crate::plugins::jobs::RunningJobs;
 use anyhow::Context;
-use dtiku_base::model::schedule_task::TaskInstance;
 use dtiku_base::model::ScheduleTask;
 use dtiku_base::model::{enums::ScheduleTaskType, schedule_task};
 use fenbi_sync::FenbiSyncService;
-use sea_orm::{EntityTrait as _, IntoActiveModel, Set};
-use spring::plugin::service::Service;
+use sea_orm::{EntityTrait as _, Set};
 use spring::{async_trait, plugin::ComponentRegistry, tracing, App};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
@@ -18,12 +16,11 @@ use spring_stream::{
     extractor::{Component, Json},
     stream_listener, Consumers,
 };
-use sqlx::Database;
 use sqlx::Row;
 
 #[stream_listener("task")]
 async fn task_schedule(
-    Json(mut task): Json<schedule_task::Model>,
+    Json(task): Json<schedule_task::Model>,
     Component(running_jobs): Component<RunningJobs>,
 ) {
     let ty = task.ty;
@@ -81,8 +78,7 @@ trait PaperSyncer {
     /**
      * 查询表的总数量
      */
-    async fn total(&self, sql: &str, db: &ConnectPool) -> anyhow::Result<i64>
-    {
+    async fn total(&self, sql: &str, db: &ConnectPool) -> anyhow::Result<i64> {
         Ok(sqlx::query(&sql)
             .fetch_one(db)
             .await

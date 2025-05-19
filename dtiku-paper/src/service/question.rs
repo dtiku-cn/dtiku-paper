@@ -24,7 +24,7 @@ impl QuestionService {
         &self,
         query: &PaperQuestionQuery,
     ) -> anyhow::Result<Vec<question::Model>> {
-        let qids = PaperQuestion::find_by_query(&self.db, query).await?;
+        let _qids = PaperQuestion::find_by_query(&self.db, query).await?;
         // Question::find_by_ids(&self.db, qids).await
         todo!()
     }
