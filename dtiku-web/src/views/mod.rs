@@ -26,6 +26,7 @@ pub struct GlobalVariables {
     pub(crate) chars: Vec<char>,
 }
 
+#[allow(dead_code)]
 impl GlobalVariables {
     pub fn now_year(&self) -> i16 {
         let now = chrono::Local::now();

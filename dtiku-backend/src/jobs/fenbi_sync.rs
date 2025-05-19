@@ -663,7 +663,7 @@ impl FenbiSyncService {
             };
 
             // ltree
-            let stmt = match keypoint_path {
+            let stmt = match &keypoint_path {
                 Some(path) => Statement::from_sql_and_values(
                     sea_orm::DatabaseBackend::Postgres,
                     r#"INSERT INTO paper_question (paper_id, question_id, sort, paper_type, keypoint_path, correct_ratio)
@@ -691,10 +691,12 @@ impl FenbiSyncService {
                 ),
             };
 
-            self.target_db
-                .execute(stmt)
-                .await
-                .context("insert paper_question failed")?;
+            self.target_db.execute(stmt).await.with_context(|| {
+                format!(
+                    "insert paper_question failed, key_point_path:{:?}",
+                    keypoint_path
+                )
+            })?;
         }
 
         Ok(())

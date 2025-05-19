@@ -3,7 +3,7 @@ pub mod proto {
 }
 
 use super::AnyhowToStatus;
-use crate::plugins::fastembed::{ImgEmbedding, TxtEmbedding};
+use crate::plugins::fastembed::TxtEmbedding;
 use proto::embedding_service_server::{EmbeddingService, EmbeddingServiceServer};
 use proto::{BatchTextReq, Embedding, TensorResp, TextReq};
 use spring::plugin::service::Service;
