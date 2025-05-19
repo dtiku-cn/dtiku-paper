@@ -599,9 +599,10 @@ impl FenbiSyncService {
                     .context("insert question_material failed")?;
                 } else {
                     tracing::error!(
-                        "origin_question#{} ==> question#{}: material not exists",
+                        "origin_question#{} ==> question#{}: material#{} target_id not exists",
                         q.id,
-                        q_in_db.id
+                        q_in_db.id,
+                        origin_m_id
                     );
                 }
             }
