@@ -1,6 +1,5 @@
-use crate::query::paper::ListPaperQuery;
-
 pub use super::_entities::paper::*;
+use crate::query::paper::ListPaperQuery;
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromJsonQueryResult,

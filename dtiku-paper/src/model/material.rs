@@ -16,9 +16,15 @@ pub struct Material {
     pub num: i16,
 }
 
-impl Material{
-    pub fn chinese_num(&self)->String{
-        self.num.to_chinese(ChineseVariant::Traditional, ChineseCase::Lower, ChineseCountMethod::TenThousand).unwrap()
+impl Material {
+    pub fn chinese_num(&self) -> String {
+        self.num
+            .to_chinese(
+                ChineseVariant::Traditional,
+                ChineseCase::Lower,
+                ChineseCountMethod::TenThousand,
+            )
+            .unwrap()
     }
 }
 
@@ -33,7 +39,7 @@ struct MaterialSelect {
     extra: Vec<MaterialExtra>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(tag = "type")]
 pub enum MaterialExtra {
     #[serde(rename = "explain")]

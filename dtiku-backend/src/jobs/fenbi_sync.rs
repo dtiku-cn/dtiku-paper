@@ -1226,7 +1226,7 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
         };
         let mut am = material::ActiveModel {
             content: Set(self.content),
-            extra: Set(serde_json::to_value(extra).context("serde encode failed")?),
+            extra: Set(extra.unwrap_or_default()),
             ..Default::default()
         };
         if let Some(id) = self.target_id {
