@@ -277,7 +277,7 @@
         themeSwitcher.switchTo(themeSwitcher.getTheme());
 
         $("#loginModal").on('show.bs.modal', function () {
-            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"http://artalk.dtiku.cn/api/v2/auth/wechat\" width=\"400\" height=\"400\"" +
+            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"https://artalk.dtiku.cn/api/v2/auth/wechat\" width=\"400\" height=\"400\"" +
                 " style=\"overflow:hidden;background:url('" + window.loadingGif + "') center center no-repeat\"></iframe>" +
                 "<p class=\"text-center\">微信截图扫码无效哦</p>");
         }).on('shown.bs.modal', function () {
