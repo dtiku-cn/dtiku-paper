@@ -57,13 +57,7 @@
     }
 </style>
 {% if global.config.global_style.len() > 0 %}
-<style>
-    {
-            {
-            global.config.global_style
-        }
-    }
-</style>
+<style>{{global.config.global_style}}</style>
 {% endif %}
 <script src="{{global.config.iconfont_js_url}}"></script>
 {{global.config.global_head_files}}

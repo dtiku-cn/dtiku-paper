@@ -18,11 +18,13 @@
 <script>
     window.addEventListener('load', function () {
         var pv = {{global.config.show_comments && comments}};
+        var darkMode = !!{{global.cookie.cookie("darkTheme")}};
         var config = Object.assign({
             el: '#artalk-comments',
             server: 'https://artalk.dtiku.cn',
             site: '公考加油站',
             pageview: pv,
+            darkMode
         });
         Artalk.init(config);
     }, false);
