@@ -8,7 +8,7 @@
 <span th:text="${count}"></span>
 <th:block th:if="${d!=0}">
     （
-    <span th:text="${#numbers.formatDecimal(count*1.0/d,1,2)}"></span>
+    <span th:text="${numbers.formatDecimal(count*1.0/d,1,2)}"></span>
     ×
     <span th:text="${d}"></span>
     ）
@@ -29,17 +29,17 @@
     <ul class="pagination justify-content-center">
         <li th:class="${page.first?'disabled page-item':'page-item'}">
             <a class="page-link"
-                th:href="|${#strings.contains(url,'?')?url:url+'?'}&page=${page.number}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|"><span>←</span>上一页</a>
+                th:href="|${strings.contains(url,'?')?url:url+'?'}&page=${page.number}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|"><span>←</span>上一页</a>
         </li>
         <li th:if="${selectable}">
             <select class="page-selector custom-select rounded-0 border-left-0 border-right-0">
-                <option th:each="p:${#numbers.sequence(1,page.totalPages)}" th:value="${p}" th:text="${p}"
+                <option th:each="p:${numbers.sequence(1,page.totalPages)}" th:value="${p}" th:text="${p}"
                     th:selected="${p==page.number+1}"></option>
             </select>
         </li>
         <li th:class="${page.last?'disabled page-item':'page-item'}">
             <a class="page-link"
-                th:href="|${#strings.contains(url,'?')?url:url+'?'}&page=${page.number+2}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|">下一页<span>→</span></a>
+                th:href="|${strings.contains(url,'?')?url:url+'?'}&page=${page.number+2}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|">下一页<span>→</span></a>
         </li>
     </ul>
     <p class="text-center" th:text="${(page.number+1)+'/'+page.totalPages}"></p>

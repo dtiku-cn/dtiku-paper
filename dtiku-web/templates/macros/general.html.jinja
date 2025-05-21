@@ -174,7 +174,7 @@
     <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
     <script>
         $(function () {
-            var $mainAlert = $("#main-alert"), alertKey = '[[${system_alertMessageKey}]]';
+            var $mainAlert = $("#main-alert"), alertKey = '{{global.config.alert_message_key}}';
             $mainAlert.on('closed.bs.alert', function () {
                 Cookies.set("dis-alert", alertKey);
             });
@@ -277,7 +277,7 @@
         themeSwitcher.switchTo(themeSwitcher.getTheme());
 
         $("#loginModal").on('show.bs.modal', function () {
-            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"/oauth/render/WECHAT_OPEN\" width=\"400\" height=\"400\"" +
+            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"http://artalk.dtiku.cn/api/v2/auth/wechat\" width=\"400\" height=\"400\"" +
                 " style=\"overflow:hidden;background:url('" + window.loadingGif + "') center center no-repeat\"></iframe>" +
                 "<p class=\"text-center\">微信截图扫码无效哦</p>");
         }).on('shown.bs.modal', function () {

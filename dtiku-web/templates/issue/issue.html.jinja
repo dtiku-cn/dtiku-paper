@@ -1,0 +1,121 @@
+{%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
+{%- import "macros/painter.html.jinja" as painter -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>${issue.title} - 论坛交流 | {{global.config.site_title}}</title>
+    {% call general::headerfiles() %}
+    <link rel="stylesheet" href="/static/vendor/vditor/3.10.4/dist/index.min.css">
+    <style media="print">
+        header.card-header {
+            justify-content: center;
+            font-size: 1.3rem;
+            margin: 10px;
+        }
+
+        header.card-header strong {
+            margin: 0 auto;
+        }
+    </style>
+    <style>
+        .card-body img,
+        .card-body object {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+        }
+
+        mjx-container[jax="SVG"][display="true"] {
+            display: block;
+            text-align: center;
+            margin: 1em 0;
+            overflow: auto hidden;
+        }
+
+        mjx-container[jax="SVG"] {
+            direction: ltr;
+        }
+
+        mjx-assistive-mml {
+            display: none;
+        }
+
+        .vditor-reset table td,
+        .vditor-reset table th {
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <div class="card mb-3">
+        <header class="card-header d-flex align-items-center p-3 p-lg-2 pl-lg-3">
+            <svg class="icon-svg icon-svg-md mr-2 d-print-none">
+                <use th:xlink:href="|#${issue.topic.icon}|"></use>
+            </svg>
+            <strong class="d-none d-md-block d-print-none" th:text="|【${issue.topic.text}】|"></strong>
+            <strong class="mr-auto" th:text="${issue.title}"></strong>
+            <a th:if="${issue.userId == user?.id}" class="btn card-link d-flex align-items-center d-print-none"
+                data-toggle="tooltip" title="重新编辑" th:href="|/bbs/issue/${issue.id}/edit|">
+                <svg class="icon-svg icon-svg-sm mr-2">
+                    <use xlink:href="#ic-post"></use>
+                </svg>
+                <b>编辑</b>
+            </a>
+            <a class="btn card-link ml-0 d-lg-flex align-items-center d-none d-print-none"
+                th:href="${user==null?'#loginModal':'javascript:window.print()'}"
+                th:data-toggle="${user==null?'modal':''}">
+                <svg class="icon-svg icon-svg-sm mr-2">
+                    <use xlink:href="#ic-print"></use>
+                </svg>
+                <b>打印</b>
+            </a>
+        </header>
+        <div class="card-body vditor-reset" th:utext="${issue.html}"></div>
+        <footer class="card-footer d-flex align-items-center d-print-none">
+            <div class="d-flex align-items-center mr-auto">
+                <img th:id="${issue.user.id}" class="border rounded-circle mr-2" style="height:2em"
+                    data-toggle="tooltip" th:src="${issue.user.avatar}" th:title="${issue.user.name}"
+                    th:alt="${issue.user.name}">
+                <b class="d-none d-md-block" th:text="${issue.user.name}"></b>
+                <span th:text="|发布于${#temporals.format(issue.created,'yyyy-MM-dd HH:mm')}|"></span>
+            </div>
+            <a id="agree" class="card-link d-flex align-items-center" title="点赞"
+                th:data-toggle="${user==null?'modal':'tooltip'}"
+                th:href="${user==null?'#loginModal':'javascript:void(0)'}"
+                th:data-agree="${issue.agreeUsers.contains(user?.id)}"
+                th:classappend="${issue.agreeUsers.contains(user?.id)?'text-primary':'text-secondary'}">
+                <svg class="icon-svg icon-svg-md mr-2">
+                    <use xlink:href="#ic-agree"></use>
+                </svg>
+                <b class="agree-count" th:text="${issue.agree}"></b>
+            </a>
+        </footer>
+    </div>
+    {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
+    {% call general::footer() %}
+    <script type="module" defer src="/static/vendor/venny/venny.esm.js"></script>
+    <script th:if="${user!=null}">
+        $(function () {
+            $("#agree").click(function () {
+                var $this = $(this);
+                $.ajax({
+                    method: 'POST',
+                    url: "/bbs/issue/[[${issue.id}]]/agree?agree=" + !Boolean($this.data('agree'))
+                }).done(function (agrees) {
+                    var agree = agrees.includes([[${ user?.id }]]);
+                    $this.data('agree', agree).toggleClass('text-primary', agree).toggleClass('text-secondary', !agree);
+                    $this.find('b.agree-count').text(agrees.length);
+                });
+            });
+        })
+    </script>
+    {% call painter::painter() %}
+</body>
+
+</html>

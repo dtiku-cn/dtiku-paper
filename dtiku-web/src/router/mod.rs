@@ -70,12 +70,21 @@ async fn with_context(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let request_uri = req.uri().path().into();
 
-    let current_user = CurrentUser {
-        name: "holmofy".into(),
-        avatar: "https://q1.qlogo.cn/g?b=qq&nk=1938304905@&s=100".into(),
+    let has_user = req
+        .uri()
+        .query()
+        .map(|query| query.contains("user"))
+        .unwrap_or_default();
+    let current_user = if has_user {
+        Some(CurrentUser {
+            name: "holmofy".into(),
+            avatar: "https://q1.qlogo.cn/g?b=qq&nk=1938304905@&s=100".into(),
+        })
+    } else {
+        None
     };
     req.extensions_mut().insert(GlobalVariables::new(
-        Some(current_user),
+        current_user,
         request_uri,
         paper_types,
         config,

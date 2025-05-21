@@ -44,9 +44,9 @@
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-list"></use>
             </svg>
-            <strong class="mr-auto" th:text="|${strings.defaultString(search?.topic?.text,'')}帖子|"></strong>
-            <a class="btn card-link d-flex align-items-center" th:href="${user==null?'#loginModal':'/bbs/issue'}"
-                th:data-toggle="${user==null?'modal':''}">
+            <strong class="mr-auto">${strings.defaultString(search?.topic?.text,'')}帖子</strong>
+            <a class="btn card-link d-flex align-items-center" href="{%if global.user.is_none()%}#loginModal{%else%}/bbs/issue{%endif%}"
+                data-toggle="{%if global.user.is_none()%}modal{%endif%}">
                 <svg class="icon-svg icon-svg-sm mr-2">
                     <use xlink:href="#ic-post"></use>
                 </svg>

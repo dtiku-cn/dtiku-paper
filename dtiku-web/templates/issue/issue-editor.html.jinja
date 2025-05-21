@@ -1,0 +1,140 @@
+{%- import "macros/general.html.jinja" as general -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>论坛编辑器 | {{global.config.site_title}}</title>
+    {% call general::headerfiles() %}
+    <link rel="stylesheet" href="/static/vendor/vditor/3.10.4/dist/index.min.css">
+    <style>
+        #editor img,
+        #editor object {
+            display: block;
+            margin: 0 auto;
+        }
+
+        .vditor-reset table td,
+        .vditor-reset table th {
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <form id="form" class="card mb-3" method="post" th:action="${issue==null?'/bbs/issue':'/bbs/issue/'+issue.id}">
+        <header class="card-header d-flex flex-wrap p-1 align-items-center">
+            <div class="input-group col-12 col-lg-4 p-0 pr-lg-2">
+                <select class="custom-select" name="topic" required>
+                    <option selected value="">-选择一个主题-</option>
+                    <option th:each="t : ${topics}" th:value="${t}" th:selected="${t == issue?.topic}"
+                        th:text="${t.text}"></option>
+                </select>
+                <div class='tooltip-topic invalid-tooltip'>不能为空</div>
+                <select class="custom-select" name="area">
+                    <option selected value="">-选择省份(可选)-</option>
+                    <option th:each="a : ${areas}" th:value="${a}" th:selected="${a == issue?.area}"
+                        th:text="${a.text}"></option>
+                </select>
+            </div>
+            <div class="input-group col-12 col-lg-8 p-0 mt-2 mt-lg-0">
+                <input name="title" type="text" class="form-control" placeholder="输入标题" th:value="${issue?.title}"
+                    required>
+                <div class='tooltip-title invalid-tooltip'>不能为空</div>
+                <div class="input-group-append">
+                    <input id="preview" type="button" class="btn btn-success" value="预览" />
+                    <input id="submit" type="submit" class="btn btn-primary d-none" value="提交" />
+                </div>
+            </div>
+        </header>
+        <div class="card-body p-0">
+            <div id="editor" style="height: 100vh" data-toggle="tooltip"></div>
+        </div>
+    </form>
+    {% call general::footer() %}
+    <script src="/static/vendor/vditor/3.10.4/dist/index.min.js"></script>
+    <script type="module" defer src="/static/vendor/venny/venny.esm.js"></script>
+    <script>
+        $(function () {
+            var eEditor = document.querySelector('#editor');
+            eEditor.style.background = 'url("' + window.loadingGif + '") center center no-repeat';
+            var initValue = '[(${#strings.escapeJavaScript(issue?.markdown)})]';
+            window.vEditor = new Vditor(eEditor, {
+                width: '100%',
+                height: '100vh',
+                placeholder: '在这里输入文章内容',
+                mode: 'wysiwyg',
+                value: initValue || '',
+                cdn: 'https://gwy.dtiku.cn/vendor/vditor/3.10.4',
+                counter: {
+                    enable: true,
+                    type: 'markdown'
+                },
+                toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike',
+                    '|', 'line', 'quote', 'list', 'ordered-list', 'check', 'outdent', 'indent', 'code', 'inline-code', 'table',
+                    '|', 'undo', 'redo', 'edit-mode', 'fullscreen', 'preview'
+                ],
+                toolbarConfig: {
+                    pin: true
+                },
+                preview: {
+                    theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
+                    list: { dark: "Dark", light: "Light" },
+                    path: '/vendor/vditor/3.10.4/dist/content-theme',
+                    math: { engine: 'MathJax', inlineDigit: true },
+                    actions: []
+                },
+                cache: {
+                    enable: true,
+                    id: 'issue-[[${issue?.id}]]' || 'new-issue'
+                },
+                focus() {
+                    $("#editor").tooltip('toggle').attr("data-original-title", "").tooltip("hide");
+                },
+                after() {
+                    $('button[data-type="preview"]').click(function () {
+                        $("#submit").toggleClass('d-none');
+                        $("#preview").toggleClass('d-none');
+                    });
+                }
+            });
+            window.themeSwitcher.listener.push(function (dark) {
+                vEditor.setTheme(dark ? 'dark' : 'light');
+            });
+            $("#preview").click(function () {
+                $('button[data-type="preview"]').click();
+            });
+            $("#form").submit(function (e) {
+                if (!this.topic.value) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (!this.title.value) {
+                    e.preventDefault();
+                    return false;
+                }
+                var md = vEditor.getValue();
+                if (!md || !md.trim()) {
+                    $("#editor").tooltip('hide').attr("data-original-title", "必填内容").tooltip("show");
+                    e.preventDefault();
+                    return false;
+                } else {
+                    $("<input />").attr("type", "hidden")
+                        .attr("name", "markdown")
+                        .attr("value", md)
+                        .appendTo("#form");
+                    $("<input />").attr("type", "hidden")
+                        .attr("name", "html")
+                        .attr("value", $(".vditor-preview .vditor-reset").html())
+                        .appendTo("#form");
+                    vEditor.clearCache();
+                    return true;
+                }
+            });
+        })
+    </script>
+</body>
+
+</html>
