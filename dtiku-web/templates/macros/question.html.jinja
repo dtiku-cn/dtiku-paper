@@ -138,7 +138,7 @@
                 耗时：<b class="text-info" th:text="${@thymeleafUtils.formatSecond(timeMap.getOrDefault(q.id,0))}"></b>
             </div>
         </div>
-        <th:block th:include="fragments/question::question_solution(${q})" />
+        <th:block th:include="fragments/question::question_solution(${q})"></th:block>
     </div>
 </div>
 {% endmacro xingce_exercise_question %}
@@ -169,7 +169,7 @@
         {% if let Some(answer) = q.get_answer()%}
         <div>参考答案：<b class="-answer-">{{answer}}</b></div>
         {% endif %}
-        <th:block th:include="fragments/question::question_solution(${q})" />
+        <th:block th:include="fragments/question::question_solution(${q})"></th:block>
     </div>
 </div>
 {% endif %}
@@ -212,7 +212,7 @@
             <b class="-answer-" th:text="${controversy.get(q.id).foAnswer}"></b>,
             <b class="-answer-" th:text="${controversy.get(q.id).toAnswer}"></b>
         </div>
-        <th:block th:include="fragments/question::question_solution(${q})" />
+        <th:block th:include="fragments/question::question_solution(${q})"></th:block>
     </div>
 </div>
 {% endmacro controversy_xingce_question %}

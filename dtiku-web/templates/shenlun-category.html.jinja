@@ -51,7 +51,7 @@
         </div>
 
         <div class="col-xs-12 col-md-9">
-            <th:block th:include="fragments/shenlun-template::shenlun-template(${template})" />
+            <th:block th:include="fragments/shenlun-template::shenlun-template(${template})"></th:block>
             <ul class="nav nav-pills my-3" role="tablist">
                 <li role="presentation" class="nav-item" th:each="y:${yearStats}">
                     <a class="nav-link d-flex justify-content-between align-items-center"
@@ -65,7 +65,7 @@
             <div class="card mb-3" th:each="q : ${page.content}" th:include="fragments/question::question_card(${q})">
             </div>
             <th:block
-                th:include="fragments/elements::pagination(${page},@{/shenlun-categories/{c}/{t}/{y}(c=${category},t=${text},y=${year},fromType=${strings.defaultString(fromType,'')})},true)" />
+                th:include="fragments/elements::pagination(${page},@{/shenlun-categories/{c}/{t}/{y}(c=${category},t=${text},y=${year},fromType=${strings.defaultString(fromType,'')})},true)"></th:block>
         </div>
     </div>
     {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽")%}

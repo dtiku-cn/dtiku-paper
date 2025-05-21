@@ -118,7 +118,7 @@
         </table>
 
         <th:block
-            th:include="fragments/elements::pagination(${page},@{/{type}(type=${modelType.name()},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})},true)" />
+            th:include="fragments/elements::pagination(${page},@{/{type}(type=${modelType.name()},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})},true)"></th:block>
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
