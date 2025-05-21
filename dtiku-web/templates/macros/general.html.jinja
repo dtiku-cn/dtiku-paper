@@ -3,9 +3,10 @@
 <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<meta name="theme-color" content='{% if global.cookie.cookie("darkTheme") == "true"%}black{%else%}white{%endif%}'>
 <meta name="google-site-verification" content="VCjvluBwap6weZ9wjbSywoJxZ0G3meNoyTqlckhYg4M" />
 <meta name="keywords" content="公务员考试真题,公考题库,行测题库,申论题库,成语统计" />
-<meta name="description" th:content="本站提供公务员考试真题整套、模块在线打印和下载服务，包含行测、申论、高频成语、高频词语、备考资料。" />
+<meta name="description" tcontent="本站提供公务员考试真题整套、模块在线打印和下载服务，包含行测、申论、高频成语、高频词语、备考资料。" />
 <meta name="og:title" content="公务员考试真题,公考题库,行测题库,申论题库,成语统计" />
 <meta name="og:description" content="本站提供公务员考试真题整套、模块在线打印和下载服务，包含行测、申论、高频成语、高频词语、备考资料。" />
 <meta name="og:image" content="https://gwy.dtiku.cn/favicon.ico" />
@@ -56,7 +57,13 @@
     }
 </style>
 {% if global.config.global_style.len() > 0 %}
-<style>{{global.config.global_style}}</style>
+<style>
+    {
+            {
+            global.config.global_style
+        }
+    }
+</style>
 {% endif %}
 <script src="{{global.config.iconfont_js_url}}"></script>
 {{global.config.global_head_files}}
