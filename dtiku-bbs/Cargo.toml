@@ -6,5 +6,8 @@ edition = "2021"
 [dependencies]
 spring.workspace = true
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
-serde.workspace = true
+serde = { workspace = true }
+serde_urlencoded = { workspace = true }
+spring-sea-orm = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
+anyhow = { workspace = true }

@@ -2,10 +2,12 @@
 
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use strum::EnumMessage;
 
 #[derive(
     Debug,
     Clone,
+    Copy,
     PartialEq,
     Eq,
     EnumIter,
@@ -13,24 +15,41 @@ use serde::{Deserialize, Serialize};
     Serialize,
     Deserialize,
     strum :: EnumString,
+    strum :: EnumMessage,
+    strum :: Display
 )]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "topic_type")]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum TopicType {
-    #[sea_orm(string_value = "linxuan")]
-    Linxuan,
-    #[sea_orm(string_value = "mianshi")]
-    Mianshi,
-    #[sea_orm(string_value = "share")]
-    Share,
-    #[sea_orm(string_value = "shenhe")]
-    Shenhe,
-    #[sea_orm(string_value = "shenlun")]
-    Shenlun,
-    #[sea_orm(string_value = "sydw")]
-    Sydw,
-    #[sea_orm(string_value = "work")]
-    Work,
     #[sea_orm(string_value = "xingce")]
+    #[strum(message = "行测")]
     Xingce,
+    #[sea_orm(string_value = "shenlun")]
+    #[strum(message = "申论")]
+    Shenlun,
+    #[sea_orm(string_value = "mianshi")]
+    #[strum(message = "面试")]
+    Mianshi,
+    #[sea_orm(string_value = "shenhe")]
+    #[strum(message = "审核")]
+    Shenhe,
+    #[sea_orm(string_value = "linxuan")]
+    #[strum(message = "遴选")]
+    Linxuan,
+    #[sea_orm(string_value = "sydw")]
+    #[strum(message = "事业单位")]
+    Sydw,
+    #[sea_orm(string_value = "share")]
+    #[strum(message = "分享")]
+    Share,
+    #[sea_orm(string_value = "work")]
+    #[strum(message = "工作与生活")]
+    Work,
+}
+
+impl TopicType {
+    pub fn text(&self) -> &'static str {
+        self.get_message().unwrap_or_default()
+    }
 }

@@ -1,6 +1,12 @@
+use super::IssueQuery;
 pub use super::_entities::issue::*;
-use sea_orm::{sqlx::types::chrono::Local, ActiveModelBehavior, ConnectionTrait, DbErr, Set};
+use anyhow::Context;
+use sea_orm::{
+    sea_query::IntoCondition, sqlx::types::chrono::Local, ActiveModelBehavior, ConnectionTrait,
+    DbErr, EntityTrait, QueryFilter, Set,
+};
 use spring::async_trait;
+use spring_sea_orm::pagination::{Page, Pagination, PaginationExt};
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -16,6 +22,16 @@ impl ActiveModelBehavior for ActiveModel {
     }
 }
 
-impl Entity{
-    
+impl Entity {
+    pub async fn search<C: ConnectionTrait>(
+        db: &C,
+        query: &IssueQuery,
+        pagination: &Pagination,
+    ) -> anyhow::Result<Page<Model>> {
+        Entity::find()
+            .filter(query.clone().into_condition())
+            .page(db, &pagination)
+            .await
+            .context("find issue failed")
+    }
 }

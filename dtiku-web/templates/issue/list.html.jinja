@@ -1,11 +1,12 @@
 {%- import "macros/general.html.jinja" as general -%}
 {%- import "macros/artalk.html.jinja" as artalk -%}
+{%- import "macros/elements.html.jinja" as elements -%}
 <!doctype html>
 <html lang="zh">
 
 <head>
     {% call general::meta() %}
-    <title>${strings.defaultString(search?.topic?.text,'')} - 论坛交流 | {{global.config.site_title}}</title>
+    <title>{{query.topic()}} - 论坛交流 | {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
     <style>
         .issue-list tr>td {
@@ -33,9 +34,11 @@
             <b>主题</b>
         </header>
         <div class="card-body d-flex flex-wrap">
-            <a class="btn btn-link" href="/bbs" th:classappend="${null==search.topic?'active':''}">全部</a>
-            <a class="btn btn-link" th:each="t : ${topics}" th:href="|?topic=${t}|" th:text="${t.text}"
-                th:classappend="${t==search.topic?'active':''}"></a>
+            <a class="btn btn-link {%if query.topic.is_none()%}active{%endif%}" href="/bbs">全部</a>
+            {%for t in TopicType::iter() %}
+            <a class="btn btn-link {%if query.topic == Some(t.clone())%}active{%endif%}"
+                href="?topic={{t}}">{{t.text()}}</a>
+            {%endfor%}
         </div>
     </div>
 
@@ -44,8 +47,9 @@
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-list"></use>
             </svg>
-            <strong class="mr-auto">${strings.defaultString(search?.topic?.text,'')}帖子</strong>
-            <a class="btn card-link d-flex align-items-center" href="{%if global.user.is_none()%}#loginModal{%else%}/bbs/issue{%endif%}"
+            <strong class="mr-auto">{{query.topic()}}帖子</strong>
+            <a class="btn card-link d-flex align-items-center"
+                href="{%if global.user.is_none()%}#loginModal{%else%}/bbs/issue{%endif%}"
                 data-toggle="{%if global.user.is_none()%}modal{%endif%}">
                 <svg class="icon-svg icon-svg-sm mr-2">
                     <use xlink:href="#ic-post"></use>
@@ -54,9 +58,9 @@
             </a>
         </header>
         <div class="input-group">
-            <input type="text" id="search" placeholder="输入标题进行搜索" th:value="${search?.title}"
+            <input type="text" id="search" placeholder="输入标题进行搜索" value="{{query.title()}}"
                 onkeydown='if(event.keyCode==13){search();}' class="form-control rounded-0"
-                th:data-filter="'/bbs/issue/like?&q=#QUERY#'">
+                data-filter="'/bbs/issue/like?&q=#QUERY#'">
             <div class="input-group-append">
                 <button id="submit" type="submit" data-target="#search" class="btn btn-outline-secondary">点我搜索</button>
             </div>
@@ -64,60 +68,61 @@
         <div class="card-body py-0">
             <div class="mt-2 text-center" th:if="${page.isEmpty()}">啊欧，空空如也</div>
             <table class="issue-list table">
-                <tr th:each="i:${page.content}">
+                {% for i in page.content %}
+                <tr>
                     <td>
-                        <a th:href="|/bbs/issue/${i.id}|">
+                        <a href="/bbs/issue/{{i.id}}">
                             <svg class="icon-svg icon-svg-md mr-2">
-                                <use th:xlink:href="|#${i.topic.icon}|"></use>
+                                <use xlink:href="#{i.topic.icon}"></use>
                             </svg>
-                            <strong th:text="|【${i.topic.text}】|"></strong>
-                            <strong th:text="${i.title}"></strong>
+                            <strong>【{{i.topic.text()}}】</strong>
+                            <strong>{{i.title}}</strong>
                         </a>
                     </td>
                     <td class="d-none d-lg-table-cell">
                         <p class="d-flex align-items-center mb-1">
-                            <img class="border rounded-circle mr-2" style="height:2em" th:src="${i.user.avatar}"
-                                th:alt="${i.user.name}">
-                            <b th:text="${i.user.name}"></b>
+                            <img class="border rounded-circle mr-2" style="height:2em" src="${i.user.avatar}"
+                                alt="${i.user.name}">
+                            <b>${i.user.name}</b>
                         </p>
-                        <b class="mb-1" data-toggle="tooltip"
-                            th:title="${temporals.format(i.created,'yyyy-MM-dd HH:mm')}"
-                            th:text="${@thymeleafUtils.format(i.created, global_now)}"></b>
+                        <b class="mb-1" data-toggle="tooltip" title="${temporals.format(i.created,'yyyy-MM-dd HH:mm')}">
+                            ${@thymeleafUtils.format(i.created,global_now)}
+                        </b>
                     </td>
                     <td>
                         <div class="d-flex justify-content-around mb-1">
-                            <div data-toggle="tooltip" th:title="|评论数: ${i.comment}|">
+                            <div data-toggle="tooltip" title="评论数: ${i.comment}">
                                 <svg class="icon-svg icon-svg-sm mr-1">
                                     <use xlink:href="#ic-comment"></use>
                                 </svg>
-                                <b th:text="${i.comment}"></b>
+                                <b>${i.comment}</b>
                             </div>
-                            <div data-toggle="tooltip" th:title="|阅读量: ${i.view}|">
+                            <div data-toggle="tooltip" title="阅读量: ${i.view}">
                                 <svg class="icon-svg icon-svg-sm mr-1">
                                     <use xlink:href="#ic-view"></use>
                                 </svg>
-                                <b th:text="${i.view}"></b>
+                                <b>${i.view}</b>
                             </div>
                         </div>
                         <div class="d-flex justify-content-around mb-1">
-                            <div data-toggle="tooltip" th:title="|点赞数: ${i.agree}|">
+                            <div data-toggle="tooltip" title="点赞数: ${i.agree}">
                                 <svg class="icon-svg icon-svg-sm mr-1">
                                     <use xlink:href="#ic-agree"></use>
                                 </svg>
-                                <b th:text="${i.agree}"></b>
+                                <b>${i.agree}</b>
                             </div>
-                            <div data-toggle="tooltip" th:title="|反对数: ${i.disagree}|">
+                            <div data-toggle="tooltip" title="反对数: ${i.disagree}">
                                 <svg class="icon-svg icon-svg-sm mr-1">
                                     <use xlink:href="#ic-disagree"></use>
                                 </svg>
-                                <b th:text="${i.disagree}"></b>
+                                <b>${i.disagree}</b>
                             </div>
                         </div>
                     </td>
                 </tr>
+                {%endfor%}
             </table>
-            <th:block
-                th:include="fragments/elements::pagination(${page},@{/bbs(topic=${search?.topic},area=${search?.area})},false)" />
+            {% call elements::pagination(page,"/bbs?{{query.to_qs()}}", false) %}
         </div>
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}

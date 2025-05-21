@@ -10,8 +10,8 @@ pub mod home;
 pub mod idiom;
 pub mod paper;
 pub mod question;
-pub mod user;
 pub mod shenlun_category;
+pub mod user;
 
 pub trait IntoTemplate<T> {
     fn to_template(self, global: GlobalVariables) -> T;
@@ -29,6 +29,10 @@ pub struct GlobalVariables {
 
 #[allow(dead_code)]
 impl GlobalVariables {
+    pub fn range(&self, range_end: &u64) -> std::ops::RangeInclusive<u64> {
+        (1..=*range_end).into_iter()
+    }
+
     pub fn now_year(&self) -> i16 {
         let now = chrono::Local::now();
         now.year() as i16

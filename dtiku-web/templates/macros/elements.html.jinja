@@ -27,22 +27,25 @@
 {% macro pagination(page,url,selectable) %}
 <nav>
     <ul class="pagination justify-content-center">
-        <li th:class="${page.first?'disabled page-item':'page-item'}">
+        <li class="{%if page.is_first()%}disabled page-item{%else%}page-item{%endif%}">
             <a class="page-link"
-                th:href="|${strings.contains(url,'?')?url:url+'?'}&page=${page.number}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|"><span>←</span>上一页</a>
+                href="|${strings.contains(url,'?')?url:url+'?'}&page=${page.number}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|"><span>←</span>上一页</a>
         </li>
-        <li th:if="${selectable}">
+        {% if selectable %}
+        <li>
             <select class="page-selector custom-select rounded-0 border-left-0 border-right-0">
-                <option th:each="p:${numbers.sequence(1,page.totalPages)}" th:value="${p}" th:text="${p}"
-                    th:selected="${p==page.number+1}"></option>
+                {%for p in global.range(page.total_pages)%}
+                <option value="{{p}}" selected="{{p==page.page+1}}">{{p}}</option>
+                {%endfor%}
             </select>
         </li>
-        <li th:class="${page.last?'disabled page-item':'page-item'}">
+        {%endif%}
+        <li class="{%if page.is_last()%}disabled page-item{%else%}page-item{%endif%}">
             <a class="page-link"
-                th:href="|${strings.contains(url,'?')?url:url+'?'}&page=${page.number+2}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|">下一页<span>→</span></a>
+                href="|${strings.contains(url,'?')?url:url+'?'}&page=${page.number+2}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|">下一页<span>→</span></a>
         </li>
     </ul>
-    <p class="text-center" th:text="${(page.number+1)+'/'+page.totalPages}"></p>
+    <p class="text-center">{{page.page+1}} / {{page.total_pages}}</p>
 </nav>
 {% endmacro pagination %}
 
