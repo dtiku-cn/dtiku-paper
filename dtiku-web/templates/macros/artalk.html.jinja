@@ -1,35 +1,46 @@
 {% macro comment(comments, visitors, ads, placeholder) %}
 <div class="d-print-none mt-4" id="addon-footer">
-{% if global.config.show_comments && comments %}
-<link rel="stylesheet" href="https://artalk.dtiku.cn/dist/Artalk.css"/>
-<div id="artalk-comments" class="my-2"></div>
-{% endif %}
-{% if global.config.show_visitors && visitors %}
-<div class="text-center font-weight-light my-2">
-    <span>当前时间</span>
-    <span>{{global.date_now()}}</span>
-    <span class="post-meta-item-text">页面访问量：</em>
-    <span class="artalk-pv-count" data-page-key="{{global.request_uri}}">加载中...</span>
+    {% if global.config.show_comments && comments %}
+    <link rel="stylesheet" href="https://artalk.dtiku.cn/dist/Artalk.css" />
+    <div id="artalk-comments" class="my-2"></div>
+    {% endif %}
+    {% if global.config.show_visitors && visitors %}
+    <div class="text-center font-weight-light my-2">
+        <span>当前时间</span>
+        <span>{{global.date_now()}}</span>
+        <span class="post-meta-item-text">页面访问量：</em>
+            <span class="artalk-pv-count" data-page-key="{{global.request_uri}}">加载中...</span>
+    </div>
+    {% endif %}
 </div>
-{% endif %}
 {% if global.config.show_comments && comments || global.config.show_visitors && visitors %}
 <script src="https://artalk.dtiku.cn/dist/Artalk.js"></script>
 {% if global.config.show_comments && comments %}
 <script>
+    Artalk.use((ctx) => {
+        ctx.on('user-changed', () => {
+            console.log('用户登录信息已修改')
+            var u = JSON.parse(localStorage.ArtalkUser);
+            if (u) {
+                Cookies.set("token", u.token);
+            }
+        })
+    });
     window.addEventListener('load', function () {
-        var pv = {{global.config.show_comments && comments}};
-        var darkMode = !!{{global.cookie("darkTheme")}};
-        var config = Object.assign({
-            el: '#artalk-comments',
-            server: 'https://artalk.dtiku.cn',
-            site: '公考加油站',
-            pageview: pv,
-            darkMode
-        });
-        window.artalk = Artalk.init(config);
-        window.themeSwitcher.listener.push(function (dark) {
-            artalk.setDarkMode(dark)
-        });
+        var pv = {{ global.config.show_comments && comments
+    }};
+    var darkMode = !!{{ global.cookie("darkTheme")}};
+    var config = Object.assign({
+        el: '#artalk-comments',
+        server: 'https://artalk.dtiku.cn',
+        site: '公考加油站',
+        pageview: pv,
+        darkMode
+    });
+    window.artalk = Artalk.init(config);
+    window.themeSwitcher.listener.push(function (dark) {
+        artalk.setDarkMode(dark)
+    });
     }, false);
 </script>
 {% endif %}
@@ -44,5 +55,7 @@
 </script>
 {% endif %}
 {% endif %}
-{% if global.config.show_ads %}<script>{{global.config.ads_script}}</script>{% endif %}
+{% if global.config.show_ads %}
+<script>{{ global.config.ads_script }}</script>
+{% endif %}
 {% endmacro comment %}
