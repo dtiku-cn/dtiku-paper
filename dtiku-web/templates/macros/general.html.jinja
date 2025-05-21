@@ -15,7 +15,12 @@
 {% macro headerfiles() %}
 <link rel="shortcut icon" type="image/svg+xml" href="/static/dist/icon.svg">
 <link rel="apple-touch-icon" type="image/svg+xml" href="/static/dist/icon.svg">
-<link rel="stylesheet" href="/static/vendor/bootstrap-4.6.2/css/bootstrap.min.css">
+<link id="bootstrap-default"
+    rel='{% if global.cookie.cookie("darkTheme") == "true"%}alternate stylesheet{%else%}stylesheet{%endif%}'
+    href="/static/vendor/bootstrap-4.6.2/css/bootstrap.min.css">
+<link id="bootstrap-dark"
+    rel='{% if global.cookie.cookie("darkTheme") == "true"%}stylesheet{%else%}alternate stylesheet{%endif%}'
+    href="/static/vendor/bootswatch/4.6.1/dist/cyborg/bootstrap.min.css">
 <link rel="stylesheet" href="/static/vendor/select2/4.0.13/css/select2.min.css">
 <link rel="stylesheet" href="/static/dist/css.css">
 <script src="/static/vendor/jquery-1.10.2/jquery.min.js"></script>
