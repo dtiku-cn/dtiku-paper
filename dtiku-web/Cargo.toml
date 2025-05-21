@@ -27,3 +27,7 @@ serde_json = { workspace = true }
 itertools = { workspace = true }
 chinese-number = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
+
+[build-dependencies]
+minify-html = "0.16"
+walkdir = "2"

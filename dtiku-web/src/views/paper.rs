@@ -22,7 +22,7 @@ pub struct PaperType {
 }
 
 #[derive(Template)]
-#[template(path = "list-paper.html.jinja")]
+#[template(path = "list-paper.html.min.jinja")]
 pub struct ListPaperTemplate {
     pub global: GlobalVariables,
     pub query: ListPaperQuery,
@@ -63,7 +63,7 @@ impl ListPaperTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "paper.html.jinja")]
+#[template(path = "paper.html.min.jinja")]
 pub struct ChapterPaperTemplate {
     pub global: GlobalVariables,
     pub paper: model::paper::Model,
@@ -72,7 +72,7 @@ pub struct ChapterPaperTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "cluster-paper.html.jinja")]
+#[template(path = "cluster-paper.html.min.jinja")]
 pub struct ClusterPaperTemplate {
     pub global: GlobalVariables,
     pub paper: model::paper::Model,

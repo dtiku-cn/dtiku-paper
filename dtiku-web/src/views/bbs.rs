@@ -5,7 +5,7 @@ use spring_sea_orm::pagination::Page;
 use strum::IntoEnumIterator;
 
 #[derive(Template)]
-#[template(path = "issue/list.html.jinja")]
+#[template(path = "issue/list.html.min.jinja")]
 pub struct ListIssueTemplate {
     pub global: GlobalVariables,
     pub page: Page<issue::Model>,
