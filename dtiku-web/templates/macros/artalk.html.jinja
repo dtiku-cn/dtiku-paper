@@ -26,7 +26,10 @@
             pageview: pv,
             darkMode
         });
-        Artalk.init(config);
+        window.artalk = Artalk.init(config);
+        window.themeSwitcher.listener.push(function (dark) {
+            artalk.setDarkMode(dark)
+        });
     }, false);
 </script>
 {% endif %}
