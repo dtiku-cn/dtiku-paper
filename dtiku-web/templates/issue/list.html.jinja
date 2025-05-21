@@ -1,4 +1,5 @@
 {%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
 <!doctype html>
 <html lang="zh">
 
@@ -119,7 +120,7 @@
                 th:include="fragments/elements::pagination(${page},@{/bbs(topic=${search?.topic},area=${search?.area})},false)" />
         </div>
     </div>
-    <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
+    {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
     <script src="/static/vendor/bootstrap-autocomplete.js/bootstrap-autocomplete.min.js"></script>
     <script>

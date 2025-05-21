@@ -3,6 +3,7 @@ mod home;
 mod idiom;
 mod paper;
 mod question;
+mod shenlun_category;
 
 use crate::views::{user::CurrentUser, GlobalVariables};
 use dtiku_base::service::system_config::SystemConfigService;

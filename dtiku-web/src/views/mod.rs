@@ -11,6 +11,7 @@ pub mod idiom;
 pub mod paper;
 pub mod question;
 pub mod user;
+pub mod shenlun_category;
 
 pub trait IntoTemplate<T> {
     fn to_template(self, global: GlobalVariables) -> T;

@@ -1,0 +1,79 @@
+{%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
+{%- import "macros/painter.html.jinja" as painter -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>strings.defaultString(text,'申论答案') | strings.defaultString(category.category,'申论答案') | 申论题型分类 |
+        {{global.config.site_title}}</title>
+    {% call general::headerfiles() %}
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <div id="fromType" class="text-center mb-3">
+        <a th:if="${bools.isTrue(system_showVendor)}" class="btn btn-link" href="/shenlun-categories"
+            th:classappend="${fromType==null?'active':''}">全部</a>
+        <a th:if="${bools.isTrue(system_showVendor)}" class="btn btn-link" th:each="type : ${allFromType}"
+            th:href="@{/shenlun-categories(fromType=${type.name()})}" th:data="${type.name()}" th:text="${type.text}"
+            th:classappend="${fromType==type?'active':''}"></a>
+    </div>
+    <div class="row mb-4">
+        <div class=" col-xs-12 col-md-3 mb-3">
+            <div id="accordion" class="accordion position-sticky" style="top:0">
+                <div class="card" th:each="e:${categoryStats.asMap().entrySet()}">
+                    <div class="card-header p-2" th:id="|heading-${e.key}|">
+                        <button type="button" class="btn btn-link d-flex align-items-center text-left"
+                            data-toggle="collapse" th:classappend="${category==e.key?'':'collapsed'}"
+                            th:aria-expanded="${category==e.key}" th:data-target="'#collapse-'+${e.key}">
+                            <svg class="icon-svg icon-svg-sm icon-svg-arrow mr-2">
+                                <use xlink:href="#ic-arrow"></use>
+                            </svg>
+                            <b th:text="${e.key.category}"></b>
+                        </button>
+                    </div>
+                    <div class="collapse" data-parent="#accordion" th:id="'collapse-'+${e.key}"
+                        th:classappend="${category==e.key?'show':''}">
+                        <div class="list-group list-group-flush">
+                            <a class="list-group-item d-flex justify-content-between align-items-center"
+                                th:each="v:${e.value}" th:classappend="${text==v.text?'active':''}"
+                                th:href="@{/shenlun-categories/{category}/{text}(category=${v.category},text=${v.text},fromType=${strings.defaultString(fromType,'')})}">
+                                <strong th:if="${text==v.text}" th:text="${v.text}"></strong>
+                                <span th:if="${text!=v.text}" th:text="${v.text}"></span>
+                                <span class="badge badge-pill badge-secondary" th:text="${v.count}"></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-md-9">
+            <th:block th:include="fragments/shenlun-template::shenlun-template(${template})" />
+            <ul class="nav nav-pills my-3" role="tablist">
+                <li role="presentation" class="nav-item" th:each="y:${yearStats}">
+                    <a class="nav-link d-flex justify-content-between align-items-center"
+                        th:classappend="${year==y.year?'active':''}"
+                        th:href="@{/shenlun-categories/{category}/{text}/{year}(category=${category},text=${text},year=${y.year},fromType=${strings.defaultString(fromType,'')})}">
+                        <span class="d-inline-block mr-1" th:text="${y.year}"></span>
+                        <span class="badge badge-pill badge-secondary" th:text="${y.count}"></span>
+                    </a>
+                </li>
+            </ul>
+            <div class="card mb-3" th:each="q : ${page.content}" th:include="fragments/question::question_card(${q})">
+            </div>
+            <th:block
+                th:include="fragments/elements::pagination(${page},@{/shenlun-categories/{c}/{t}/{y}(c=${category},t=${text},y=${year},fromType=${strings.defaultString(fromType,'')})},true)" />
+        </div>
+    </div>
+    {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽")%}
+    {% call general::footer() %}
+    {% call painter::painter() %}
+    <script th:replace="fragments/indent::solution-indent"></script>
+    <script th:replace="fragments/elements :: pager-select"></script>
+    <script src='/static/dist/js/speech.js'></script>
+</body>
+
+</html>

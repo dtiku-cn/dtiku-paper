@@ -1,0 +1,123 @@
+{% macro table_hint_tr(collection, colspan, hint_text) %}
+<tr th:if="${collection==null || collection.isEmpty()}">
+    <td th:colspan="${colspan}" class="text-center" th:text="${hint_text}"></td>
+</tr>
+{% endmacro table_hint_tr %}
+
+{% macro divide(count,d) %}
+<span th:text="${count}"></span>
+<th:block th:if="${d!=0}">
+    （
+    <span th:text="${#numbers.formatDecimal(count*1.0/d,1,2)}"></span>
+    ×
+    <span th:text="${d}"></span>
+    ）
+</th:block>
+{% endmacro divide %}
+
+{% macro paperTypeStats(stats) %}
+<td th:text="${stats.paperCount}"></td>
+<td th:include="fragments/elements::divide(${stats.chapterCount},${stats.paperCount})"></td>
+<td th:text="${stats.materialCount}"></td>
+<td th:include="fragments/elements::divide(${stats.questionCount},${stats.paperCount})"></td>
+<td th:text="${stats.solutionCount}"></td>
+{% endmacro paperTypeStats %}
+
+
+{% macro pagination(page,url,selectable) %}
+<nav>
+    <ul class="pagination justify-content-center">
+        <li th:class="${page.first?'disabled page-item':'page-item'}">
+            <a class="page-link"
+                th:href="|${#strings.contains(url,'?')?url:url+'?'}&page=${page.number}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|"><span>←</span>上一页</a>
+        </li>
+        <li th:if="${selectable}">
+            <select class="page-selector custom-select rounded-0 border-left-0 border-right-0">
+                <option th:each="p:${#numbers.sequence(1,page.totalPages)}" th:value="${p}" th:text="${p}"
+                    th:selected="${p==page.number+1}"></option>
+            </select>
+        </li>
+        <li th:class="${page.last?'disabled page-item':'page-item'}">
+            <a class="page-link"
+                th:href="|${#strings.contains(url,'?')?url:url+'?'}&page=${page.number+2}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|">下一页<span>→</span></a>
+        </li>
+    </ul>
+    <p class="text-center" th:text="${(page.number+1)+'/'+page.totalPages}"></p>
+</nav>
+{% endmacro pagination %}
+
+{% macro pager_select() %}
+<script>
+    $(function () {
+        $(".page-selector").change(function () {
+            const params = new URLSearchParams(location.search);
+            params.set("page", $(this).val());
+            location.search = "?" + params.toString();
+        });
+    })
+</script>
+{% endmacro pager_select %}
+
+{% macro toast() %}
+<div class="position-fixed bottom-0 right-0 p-3" style="z-index: 5; right: 0; bottom: 0;">
+    <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" data-delay="2000">
+    </div>
+</div>
+<script>
+    function toast(text) {
+        $("#liveToast").html(`
+            <div class="toast-header">
+                <svg class="icon-svg icon-svg-sm mr-2">
+                    <use xlink:href="#ic-library"></use>
+                </svg>
+                <small>${new Date().toISOString()}</small>
+                <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="toast-body">
+                ${text}
+            </div>
+            `).toast('show');
+    }
+</script>
+{% endmacro toast %}
+
+{% macro sortable() %}
+<script>
+    $(function () {
+        $("th.sortable").click(function (e) {
+            var param = new URLSearchParams(location.search);
+            var order = e.offsetY < this.clientHeight / 2 ? 'asc' : 'desc';
+            param.set("sort", $(this).data("sort-field") + "," + order);
+            location.search = "?" + param.toString();
+        });
+    })
+</script>
+{% endmacro sortable %}
+
+{% macro json2table() %}
+<script src="/dist/js/json2table.js"></script>
+<script>
+    $(function () {
+        function obj2arr(obj) {
+            const arr = [];
+            for (let [key, value] of Object.entries(obj)) {
+                if (typeof value === 'object') {
+                    value = obj2arr(value);
+                }
+                arr.push({ key, value });
+            }
+            return arr;
+        }
+
+        $(".json2table").each(function () {
+            var $this = $(this),
+                json = $this.data('json2table'),
+                obj = typeof json === 'string' ? JSON.parse(json) : json,
+                arr = obj2arr(obj);
+            $this.html(ConvertJsonToTable(arr))
+        })
+    })
+</script>
+{% endmacro json2table %}
