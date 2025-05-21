@@ -264,7 +264,7 @@
                 Cookies.set("darkTheme", dark);
                 listener.forEach(function (l) {
                     if (typeof l === 'function') {
-                        l();
+                        l(dark);
                     } else {
                         l.onChange && l.onChange(dark);
                     }
