@@ -1311,6 +1311,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "feignhttp",
+ "lazy_static",
  "sea-orm",
  "serde",
  "serde_urlencoded",

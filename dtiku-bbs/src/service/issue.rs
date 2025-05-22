@@ -37,6 +37,9 @@ impl IssueService {
         pagination: &Pagination,
     ) -> anyhow::Result<Page<FullIssue>> {
         let issues = Issue::search(&self.db, query, pagination).await?;
+        if issues.is_empty() {
+            return Ok(Page::new(Vec::new(), pagination, issues.total_elements));
+        }
         let page_keys = issues
             .iter()
             .map(|i| format!("/bbs/issue/{}", i.id))

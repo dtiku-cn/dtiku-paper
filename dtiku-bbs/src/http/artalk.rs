@@ -1,8 +1,12 @@
 use feignhttp::get;
+use lazy_static::lazy_static;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::{collections::HashMap, env};
 
-const ARTALK_URL: &str = "https://artalk.dtiku.cn/api/v2";
+lazy_static! {
+    static ref ARTALK_URL: String =
+        { env::var("ARTALK_URL").unwrap_or_else(|_| "https://artalk.dtiku.cn/api/v2".to_string()) };
+}
 
 #[derive(Debug, Deserialize)]
 pub struct StatsResult {
