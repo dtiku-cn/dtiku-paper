@@ -9,6 +9,7 @@ use crate::views::{user::CurrentUser, GlobalVariables};
 use axum_extra::extract::CookieJar;
 use axum_extra::headers::Cookie;
 use axum_extra::TypedHeader;
+use derive_more::derive::Deref;
 use dtiku_base::service::system_config::SystemConfigService;
 use dtiku_paper::service::exam_category::ExamCategoryService;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
@@ -16,6 +17,7 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use spring::tracing::{self, Level};
 use spring_opentelemetry::trace;
+use spring_web::axum::http::header;
 use spring_web::axum::http::request::Parts;
 use spring_web::axum::RequestPartsExt;
 use spring_web::error::{KnownWebError, WebError};
@@ -34,7 +36,6 @@ use spring_web::{
     Router,
 };
 use std::env;
-use std::ops::Deref;
 use tokio::task_local;
 
 pub fn routers() -> Router {
@@ -58,6 +59,7 @@ task_local! {
 async fn with_context(
     Component(ec_service): Component<ExamCategoryService>,
     Component(sc_service): Component<SystemConfigService>,
+    OriginalHost(original_host): OriginalHost,
     cookies: CookieJar,
     mut req: Request,
     next: Next,
@@ -78,7 +80,7 @@ async fn with_context(
         .load_config()
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let request_uri = req.uri().path().into();
+    let request_uri = req.uri().clone();
 
     let has_user = req
         .uri()
@@ -96,6 +98,7 @@ async fn with_context(
     req.extensions_mut().insert(GlobalVariables::new(
         current_user,
         request_uri,
+        original_host,
         paper_types,
         config,
         cookies,
@@ -139,19 +142,13 @@ where
     }
 }
 
+#[derive(Debug, Deref)]
 pub struct OptionalClaims(Option<Claims>);
 
 impl OptionalClaims {
+    #[allow(unused)]
     pub fn is_none(&self) -> bool {
         self.0.is_none()
-    }
-}
-
-impl Deref for OptionalClaims {
-    type Target = Option<Claims>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
 
@@ -198,4 +195,26 @@ pub fn decode(token: &str) -> anyhow::Result<Claims> {
             KnownWebError::unauthorized("invalid token")
         })?;
     Ok(token_data.claims)
+}
+
+#[derive(Debug, Deref)]
+pub struct OriginalHost(String);
+
+impl<S> FromRequestParts<S> for OriginalHost
+where
+    S: Send + Sync,
+{
+    type Rejection = StatusCode;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        let host = parts
+            .headers
+            .get("x-forwarded-host")
+            .or_else(|| parts.headers.get(header::HOST))
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| "unknown".into());
+
+        Ok(OriginalHost(host))
+    }
 }

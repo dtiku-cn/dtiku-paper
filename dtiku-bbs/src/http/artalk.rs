@@ -5,7 +5,7 @@ use std::{collections::HashMap, env};
 
 lazy_static! {
     static ref ARTALK_URL: String =
-        { env::var("ARTALK_URL").unwrap_or_else(|_| "https://artalk.dtiku.cn/api/v2".to_string()) };
+        env::var("ARTALK_URL").unwrap_or_else(|_| "https://artalk.dtiku.cn/api/v2".to_string());
 }
 
 #[derive(Debug, Deserialize)]

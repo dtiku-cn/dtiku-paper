@@ -67,7 +67,7 @@
                 placeholder: '在这里输入文章内容',
                 mode: 'wysiwyg',
                 value: initValue || '',
-                cdn: 'https://gwy.dtiku.cn/vendor/vditor/3.10.4',
+                cdn: 'https://{{global.original_host}}/static/vendor/vditor/3.10.4',
                 counter: {
                     enable: true,
                     type: 'markdown'
@@ -82,7 +82,7 @@
                 preview: {
                     theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
                     list: { dark: "Dark", light: "Light" },
-                    path: '/vendor/vditor/3.10.4/dist/content-theme',
+                    path: '/static/vendor/vditor/3.10.4/dist/content-theme',
                     math: { engine: 'MathJax', inlineDigit: true },
                     actions: []
                 },

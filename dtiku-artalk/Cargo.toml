@@ -13,6 +13,7 @@ spring = { workspace = true }
 spring-grpc = { workspace = true }
 spring-sqlx = { workspace = true }
 spring-opentelemetry = { workspace = true }
+sqlx = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -9,7 +9,7 @@
 <meta name="description" tcontent="本站提供公务员考试真题整套、模块在线打印和下载服务，包含行测、申论、高频成语、高频词语、备考资料。" />
 <meta name="og:title" content="公务员考试真题,公考题库,行测题库,申论题库,成语统计" />
 <meta name="og:description" content="本站提供公务员考试真题整套、模块在线打印和下载服务，包含行测、申论、高频成语、高频词语、备考资料。" />
-<meta name="og:image" content="https://gwy.dtiku.cn/favicon.ico" />
+<meta name="og:image" content="/favicon.ico" />
 <meta name="apple-mobile-web-app-title" content="公考加油站" />
 {% endmacro meta %}
 
@@ -283,7 +283,7 @@
         themeSwitcher.switchTo(themeSwitcher.getTheme());
 
         $("#loginModal").on('show.bs.modal', function () {
-            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"https://artalk.dtiku.cn/api/v2/auth/wechat\" width=\"400\" height=\"400\"" +
+            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"https://{{global.original_host}}/api/v2/auth/wechat\" width=\"400\" height=\"400\"" +
                 " style=\"overflow:hidden;background:url('" + window.loadingGif + "') center center no-repeat\"></iframe>" +
                 "<p class=\"text-center\">微信截图扫码无效哦</p>");
         }).on('shown.bs.modal', function () {

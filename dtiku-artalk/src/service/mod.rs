@@ -6,6 +6,8 @@ use proto::artalk_service_server::{ArtalkService, ArtalkServiceServer};
 use proto::{UserReq, UserResp};
 use spring::plugin::service::Service;
 use spring_sqlx::{sqlx, ConnectPool};
+use sqlx::FromRow;
+use tonic::Status;
 
 #[derive(Clone, Service)]
 #[service(grpc = "ArtalkServiceServer")]
@@ -20,7 +22,7 @@ impl ArtalkService for ArtalkServiceImpl {
         &self,
         request: tonic::Request<UserReq>,
     ) -> std::result::Result<tonic::Response<UserResp>, tonic::Status> {
-        let identity: AuthIdentity = sqlx::query_as::<AuthIdentity>(
+        let identity: AuthIdentity = sqlx::query_as::<_, AuthIdentity>(
             r#"
             SELECT remote_uid, token, user_id
             FROM atk_auth_identities
@@ -29,7 +31,8 @@ impl ArtalkService for ArtalkServiceImpl {
         )
         .bind(request.get_ref().user_id)
         .fetch_one(&self.db)
-        .await?;
+        .await
+        .map_err(|e| Status::internal(format!("sqlx query failed:{e:?}")))?;
         Ok(tonic::Response::new(UserResp {
             user_id: identity.user_id,
             remote_uid: identity.remote_uid,
@@ -37,7 +40,6 @@ impl ArtalkService for ArtalkServiceImpl {
         }))
     }
 }
-use sqlx::FromRow;
 
 #[derive(Debug, FromRow)]
 struct AuthIdentity {

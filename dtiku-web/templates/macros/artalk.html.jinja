@@ -32,7 +32,7 @@
     var darkMode = !!{{ global.cookie("darkTheme")}};
     var config = Object.assign({
         el: '#artalk-comments',
-        server: 'https://gwy.dtiku.cn',
+        server: 'https://{{global.original_host}}',
         site: '公考加油站',
         pageview: pv,
         darkMode
@@ -48,7 +48,7 @@
 <script>
     window.addEventListener('load', function () {
         Artalk.loadCountWidget({
-            server: 'https://gwy.dtiku.cn',
+            server: 'https://{{global.original_host}}',
             site: '公考加油站',
         });
     }, false);
