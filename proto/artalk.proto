@@ -1,0 +1,16 @@
+syntax = "proto3";
+package artalk;
+
+service ArtalkService {
+    rpc auth_identity(UserReq) returns (UserResp);
+}
+
+message UserReq{
+    int32 user_id=1;
+}
+
+message UserResp{
+    int32 user_id=1;
+    string remote_uid=2;
+    string token=3;
+}

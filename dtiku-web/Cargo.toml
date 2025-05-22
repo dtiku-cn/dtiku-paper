@@ -21,12 +21,15 @@ dtiku-bbs = { path = "../dtiku-bbs", version = "0.0.1" }
 askama = { workspace = true, features = ["serde_json"] }
 anyhow = { workspace = true }
 chrono = { workspace = true }
-tower-cookies = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 itertools = { workspace = true }
 chinese-number = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
+just-auth = { workspace = true }
+axum-extra = { workspace = true, features = ["cookie", "typed-header"] }
+lazy_static = { workspace = true }
+jsonwebtoken = { workspace = true }
 
 [build-dependencies]
 minify-html = "0.16"

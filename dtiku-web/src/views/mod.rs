@@ -1,8 +1,8 @@
+use axum_extra::extract::CookieJar;
 use chrono::Datelike;
 use dtiku_base::service;
 use dtiku_paper::domain::exam_category::ExamPaperType;
 use paper::PaperType;
-use tower_cookies::Cookies;
 use user::CurrentUser;
 
 pub mod bbs;
@@ -23,7 +23,7 @@ pub struct GlobalVariables {
     pub(crate) request_uri: String,
     pub(crate) paper_types: Vec<ExamPaperType>,
     pub(crate) config: service::system_config::Config,
-    pub(crate) cookies: Cookies,
+    pub(crate) cookies: CookieJar,
     pub(crate) chars: Vec<char>,
 }
 
@@ -92,7 +92,7 @@ impl GlobalVariables {
         request_uri: String,
         paper_types: Vec<ExamPaperType>,
         config: service::system_config::Config,
-        cookies: Cookies,
+        cookies: CookieJar,
     ) -> Self {
         Self {
             user: current_user,
