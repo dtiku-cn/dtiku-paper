@@ -9,6 +9,7 @@ pub struct StatsResult {
     pub data: HashMap<String, i32>,
 }
 
+/// https://docs.rs/feignhttp
 #[get(ARTALK_URL, path = "/stats/page_comment")]
 async fn page_comment_req(page_keys: String) -> feignhttp::Result<StatsResult> {}
 
