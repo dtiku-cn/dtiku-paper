@@ -75,8 +75,7 @@
                             <svg class="icon-svg icon-svg-md mr-2">
                                 <use xlink:href="#{i.topic.icon}"></use>
                             </svg>
-                            <strong>【{{i.topic.text()}}】</strong>
-                            <strong>{{i.title}}</strong>
+                            <strong>【{{i.topic.text()}}】{{i.title}}</strong>
                         </a>
                     </td>
                     <td class="d-none d-lg-table-cell">
@@ -91,17 +90,17 @@
                     </td>
                     <td>
                         <div class="d-flex justify-content-around mb-1">
-                            <div data-toggle="tooltip" title="评论数: ${i.comment}">
+                            <div data-toggle="tooltip" title="评论数: {{i.comment}}">
                                 <svg class="icon-svg icon-svg-sm mr-1">
                                     <use xlink:href="#ic-comment"></use>
                                 </svg>
-                                <b>${i.comment}</b>
+                                <b>{{i.comment}}</b>
                             </div>
-                            <div data-toggle="tooltip" title="阅读量: ${i.view}">
+                            <div data-toggle="tooltip" title="阅读量: {{i.view}}">
                                 <svg class="icon-svg icon-svg-sm mr-1">
                                     <use xlink:href="#ic-view"></use>
                                 </svg>
-                                <b>${i.view}</b>
+                                <b>{{i.view}}</b>
                             </div>
                         </div>
                         <div class="d-flex justify-content-around mb-1">

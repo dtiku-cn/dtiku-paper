@@ -11,3 +11,4 @@ serde_urlencoded = { workspace = true }
 spring-sea-orm = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 anyhow = { workspace = true }
+feignhttp = { workspace = true, features = ["json"] }

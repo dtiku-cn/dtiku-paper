@@ -1,3 +1,5 @@
+use crate::domain::issue::FullIssue;
+
 use super::IssueQuery;
 pub use super::_entities::issue::*;
 use anyhow::Context;
@@ -33,5 +35,26 @@ impl Entity {
             .page(db, &pagination)
             .await
             .context("find issue failed")
+    }
+}
+
+impl Model {
+    pub fn to_full_issue(
+        self,
+        page_pv: &std::collections::HashMap<String, i32>,
+        page_comment: &std::collections::HashMap<String, i32>,
+    ) -> FullIssue {
+        let key = format!("/bbs/issue/{}", self.id);
+        FullIssue {
+            id: self.id,
+            title: self.title,
+            topic: self.topic,
+            markdown: self.markdown,
+            user_id: self.user_id,
+            created: self.created,
+            modified: self.modified,
+            view: page_pv.get(&key).unwrap_or(&0).to_owned(),
+            comment: page_comment.get(&key).unwrap_or(&0).to_owned(),
+        }
     }
 }

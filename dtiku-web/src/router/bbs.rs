@@ -1,8 +1,8 @@
 use crate::views::{bbs::ListIssueTemplate, GlobalVariables};
 use anyhow::Context;
 use askama::Template;
-use dtiku_bbs::model::{Issue, IssueQuery};
-use spring_sea_orm::{pagination::Pagination, DbConn};
+use dtiku_bbs::{model::IssueQuery, service::issue::IssueService};
+use spring_sea_orm::pagination::Pagination;
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
@@ -15,12 +15,12 @@ use spring_web::{
 
 #[get("/bbs")]
 async fn list_issue(
-    Component(db): Component<DbConn>,
+    Component(is): Component<IssueService>,
     Query(query): Query<IssueQuery>,
     pagination: Pagination,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    let page = Issue::search(&db, &query, &pagination).await?;
+    let page = is.search(&query, &pagination).await?;
     let t = ListIssueTemplate {
         global,
         page,
