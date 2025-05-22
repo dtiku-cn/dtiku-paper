@@ -1,4 +1,5 @@
 {%- import "macros/general.html.jinja" as general -%}
+{%- import "macros/artalk.html.jinja" as artalk -%}
 <!DOCTYPE html>
 <html lang="zh">
 
@@ -152,6 +153,7 @@
         </div>
     </div>
 
+    {% call artalk::comment(true,true,true,"来这里吐槽一下试卷😁")%}
     {% call general::footer() %}
 </body>
 
