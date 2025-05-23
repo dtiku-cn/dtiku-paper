@@ -1,13 +1,16 @@
+use crate::{
+    router::decode,
+    service::user::UserService,
+    views::user::{CurrentUser, UserLoginRefreshTemplate},
+};
 use anyhow::Context;
-use dtiku_base::service::user::UserService;
+use askama::Template;
 use spring_web::{
     axum::response::{Html, IntoResponse},
     error::Result,
     extractor::{Component, Path, RawQuery},
     get,
 };
-
-use crate::router::decode;
 
 #[get("/api/v2/auth/{provider}/callback")]
 async fn user_login_callback(
@@ -21,5 +24,11 @@ async fn user_login_callback(
         .context("auth_callback error")?;
     let claims = decode(&token)?;
     let user = us.get_user_detail(claims.user_id).await?;
-    todo!()
+    let t = UserLoginRefreshTemplate {
+        user: CurrentUser {
+            name: user.name,
+            avatar: user.avatar,
+        },
+    };
+    Ok(Html(t.render().context("render failed")?))
 }

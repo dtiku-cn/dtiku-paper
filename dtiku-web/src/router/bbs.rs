@@ -1,7 +1,10 @@
-use crate::views::{bbs::ListIssueTemplate, GlobalVariables};
+use crate::{
+    service::issue::IssueService,
+    views::{bbs::ListIssueTemplate, GlobalVariables},
+};
 use anyhow::Context;
 use askama::Template;
-use dtiku_bbs::{model::IssueQuery, service::issue::IssueService};
+use dtiku_bbs::model::IssueQuery;
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
     axum::{

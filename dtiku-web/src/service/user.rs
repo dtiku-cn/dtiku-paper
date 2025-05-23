@@ -1,8 +1,8 @@
+use crate::rpc::artalk;
 use anyhow::Context;
-use sea_orm::{DbConn, EntityTrait};
+use dtiku_base::model::{user_info, UserInfo};
 use spring::plugin::service::Service;
-
-use crate::{model::UserInfo, rpc::artalk};
+use spring_sea_orm::DbConn;
 
 #[derive(Debug, Clone, Service)]
 pub struct UserService {
@@ -25,18 +25,17 @@ impl UserService {
     }
 
     pub async fn get_user_detail(&self, user_id: i32) -> anyhow::Result<user_info::Model> {
-        let u = UserInfo::find_by_id(user_id)
-            .one(&self.db)
+        let u = UserInfo::find_user_by_id(&self.db, user_id)
             .await
             .context("get user detail failed")?;
 
-        match u {
-            Some(u)=>u,
-            None=>{
-                
+        let u = match u {
+            Some(u) => u,
+            None => {
+                todo!()
             }
-        }
-        todo!()
+        };
+        Ok(u)
     }
 }
 

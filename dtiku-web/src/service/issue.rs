@@ -1,6 +1,5 @@
 use crate::rpc::artalk::{page_comment, page_pv};
 use crate::views::bbs::FullIssue;
-use anyhow::Context;
 use dtiku_bbs::model::{Issue, IssueQuery};
 use spring::plugin::service::Service;
 use spring_sea_orm::pagination::{Page, Pagination};
@@ -14,17 +13,14 @@ pub struct IssueService {
 
 impl IssueService {
     pub async fn find_issue_by_id(&self, id: i32) -> anyhow::Result<Option<FullIssue>> {
-        let issue = Issue::find_by_id(id)
-            .one(&self.db)
-            .await
-            .with_context(|| format!("Issue::find_by_id({id}) failed"))?;
+        let issue = Issue::find_issue_by_id(&self.db, id).await?;
         match issue {
             Some(i) => {
                 let key = format!("/bbs/issue/{}", i.id);
                 let page_keys = vec![key];
                 let pv = page_pv(&page_keys).await;
                 let cmt = page_comment(&page_keys).await;
-                Ok(Some(i.to_full_issue(&pv, &cmt)))
+                Ok(Some(FullIssue::new(i, &pv, &cmt)))
             }
             None => Ok(None),
         }
@@ -45,6 +41,6 @@ impl IssueService {
             .collect();
         let pv = page_pv(&page_keys).await;
         let cmt = page_comment(&page_keys).await;
-        Ok(issues.map(|i| i.to_full_issue(&pv, &cmt)))
+        Ok(issues.map(|i| FullIssue::new(i, &pv, &cmt)))
     }
 }

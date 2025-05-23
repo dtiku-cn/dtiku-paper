@@ -23,6 +23,16 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 impl Entity {
+    pub async fn find_issue_by_id<C: ConnectionTrait>(
+        db: &C,
+        id: i32,
+    ) -> anyhow::Result<Option<Model>> {
+        Entity::find_by_id(id)
+            .one(db)
+            .await
+            .with_context(|| format!("Issue::find_by_id({id}) failed"))
+    }
+
     pub async fn search<C: ConnectionTrait>(
         db: &C,
         query: &IssueQuery,

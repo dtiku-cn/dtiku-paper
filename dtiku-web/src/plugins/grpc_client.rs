@@ -5,10 +5,11 @@ pub mod artalk {
     tonic::include_proto!("artalk");
 }
 
-use crate::config::embedding::EmbeddingConfig;
-use anyhow::Context;
-use derive_more::derive::{Deref, DerefMut};
+use super::GrpcClientConfig;
 use ai::{embedding_service_client::EmbeddingServiceClient, TextReq};
+use anyhow::Context;
+use artalk::{artalk_service_client::ArtalkServiceClient, UserResp};
+use derive_more::derive::{Deref, DerefMut};
 use spring::{
     app::AppBuilder,
     async_trait,
@@ -23,15 +24,20 @@ pub struct GrpcClientPlugin;
 #[async_trait]
 impl Plugin for GrpcClientPlugin {
     async fn build(&self, app: &mut AppBuilder) {
-        let embedding_config = app
-            .get_config::<EmbeddingConfig>()
+        let grpc_config = app
+            .get_config::<GrpcClientConfig>()
             .expect("load huggingface config failed");
 
-        let client = EmbeddingServiceClient::connect(embedding_config.url)
+        let embedding_client = EmbeddingServiceClient::connect(grpc_config.embedding_url)
             .await
             .expect("embedding service connect failed");
 
-        app.add_component(Embedding(client));
+        let artalk_client = ArtalkServiceClient::connect(grpc_config.artalk_url)
+            .await
+            .expect("artalk service connect failed");
+
+        app.add_component(Embedding(embedding_client))
+            .add_component(Artalk(artalk_client));
     }
 }
 
@@ -47,5 +53,20 @@ impl Embedding {
             .await
             .context("embedding service call failed")?;
         Ok(resp.into_inner().embedding)
+    }
+}
+
+#[derive(Debug, Clone, Deref, DerefMut)]
+pub struct Artalk(ArtalkServiceClient<Channel>);
+
+impl Artalk {
+    pub async fn auth_identity(&self, user_id: i32) -> Result<UserResp> {
+        let resp = self
+            .0
+            .clone()
+            .auth_identity(artalk::UserReq { user_id })
+            .await
+            .context("artalk service call failed")?;
+        Ok(resp.into_inner())
     }
 }

@@ -26,7 +26,7 @@ pub struct FullIssue {
 }
 
 impl FullIssue {
-    pub fn to_full_issue(
+    pub fn new(
         issue: issue::Model,
         page_pv: &std::collections::HashMap<String, i32>,
         page_comment: &std::collections::HashMap<String, i32>,

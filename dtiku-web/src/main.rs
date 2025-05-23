@@ -3,6 +3,7 @@ mod router;
 mod rpc;
 mod service;
 mod views;
+mod plugins;
 
 use spring::App;
 use spring_opentelemetry::{
