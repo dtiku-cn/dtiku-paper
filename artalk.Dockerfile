@@ -2,18 +2,13 @@
 FROM rust:latest AS builder
 
 RUN apt-get update && apt-get install -y \
-    pkg-config \
     protobuf-compiler \
-    libxml2 libxml2-dev \
-    openssl libssl-dev ca-certificates \
-    clang \
-    build-essential \
     &&\
     apt-get clean
 
 COPY . /build
 
-WORKDIR /build/dtiku-web
+WORKDIR /build/dtiku-artalk
 
 RUN cargo build --release
 
@@ -26,11 +21,10 @@ ENV RUST_LOG=info
 
 WORKDIR /runner
 
-COPY --from=builder /build/target/release/web ./dtiku-web
+COPY --from=builder /build/target/release/artalk ./dtiku-artalk
 
-COPY ./dtiku-web/config ./config
-COPY ./dtiku-web/static ./static
+COPY ./dtiku-artalk/config ./config
 
 EXPOSE 8080
 
-ENTRYPOINT ["/runner/dtiku-web"]
+ENTRYPOINT ["/runner/dtiku-artalk"]
