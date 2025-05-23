@@ -1,4 +1,4 @@
-name: Publish AI Docker Image CI
+name: Publish Artalk Docker Image CI
 
 on:
   workflow_dispatch:
