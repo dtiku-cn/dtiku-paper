@@ -20,10 +20,11 @@ pub struct UserService {
 impl UserService {
     pub async fn auth_callback(
         &self,
+        cookie: &str,
         provider: String,
         raw_query: String,
     ) -> anyhow::Result<String> {
-        let html = artalk::auth_callback(provider, raw_query)
+        let html = artalk::auth_callback(cookie, &provider, &raw_query)
             .await
             .context("artalk callback failed")?;
         let token = substring_between(&html, "{ type: 'ATK_AUTH_CALLBACK', payload: '", "' },")

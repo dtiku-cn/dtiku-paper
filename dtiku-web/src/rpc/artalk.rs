@@ -11,8 +11,9 @@ lazy_static! {
 /// https://docs.rs/feignhttp
 #[get(ARTALK_URL, path = "/auth/{provider}/callback?{raw_query}")]
 pub async fn auth_callback(
-    #[path] provider: String,
-    #[param] raw_query: String,
+    #[header] cookie: &str,
+    #[path] provider: &str,
+    #[param] raw_query: &str,
 ) -> feignhttp::Result<String> {
 }
 

@@ -7,7 +7,10 @@ use anyhow::Context;
 use askama::Template;
 use axum_extra::extract::{cookie::Cookie, CookieJar};
 use spring_web::{
-    axum::response::{Html, IntoResponse},
+    axum::{
+        http::{header, HeaderMap},
+        response::{Html, IntoResponse},
+    },
     error::Result,
     extractor::{Component, Path, RawQuery},
     get,
@@ -18,10 +21,15 @@ async fn user_login_callback(
     Path(provider): Path<String>,
     RawQuery(query): RawQuery,
     Component(us): Component<UserService>,
+    headers: HeaderMap,
     cookies: CookieJar,
 ) -> Result<impl IntoResponse> {
+    let raw_cookie = match headers.get(header::COOKIE) {
+        Some(cookie) => cookie.to_str().unwrap_or_default(),
+        None => "",
+    };
     let token = us
-        .auth_callback(provider, query.unwrap_or_default())
+        .auth_callback(raw_cookie, provider, query.unwrap_or_default())
         .await
         .context("auth_callback error")?;
     let claims = decode(&token)?;
