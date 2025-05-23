@@ -1,10 +1,11 @@
+mod plugins;
 mod query;
 mod router;
 mod rpc;
 mod service;
 mod views;
-mod plugins;
 
+use plugins::grpc_client::GrpcClientPlugin;
 use spring::App;
 use spring_opentelemetry::{
     KeyValue, OpenTelemetryPlugin, ResourceConfigurator, SERVICE_NAME, SERVICE_VERSION,
@@ -25,6 +26,7 @@ async fn main() {
         .add_plugin(RedisPlugin)
         .add_plugin(SeaOrmPlugin)
         .add_plugin(OpenTelemetryPlugin)
+        .add_plugin(GrpcClientPlugin)
         .run()
         .await
 }
