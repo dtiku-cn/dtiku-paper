@@ -1418,6 +1418,7 @@ dependencies = [
  "lazy_static",
  "minify-html",
  "prost",
+ "sea-orm",
  "serde",
  "serde_json",
  "spring",

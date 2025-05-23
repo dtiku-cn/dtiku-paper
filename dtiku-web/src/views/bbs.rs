@@ -45,3 +45,10 @@ impl FullIssue {
         }
     }
 }
+
+#[derive(Template)]
+#[template(path = "issue/issue.html.min.jinja")]
+pub struct IssueTemplate {
+    pub global: GlobalVariables,
+    pub issue: FullIssue,
+}

@@ -6,7 +6,7 @@
     <title>Refresh</title>
     <script>
         try {
-            localStorage.setItem('ArtalkUser', '[(${@thymeleafUtils.toJSON(walineUser)})]');
+            localStorage.setItem('ArtalkUser', '{{user | json}}');
         } catch (e) {
             console.log(e);
         }

@@ -83,7 +83,7 @@
                     data-toggle="tooltip" th:src="${issue.user.avatar}" th:title="${issue.user.name}"
                     th:alt="${issue.user.name}">
                 <b class="d-none d-md-block" th:text="${issue.user.name}"></b>
-                <span th:text="|发布于${#temporals.format(issue.created,'yyyy-MM-dd HH:mm')}|"></span>
+                <span th:text="|发布于${temporals.format(issue.created,'yyyy-MM-dd HH:mm')}|"></span>
             </div>
             <a id="agree" class="card-link d-flex align-items-center" title="点赞"
                 th:data-toggle="${user==null?'modal':'tooltip'}"

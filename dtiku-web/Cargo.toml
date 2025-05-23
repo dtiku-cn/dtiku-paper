@@ -34,6 +34,7 @@ derive_more = { workspace = true, features = ["deref", "deref_mut"] }
 prost = { workspace = true }
 tonic = { workspace = true }
 feignhttp = { workspace = true, features = ["json"] }
+sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 
 [build-dependencies]
 minify-html = "0.16"

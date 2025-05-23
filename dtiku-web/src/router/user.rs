@@ -1,10 +1,11 @@
 use crate::{
     router::decode,
     service::user::UserService,
-    views::user::{CurrentUser, UserLoginRefreshTemplate},
+    views::user::{ArtalkUser, UserLoginRefreshTemplate},
 };
 use anyhow::Context;
 use askama::Template;
+use axum_extra::extract::{cookie::Cookie, CookieJar};
 use spring_web::{
     axum::response::{Html, IntoResponse},
     error::Result,
@@ -17,6 +18,7 @@ async fn user_login_callback(
     Path(provider): Path<String>,
     RawQuery(query): RawQuery,
     Component(us): Component<UserService>,
+    cookies: CookieJar,
 ) -> Result<impl IntoResponse> {
     let token = us
         .auth_callback(provider, query.unwrap_or_default())
@@ -25,10 +27,14 @@ async fn user_login_callback(
     let claims = decode(&token)?;
     let user = us.get_user_detail(claims.user_id).await?;
     let t = UserLoginRefreshTemplate {
-        user: CurrentUser {
+        user: ArtalkUser {
+            email: format!("{}@wechat.com", user.wechat_id),
             name: user.name,
-            avatar: user.avatar,
+            token: token.clone(),
+            link: "".to_string(),
+            is_admin: false,
         },
     };
-    Ok(Html(t.render().context("render failed")?))
+    let cookies = cookies.add(Cookie::build(("token", token)).build());
+    Ok((cookies, Html(t.render().context("render failed")?)))
 }
