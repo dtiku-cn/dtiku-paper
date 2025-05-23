@@ -1,6 +1,7 @@
 use feignhttp::get;
 use lazy_static::lazy_static;
 use serde::Deserialize;
+use spring::tracing::instrument;
 use std::{collections::HashMap, env};
 
 lazy_static! {
@@ -9,6 +10,7 @@ lazy_static! {
 }
 
 /// https://docs.rs/feignhttp
+#[instrument]
 #[get(ARTALK_URL, path = "/auth/{provider}/callback?{raw_query}")]
 pub async fn auth_callback(
     #[header] cookie: &str,
