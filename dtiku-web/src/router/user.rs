@@ -1,22 +1,25 @@
-use crate::views::{bbs::ListIssueTemplate, GlobalVariables};
 use anyhow::Context;
-use askama::Template;
-use dtiku_bbs::{model::IssueQuery, service::issue::IssueService};
-use spring_sea_orm::pagination::Pagination;
+use dtiku_base::service::user::UserService;
 use spring_web::{
-    axum::{
-        response::{Html, IntoResponse},
-        Extension,
-    },
+    axum::response::{Html, IntoResponse},
     error::Result,
-    extractor::{Component, Query},
+    extractor::{Component, Path, RawQuery},
     get,
 };
 
-#[get("/api/user")]
-async fn user_detail(
-    Query(query): Query<OAuthQuery>,
-    Component(auth): Component<AuthService>,
+use crate::router::decode;
+
+#[get("/api/v2/auth/{provider}/callback")]
+async fn user_login_callback(
+    Path(provider): Path<String>,
+    RawQuery(query): RawQuery,
+    Component(us): Component<UserService>,
 ) -> Result<impl IntoResponse> {
+    let token = us
+        .auth_callback(provider, query.unwrap_or_default())
+        .await
+        .context("auth_callback error")?;
+    let claims = decode(&token)?;
+    let user = us.get_user_detail(claims.user_id).await?;
     todo!()
 }

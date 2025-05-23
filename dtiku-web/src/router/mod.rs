@@ -4,6 +4,7 @@ mod idiom;
 mod paper;
 mod question;
 mod shenlun_category;
+mod user;
 
 use crate::views::{user::CurrentUser, GlobalVariables};
 use axum_extra::extract::CookieJar;

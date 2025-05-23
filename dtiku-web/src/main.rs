@@ -1,6 +1,8 @@
-mod router;
-mod views;
 mod query;
+mod router;
+mod rpc;
+mod service;
+mod views;
 
 use spring::App;
 use spring_opentelemetry::{

@@ -1,8 +1,7 @@
-use crate::domain::issue::FullIssue;
-use crate::http::artalk::{page_comment, page_pv};
-use crate::model::{Issue, IssueQuery};
+use crate::rpc::artalk::{page_comment, page_pv};
+use crate::views::bbs::FullIssue;
 use anyhow::Context;
-use sea_orm::EntityTrait;
+use dtiku_bbs::model::{Issue, IssueQuery};
 use spring::plugin::service::Service;
 use spring_sea_orm::pagination::{Page, Pagination};
 use spring_sea_orm::DbConn;

@@ -8,12 +8,19 @@ lazy_static! {
         env::var("ARTALK_URL").unwrap_or_else(|_| "https://artalk.dtiku.cn/api/v2".to_string());
 }
 
+/// https://docs.rs/feignhttp
+#[get(ARTALK_URL, path = "/auth/{provider}/callback?{raw_query}")]
+pub async fn auth_callback(
+    #[path] provider: String,
+    #[param] raw_query: String,
+) -> feignhttp::Result<String> {
+}
+
 #[derive(Debug, Deserialize)]
 pub struct StatsResult {
     pub data: HashMap<String, i32>,
 }
 
-/// https://docs.rs/feignhttp
 #[get(ARTALK_URL, path = "/stats/page_comment")]
 async fn page_comment_req(page_keys: String) -> feignhttp::Result<StatsResult> {}
 

@@ -4,6 +4,8 @@ use std::io::Write;
 use walkdir::WalkDir;
 
 fn main() {
+    tonic_build::compile_protos("../proto/artalk.proto").expect("build protobuf failed");
+
     let template_dir = "templates";
 
     let mut cfg = Cfg::new();

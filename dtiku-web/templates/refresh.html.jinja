@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Refresh</title>
+    <script>
+        try {
+            localStorage.setItem('ArtalkUser', '[(${@thymeleafUtils.toJSON(walineUser)})]');
+        } catch (e) {
+            console.log(e);
+        }
+        var loginPre = sessionStorage.getItem('login-pre') || '/';
+        location.href = loginPre;
+    </script>
+</head>
+
+<body></body>
+
+</html>
