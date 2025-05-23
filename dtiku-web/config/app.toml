@@ -35,3 +35,7 @@ iconfont_js_url = "//at.alicdn.com/t/c/font_3160480_m5a3rixvut.js"
 block_user_agents = ""
 seo_user_agents = ""
 ip_blacklist = ""
+
+[grpc-client]
+embedding_url = "${EMBEDDING_GRPC_URL:http://localhost:9090}"
+artalk_url = "${ARTALK_GRPC_URL:http://localhost:9090}"
