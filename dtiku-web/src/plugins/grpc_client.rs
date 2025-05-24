@@ -69,4 +69,14 @@ impl Artalk {
             .context("artalk service call failed")?;
         Ok(resp.into_inner())
     }
+
+    pub async fn comment_user(&self, comment_id: i64) -> Result<i32> {
+        let resp = self
+            .0
+            .clone()
+            .comment_user(artalk::CommentReq { comment_id })
+            .await
+            .context("artalk service call failed")?;
+        Ok(resp.into_inner().user_id)
+    }
 }

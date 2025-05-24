@@ -3,6 +3,8 @@ package artalk;
 
 service ArtalkService {
     rpc auth_identity(UserReq) returns (UserResp);
+
+    rpc comment_user(CommentReq) returns (UserIdResp);
 }
 
 message UserReq{
@@ -13,4 +15,11 @@ message UserResp{
     int32 user_id=1;
     string remote_uid=2;
     string token=3;
+}
+
+message CommentReq{
+    int64 comment_id=1;
+}
+message UserIdResp{
+    int32 user_id=1;
 }

@@ -1,4 +1,5 @@
 use anyhow::Context;
+use dtiku_macros::cached;
 use sea_orm::{
     sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ConnectionTrait, DbErr,
     EntityTrait,
@@ -32,6 +33,7 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 impl Entity {
+    #[cached(key = "user:{id}")]
     pub async fn find_user_by_id<C: ConnectionTrait>(
         db: &C,
         id: i32,

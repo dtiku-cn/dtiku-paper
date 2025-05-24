@@ -4,8 +4,8 @@ use crate::{
 };
 use anyhow::Context;
 use dtiku_base::model::{user_info, UserInfo};
-use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
+use sea_orm::{ActiveModelTrait, EntityTrait};
 use spring::plugin::service::Service;
 use spring_sea_orm::DbConn;
 use spring_web::axum::http;
@@ -31,6 +31,14 @@ impl UserService {
         let token = substring_between(&html, "{ type: 'ATK_AUTH_CALLBACK', payload: '", "' },")
             .unwrap_or_default();
         Ok(token.to_string())
+    }
+
+    pub async fn get_comment_user_avatar(&self, comment_id: i64) -> anyhow::Result<Option<String>> {
+        let user_id = self.artalk.comment_user(comment_id).await?;
+        Ok(UserInfo::find_user_by_id(&self.db, user_id)
+            .await
+            .context("get user detail failed")?
+            .map(|u| u.avatar))
     }
 
     pub async fn get_user_detail(&self, user_id: i32) -> anyhow::Result<user_info::Model> {

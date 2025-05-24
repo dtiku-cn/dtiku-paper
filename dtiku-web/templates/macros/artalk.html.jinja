@@ -51,6 +51,7 @@
     var config = Object.assign({
         el: '#artalk-comments',
         server: 'https://{{global.original_host}}',
+        avatarURLBuilder: (c) => `https://{{global.original_host}}/user/comment/${c.id}/avatar`,
         site: '公考加油站',
         pageview: pv,
         darkMode

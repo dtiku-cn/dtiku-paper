@@ -3,7 +3,7 @@ pub mod proto {
 }
 
 use proto::artalk_service_server::{ArtalkService, ArtalkServiceServer};
-use proto::{UserReq, UserResp};
+use proto::{CommentReq, UserIdResp, UserReq, UserResp};
 use spring::plugin::service::Service;
 use spring_sqlx::{sqlx, ConnectPool};
 use sqlx::FromRow;
@@ -22,7 +22,7 @@ impl ArtalkService for ArtalkServiceImpl {
         &self,
         request: tonic::Request<UserReq>,
     ) -> std::result::Result<tonic::Response<UserResp>, tonic::Status> {
-        let identity: AuthIdentity = sqlx::query_as::<_, AuthIdentity>(
+        let identity = sqlx::query_as::<_, AuthIdentity>(
             r#"
             SELECT remote_uid, token, user_id
             FROM atk_auth_identities
@@ -38,6 +38,25 @@ impl ArtalkService for ArtalkServiceImpl {
             remote_uid: identity.remote_uid,
             token: identity.token,
         }))
+    }
+
+    async fn comment_user(
+        &self,
+        request: tonic::Request<CommentReq>,
+    ) -> std::result::Result<tonic::Response<UserIdResp>, tonic::Status> {
+        let user_id = sqlx::query_scalar::<_, i32>(
+            r#"
+            SELECT user_id
+            FROM atk_comments
+            WHERE id = $1
+            "#,
+        )
+        .bind(request.get_ref().comment_id)
+        .fetch_one(&self.db)
+        .await
+        .map_err(|e| Status::internal(format!("sqlx query failed:{e:?}")))?;
+
+        Ok(tonic::Response::new(UserIdResp { user_id }))
     }
 }
 
