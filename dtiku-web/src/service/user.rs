@@ -24,12 +24,6 @@ impl UserService {
         provider: String,
         raw_query: String,
     ) -> anyhow::Result<String> {
-        tracing::warn!(
-            "auth_callback==>cookie:{},provider==>{},raw_query==>{}",
-            cookie,
-            provider,
-            raw_query
-        );
         let html = artalk::auth_callback(cookie, &provider, &raw_query)
             .await
             .context("artalk callback failed")?;
