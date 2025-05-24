@@ -21,8 +21,10 @@
         ctx.on('user-changed', () => {
             console.log('用户登录信息已修改')
             var u = JSON.parse(localStorage.ArtalkUser);
-            if (u) {
+            if (u && u.token) {
                 Cookies.set("token", u.token);
+            } else {
+                Cookies.remove("token");
             }
         })
     });
@@ -56,6 +58,6 @@
 {% endif %}
 {% endif %}
 {% if global.config.show_ads %}
-<script>{{ global.config.ads_script }}</script>
+<script>{ { global.config.ads_script } }</script>
 {% endif %}
 {% endmacro comment %}

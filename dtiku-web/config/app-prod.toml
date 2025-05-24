@@ -1,2 +1,5 @@
+[web]
+port = 8080
+
 [opentelemetry]
 enable = true

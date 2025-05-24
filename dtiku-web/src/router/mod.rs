@@ -166,7 +166,13 @@ where
 
         // Decode the user data
         let claims = match cookie.get("token") {
-            Some(token) => Some(decode(token)?),
+            Some(token) => {
+                if token.is_empty() {
+                    None
+                } else {
+                    Some(decode(token)?)
+                }
+            }
             None => None,
         };
 
