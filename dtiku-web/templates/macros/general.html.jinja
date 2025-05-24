@@ -294,8 +294,8 @@
                 " style=\"overflow:hidden;background:url('" + window.loadingGif + "') center center no-repeat\"></iframe>");
         });
         $("#revoke").click(function () {
-            Cookies.remove("uuid");
-            localStorage.removeItem('WALINE_USER');
+            Cookies.remove("token");
+            localStorage.removeItem('ArtalkUser');
             location.reload();
         });
     })

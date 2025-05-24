@@ -4,6 +4,7 @@ target/
 **/*.rs.bk
 
 *.pdb
+**/.env
 
 ### VisualStudioCode ###
 .vscode/*

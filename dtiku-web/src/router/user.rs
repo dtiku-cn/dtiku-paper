@@ -43,13 +43,11 @@ async fn user_login_callback(
             is_admin: false,
         },
     };
-    let cookies = cookies.add(
-        Cookie::build(("token", token))
-            .same_site(SameSite::Lax)
-            .http_only(true)
-            .secure(true)
-            .max_age(Duration::days(30))
-            .build(),
-    );
+    let mut token_cookie = Cookie::new("token", token);
+    token_cookie.set_path("/");
+    token_cookie.set_same_site(SameSite::Lax); // 部分跨站请求（如 GET 的链接跳转）可以携带 Cookie，适度平衡安全与体验。
+    token_cookie.set_secure(true); // 仅 HTTPS 发送
+    token_cookie.set_max_age(Duration::days(30));
+    let cookies = cookies.add(token_cookie);
     Ok((cookies, Html(t.render().context("render failed")?)))
 }

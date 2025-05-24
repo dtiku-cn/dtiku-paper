@@ -26,6 +26,22 @@
             } else {
                 Cookies.remove("token");
             }
+            location.reload();
+        });
+        ctx.on('page-loaded', () => {
+            // 禁用Artalk默认的登录
+            if ($("#artalk-comments .atk-send-btn").text() == "登录") {
+                const oldBtn = document.querySelector("#artalk-comments .atk-send-btn");
+                const newBtn = oldBtn.cloneNode(true); // true 表示深拷贝子节点
+                newBtn.innerHTML = "登录"
+                oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+                $("#artalk-comments .atk-send-btn").off("click").on("click", function (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    // 使用自定义登陆弹窗
+                    $('#loginModal').modal('show');
+                });
+            }
         })
     });
     window.addEventListener('load', function () {

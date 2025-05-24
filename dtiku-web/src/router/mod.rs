@@ -43,7 +43,7 @@ use tokio::task_local;
 pub fn routers() -> Router {
     let trace_layer = TraceLayer::new_for_http()
         .make_span_with(DefaultMakeSpan::default())
-        .on_request(DefaultOnRequest::default())
+        .on_request(DefaultOnRequest::default().level(Level::INFO))
         .on_response(DefaultOnResponse::default())
         .on_failure(DefaultOnFailure::default())
         .on_eos(DefaultOnEos::default());
@@ -67,11 +67,11 @@ async fn with_context(
     cookies: CookieJar,
     mut req: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, WebError> {
     let root_exam = ec_service
         .find_root_exam("gwy")
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| KnownWebError::internal_server_error(format!("{e:?}")))?;
     let exam_id = match root_exam {
         Some(root_exam) => root_exam.id,
         None => 0,
@@ -79,11 +79,11 @@ async fn with_context(
     let paper_types = ec_service
         .find_leaf_paper_types(exam_id)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| KnownWebError::internal_server_error(format!("{e:?}")))?;
     let config = sc_service
         .load_config()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| KnownWebError::internal_server_error(format!("{e:?}")))?;
     let request_uri = req.uri().clone();
 
     let current_user = match claims {
@@ -92,7 +92,7 @@ async fn with_context(
             us_service
                 .get_user_detail(claims.user_id)
                 .await
-                .map_err(|_| StatusCode::FORBIDDEN)?,
+                .map_err(|e| KnownWebError::forbidden(format!("{e:?}")))?,
         ),
     };
     req.extensions_mut().insert(GlobalVariables::new(
