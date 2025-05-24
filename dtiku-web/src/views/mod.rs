@@ -1,10 +1,9 @@
 use axum_extra::extract::CookieJar;
 use chrono::Datelike;
-use dtiku_base::service;
+use dtiku_base::{model::user_info, service};
 use dtiku_paper::domain::exam_category::ExamPaperType;
 use paper::PaperType;
 use spring_web::axum::http::Uri;
-use user::CurrentUser;
 
 pub mod bbs;
 pub mod home;
@@ -20,7 +19,7 @@ pub trait IntoTemplate<T> {
 
 #[derive(Debug, Clone)]
 pub struct GlobalVariables {
-    pub(crate) user: Option<CurrentUser>,
+    pub(crate) user: Option<user_info::Model>,
     pub(crate) request_uri: Uri,
     pub(crate) original_host: String,
     pub(crate) paper_types: Vec<ExamPaperType>,
@@ -90,7 +89,7 @@ impl GlobalVariables {
     }
 
     pub(crate) fn new(
-        current_user: Option<CurrentUser>,
+        current_user: Option<user_info::Model>,
         request_uri: Uri,
         original_host: String,
         paper_types: Vec<ExamPaperType>,

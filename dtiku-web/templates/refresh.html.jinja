@@ -6,7 +6,7 @@
     <title>Refresh</title>
     <script>
         try {
-            localStorage.setItem('ArtalkUser', '{{user | json}}');
+            localStorage.setItem('ArtalkUser', '{{user | json | safe}}');
         } catch (e) {
             console.log(e);
         }
@@ -15,6 +15,8 @@
     </script>
 </head>
 
-<body></body>
+<body>
+    <p style="text-align: center;">正在登录，请稍候...</p>
+</body>
 
 </html>

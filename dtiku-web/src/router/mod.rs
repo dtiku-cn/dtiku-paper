@@ -6,7 +6,8 @@ mod question;
 mod shenlun_category;
 mod user;
 
-use crate::views::{user::CurrentUser, GlobalVariables};
+use crate::service::user::UserService;
+use crate::views::GlobalVariables;
 use axum_extra::extract::CookieJar;
 use axum_extra::headers::Cookie;
 use axum_extra::TypedHeader;
@@ -60,7 +61,9 @@ task_local! {
 async fn with_context(
     Component(ec_service): Component<ExamCategoryService>,
     Component(sc_service): Component<SystemConfigService>,
+    Component(us_service): Component<UserService>,
     OriginalHost(original_host): OriginalHost,
+    OptionalClaims(claims): OptionalClaims,
     cookies: CookieJar,
     mut req: Request,
     next: Next,
@@ -83,18 +86,14 @@ async fn with_context(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let request_uri = req.uri().clone();
 
-    let has_user = req
-        .uri()
-        .query()
-        .map(|query| query.contains("user"))
-        .unwrap_or_default();
-    let current_user = if has_user {
-        Some(CurrentUser {
-            name: "holmofy".into(),
-            avatar: "https://q1.qlogo.cn/g?b=qq&nk=1938304905@&s=100".into(),
-        })
-    } else {
-        None
+    let current_user = match claims {
+        None => None,
+        Some(claims) => Some(
+            us_service
+                .get_user_detail(claims.user_id)
+                .await
+                .map_err(|_| StatusCode::FORBIDDEN)?,
+        ),
     };
     req.extensions_mut().insert(GlobalVariables::new(
         current_user,

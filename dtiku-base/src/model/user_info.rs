@@ -7,6 +7,16 @@ use spring::async_trait;
 
 pub use super::_entities::user_info::*;
 
+impl Model {
+    pub fn is_expired(&self) -> bool {
+        true
+    }
+
+    pub fn due_time(&self) -> String {
+        "2023-10-01".to_string()
+    }
+}
+
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
     async fn before_save<C>(mut self, _db: &C, insert: bool) -> Result<Self, DbErr>

@@ -5,7 +5,11 @@ use crate::{
 };
 use anyhow::Context;
 use askama::Template;
-use axum_extra::extract::{cookie::Cookie, CookieJar};
+use axum_extra::extract::{
+    cookie::{Cookie, SameSite},
+    CookieJar,
+};
+use cookie::time::Duration;
 use spring_web::{
     axum::{
         http::HeaderMap,
@@ -39,6 +43,13 @@ async fn user_login_callback(
             is_admin: false,
         },
     };
-    let cookies = cookies.add(Cookie::build(("token", token)).build());
+    let cookies = cookies.add(
+        Cookie::build(("token", token))
+            .same_site(SameSite::Lax)
+            .http_only(true)
+            .secure(true)
+            .max_age(Duration::days(30))
+            .build(),
+    );
     Ok((cookies, Html(t.render().context("render failed")?)))
 }
