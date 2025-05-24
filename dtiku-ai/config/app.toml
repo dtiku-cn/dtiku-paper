@@ -1,6 +1,8 @@
 [huggingface]
 cache_dir = "${HF_HOME:../.hf-cache}"
-port = 9090
+
+[grpc]
+port = 18000
 
 [logger]
 # level = "debug"

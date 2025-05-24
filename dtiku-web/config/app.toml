@@ -38,5 +38,5 @@ seo_user_agents = ""
 ip_blacklist = ""
 
 [grpc-client]
-embedding_url = "${EMBEDDING_GRPC_URL:http://localhost:9090}"
-artalk_url = "${ARTALK_GRPC_URL:http://localhost:9090}"
+embedding_url = "${EMBEDDING_GRPC_URL:http://localhost:18000}"
+artalk_url = "${ARTALK_GRPC_URL:http://localhost:18090}"

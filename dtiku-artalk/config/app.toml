@@ -1,2 +1,5 @@
 [sqlx]
 uri = "${DATABASE_URL}"
+
+[grpc]
+port = 18090
