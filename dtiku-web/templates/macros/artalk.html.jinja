@@ -2,6 +2,7 @@
 <div class="d-print-none mt-4" id="addon-footer">
     {% if global.config.show_comments && comments %}
     <link rel="stylesheet" href="https://artalk.dtiku.cn/dist/Artalk.css" />
+    <style>.atk-user-profile-btn{pointer-events: none;}</style>
     <div id="artalk-comments" class="my-2"></div>
     {% endif %}
     {% if global.config.show_visitors && visitors %}
@@ -42,6 +43,7 @@
                     $('#loginModal').modal('show');
                 });
             }
+            
         })
     });
     window.addEventListener('load', function () {
