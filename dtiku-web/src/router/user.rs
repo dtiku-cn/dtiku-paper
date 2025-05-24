@@ -8,7 +8,7 @@ use askama::Template;
 use axum_extra::extract::{cookie::Cookie, CookieJar};
 use spring_web::{
     axum::{
-        http::{header, HeaderMap},
+        http::HeaderMap,
         response::{Html, IntoResponse},
     },
     error::Result,

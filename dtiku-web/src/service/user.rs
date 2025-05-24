@@ -6,7 +6,7 @@ use anyhow::Context;
 use dtiku_base::model::{user_info, UserInfo};
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
-use spring::{plugin::service::Service, tracing};
+use spring::plugin::service::Service;
 use spring_sea_orm::DbConn;
 use spring_web::axum::http;
 
