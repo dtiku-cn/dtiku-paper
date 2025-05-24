@@ -6,7 +6,7 @@ use anyhow::Context;
 use dtiku_base::model::{user_info, UserInfo};
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
-use spring::plugin::service::Service;
+use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 
 #[derive(Debug, Clone, Service)]
@@ -24,6 +24,12 @@ impl UserService {
         provider: String,
         raw_query: String,
     ) -> anyhow::Result<String> {
+        tracing::warn!(
+            "auth_callback==>cookie:{},provider==>{},raw_query==>{}",
+            cookie,
+            provider,
+            raw_query
+        );
         let html = artalk::auth_callback(cookie, &provider, &raw_query)
             .await
             .context("artalk callback failed")?;
