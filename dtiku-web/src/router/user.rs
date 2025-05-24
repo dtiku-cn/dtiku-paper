@@ -24,12 +24,8 @@ async fn user_login_callback(
     headers: HeaderMap,
     cookies: CookieJar,
 ) -> Result<impl IntoResponse> {
-    let raw_cookie = match headers.get(header::COOKIE) {
-        Some(cookie) => cookie.to_str().unwrap_or_default(),
-        None => "",
-    };
     let token = us
-        .auth_callback(raw_cookie, provider, query.unwrap_or_default())
+        .auth_callback(headers, provider, query.unwrap_or_default())
         .await
         .context("auth_callback error")?;
     let claims = decode(&token)?;

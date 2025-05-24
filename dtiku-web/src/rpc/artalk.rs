@@ -1,7 +1,8 @@
+use anyhow::Context;
 use feignhttp::get;
 use lazy_static::lazy_static;
+use reqwest::header::HeaderMap;
 use serde::Deserialize;
-use spring::tracing::instrument;
 use std::{collections::HashMap, env};
 
 lazy_static! {
@@ -10,13 +11,29 @@ lazy_static! {
 }
 
 /// https://docs.rs/feignhttp
-#[instrument]
-#[get(ARTALK_URL, path = "/auth/{provider}/callback?{raw_query}", headers="Host: gwy.dtiku.cn, X-Forwarded-Proto: https, X-Forwarded-Host: gwy.dtiku.cn, Cookie={cookie}")]
 pub async fn auth_callback(
-    #[param] cookie: &str,
-    #[path] provider: &str,
-    #[param] raw_query: &str,
-) -> feignhttp::Result<String> {
+    headers: HeaderMap,
+    provider: &str,
+    raw_query: &str,
+) -> anyhow::Result<String> {
+    let base_url = ARTALK_URL.as_str();
+    let client = reqwest::Client::new();
+
+    let mut req = client.get(format!("{base_url}/auth/{provider}/callback?{raw_query}"));
+    // 转发原始 headers
+    for (key, value) in headers.iter() {
+        // 建议排除某些敏感头
+        if key != "host" && key != "content-length" {
+            req = req.header(key, value);
+        }
+    }
+
+    let resp = req
+        .send()
+        .await
+        .context("send auth_callback request failed")?;
+
+    Ok(resp.text().await.context("parse response text failed")?)
 }
 
 #[derive(Debug, Deserialize)]

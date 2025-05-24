@@ -8,6 +8,7 @@ use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
+use spring_web::axum::http;
 
 #[derive(Debug, Clone, Service)]
 pub struct UserService {
@@ -20,11 +21,11 @@ pub struct UserService {
 impl UserService {
     pub async fn auth_callback(
         &self,
-        cookie: &str,
+        headers: http::HeaderMap,
         provider: String,
         raw_query: String,
     ) -> anyhow::Result<String> {
-        let html = artalk::auth_callback(cookie, &provider, &raw_query)
+        let html = artalk::auth_callback(headers, &provider, &raw_query)
             .await
             .context("artalk callback failed")?;
         let token = substring_between(&html, "{ type: 'ATK_AUTH_CALLBACK', payload: '", "' },")

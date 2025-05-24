@@ -1418,6 +1418,7 @@ dependencies = [
  "lazy_static",
  "minify-html",
  "prost",
+ "reqwest 0.12.15",
  "sea-orm",
  "serde",
  "serde_json",
