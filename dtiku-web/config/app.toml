@@ -4,7 +4,7 @@ graceful = true
 [web.middlewares]
 static = { enable = true, uri = "/static", path = "static", precompressed = true }
 # 因为和opentelemetry冲突所以写到代码里
-logger = { enable = false, level = "${WEB_LOG_LEVEL:info}" }
+logger = { enable = false, level = "${WEB_LOG_LEVEL:info}", override_filter = "${WEB_LOG_LEVEL_FILTER:info,feignhttp=debug}" }
 
 [sea-orm]
 uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/empty_tiku}"

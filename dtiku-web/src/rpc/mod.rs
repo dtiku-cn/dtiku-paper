@@ -3,15 +3,14 @@ pub mod artalk;
 use feignhttp::get;
 use serde::{Deserialize, Serialize};
 
-#[get("https://api.weixin.qq.com/sns/userinfo?access_token={access_token}&openid={openid}")]
+#[get("https://api.weixin.qq.com/sns/userinfo")]
 pub async fn wechat_user_info(
-    #[param] access_token: &str,
-    #[param] openid: &str,
+    #[query] access_token: &str,
+    #[query] openid: &str,
 ) -> feignhttp::Result<WechatUser> {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct WechatUser {
     pub openid: String,
     pub nickname: String,

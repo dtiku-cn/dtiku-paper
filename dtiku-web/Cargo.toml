@@ -33,7 +33,7 @@ jsonwebtoken = { workspace = true }
 derive_more = { workspace = true, features = ["deref", "deref_mut"] }
 prost = { workspace = true }
 tonic = { workspace = true }
-feignhttp = { workspace = true, features = ["json"] }
+feignhttp = { workspace = true, features = ["json", "log"] }
 reqwest = { workspace = true }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 
