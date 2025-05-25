@@ -2,7 +2,11 @@
 <div class="d-print-none mt-4" id="addon-footer">
     {% if global.config.show_comments && comments %}
     <link rel="stylesheet" href="https://artalk.dtiku.cn/dist/Artalk.css" />
-    <style>.atk-user-profile-btn{pointer-events: none;}</style>
+    <style>
+        .atk-user-profile-btn {
+            pointer-events: none;
+        }
+    </style>
     <div id="artalk-comments" class="my-2"></div>
     {% endif %}
     {% if global.config.show_visitors && visitors %}
@@ -43,7 +47,7 @@
                     $('#loginModal').modal('show');
                 });
             }
-            
+
         })
     });
     window.addEventListener('load', function () {
@@ -54,6 +58,15 @@
         el: '#artalk-comments',
         server: 'https://{{global.original_host}}',
         avatarURLBuilder: (c) => `https://{{global.original_host}}/user/comment/${c.id}/avatar`,
+        imgUploader: async (f) => {
+            const form = new FormData()
+            form.set('file', f)
+            const resp = await fetch('https://{{global.original_host}}/upload', {
+                method: 'POST',
+                body: form,
+            });
+            return await resp.text();
+        },
         site: '公考加油站',
         pageview: pv,
         darkMode

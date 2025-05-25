@@ -26,7 +26,7 @@ impl Plugin for GrpcClientPlugin {
     async fn build(&self, app: &mut AppBuilder) {
         let grpc_config = app
             .get_config::<GrpcClientConfig>()
-            .expect("load huggingface config failed");
+            .expect("load grpc config failed");
 
         let embedding_client = EmbeddingServiceClient::connect(grpc_config.embedding_url)
             .await

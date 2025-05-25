@@ -6,6 +6,7 @@ mod service;
 mod views;
 
 use plugins::grpc_client::GrpcClientPlugin;
+use plugins::dav_client::WebDAVClientPlugin;
 use spring::App;
 use spring_opentelemetry::{
     KeyValue, OpenTelemetryPlugin, ResourceConfigurator, SERVICE_NAME, SERVICE_VERSION,
@@ -27,6 +28,7 @@ async fn main() {
         .add_plugin(SeaOrmPlugin)
         .add_plugin(OpenTelemetryPlugin)
         .add_plugin(GrpcClientPlugin)
+        .add_plugin(WebDAVClientPlugin)
         .run()
         .await
 }

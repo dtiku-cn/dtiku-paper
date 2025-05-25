@@ -1,12 +1,10 @@
-use anyhow::Context;
+pub use super::_entities::user_info::*;
 use dtiku_macros::cached;
 use sea_orm::{
     sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ConnectionTrait, DbErr,
     EntityTrait,
 };
 use spring::async_trait;
-
-pub use super::_entities::user_info::*;
 
 impl Model {
     pub fn is_expired(&self) -> bool {

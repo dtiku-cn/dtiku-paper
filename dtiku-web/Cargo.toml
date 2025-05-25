@@ -18,6 +18,7 @@ tokio = { workspace = true, features = ["full"] }
 dtiku-base = { path = "../dtiku-base", version = "0.0.1" }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
 dtiku-bbs = { path = "../dtiku-bbs", version = "0.0.1" }
+dtiku-macros = { path = "../dtiku-macros", version = "0.0.1" }
 askama = { workspace = true, features = ["serde_json"] }
 anyhow = { workspace = true }
 chrono = { workspace = true }
@@ -27,7 +28,11 @@ itertools = { workspace = true }
 chinese-number = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 just-auth = { workspace = true }
-axum-extra = { workspace = true, features = ["cookie", "typed-header"] }
+axum-extra = { workspace = true, features = [
+    "cookie",
+    "typed-header",
+    "multipart",
+] }
 lazy_static = { workspace = true }
 jsonwebtoken = { workspace = true }
 derive_more = { workspace = true, features = ["deref", "deref_mut"] }
@@ -37,6 +42,8 @@ feignhttp = { workspace = true, features = ["json"] }
 reqwest = { workspace = true }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 cookie = { workspace = true }
+reqwest_dav = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
 
 [build-dependencies]
 minify-html = "0.16"

@@ -27,7 +27,7 @@ pub fn cached(attr: TokenStream, item: TokenStream) -> TokenStream {
     let redis_set_stmt = match args.expire {
         Some(expire_sec) => {
             quote! {
-                let _: redis::Value = redis.set(&cache_key, json, #expire_sec).await.context("cache error")?;
+                let _: redis::Value = redis.set_ex(&cache_key, json, #expire_sec).await.context("cache error")?;
             }
         }
         None => {

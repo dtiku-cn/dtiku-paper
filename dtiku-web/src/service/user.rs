@@ -4,8 +4,8 @@ use crate::{
 };
 use anyhow::Context;
 use dtiku_base::model::{user_info, UserInfo};
+use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, EntityTrait};
 use spring::plugin::service::Service;
 use spring_sea_orm::DbConn;
 use spring_web::axum::http;
@@ -52,7 +52,7 @@ impl UserService {
                 let UserResp {
                     token, remote_uid, ..
                 } = self.artalk.auth_identity(user_id).await?;
-                let wechat_user = rpc::wechat_user_info(&token, &remote_uid)
+                let wechat_user = rpc::wechat::wechat_user_info(&token, &remote_uid)
                     .await
                     .with_context(|| format!("wechat_user_info({token},{remote_uid})"))?;
 

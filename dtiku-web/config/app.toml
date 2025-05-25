@@ -40,3 +40,8 @@ ip_blacklist = ""
 [grpc-client]
 embedding_url = "${EMBEDDING_GRPC_URL:http://localhost:18000}"
 artalk_url = "${ARTALK_GRPC_URL:http://localhost:18090}"
+
+[web-dav-client]
+host = "${WEB_DAV_HOST:https://alist.dtiku.cn/dav}"
+username = "${WEB_DAV_USERNAME:xxx}"
+password = "${WEB_DAV_PASSWORD:xxx}"
