@@ -434,7 +434,7 @@ window.FloatButton = function (options) {
                     "#float-buttons > div:nth-child(" + rn + "){transform:translateY(-" + t + "rem) !important;opacity: 1;}"
             }
         }).join("");
-        return "<style>#float-buttons {position: fixed;bottom: 4rem;right: 3rem;z-index: 122;}" +
+        return "<style>#float-buttons {position: fixed;bottom: 4rem;right: 3rem;z-index: 122;color:#007bff;}" +
             "#float-buttons > div {position: fixed;z-index: 23;transition: all .2s;box-shadow: 3px 3px 6px 3px rgba(0, 0, 0, .3);}" +
             menuCss +
             "#float-buttons > div:hover {box-shadow: 3px 3px 6px 3px rgba(0, 0, 0, .45);}" +
