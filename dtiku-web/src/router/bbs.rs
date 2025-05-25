@@ -1,7 +1,7 @@
 use crate::{
     service::issue::IssueService,
     views::{
-        bbs::{IssueTemplate, ListIssueTemplate},
+        bbs::{IssueEditorTemplate, IssueTemplate, ListIssueTemplate},
         GlobalVariables,
     },
 };
@@ -31,6 +31,15 @@ async fn list_issue(
         global,
         page,
         query,
+    };
+    Ok(Html(t.render().context("render failed")?))
+}
+
+#[get("/bbs/issue")]
+async fn new_issue(Extension(global): Extension<GlobalVariables>) -> Result<impl IntoResponse> {
+    let t = IssueEditorTemplate {
+        global,
+        issue: None,
     };
     Ok(Html(t.render().context("render failed")?))
 }

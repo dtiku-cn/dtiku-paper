@@ -24,24 +24,24 @@
 
 <body class="container">
     {% call general::header() %}
-    <form id="form" class="card mb-3" method="post" th:action="${issue==null?'/bbs/issue':'/bbs/issue/'+issue.id}">
+    <form id="form" class="card mb-3" method="post"
+        action="{%if let Some(i)=issue%}/bbs/issue/{{i.id}}{%else%}/bbs/issue{%endif%}">
         <header class="card-header d-flex flex-wrap p-1 align-items-center">
             <div class="input-group col-12 col-lg-4 p-0 pr-lg-2">
                 <select class="custom-select" name="topic" required>
                     <option selected value="">-选择一个主题-</option>
-                    <option th:each="t : ${topics}" th:value="${t}" th:selected="${t == issue?.topic}"
-                        th:text="${t.text}"></option>
+                    {%for t in TopicType::iter() %}
+                    <option value="{{t}}"
+                        selected="{%if Some(t.clone())==issue.map(|i|i.topic)%}true{%else%}false{%endif%}">
+                        {{t.text()}}
+                    </option>
+                    {%endfor%}
                 </select>
                 <div class='tooltip-topic invalid-tooltip'>不能为空</div>
-                <select class="custom-select" name="area">
-                    <option selected value="">-选择省份(可选)-</option>
-                    <option th:each="a : ${areas}" th:value="${a}" th:selected="${a == issue?.area}"
-                        th:text="${a.text}"></option>
-                </select>
             </div>
             <div class="input-group col-12 col-lg-8 p-0 mt-2 mt-lg-0">
-                <input name="title" type="text" class="form-control" placeholder="输入标题" th:value="${issue?.title}"
-                    required>
+                <input name="title" type="text" class="form-control" placeholder="输入标题"
+                    value="{%if let Some(i)=issue%}{{i.title}}{%endif%}" required>
                 <div class='tooltip-title invalid-tooltip'>不能为空</div>
                 <div class="input-group-append">
                     <input id="preview" type="button" class="btn btn-success" value="预览" />
@@ -60,7 +60,7 @@
         $(function () {
             var eEditor = document.querySelector('#editor');
             eEditor.style.background = 'url("' + window.loadingGif + '") center center no-repeat';
-            var initValue = '[(${#strings.escapeJavaScript(issue?.markdown)})]';
+            var initValue = '{%if let Some(i)=issue%}{{i.markdown|safe}}{%endif%}';
             window.vEditor = new Vditor(eEditor, {
                 width: '100%',
                 height: '100vh',
@@ -74,7 +74,7 @@
                 },
                 toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike',
                     '|', 'line', 'quote', 'list', 'ordered-list', 'check', 'outdent', 'indent', 'code', 'inline-code', 'table',
-                    '|', 'undo', 'redo', 'edit-mode', 'fullscreen', 'preview'
+                    '|', 'undo', 'redo', 'upload', 'edit-mode', 'fullscreen', 'preview'
                 ],
                 toolbarConfig: {
                     pin: true
@@ -98,6 +98,12 @@
                         $("#submit").toggleClass('d-none');
                         $("#preview").toggleClass('d-none');
                     });
+                },
+                upload: {
+                    url: "/upload",
+                    fieldName: 'file',
+                    multiple: false,
+                    format: (f, respTxt) => `{"msg":"","code":0,"data":{"errFiles":[],"succMap":{"${f[0].name}":"${respTxt}"}}}`
                 }
             });
             window.themeSwitcher.listener.push(function (dark) {
