@@ -31,7 +31,7 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 impl Entity {
-    #[cached(key = "user:{id}")]
+    #[cached(key = "user:{id}",expire = 86400)]
     pub async fn find_user_by_id<C: ConnectionTrait>(
         db: &C,
         id: i32,

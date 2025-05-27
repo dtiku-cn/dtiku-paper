@@ -63,7 +63,7 @@ impl Entity {
         Ok(v)
     }
 
-    #[cached(key = "config:{key:?}")]
+    #[cached(key = "config:{key:?}",expire = 86400)]
     pub async fn find_cached_value_by_key<C>(
         db: &C,
         key: SystemConfigKey,

@@ -21,7 +21,7 @@ impl ActiveModel {
 }
 
 impl Entity {
-    #[cached(key = "label:{id}")]
+    #[cached(key = "label:{id}",expire = 86400)]
     pub async fn find_by_id_with_cache<C>(db: &C, id: i32) -> anyhow::Result<Option<Model>>
     where
         C: ConnectionTrait,

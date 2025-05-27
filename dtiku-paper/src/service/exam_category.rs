@@ -14,7 +14,6 @@ pub struct ExamCategoryService {
 }
 
 impl ExamCategoryService {
-    #[cached(key = "exam_category:root_exam:{prefix}")]
     pub async fn find_root_exam(
         &self,
         prefix: &str,

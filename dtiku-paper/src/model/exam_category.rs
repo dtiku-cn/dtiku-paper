@@ -28,6 +28,7 @@ impl Entity {
             .context("exam_category::find_all_by_pids() failed")
     }
 
+    #[cached(key = "exam_category:root_exam:{prefix}",expire = 86400)]
     pub async fn find_by_root_prefix<C>(db: &C, prefix: &str) -> anyhow::Result<Option<Model>>
     where
         C: ConnectionTrait,

@@ -66,7 +66,7 @@ impl Entity {
         }
     }
 
-    #[cached(key = "keypoint:{id}")]
+    #[cached(key = "keypoint:{id}",expire = 86400)]
     pub async fn find_by_id_with_cache<C: ConnectionTrait>(
         db: &C,
         id: i32,
