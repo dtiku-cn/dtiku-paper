@@ -2,7 +2,6 @@ use crate::{
     domain::exam_category::ExamPaperType,
     model::{exam_category, ExamCategory},
 };
-use dtiku_macros::cached;
 use itertools::Itertools;
 use sea_orm::DbConn;
 use spring::plugin::service::Service;

@@ -1357,7 +1357,6 @@ pub struct CourseSet {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct LiveConfigItem {
     pub id: i64,
     pub name: String,

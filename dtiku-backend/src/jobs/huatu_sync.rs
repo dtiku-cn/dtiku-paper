@@ -2,13 +2,18 @@ use super::{JobScheduler, PaperSyncer};
 use crate::plugins::embedding::Embedding;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
-use dtiku_paper::model::{label, paper};
+use dtiku_paper::model::{exam_category, label, paper, ExamCategory, FromType, Label};
 use futures::StreamExt;
-use sea_orm::ConnectionTrait;
+use itertools::Itertools;
+use pinyin::ToPinyin;
+use sea_orm::ColumnTrait;
+use sea_orm::{ActiveValue::Set, ConnectionTrait, EntityTrait, PaginatorTrait, QueryFilter};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
+use sqlx::types::Json;
 
 #[derive(Clone, Service)]
 #[service(prototype)]
@@ -86,40 +91,89 @@ impl HuatuSyncService {
         if progress.total <= 0 {
             return Ok(());
         }
-        let mut stream = sqlx::query_as::<_, OriginLabel>(
+        self.sync_exam_tree().await?;
+
+        // let mut stream = sqlx::query_as::<_, OriginLabel>(
+        //     r##"
+        //         select
+        //             id,
+        //             jsonb_extract_path_text(extra,'name') as name,
+        //             jsonb_extract_path_text(extra,'parent_name') as parent_name
+        //         from "label" l
+        //         where from_ty ='huatu'
+        // "##,
+        // )
+        // .fetch(&self.source_db);
+
+        // while let Some(row) = stream.next().await {
+        //     match row {
+        //         Ok(row) => {
+        //             let source_id = row.id;
+        //             let label = row.select_from(&self.target_db).await?;
+
+        //             sqlx::query("update label set target_id=$1 where id=$2 and from_ty='huatu'")
+        //                 .bind(label.id)
+        //                 .bind(source_id)
+        //                 .execute(&self.source_db)
+        //                 .await
+        //                 .context("update source db label target_id failed")?;
+
+        //             if progress.increase(1) {
+        //                 self.task = self
+        //                     .task
+        //                     .update_progress(&progress, &self.target_db)
+        //                     .await?;
+        //             }
+        //         }
+        //         Err(e) => tracing::error!("find label failed: {:?}", e),
+        //     };
+        // }
+
+        Ok(())
+    }
+
+    async fn sync_exam_tree(&mut self) -> anyhow::Result<()> {
+        if ExamCategory::find()
+            .filter(exam_category::Column::FromTy.eq(FromType::Huatu))
+            .count(&self.target_db)
+            .await?
+            > 0
+        {
+            tracing::info!("exam_category already exists");
+            return Ok(());
+        }
+        let category = sqlx::query_as::<_, OriginExamCategory>(
             r##"
-                select 
-                    id,
-                    jsonb_extract_path_text(extra,'name') as name,
-                    jsonb_extract_path_text(extra,'parent_name') as parent_name
-                from "label" l 
-                where from_ty ='huatu'
-        "##,
+                select extra
+                from exam_category_tree
+                where from_ty = 'huatu'
+                "##,
         )
-        .fetch(&self.source_db);
+        .fetch_one(&self.source_db)
+        .await
+        .context("fetch huatu exam_category_tree failed")?;
 
-        while let Some(row) = stream.next().await {
-            match row {
-                Ok(row) => {
-                    let source_id = row.id;
-                    let label = row.save_to(&self.target_db).await?;
+        for c in category.extra.0 {
+            let root_category = c
+                .to_exam_category()
+                .insert_on_conflict(&self.target_db)
+                .await
+                .context("insert exam category failed")?;
 
-                    sqlx::query("update label set target_id=$1 where id=$2 and from_ty='huatu'")
-                        .bind(label.id)
-                        .bind(source_id)
-                        .execute(&self.source_db)
+            for cc in c.childrens {
+                let second_category = cc
+                    .to_exam_category_with_pid(root_category.id)
+                    .insert_on_conflict(&self.target_db)
+                    .await
+                    .context("insert exam category failed")?;
+
+                for ccc in cc.childrens {
+                    ccc.to_exam_category_with_pid(second_category.id)
+                        .insert_on_conflict(&self.target_db)
                         .await
-                        .context("update source db label target_id failed")?;
-
-                    if progress.increase(1) {
-                        self.task = self
-                            .task
-                            .update_progress(&progress, &self.target_db)
-                            .await?;
-                    }
+                        .context("insert exam category failed")?;
                 }
-                Err(e) => tracing::error!("find label failed: {:?}", e),
-            };
+            }
         }
 
         Ok(())
@@ -154,14 +208,12 @@ impl HuatuSyncService {
                         let source_id = row.id;
                         let paper = self.save_paper(row).await?;
 
-                        sqlx::query(
-                            "update paper set target_id=$1 where id=$2 and from_ty='huatu",
-                        )
-                        .bind(paper.id)
-                        .bind(source_id)
-                        .execute(&self.source_db)
-                        .await
-                        .context("update source db label target_id failed")?;
+                        sqlx::query("update paper set target_id=$1 where id=$2 and from_ty='huatu")
+                            .bind(paper.id)
+                            .bind(source_id)
+                            .execute(&self.source_db)
+                            .await
+                            .context("update source db label target_id failed")?;
 
                         progress.current = source_id;
                         self.task = self
@@ -181,6 +233,52 @@ impl HuatuSyncService {
     }
 }
 
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, sqlx::FromRow)]
+pub struct OriginExamCategory {
+    pub extra: Json<Vec<ExamTreeNode>>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExamTreeNode {
+    pub id: i64,
+    pub name: String,
+    pub childrens: Vec<ExamTreeNode>,
+}
+
+impl ExamTreeNode {
+    fn to_exam_category(&self) -> exam_category::ActiveModel {
+        exam_category::ActiveModel {
+            name: Set(self.name.clone()),
+            prefix: Set(self
+                .name
+                .as_str()
+                .to_pinyin()
+                .into_iter()
+                .filter_map(|s| s.map(|py| py.plain()))
+                .join("")),
+            pid: Set(0),
+            from_ty: Set(FromType::Huatu),
+            ..Default::default()
+        }
+    }
+
+    fn to_exam_category_with_pid(&self, pid: i16) -> exam_category::ActiveModel {
+        exam_category::ActiveModel {
+            name: Set(self.name.clone()),
+            prefix: Set(self
+                .name
+                .as_str()
+                .to_pinyin()
+                .into_iter()
+                .filter_map(|s| s.map(|py| py.plain()))
+                .join("")),
+            pid: Set(pid),
+            from_ty: Set(FromType::Huatu),
+            ..Default::default()
+        }
+    }
+}
+
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct OriginLabel {
     id: Option<i32>,
@@ -189,7 +287,7 @@ struct OriginLabel {
 }
 
 impl OriginLabel {
-    async fn save_to<C: ConnectionTrait>(self, db: &C) -> anyhow::Result<label::Model> {
+    async fn select_from<C: ConnectionTrait>(self, _db: &C) -> anyhow::Result<label::Model> {
         todo!()
     }
 }
@@ -215,8 +313,7 @@ impl OriginPaper {
     }
 }
 
-
-enum Modules{
+enum Modules {
     Blocks(Vec<PaperBlock>),
     Topics(Vec<String>),
 }

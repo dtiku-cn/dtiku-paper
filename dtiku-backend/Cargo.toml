@@ -42,6 +42,7 @@ textdistance = { workspace = true }
 prost = { workspace = true }
 tonic = { workspace = true }
 search-api = { workspace = true }
+pinyin = { workspace = true }
 
 [build-dependencies]
 tonic-build = "0.13"
