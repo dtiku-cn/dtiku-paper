@@ -1,5 +1,7 @@
 [sqlx]
 uri = "${DATABASE_URL}"
+connect_timeout = "${PG_CONNECT_TIMEOUT:10000}"
+idle_timeout = "${PG_IDLE_TIMEOUT:300000}"
 
 [grpc]
 port = 18090

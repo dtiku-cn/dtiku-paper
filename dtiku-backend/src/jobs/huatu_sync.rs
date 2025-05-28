@@ -6,14 +6,15 @@ use dtiku_paper::model::{exam_category, label, paper, ExamCategory, FromType, La
 use futures::StreamExt;
 use itertools::Itertools;
 use pinyin::ToPinyin;
-use sea_orm::ColumnTrait;
 use sea_orm::{ActiveValue::Set, ConnectionTrait, EntityTrait, PaginatorTrait, QueryFilter};
+use sea_orm::{ColumnTrait, Statement};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
 use sqlx::types::Json;
+use sqlx::Row;
 
 #[derive(Clone, Service)]
 #[service(prototype)]
@@ -93,41 +94,41 @@ impl HuatuSyncService {
         }
         self.sync_exam_tree().await?;
 
-        // let mut stream = sqlx::query_as::<_, OriginLabel>(
-        //     r##"
-        //         select
-        //             id,
-        //             jsonb_extract_path_text(extra,'name') as name,
-        //             jsonb_extract_path_text(extra,'parent_name') as parent_name
-        //         from "label" l
-        //         where from_ty ='huatu'
-        // "##,
-        // )
-        // .fetch(&self.source_db);
+        let mut stream = sqlx::query_as::<_, OriginLabel>(
+            r##"
+                select
+                    id,
+                    jsonb_extract_path_text(extra,'name') as name,
+                    jsonb_extract_path_text(extra,'parent_name') as parent_name
+                from "label" l
+                where from_ty ='huatu'
+        "##,
+        )
+        .fetch(&self.source_db);
 
-        // while let Some(row) = stream.next().await {
-        //     match row {
-        //         Ok(row) => {
-        //             let source_id = row.id;
-        //             let label = row.select_from(&self.target_db).await?;
+        while let Some(row) = stream.next().await {
+            match row {
+                Ok(row) => {
+                    let source_id = row.id;
+                    let exam_id = row.select_from(&self.target_db).await?;
 
-        //             sqlx::query("update label set target_id=$1 where id=$2 and from_ty='huatu'")
-        //                 .bind(label.id)
-        //                 .bind(source_id)
-        //                 .execute(&self.source_db)
-        //                 .await
-        //                 .context("update source db label target_id failed")?;
+                    sqlx::query("update label set target_id=$1 where id=$2 and from_ty='huatu'")
+                        .bind(exam_id)
+                        .bind(source_id)
+                        .execute(&self.source_db)
+                        .await
+                        .context("update source db label target_id failed")?;
 
-        //             if progress.increase(1) {
-        //                 self.task = self
-        //                     .task
-        //                     .update_progress(&progress, &self.target_db)
-        //                     .await?;
-        //             }
-        //         }
-        //         Err(e) => tracing::error!("find label failed: {:?}", e),
-        //     };
-        // }
+                    if progress.increase(1) {
+                        self.task = self
+                            .task
+                            .update_progress(&progress, &self.target_db)
+                            .await?;
+                    }
+                }
+                Err(e) => tracing::error!("find label failed: {:?}", e),
+            };
+        }
 
         Ok(())
     }
@@ -229,7 +230,30 @@ impl HuatuSyncService {
     }
 
     async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
-        todo!()
+        let source_paper_id = paper.id;
+        let target_exam_id: i32 =
+            sqlx::query("select target_id from label where id = $1 and from_ty='huatu'")
+                .bind(paper.label_id)
+                .fetch_one(&self.source_db)
+                .await
+                .with_context(|| format!("find target_id for label#{}", paper.label_id))?
+                .try_get("target_id")
+                .context("get target_id failed")?;
+        let paper = paper.save_paper(&self.target_db, target_exam_id).await?;
+
+        self.sync_questions_and_materials(source_paper_id, &paper)
+            .await?;
+
+        Ok(paper)
+    }
+
+    async fn sync_questions_and_materials(
+        &self,
+        source_paper_id: i64,
+        paper: &paper::Model,
+    ) -> anyhow::Result<()> {
+        // todo
+        Ok(())
     }
 }
 
@@ -287,8 +311,32 @@ struct OriginLabel {
 }
 
 impl OriginLabel {
-    async fn select_from<C: ConnectionTrait>(self, _db: &C) -> anyhow::Result<label::Model> {
-        todo!()
+    async fn select_from<C: ConnectionTrait>(self, db: &C) -> anyhow::Result<Option<i16>> {
+        let stmt = Statement::from_sql_and_values(
+            sea_orm::DatabaseBackend::Postgres,
+            r##"
+            select ec2.id as id from exam_category ec1
+            left join exam_category ec2 
+            on ec1.id = ec2.pid
+            where ec2."name" = $1
+            and ec1."name" = $2
+            "##,
+            vec![self.name.clone().into(), self.parent_name.clone().into()],
+        );
+
+        let r = db.query_one(stmt).await.with_context(|| {
+            format!(
+                "query exam_category failed, name:{:?}<<parent_name:{:?}",
+                self.name, self.parent_name
+            )
+        })?;
+        Ok(match r {
+            Some(qr) => {
+                let id: i16 = qr.try_get("", "id").context("get id column failed")?;
+                Some(id)
+            }
+            None => None,
+        })
     }
 }
 
@@ -309,6 +357,7 @@ impl OriginPaper {
         db: &C,
         label_id: i32,
     ) -> anyhow::Result<paper::Model> {
+        // todo
         todo!()
     }
 }

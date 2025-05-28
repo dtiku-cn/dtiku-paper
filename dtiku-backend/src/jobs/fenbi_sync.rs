@@ -1304,7 +1304,6 @@ struct OriginQuestionCategory {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct QuestionCategory {
     pub name: String,
     pub count: i64,
@@ -1315,7 +1314,6 @@ struct QuestionCategory {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, sqlx::FromRow)]
-#[serde(rename_all = "camelCase")]
 pub struct OriginExamCategory {
     pub extra: Json<Vec<CourseCategory>>,
 }
