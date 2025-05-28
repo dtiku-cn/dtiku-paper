@@ -1,11 +1,11 @@
 mod bbs;
 mod home;
 mod idiom;
+mod img;
 mod paper;
 mod question;
 mod shenlun_category;
 mod user;
-mod img;
 
 use crate::service::user::UserService;
 use crate::views::GlobalVariables;
