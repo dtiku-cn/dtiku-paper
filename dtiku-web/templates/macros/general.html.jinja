@@ -65,7 +65,13 @@
     }
 </style>
 {% if global.config.global_style.len() > 0 %}
-<style>{{global.config.global_style}}</style>
+<style>
+    {
+            {
+            global.config.global_style
+        }
+    }
+</style>
 {% endif %}
 <script src="{{global.config.iconfont_js_url}}"></script>
 {{global.config.global_head_files}}
@@ -223,7 +229,7 @@
 <script defer>
     $(function () {
         $(document).ajaxError(function (e, jqxhr) {
-            $('#toast').toast('show').find('.toast-body').text(jqxhr.responseJSON.message);
+            $('#toast').toast('show').find('.toast-body').text(jqxhr.responseText || jqxhr.statusText || '请求失败');
         })
     })
 </script>
