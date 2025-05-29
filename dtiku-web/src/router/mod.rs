@@ -21,14 +21,12 @@ use serde::{Deserialize, Serialize};
 use spring::config::env::Env;
 use spring::tracing::{self, Level};
 use spring_opentelemetry::trace;
-use spring_web::axum::http::header;
 use spring_web::axum::http::request::Parts;
 use spring_web::axum::RequestPartsExt;
 use spring_web::error::{KnownWebError, WebError};
 use spring_web::extractor::FromRequestParts;
 use spring_web::{
     axum::{
-        http::StatusCode,
         middleware::{self, Next},
         response::Response,
     },

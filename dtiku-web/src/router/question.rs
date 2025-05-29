@@ -14,11 +14,11 @@ use dtiku_paper::{
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
-        Extension, Form,
+        Extension,
     },
     error::Result,
     extractor::{Component, Query},
-    get, post,
+    get,
 };
 
 #[get("/question/search")]

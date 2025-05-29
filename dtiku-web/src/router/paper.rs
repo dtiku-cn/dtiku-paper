@@ -100,5 +100,6 @@ async fn paper_title_like(
     Component(ps): Component<PaperService>,
     Query(query): Query<PaperTitleLikeQuery>,
 ) -> Result<impl IntoResponse> {
-    Ok(Json(ps.search_by_name(&query.title).await?))
+    let ps = ps.search_by_name(&query.title).await?;
+    Ok(Json(ps))
 }
