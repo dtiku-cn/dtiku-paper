@@ -265,6 +265,13 @@
                         l.onChange && l.onChange(dark);
                     }
                 });
+                $('iframe').each(function () {
+                    try {
+                        this.contentWindow.postMessage({ type: 'set-theme', dark }, '*');
+                    } catch (e) {
+                        console.warn('无法向 iframe 发送消息:', e);
+                    }
+                });
             }
 
             $("#theme").prop("checked", getTheme()).click(function (e) {

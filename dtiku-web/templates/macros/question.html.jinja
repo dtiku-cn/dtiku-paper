@@ -15,7 +15,7 @@
             var $iframe = $($(this).attr('href')).addClass('active').children('.iframe-nested');
             if (!$iframe.html().trim()) {
                 $iframe.html(function () {
-                    return "<iframe class='border-0' src='" + $(this).data("href") + "' width='" + $(this).parent().width() + "' height='600'></iframe>"
+                    return "<iframe class='border-0' style='width:100%' src='" + $(this).data("href") + "' height='600'></iframe>"
                 });
             } else {
                 $iframe.find('iframe').attr('width', $iframe.parent().width());

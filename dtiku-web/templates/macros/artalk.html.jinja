@@ -79,6 +79,13 @@
     window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {
         artalk.setDarkMode(dark)
     });
+    // 内嵌于iframe时
+    window.addEventListener('message', function (event) {
+        const msg = event.data;
+        if (msg && msg.type === 'set-theme') {
+            artalk.setDarkMode(msg.dark)
+        }
+    });
     }, false);
 </script>
 {% endif %}
