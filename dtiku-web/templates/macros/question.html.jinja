@@ -45,27 +45,28 @@
     <li role="presentation" class="nav-item">
         <a class="nav-link {%if loop.index==1%}active{%endif%}" role="tab" data-toggle="tab"
             href="#solution-{{q.id}}-{{s.id}}">
-            ${bools.isTrue(system_showVendor)?type.text:'参考解析'+@thymeleafUtils.formatChinese(iter.index+1)}
+            {%if global.config.show_vendor%}type.text{%else%}参考解析{{global.chinese_num(loop.index)}}{%endif%}
         </a>
     </li>
     {%endfor%}
     {%endif%}
-    <li role="presentation" class="nav-item"
-        th:if="${q.hasImage && !#strings.startsWith(#request.requestURI,'/question/detail')}"
-        th:classappend="${bools.isTrue(system_showSolution)?'':'active'}">
-        <a class="nav-link recommend-for" role="tab" data-toggle="tab" th:href="'#recommend-for-'+${q.id}">相似题型</a>
+    {%if !global.uri_starts_with("/question/detail")%}
+    <li role="presentation" class="nav-item {%if !global.config.show_solution%}active{%endif%}">
+        <a class="nav-link recommend-for" role="tab" data-toggle="tab" href="#recommend-for-{{q.id}}">相似题型</a>
     </li>
-    <li role="presentation" class="nav-item"
-        th:if="${bools.isTrue(system_showComments) && !#strings.startsWith(#request.requestURI,'/question/detail')}"
-        th:classappend="${bools.isTrue(system_showSolution)?'':'active'}">
-        <a class="nav-link comment-for" role="tab" data-toggle="tab" th:href="'#comment-for-'+${q.id}">讨论区</a>
+    {%endif%}
+    {%if global.config.show_comments && !global.uri_starts_with("/question/detail")%}
+    <li role="presentation" class="nav-item {%if !global.config.show_solution%}active{%endif%}">
+        <a class="nav-link comment-for" role="tab" data-toggle="tab" href="#comment-for-{{q.id}}">讨论区</a>
     </li>
+    {%endif%}
 </ul>
 <div class="tab-content card">
     {% if !global.config.show_solution %}
     <div id="solution-{{q.id}}-login|" class="solution tab-pane card-body bg-light active" role="tabpanel">
-        <a class="btn btn-link btn-block" href="#${user==null?'loginModal':'payModal'}" data-toggle="modal">
-            ${user==null?'请先登录':'网站赞助'}
+        <a class="btn btn-link btn-block" href="#{%if global.user.is_none()%}loginModal{%else%}payModal{%endif%}"
+            data-toggle="modal">
+            {%if global.user.is_none()%}请先登录{%else%}网站赞助{%endif%}
         </a>
     </div>
     {%else if let Some(solutions) = q.solutions %}
@@ -76,16 +77,17 @@
     </div>
     {%endfor%}
     {%endif%}
-    <div role="tabpanel" class="tab-pane card-body bg-light px-0"
-        th:if="${q.hasImage && !#strings.startsWith(#request.requestURI,'/question/detail')}"
-        th:id="|recommend-for-${q.id}|" th:data-href="'/question/recommend/'+${q.id}">
+    {%if !global.uri_starts_with("/question/detail")%}
+    <div role="tabpanel" class="tab-pane card-body bg-light px-0" id="recommend-for-{{q.id}}"
+        data-href="/question/recommend/{{q.id}}">
     </div>
-    <div role="tabpanel" class="tab-pane card-body bg-light"
-        th:if="${bools.isTrue(system_showComments) && !#strings.startsWith(#request.requestURI,'/question/detail')}"
-        th:id="|comment-for-${q.id}|">
-        <div class="iframe-nested" th:data-href="'/question/detail/'+${q.id}+'?onlyComment=true'"></div>
-        <a class="btn btn-link btn-block" target="_blank" th:href="@{/question/detail/{id}(id=${q.id})}">跳转讨论区</a>
+    {%endif%}
+    {%if global.config.show_comments && !global.uri_starts_with("/question/detail")%}
+    <div role="tabpanel" class="tab-pane card-body bg-light" id="comment-for-{{q.id}}">
+        <div class="iframe-nested" data-href="/question/detail/{{q.id}}?onlyComment=true"></div>
+        <a class="btn btn-link btn-block" target="_blank" href="/question/detail/{{q.id}}">跳转讨论区</a>
     </div>
+    {%endif%}
 </div>
 {% endmacro question_solution %}
 
@@ -108,8 +110,8 @@
 
 {# 行测答题模式 #}
 {% macro xingce_exercise_question(q,userAnswer) %}
-<div th:id="'question-'+${q.id}" class="question">
-    <div class="question-content" th:utext="${q.html}"></div>
+<div id="question-{{q.id}}" class="question">
+    <div class="question-content">{{q.content}}</div>
     <div class="option-group ml-4 d-flex flex-wrap">
         <div th:class="${q.answer!=null&&q.answer.answer.length()>1?'custom-control custom-checkbox pl-0':'custom-control custom-radio pl-0'}"
             th:each="o : ${q.options}" th:id="'option-'+${q.id}+${o.caption}"

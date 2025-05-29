@@ -10,7 +10,7 @@ use dtiku_paper::{
 };
 
 #[derive(Template)]
-#[template(path = "question-search.html.min.jinja")]
+#[template(path = "question/search.html.min.jinja")]
 pub struct QuestionSearchTemplate {
     pub global: GlobalVariables,
     pub questions: Vec<QuestionWithPaper>,
@@ -18,7 +18,7 @@ pub struct QuestionSearchTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "question-search-img.html.min.jinja")]
+#[template(path = "question/search-img.html.min.jinja")]
 pub struct QuestionSearchImgTemplate {
     pub global: GlobalVariables,
     pub questions: Vec<QuestionWithPaper>,
@@ -26,7 +26,7 @@ pub struct QuestionSearchImgTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "question-section.html.min.jinja")]
+#[template(path = "question/section.html.min.jinja")]
 pub struct QuestionSectionTemplate {
     pub global: GlobalVariables,
     pub papers: Vec<model::paper::Model>,
@@ -91,4 +91,17 @@ impl FullQuestion {
                 .unwrap_or_default(),
         }
     }
+}
+
+#[derive(Template)]
+#[template(path = "question/detail.html.min.jinja")]
+pub struct QuestionDetailTemplate {
+    pub global: GlobalVariables,
+    pub question: FullQuestion,
+}
+
+#[derive(Template)]
+#[template(path = "question/only-comment.html.min.jinja")]
+pub struct OnlyCommentTemplate {
+    pub global: GlobalVariables,
 }

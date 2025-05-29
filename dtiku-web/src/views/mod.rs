@@ -1,4 +1,5 @@
 use axum_extra::extract::CookieJar;
+use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
 use chrono::Datelike;
 use dtiku_base::{model::user_info, service};
 use dtiku_paper::domain::exam_category::ExamPaperType;
@@ -32,6 +33,16 @@ pub struct GlobalVariables {
 impl GlobalVariables {
     pub fn range(&self, range_end: &u64) -> std::ops::RangeInclusive<u64> {
         (1..=*range_end).into_iter()
+    }
+
+    pub fn chinese_num(&self, num: &usize) -> String {
+        (*num as i32)
+            .to_chinese(
+                ChineseVariant::Traditional,
+                ChineseCase::Lower,
+                ChineseCountMethod::TenThousand,
+            )
+            .unwrap()
     }
 
     pub fn now_year(&self) -> i16 {

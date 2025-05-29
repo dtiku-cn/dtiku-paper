@@ -1,7 +1,11 @@
 use crate::{
+    query::question::DetailQuery,
     router::EXAM_ID,
     views::{
-        question::{QuestionSearchImgTemplate, QuestionSearchTemplate, QuestionSectionTemplate},
+        question::{
+            OnlyCommentTemplate, QuestionDetailTemplate, QuestionSearchImgTemplate,
+            QuestionSearchTemplate, QuestionSectionTemplate,
+        },
         GlobalVariables,
     },
 };
@@ -17,7 +21,7 @@ use spring_web::{
         Extension,
     },
     error::Result,
-    extractor::{Component, Query},
+    extractor::{Component, Path, Query},
     get,
 };
 
@@ -75,4 +79,29 @@ async fn question_section(
         questions,
     };
     Ok(Html(t.render().context("render failed")?))
+}
+
+#[get("/question/recommend/{id}")]
+async fn question_recommend(Path(id): Path<i32>) -> Result<impl IntoResponse> {
+    Ok(format!("recommend/{id}: 等待上线中..."))
+}
+
+#[get("/question/detail/{id}")]
+async fn question_detail(
+    Path(id): Path<i32>,
+    Query(q): Query<DetailQuery>,
+    Component(qs): Component<QuestionService>,
+    Extension(global): Extension<GlobalVariables>,
+) -> Result<impl IntoResponse> {
+    if q.only_comment {
+        let t = OnlyCommentTemplate { global };
+        Ok(Html(t.render().context("render failed")?))
+    } else {
+        let question = qs.full_question_by_id(id).await?;
+        let t = QuestionDetailTemplate {
+            global,
+            question: todo!(),
+        };
+        Ok(Html(t.render().context("render failed")?))
+    }
 }

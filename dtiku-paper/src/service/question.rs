@@ -34,4 +34,8 @@ impl QuestionService {
         let qs = Question::find_by_ids(&self.db, qids).await?;
         Ok((qs, ps))
     }
+
+    pub async fn full_question_by_id(&self, id: i32) -> anyhow::Result<()> {
+        todo!()
+    }
 }
