@@ -196,6 +196,20 @@ pub struct QA {
 pub type QuestionChoice = String;
 
 impl Entity {
+    pub async fn find_by_ids<C>(db: &C, ids: Vec<i32>) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        if ids.len() <= 0 {
+            return Ok(vec![]);
+        }
+        Entity::find()
+            .filter(Column::Id.is_in(ids))
+            .all(db)
+            .await
+            .context("question::find_by_ids() failed")
+    }
+
     pub async fn search_question<C>(
         db: &C,
         search: &QuestionSearch,

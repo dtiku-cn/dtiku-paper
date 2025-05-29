@@ -16,3 +16,9 @@ pub struct ListPaperQuery {
 pub struct PaperQuery {
     pub mode: Option<PaperMode>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct PaperTitleLikeQuery {
+    #[serde(default, rename = "q")]
+    pub title: String,
+}

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use crate::domain::paper::{FullPaper, PaperMode};
+use crate::model::Paper;
 use crate::model::{paper, Material, Question, QuestionMaterial, Solution};
 use crate::query::paper::ListPaperQuery;
 use anyhow::Context;
@@ -9,8 +8,7 @@ use sea_orm::ColumnTrait;
 use sea_orm::{DbConn, EntityTrait, QueryFilter};
 use spring::plugin::service::Service;
 use spring_sea_orm::pagination::Page;
-
-use crate::model::Paper;
+use std::collections::HashMap;
 
 #[derive(Clone, Service)]
 pub struct PaperService {
@@ -56,11 +54,11 @@ impl PaperService {
         Paper::find_by_query(&self.db, &query).await
     }
 
-    pub async fn search_by_name(&self, name: &str) {
-        let _ = Paper::find()
+    pub async fn search_by_name(&self, name: &str) -> anyhow::Result<Vec<paper::Model>> {
+        Paper::find()
             .filter(paper::Column::Title.contains(name))
             .all(&self.db)
-            .await;
-        println!("{name}")
+            .await
+            .with_context(|| format!("Paper::search_by_name failed:{name}"))
     }
 }

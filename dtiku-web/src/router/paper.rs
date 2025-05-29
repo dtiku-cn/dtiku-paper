@@ -1,5 +1,5 @@
 use crate::{
-    query::paper::{ListPaperQuery, PaperQuery},
+    query::paper::{ListPaperQuery, PaperQuery, PaperTitleLikeQuery},
     views::{
         paper::{ChapterPaperTemplate, ClusterPaperTemplate, ListPaperTemplate},
         GlobalVariables, IntoTemplate,
@@ -16,7 +16,7 @@ use dtiku_paper::{
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
-        Extension,
+        Extension, Json,
     },
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
@@ -93,4 +93,12 @@ async fn paper_exercise(
         .ok_or_else(|| KnownWebError::not_found("试卷未找到"))?;
     let t: ChapterPaperTemplate = paper.to_template(global);
     Ok(Html(t.render().context("render failed")?))
+}
+
+#[get("/paper/title/like")]
+async fn paper_title_like(
+    Component(ps): Component<PaperService>,
+    Query(query): Query<PaperTitleLikeQuery>,
+) -> Result<impl IntoResponse> {
+    Ok(Json(ps.search_by_name(&query.title).await?))
 }

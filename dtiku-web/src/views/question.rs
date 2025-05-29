@@ -29,6 +29,8 @@ pub struct QuestionSearchImgTemplate {
 #[template(path = "question-section.html.min.jinja")]
 pub struct QuestionSectionTemplate {
     pub global: GlobalVariables,
+    pub papers: Vec<model::paper::Model>,
+    pub questions: Vec<model::question::Model>,
 }
 
 pub struct FullQuestion {

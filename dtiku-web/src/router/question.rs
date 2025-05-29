@@ -8,8 +8,9 @@ use crate::{
 use anyhow::Context;
 use askama::Template;
 use dtiku_paper::{
-    domain::question::QuestionSearch, query::question::PaperQuestionQuery,
-    service::question::QuestionService,
+    domain::question::QuestionSearch,
+    query::question::PaperQuestionQuery,
+    service::{paper::PaperService, question::QuestionService},
 };
 use spring_web::{
     axum::{
@@ -64,9 +65,15 @@ async fn search_question_by_img(
 
 #[get("/question/section")]
 async fn question_section(
-    Query(_query): Query<PaperQuestionQuery>,
+    Query(query): Query<PaperQuestionQuery>,
+    Component(qs): Component<QuestionService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    let t = QuestionSectionTemplate { global };
+    let (questions, papers) = qs.search_question_by_section(&query).await?;
+    let t = QuestionSectionTemplate {
+        global,
+        papers,
+        questions,
+    };
     Ok(Html(t.render().context("render failed")?))
 }

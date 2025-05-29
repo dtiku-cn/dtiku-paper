@@ -30,13 +30,13 @@
             </svg>
         </div>
         <h1 class="text-center mb-4">模块真题打印</h1>
-        <form method="post" action="/question/section">
+        <form action="/question/section">
             <div class="form-group mb-2 mx-n1">
                 <select id="paperIds" name="paperIds" class="form-control" multiple="multiple" required
                     data-placeholder="输入省份或年份等关键词搜索试卷,最多可选20张试卷">
-                    <option selected th:each="p:${papers}" th:value="${p.id}" th:text="${p.title}"
-                        th:data-type="${p.fromType}">
-                    </option>
+                    {%for p in papers%}
+                    <option selected value="{{p.id}}">{{p.title}}</option>
+                    {%endfor%}
                 </select>
             </div>
 
@@ -61,8 +61,8 @@
                         <label for="sectionType" class="input-group-text">题目/答案</label>
                     </div>
                     <select id="sectionType" name="sectionType" class="custom-select">
-                        <option th:each="s:${allSections}" th:value="${s.name()}" th:text="${s.text}"
-                            th:selected="${sectionType==s}"></option>
+                        <option th:each="s:${allSections}" th:value="${s.name()}" th:selected="${sectionType==s}">
+                            ${s.text}</option>
                     </select>
                 </div>
             </div>
@@ -94,15 +94,16 @@
             </div>
         </div>
         <div class="carousel-inner">
-            <div th:each="q,iter : ${questions}" th:class="${iter.index==0?'active':''}">
+            {%for q in questions%}
+            <div class="{%if loop.index==1%}active{%endif%}">
                 <div th:if="${q.material!=null}" class="material" th:each="m:${q.material}">
                     <h4 class="text-center mt-2" th:text="${m.chineseNumber()}"></h4>
-                    <div th:utext="${m.html}"></div>
+                    <div>${m.html}</div>
                 </div>
-                <div th:id="${'q-'+q.id}" class="clearfix mt-3 p-1">
-                    <b class="q-number float-left" th:text="|${iter.index+1}、|"></b>
-                    <a class="q-number float-left text-reset" th:href="'/paper/'+${q.paper.id}+'#'+${q.number}">
-                        <b th:text="|(${q.paper.year}${q.paper.area}第${q.number}题)|"></b>
+                <div id="q-{{q.id}}" class="clearfix mt-3 p-1">
+                    <b class="q-number float-left">{{loop.index}}、</b>
+                    <a class="q-number float-left text-reset" href="/paper/{q.paper.id}#{q.number}">
+                        <b>(${q.paper.year}${q.paper.area}第${q.number}题)</b>
                     </a>
                     <div class="question-wrapper" th:include="${sectionType.name()=='question'}?
                         ~{fragments/question::xingce_question(${q})}:(
@@ -110,6 +111,7 @@
                         ~{fragments/question::xingce_exercise_question(${q},null)})"></div>
                 </div>
             </div>
+            {%endfor%}
         </div>
     </div>
     {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽")%}
@@ -141,7 +143,7 @@
                 closeOnSelect: false,
                 tokenSeparators: [','],
                 ajax: {
-                    url: '/paper/like',
+                    url: '/paper/title/like',
                     dataType: 'json',
                     delay: 250,
                     cache: true,
