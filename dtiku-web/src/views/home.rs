@@ -1,6 +1,5 @@
-use askama::Template;
-
 use super::GlobalVariables;
+use askama::Template;
 
 #[derive(Template)]
 #[template(path = "home.html.min.jinja")]
