@@ -9,7 +9,7 @@ mod user;
 
 use crate::service::user::UserService;
 use crate::views::GlobalVariables;
-use axum_extra::extract::CookieJar;
+use axum_extra::extract::{CookieJar, Host};
 use axum_extra::headers::Cookie;
 use axum_extra::TypedHeader;
 use derive_more::derive::Deref;
@@ -76,7 +76,7 @@ async fn with_context(
     Component(ec_service): Component<ExamCategoryService>,
     Component(sc_service): Component<SystemConfigService>,
     Component(us_service): Component<UserService>,
-    OriginalHost(original_host): OriginalHost,
+    Host(original_host): Host,
     OptionalClaims(claims): OptionalClaims,
     cookies: CookieJar,
     mut req: Request,
@@ -215,26 +215,4 @@ pub fn decode(token: &str) -> anyhow::Result<Claims> {
             KnownWebError::unauthorized("invalid token")
         })?;
     Ok(token_data.claims)
-}
-
-#[derive(Debug, Deref)]
-pub struct OriginalHost(String);
-
-impl<S> FromRequestParts<S> for OriginalHost
-where
-    S: Send + Sync,
-{
-    type Rejection = StatusCode;
-
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let host = parts
-            .headers
-            .get("x-forwarded-host")
-            .or_else(|| parts.headers.get(header::HOST))
-            .and_then(|v| v.to_str().ok())
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| "unknown".into());
-
-        Ok(OriginalHost(host))
-    }
 }

@@ -32,6 +32,7 @@ axum-extra = { workspace = true, features = [
     "cookie",
     "typed-header",
     "multipart",
+    "query",
 ] }
 lazy_static = { workspace = true }
 jsonwebtoken = { workspace = true }

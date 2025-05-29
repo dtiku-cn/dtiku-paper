@@ -1,5 +1,7 @@
 create extension if not exists vector;
 create extension if not exists ltree;
+create extension if not exists pg_trgm;
+
 CREATE TYPE from_type AS ENUM (
 	'fenbi',
 	'huatu',
@@ -39,6 +41,9 @@ create table if not exists paper(
     extra jsonb not null,
     unique(label_id, title)
 );
+create index if not exists idx_paper_title_trgm
+on paper
+using gin (title gin_trgm_ops);
 -- 知识点
 drop table if exists key_point;
 create table if not exists key_point(

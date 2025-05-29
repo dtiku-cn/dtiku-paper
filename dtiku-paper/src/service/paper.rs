@@ -4,7 +4,7 @@ use crate::model::{paper, Material, Question, QuestionMaterial, Solution};
 use crate::query::paper::ListPaperQuery;
 use anyhow::Context;
 use itertools::Itertools;
-use sea_orm::ColumnTrait;
+use sea_orm::{ColumnTrait, QuerySelect};
 use sea_orm::{DbConn, EntityTrait, QueryFilter};
 use spring::plugin::service::Service;
 use spring_sea_orm::pagination::Page;
@@ -57,6 +57,7 @@ impl PaperService {
     pub async fn search_by_name(&self, name: &str) -> anyhow::Result<Vec<paper::Model>> {
         Paper::find()
             .filter(paper::Column::Title.contains(name))
+            .limit(100)
             .all(&self.db)
             .await
             .with_context(|| format!("Paper::search_by_name failed:{name}"))

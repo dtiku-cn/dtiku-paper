@@ -8,18 +8,17 @@ use crate::{
 use anyhow::Context;
 use askama::Template;
 use dtiku_paper::{
-    domain::question::QuestionSearch,
-    query::question::PaperQuestionQuery,
-    service::{paper::PaperService, question::QuestionService},
+    domain::question::QuestionSearch, query::question::PaperQuestionQuery,
+    service::question::QuestionService,
 };
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
-        Extension,
+        Extension, Form,
     },
     error::Result,
     extractor::{Component, Query},
-    get,
+    get, post,
 };
 
 #[get("/question/search")]
@@ -65,7 +64,7 @@ async fn search_question_by_img(
 
 #[get("/question/section")]
 async fn question_section(
-    Query(query): Query<PaperQuestionQuery>,
+    query: axum_extra::extract::Query<PaperQuestionQuery>,
     Component(qs): Component<QuestionService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
