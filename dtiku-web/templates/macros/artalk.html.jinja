@@ -3,7 +3,10 @@
     {% if global.config.show_comments && comments %}
     <link rel="stylesheet" href="https://artalk.dtiku.cn/dist/Artalk.css" />
     <style>
-        .atk-copyright{display: none;}
+        .atk-copyright {
+            display: none;
+        }
+
         .atk-user-profile-btn {
             pointer-events: none;
         }
@@ -73,7 +76,7 @@
         darkMode
     });
     window.artalk = Artalk.init(config);
-    window.themeSwitcher.listener.push(function (dark) {
+    window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {
         artalk.setDarkMode(dark)
     });
     }, false);
