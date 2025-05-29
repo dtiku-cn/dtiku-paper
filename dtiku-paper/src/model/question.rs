@@ -5,7 +5,7 @@ use anyhow::Context;
 use itertools::Itertools;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
-    FromJsonQueryResult, FromQueryResult, QueryFilter,
+    FromJsonQueryResult, FromQueryResult, QueryFilter, QuerySelect,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -205,6 +205,7 @@ impl Entity {
     {
         let qs = Entity::find()
             .filter(search.clone())
+            .limit(100)
             .into_partial_model::<QuestionSelect>()
             .all(db)
             .await

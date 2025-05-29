@@ -8,6 +8,7 @@ pub struct QuestionSearch {
     #[serde(default)]
     pub content: String,
     pub exam_id: Option<i16>,
+    #[serde(rename = "type")]
     pub paper_type: Option<i16>,
 }
 

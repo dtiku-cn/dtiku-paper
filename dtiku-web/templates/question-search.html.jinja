@@ -35,13 +35,31 @@
 
     <div class="input-group has-validation border rounded">
         <div id="question-type" class="input-group-prepend border-right">
+            {%if let Some(t)=query.paper_type%}
+            {%if let Some(pt)=global.get_type_by_id(**t)%}
             <button class="btn btn-outline-secondary dropdown-toggle border-0" type="button" data-toggle="dropdown"
-                th:value="${type==null?'':type.name()}" th:text="${type==null?'全部':type.showText}">
+                value="{{pt.id}}">
+                {{pt.name}}
             </button>
+            {%else%}
+            <button class="btn btn-outline-secondary dropdown-toggle border-0" type="button"
+                data-toggle="dropdown">全部</button>
+            {%endif%}
+            {%else%}
+            <button class="btn btn-outline-secondary dropdown-toggle border-0" type="button"
+                data-toggle="dropdown">全部</button>
+            {%endif%}
             <div class="dropdown-menu shadow-sm">
                 <a class="dropdown-item" href="#" value="">全部</a>
-                <a class="dropdown-item" href="#" th:each="t:${types}" th:value="${t.name()}"
-                    th:text="${t.showText}"></a>
+                {% for p in global.paper_types %}
+                {% if let Some(paper_types) = p.children %}
+                {% for sub_type in paper_types %}
+                <a class="dropdown-item" href="#" value="{{sub_type.id}}">{{p.name ~ '/' ~ sub_type.name}}</a>
+                {% endfor %}
+                {% else %}
+                <a class="dropdown-item" href="#" value="{{p.id}}">{{p.name}}</a>
+                {% endif %}
+                {% endfor %}
             </div>
         </div>
         <input type="text" id="search" placeholder="输入题目关键字就能搜出题目和答案哦！" value="{{query.content}}"

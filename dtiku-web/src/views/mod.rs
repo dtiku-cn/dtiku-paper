@@ -68,6 +68,19 @@ impl GlobalVariables {
         Self::inner_get_paper_type_by_prefix(&self.paper_types, prefix)
     }
 
+    pub fn get_type_by_id(&self, id: i16) -> Option<PaperType> {
+        self.paper_types
+            .iter()
+            .find(|p| p.id == id)
+            .map(|p| PaperType {
+                id: p.id,
+                name: p.name.clone(),
+                prefix: p.prefix.clone(),
+                pid: p.pid,
+                from_ty: p.from_ty.clone(),
+            })
+    }
+
     fn inner_get_paper_type_by_prefix(vec: &Vec<ExamPaperType>, prefix: &str) -> Option<PaperType> {
         for p in vec {
             if p.prefix == prefix {

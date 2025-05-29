@@ -33,7 +33,6 @@ async fn search_question(
         query.exam_id = Some(EXAM_ID.get());
         qs.search_question(&query).await?
     };
-    println!("{:?}", questions.clone());
     let t = QuestionSearchTemplate {
         global,
         questions,
