@@ -37,6 +37,14 @@
         color: #CE1126 !important;
     }
 
+    #float-buttons>div {
+        background-color: white !important;
+    }
+
+    .dark-theme #float-buttons>div {
+        background-color: #282828 !important;
+    }
+
     @media print {
         body {
             background: white !important;
@@ -224,7 +232,7 @@
 {% macro footer() %}
 <footer class="text-center font-weight-lighter d-none d-sm-block d-print-none mb-4" style="font-size:.8rem">
     <a href="https://beian.miit.gov.cn/">赣ICP备17009276号-3</a>
-    <span th:text="|2021 ~ ${temporals.format(temporals.createNow(),'YYYY')}|"></span>
+    <span>2021 ~ {{global.now_year()}}</span>
     &copy;
     网站内容部分来自网络，如有侵权请<a href="mailto:1938304905@qq.com">邮箱</a>联系删除
 </footer>
