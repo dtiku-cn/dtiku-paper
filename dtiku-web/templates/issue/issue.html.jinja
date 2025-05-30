@@ -56,57 +56,59 @@
     <div class="card mb-3">
         <header class="card-header d-flex align-items-center p-3 p-lg-2 pl-lg-3">
             <svg class="icon-svg icon-svg-md mr-2 d-print-none">
-                <use th:xlink:href="|#${issue.topic.icon}|"></use>
+                <use xlink:href="#${issue.topic.icon}"></use>
             </svg>
-            <strong class="d-none d-md-block d-print-none" th:text="|【${issue.topic.text}】|"></strong>
-            <strong class="mr-auto" th:text="${issue.title}"></strong>
-            <a th:if="${issue.userId == user?.id}" class="btn card-link d-flex align-items-center d-print-none"
-                data-toggle="tooltip" title="重新编辑" th:href="|/bbs/issue/${issue.id}/edit|">
+            <strong class="d-none d-md-block d-print-none">【{{issue.topic.text()}}】</strong>
+            <strong class="mr-auto">{{issue.title}}</strong>
+            {%if Some(*issue.user_id) == global.current_user_id()%}
+            <a class="btn card-link d-flex align-items-center d-print-none" data-toggle="tooltip" title="重新编辑"
+                href="/bbs/issue/{{issue.id}}/edit">
                 <svg class="icon-svg icon-svg-sm mr-2">
                     <use xlink:href="#ic-post"></use>
                 </svg>
                 <b>编辑</b>
             </a>
+            {%endif%}
             <a class="btn card-link ml-0 d-lg-flex align-items-center d-none d-print-none"
-                th:href="${user==null?'#loginModal':'javascript:window.print()'}"
-                th:data-toggle="${user==null?'modal':''}">
+                href="{%if global.user.is_none()%}#loginModal{%else%}javascript:window.print(){%endif%}"
+                data-toggle="{%if global.user.is_none()%}modal{%endif%}">
                 <svg class="icon-svg icon-svg-sm mr-2">
                     <use xlink:href="#ic-print"></use>
                 </svg>
                 <b>打印</b>
             </a>
         </header>
-        <div class="card-body vditor-reset" th:utext="${issue.html}"></div>
+        <div class="card-body vditor-reset">{{issue.html|safe}}</div>
         <footer class="card-footer d-flex align-items-center d-print-none">
             <div class="d-flex align-items-center mr-auto">
-                <img th:id="${issue.user.id}" class="border rounded-circle mr-2" style="height:2em"
-                    data-toggle="tooltip" th:src="${issue.user.avatar}" th:title="${issue.user.name}"
-                    th:alt="${issue.user.name}">
-                <b class="d-none d-md-block" th:text="${issue.user.name}"></b>
-                <span th:text="|发布于${temporals.format(issue.created,'yyyy-MM-dd HH:mm')}|"></span>
+                <img id="{{issue.user_id}}" class="border rounded-circle mr-2" style="height:2em" data-toggle="tooltip"
+                    src="${issue.user.avatar}" title="${issue.user.name}" alt="${issue.user.name}">
+                <b class="d-none d-md-block">${issue.user.name}</b>
+                <span>发布于{{global.format(issue.created, "%Y-%m-%d %H:%M")}}</span>
             </div>
             <a id="agree" class="card-link d-flex align-items-center" title="点赞"
-                th:data-toggle="${user==null?'modal':'tooltip'}"
-                th:href="${user==null?'#loginModal':'javascript:void(0)'}"
-                th:data-agree="${issue.agreeUsers.contains(user?.id)}"
+                data-toggle="{%if global.user.is_none()%}modal{%else%}tooltip{%endif%}"
+                href="{%if global.user.is_none()%}#loginModal{%else%}javascript:void(0){%endif%}"
+                data-agree="${issue.agreeUsers.contains(user?.id)}"
                 th:classappend="${issue.agreeUsers.contains(user?.id)?'text-primary':'text-secondary'}">
                 <svg class="icon-svg icon-svg-md mr-2">
                     <use xlink:href="#ic-agree"></use>
                 </svg>
-                <b class="agree-count" th:text="${issue.agree}"></b>
+                <b class="agree-count">${issue.agree}</b>
             </a>
         </footer>
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
     <script type="module" defer src="/static/vendor/venny/venny.esm.js"></script>
-    <script th:if="${user!=null}">
+    {% if global.user.is_some() %}
+    <script>
         $(function () {
             $("#agree").click(function () {
                 var $this = $(this);
                 $.ajax({
                     method: 'POST',
-                    url: "/bbs/issue/[[${issue.id}]]/agree?agree=" + !Boolean($this.data('agree'))
+                    url: "/bbs/issue/{{issue.id}}}/agree?agree=" + !Boolean($this.data('agree'))
                 }).done(function (agrees) {
                     var agree = agrees.includes([[${ user?.id }]]);
                     $this.data('agree', agree).toggleClass('text-primary', agree).toggleClass('text-secondary', !agree);
@@ -115,6 +117,7 @@
             });
         })
     </script>
+    {%endif%}
     {% call painter::painter() %}
 </body>
 

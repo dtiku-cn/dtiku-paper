@@ -1,6 +1,6 @@
 use axum_extra::extract::CookieJar;
 use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
-use chrono::Datelike;
+use chrono::{Datelike, NaiveDateTime};
 use dtiku_base::{model::user_info, service};
 use dtiku_paper::domain::exam_category::ExamPaperType;
 use paper::PaperType;
@@ -55,8 +55,16 @@ impl GlobalVariables {
         now.format("%Y-%m-%d").to_string()
     }
 
+    pub fn format(&self, date: &NaiveDateTime, fmt: &str) -> String {
+        date.format(fmt).to_string()
+    }
+
     pub fn uri_starts_with(&self, prefix: &str) -> bool {
         self.request_uri.path().starts_with(prefix)
+    }
+
+    pub fn current_user_id(&self) -> Option<i32> {
+        self.user.as_ref().map(|u| u.id)
     }
 
     pub fn has_cookie(&self, cookie_name: &str) -> bool {

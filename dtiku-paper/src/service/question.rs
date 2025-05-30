@@ -35,7 +35,7 @@ impl QuestionService {
         Ok((qs, ps))
     }
 
-    pub async fn full_question_by_id(&self, id: i32) -> anyhow::Result<()> {
+    pub async fn full_question_by_id(&self, _id: i32) -> anyhow::Result<()> {
         todo!()
     }
 }

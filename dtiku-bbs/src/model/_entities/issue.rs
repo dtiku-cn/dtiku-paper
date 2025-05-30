@@ -13,7 +13,9 @@ pub struct Model {
     pub title: String,
     #[sea_orm(column_type = "Text")]
     pub markdown: String,
-    pub user_id: i64,
+    #[sea_orm(column_type = "Text")]
+    pub html: String,
+    pub user_id: i32,
     pub created: DateTime,
     pub modified: DateTime,
 }
