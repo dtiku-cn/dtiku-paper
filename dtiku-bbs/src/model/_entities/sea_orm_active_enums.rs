@@ -53,6 +53,6 @@ impl TopicType {
         self.get_message().unwrap_or_default()
     }
     pub fn icon(&self) -> String {
-        format!("ic-{}", self.get_message().unwrap_or_default())
+        format!("ic-{}", self.to_string())
     }
 }
