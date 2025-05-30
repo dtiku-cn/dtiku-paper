@@ -54,16 +54,27 @@ impl Entity {
     {
         let value = Self::find_cached_value_by_key(db, key).await?;
         let v = match value {
-            Some(v) => Some(
-                serde_json::from_value(v)
-                    .with_context(|| format!("parse json failed for {key:?}"))?,
-            ),
+            Some(v) => match v {
+                Value::Null => None,
+                Value::String(s) => {
+                    if s.is_empty() {
+                        None
+                    } else {
+                        serde_json::from_str(&format!("{s}"))
+                            .with_context(|| format!("parse json failed for {key:?}"))?
+                    }
+                }
+                _ => Some(
+                    serde_json::from_value(v)
+                        .with_context(|| format!("parse json failed for {key:?}"))?,
+                ),
+            },
             None => None,
         };
         Ok(v)
     }
 
-    #[cached(key = "config:{key:?}",expire = 86400)]
+    #[cached(key = "config:{key:?}", expire = 86400)]
     pub async fn find_cached_value_by_key<C>(
         db: &C,
         key: SystemConfigKey,
