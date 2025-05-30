@@ -16,7 +16,7 @@ use strum::EnumMessage;
     Deserialize,
     strum :: EnumString,
     strum :: EnumMessage,
-    strum :: Display
+    strum :: Display,
 )]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "topic_type")]
 #[serde(rename_all = "snake_case")]
@@ -43,13 +43,16 @@ pub enum TopicType {
     #[sea_orm(string_value = "share")]
     #[strum(message = "分享")]
     Share,
-    #[sea_orm(string_value = "work")]
-    #[strum(message = "工作与生活")]
-    Work,
+    #[sea_orm(string_value = "growth")]
+    #[strum(message = "工作与成长")]
+    Growth,
 }
 
 impl TopicType {
     pub fn text(&self) -> &'static str {
         self.get_message().unwrap_or_default()
+    }
+    pub fn icon(&self) -> String {
+        format!("ic-{}", self.get_message().unwrap_or_default())
     }
 }

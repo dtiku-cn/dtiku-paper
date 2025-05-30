@@ -1,8 +1,9 @@
 pub use super::_entities::user_info::*;
+use anyhow::Context;
 use dtiku_macros::cached;
 use sea_orm::{
-    sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ConnectionTrait, DbErr,
-    EntityTrait,
+    sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ColumnTrait,
+    ConnectionTrait, DbErr, EntityTrait, QueryFilter,
 };
 use spring::async_trait;
 
@@ -31,7 +32,7 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 impl Entity {
-    #[cached(key = "user:{id}",expire = 86400)]
+    #[cached(key = "user:{id}", expire = 86400)]
     pub async fn find_user_by_id<C: ConnectionTrait>(
         db: &C,
         id: i32,
@@ -39,6 +40,17 @@ impl Entity {
         Entity::find_by_id(id)
             .one(db)
             .await
-            .with_context(|| format!("UserInfo::find_by_id({id}) failed"))
+            .with_context(|| format!("UserInfo::find_user_by_id({id}) failed"))
+    }
+
+    pub async fn find_user_by_ids<C: ConnectionTrait>(
+        db: &C,
+        ids: Vec<i32>,
+    ) -> anyhow::Result<Vec<Model>> {
+        Entity::find()
+            .filter(Column::Id.is_in(ids))
+            .all(db)
+            .await
+            .context("UserInfo::find_user_by_ids() failed")
     }
 }

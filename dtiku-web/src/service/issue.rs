@@ -1,9 +1,12 @@
 use crate::rpc::artalk::{page_comment, page_pv};
 use crate::views::bbs::FullIssue;
+use dtiku_base::model::{user_info, UserInfo};
 use dtiku_bbs::model::{Issue, IssueQuery};
+use itertools::Itertools;
 use spring::plugin::service::Service;
 use spring_sea_orm::pagination::{Page, Pagination};
 use spring_sea_orm::DbConn;
+use std::collections::HashMap;
 
 #[derive(Clone, Service)]
 pub struct IssueService {
@@ -16,11 +19,16 @@ impl IssueService {
         let issue = Issue::find_issue_by_id(&self.db, id).await?;
         match issue {
             Some(i) => {
+                let u = UserInfo::find_user_by_id(&self.db, i.user_id).await?;
+                let mut m = HashMap::new();
+                if let Some(user) = u {
+                    m.insert(user.id, user);
+                }
                 let key = format!("/bbs/issue/{}", i.id);
                 let page_keys = vec![key];
                 let pv = page_pv(&page_keys).await;
                 let cmt = page_comment(&page_keys).await;
-                Ok(Some(FullIssue::new(i, &pv, &cmt)))
+                Ok(Some(FullIssue::new(i, &pv, &cmt, &mut m)))
             }
             None => Ok(None),
         }
@@ -39,8 +47,12 @@ impl IssueService {
             .iter()
             .map(|i| format!("/bbs/issue/{}", i.id))
             .collect();
+        let user_ids = issues.iter().map(|i| i.user_id).collect_vec();
+        let users = UserInfo::find_user_by_ids(&self.db, user_ids).await?;
+        let mut id_u_map: HashMap<i32, user_info::Model> =
+            users.into_iter().map(|u| (u.id, u)).collect();
         let pv = page_pv(&page_keys).await;
         let cmt = page_comment(&page_keys).await;
-        Ok(issues.map(|i| FullIssue::new(i, &pv, &cmt)))
+        Ok(issues.map(|i| FullIssue::new(i, &pv, &cmt, &mut id_u_map)))
     }
 }

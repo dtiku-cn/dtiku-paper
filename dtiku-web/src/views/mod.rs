@@ -59,6 +59,43 @@ impl GlobalVariables {
         date.format(fmt).to_string()
     }
 
+    pub fn format_with_now(&self, date_time: &NaiveDateTime) -> String {
+        let end_time = chrono::Local::now().naive_local();
+
+        let start_date = date_time.date();
+        let end_date = end_time.date();
+        let period = end_date.signed_duration_since(start_date);
+        let days = period.num_days();
+
+        // 如果超过一个月（按30天近似）或一年
+        if days >= 30 {
+            return date_time.format("%Y-%m-%d").to_string();
+        }
+
+        if days < 1 {
+            let duration = end_time - *date_time;
+            let seconds = duration.num_seconds();
+            let minutes = seconds / 60;
+
+            if minutes > 60 {
+                let hours = minutes / 60;
+                return format!("{}小时前", hours);
+            } else if minutes > 3 {
+                return format!("{}分钟前", minutes);
+            } else if minutes > 1 {
+                return format!("{}分{}前", minutes, seconds % 60);
+            } else {
+                return format!("{}秒前", seconds);
+            }
+        }
+
+        if days < 7 {
+            return format!("{}天前", days);
+        }
+
+        date_time.format("%Y-%m-%d").to_string()
+    }
+
     pub fn uri_starts_with(&self, prefix: &str) -> bool {
         self.request_uri.path().starts_with(prefix)
     }

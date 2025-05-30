@@ -2,7 +2,7 @@ use super::{JobScheduler, PaperSyncer};
 use crate::plugins::embedding::Embedding;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
-use dtiku_paper::model::{exam_category, label, paper, ExamCategory, FromType, Label};
+use dtiku_paper::model::{exam_category, paper, ExamCategory, FromType};
 use futures::StreamExt;
 use itertools::Itertools;
 use pinyin::ToPinyin;

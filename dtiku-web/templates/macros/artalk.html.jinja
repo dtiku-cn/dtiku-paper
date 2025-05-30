@@ -73,7 +73,10 @@
         },
         site: '公考加油站',
         pageview: pv,
-        darkMode
+        darkMode,
+        pageVote: {
+            activeClass: 'text-primary',
+        }
     });
     window.artalk = Artalk.init(config);
     window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {

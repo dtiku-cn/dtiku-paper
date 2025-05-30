@@ -1,6 +1,7 @@
 use super::GlobalVariables;
 use askama::Template;
 use chrono::NaiveDateTime;
+use dtiku_base::model::user_info;
 use dtiku_bbs::model::{issue, IssueQuery, TopicType};
 use spring_sea_orm::pagination::Page;
 use strum::IntoEnumIterator;
@@ -24,6 +25,7 @@ pub struct FullIssue {
     pub modified: NaiveDateTime,
     pub view: i32,
     pub comment: i32,
+    pub user: Option<user_info::Model>,
 }
 
 impl FullIssue {
@@ -31,9 +33,11 @@ impl FullIssue {
         issue: issue::Model,
         page_pv: &std::collections::HashMap<String, i32>,
         page_comment: &std::collections::HashMap<String, i32>,
+        id_user_map: &mut std::collections::HashMap<i32, user_info::Model>,
     ) -> Self {
         let key = format!("/bbs/issue/{}", issue.id);
         FullIssue {
+            user: id_user_map.remove(&issue.user_id),
             id: issue.id,
             title: issue.title,
             topic: issue.topic,
@@ -45,6 +49,12 @@ impl FullIssue {
             view: page_pv.get(&key).unwrap_or(&0).to_owned(),
             comment: page_comment.get(&key).unwrap_or(&0).to_owned(),
         }
+    }
+
+    pub fn author_name(&self) -> String {
+        self.user
+            .as_ref()
+            .map_or_else(|| "未知用户".to_string(), |u| u.name.clone())
     }
 }
 
