@@ -19,7 +19,7 @@
                         <input type="radio" name="level" id="{{l.to_string()}}" value="{{l.to_string()}}"
                             data-origin-amount="{{l.original_amount_text()}}"
                             data-amount="{{l.amount_text()}} / {{l.days()}}天" required>
-                        <b>${l.title}</b>
+                        <b>{{l.title()}}</b>
                     </label>
                     {%endfor%}
                 </div>
@@ -54,8 +54,8 @@
             </div>
         </div>
     </form>
-    <script src="/static/vendor/bootstrap/4.6.1/js/bootstrap.bundle.min.js"></script>
-    <script>${ system_analyticsScript }</script>
+    <script src="/static/vendor/bootstrap-4.6.2/js/bootstrap.bundle.min.js"></script>
+    <script>{{ global.config.analytics_script }}</script>
     <script>
         $(function () {
             $("input[name='level']").change(function () {

@@ -1,6 +1,10 @@
 use super::Claims;
-use crate::query::pay::TradeCreateQuery;
+use crate::{
+    query::pay::TradeCreateQuery,
+    views::{pay::PayTradeCreateTemplate, GlobalVariables},
+};
 use anyhow::Context;
+use askama::Template;
 use dtiku_pay::{
     alipay_sdk_rust::biz::{self, BizContenter as _},
     Alipay,
@@ -8,7 +12,7 @@ use dtiku_pay::{
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
-        Form,
+        Extension, Form,
     },
     error::Result,
     extractor::Component,
@@ -16,8 +20,12 @@ use spring_web::{
 };
 
 #[get("/pay/render")]
-async fn render_pay() -> Result<impl IntoResponse> {
-    Ok(Html(""))
+async fn render_pay(
+    claims: Claims,
+    Extension(global): Extension<GlobalVariables>,
+) -> Result<impl IntoResponse> {
+    let t = PayTradeCreateTemplate { global };
+    Ok(Html(t.render().context("render failed")?))
 }
 
 #[get("/pay/trade")]

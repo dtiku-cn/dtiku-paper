@@ -3,10 +3,10 @@ mod home;
 mod idiom;
 mod img;
 mod paper;
+mod pay;
 mod question;
 mod shenlun_category;
 mod user;
-mod pay;
 
 use crate::service::user::UserService;
 use crate::views::GlobalVariables;
@@ -23,6 +23,7 @@ use spring::config::env::Env;
 use spring::tracing::{self, Level};
 use spring_opentelemetry::trace;
 use spring_web::axum::http::request::Parts;
+use spring_web::axum::response::Redirect;
 use spring_web::axum::RequestPartsExt;
 use spring_web::error::{KnownWebError, WebError};
 use spring_web::extractor::FromRequestParts;
@@ -183,7 +184,7 @@ where
                 if token.is_empty() {
                     None
                 } else {
-                    Some(decode(token)?)
+                    decode(token).ok()
                 }
             }
             None => None,
