@@ -1,10 +1,14 @@
 use super::Claims;
 use crate::{
     query::pay::TradeCreateQuery,
-    views::{pay::PayTradeCreateTemplate, GlobalVariables},
+    views::{
+        pay::{PayRedirectTemplate, PayTradeCreateTemplate},
+        GlobalVariables,
+    },
 };
 use anyhow::Context;
 use askama::Template;
+use axum_client_ip::ClientIp;
 use dtiku_pay::{
     alipay_sdk_rust::biz::{self, BizContenter as _},
     service::pay_order::PayOrderService,
@@ -15,7 +19,7 @@ use spring_web::{
         response::{Html, IntoResponse},
         Extension, Form,
     },
-    error::Result,
+    error::{KnownWebError, Result},
     extractor::Component,
     get, post,
 };
@@ -35,13 +39,21 @@ async fn render_pay(
 #[post("/pay/create")]
 async fn create_trade(
     claims: Claims,
+    ClientIp(client_ip): ClientIp,
     Component(ps): Component<PayOrderService>,
+    Extension(global): Extension<GlobalVariables>,
     Form(trade): Form<TradeCreateQuery>,
 ) -> Result<impl IntoResponse> {
-    println!("{trade:?}");
-    ps.create_order(claims.user_id, trade.level, trade.pay_from)
-        .await?;
-    Ok("支付接口正在施工中...")
+    let qrcode_url = ps
+        .create_order(claims.user_id, trade.level, trade.pay_from, client_ip)
+        .await?
+        .ok_or_else(|| KnownWebError::internal_server_error("支付码生成失败"))?;
+    let t = PayRedirectTemplate {
+        global,
+        qrcode_url,
+        pay_from: trade.pay_from,
+    };
+    Ok(Html(t.render().context("render failed")?))
 }
 
 #[post("/pay/alipay/callback")]

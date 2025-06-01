@@ -1,0 +1,30 @@
+{%- import "macros/general.html.min.jinja" as general -%}
+{%- import "macros/qrcode.html.jinja" as qrcode -%}
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>订单创建成功，等待付款...</title>
+    <style>
+        .qrcode img {
+            user-select: auto;
+            pointer-events: auto;
+            -moz-user-select: auto;
+            -webkit-user-select: auto;
+            -o-user-select: auto;
+            -webkit-touch-callout: none;
+        }
+    </style>
+</head>
+
+<body style="display: flex;flex-direction: column;justify-content: center;align-items:center;user-select: none">
+    <p>付款给<q>公考加油站</q></p>
+    <div class="qrcode" style="display: flex;justify-content: center;position:relative" data-qrcode="{{qrcode_url}}"
+        data-icon="{{pay_from}}"></div>
+    <script src="/static/vendor/jquery-1.10.2/jquery.min.js"></script>
+    <script src="{{global.config.iconfont_js_url}}"></script>
+    {% call qrcode::qr_code_script(256) %}
+    <script>{{global.config.analytics_script}}</script>
+</body>
+
+</html>

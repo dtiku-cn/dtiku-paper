@@ -1,0 +1,49 @@
+{% macro qr_code_script(width) %}
+<script src='/static/vendor/qrcodejs-1.0.0/qrcode.min.js'></script>
+<script>
+    $(function () {
+        function encodeQrCodeUrl(text) {
+            if (text.startsWith("http") || text.startsWith("wxp:")) {
+                return text;
+            }
+            if (location.host.startsWith('localhost')) {
+                return location.host + text;
+            } else {
+                return "https://p.hufeifei.cn" + text;
+            }
+        }
+
+        $('.qrcode').each(function (i, e) {
+            var $e = $(e);
+            var text = $e.data('qrcode');
+            var url = encodeQrCodeUrl(text);
+            $e.data('qrcode-instance', new QRCode(e, {
+                text: url,
+                width: [[${ w }]],
+                height: [[${ w }]],
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H,
+                logoWidth: 32,
+                logoHeight: 32
+            }));
+            if ($e.data('icon')) {
+                var style = 'position:absolute;' +
+                    'overflow: hidden;' +
+                    'font-size: 50px;' +
+                    'width:32px;' +
+                    'height:32px;' +
+                    'top:50%;' +
+                    'left:50%;' +
+                    'margin-left:-16px;' +
+                    'margin-top:-15px;' +
+                    'border-radius: 4px;' +
+                    'background: white;';
+                $e.css("position", "relative").append("<svg style='" + style + "'>\n" +
+                    "<use xlink:href=\"#ic-" + $e.data('icon') + "\"></use>\n" +
+                    "</svg>");
+            }
+        })
+    })
+</script>
+{% endmacro qr_code_script %}

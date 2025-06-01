@@ -7,6 +7,7 @@ use strum::{EnumMessage, EnumProperty};
 #[derive(
     Debug,
     Clone,
+    Copy,
     PartialEq,
     Eq,
     EnumIter,
@@ -36,7 +37,7 @@ pub enum OrderLevel {
 }
 
 impl OrderLevel {
-    pub fn days(&self) -> i64 {
+    pub fn days(&self) -> i32 {
         match self {
             Self::Monthly => 30,
             Self::Quarterly => 90,
@@ -44,7 +45,7 @@ impl OrderLevel {
             Self::Annual => 360,
         }
     }
-    pub fn discount_rate(&self) -> f64 {
+    pub fn discount_rate(&self) -> f32 {
         match self {
             Self::Monthly => 1.0,
             Self::Quarterly => 0.968,
@@ -57,7 +58,7 @@ impl OrderLevel {
     }
 
     #[inline]
-    pub fn original_amount(&self) -> i64 {
+    pub fn original_amount(&self) -> i32 {
         return self.days() / 30 * 1000;
     }
 
@@ -67,12 +68,12 @@ impl OrderLevel {
     }
 
     #[inline]
-    pub fn discount(&self) -> i64 {
-        return ((self.original_amount() as f64) * self.discount_rate()) as i64;
+    pub fn discount(&self) -> i32 {
+        return ((self.original_amount() as f32) * self.discount_rate()) as i32;
     }
 
     #[inline]
-    pub fn amount(&self) -> i64 {
+    pub fn amount(&self) -> i32 {
         return self.discount() / 100 * 100;
     }
 
@@ -85,6 +86,7 @@ impl OrderLevel {
 #[derive(
     Debug,
     Clone,
+    Copy,
     PartialEq,
     Eq,
     EnumIter,
@@ -104,7 +106,7 @@ pub enum PayFrom {
     Alipay,
     #[sea_orm(string_value = "wechat")]
     #[strum(message = "微信")]
-    Wechat
+    Wechat,
 }
 
 impl PayFrom {
