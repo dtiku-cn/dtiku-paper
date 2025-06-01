@@ -71,9 +71,3 @@ pub struct IssueEditorTemplate {
     pub global: GlobalVariables,
     pub issue: Option<FullIssue>,
 }
-
-impl IssueEditorTemplate {
-    pub fn topic(&self) -> Option<TopicType> {
-        self.issue.as_ref().map(|i| i.topic)
-    }
-}

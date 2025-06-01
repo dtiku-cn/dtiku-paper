@@ -13,6 +13,7 @@ pub struct Model {
     pub user_id: i32,
     pub level: OrderLevel,
     pub pay_from: PayFrom,
+    pub confirm: Option<DateTime>,
     pub created: DateTime,
     pub modified: DateTime,
 }

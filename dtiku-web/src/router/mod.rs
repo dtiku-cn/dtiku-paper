@@ -23,7 +23,6 @@ use spring::config::env::Env;
 use spring::tracing::{self, Level};
 use spring_opentelemetry::trace;
 use spring_web::axum::http::request::Parts;
-use spring_web::axum::response::Redirect;
 use spring_web::axum::RequestPartsExt;
 use spring_web::error::{KnownWebError, WebError};
 use spring_web::extractor::FromRequestParts;
@@ -43,24 +42,22 @@ use std::env;
 use tokio::task_local;
 
 pub fn routers() -> Router {
-    let trace_layer = match Env::init() {
-        Env::Dev => {
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::default().level(Level::INFO))
-                .on_request(DefaultOnRequest::default().level(Level::INFO))
-                .on_response(DefaultOnResponse::default().level(Level::INFO))
-                .on_failure(DefaultOnFailure::default().level(Level::INFO))
-                .on_eos(DefaultOnEos::default());
-        }
-        _ => {
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::default().level(Level::INFO))
-                .on_request(DefaultOnRequest::default())
-                .on_response(DefaultOnResponse::default())
-                .on_failure(DefaultOnFailure::default())
-                .on_eos(DefaultOnEos::default());
-        }
+    let env = Env::init();
+    let trace_layer = match env {
+        Env::Dev => TraceLayer::new_for_http()
+            .make_span_with(DefaultMakeSpan::default().level(Level::INFO))
+            .on_request(DefaultOnRequest::default().level(Level::INFO))
+            .on_response(DefaultOnResponse::default().level(Level::INFO))
+            .on_failure(DefaultOnFailure::default().level(Level::INFO))
+            .on_eos(DefaultOnEos::default()),
+        _ => TraceLayer::new_for_http()
+            .make_span_with(DefaultMakeSpan::default().level(Level::INFO))
+            .on_request(DefaultOnRequest::default())
+            .on_response(DefaultOnResponse::default())
+            .on_failure(DefaultOnFailure::default())
+            .on_eos(DefaultOnEos::default()),
     };
+
     let http_tracing_layer = trace::HttpLayer::server(Level::INFO);
     spring_web::handler::auto_router()
         .route_layer(middleware::from_fn(with_context))

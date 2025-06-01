@@ -6,11 +6,7 @@ use alipay_sdk_rust::{biz, response::TradePrecreateResponse};
 use anyhow::Context;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, DbConn};
 use spring::{plugin::service::Service, tracing};
-use std::net::IpAddr;
-use wechat_pay_rust_sdk::{
-    model::{H5Params, H5SceneInfo},
-    response::H5Response,
-};
+use wechat_pay_rust_sdk::{model::NativeParams, response::NativeResponse};
 
 #[derive(Clone, Service)]
 pub struct PayOrderService {
@@ -18,8 +14,8 @@ pub struct PayOrderService {
     db: DbConn,
     #[inject(component)]
     alipay: Alipay,
-    // #[inject(component)]
-    // wechat: WechatPayClient,
+    #[inject(component)]
+    wechat: WechatPayClient,
 }
 
 impl PayOrderService {
@@ -28,7 +24,6 @@ impl PayOrderService {
         user_id: i32,
         level: OrderLevel,
         from: PayFrom,
-        ip_addr: IpAddr,
     ) -> anyhow::Result<Option<String>> {
         let order = pay_order::ActiveModel {
             user_id: Set(user_id),
@@ -41,14 +36,14 @@ impl PayOrderService {
         .context("创建订单失败")?;
 
         let subject = format!("公考加油站{}会员", level.title());
-        let out_trade_no = order.id.to_string();
+        let out_trade_no = format!("{:06}", order.id); // 微信“商户订单号”字符串规则校验最少6字节
         let amount = level.amount();
         let qrcode_url = match from {
             PayFrom::Alipay => {
                 let mut biz_content = biz::TradePrecreateBiz::new();
                 biz_content.set_subject(subject.into());
                 biz_content.set_out_trade_no(out_trade_no.into());
-                biz_content.set_total_amount(level.amount().into());
+                biz_content.set_total_amount(amount.into());
                 let resp = self
                     .alipay
                     .trade_precreate(&biz_content)
@@ -64,29 +59,19 @@ impl PayOrderService {
                 response.qr_code
             }
             PayFrom::Wechat => {
-                // let resp = self
-                //     .wechat
-                //     .h5_pay(H5Params::new(
-                //         subject,
-                //         out_trade_no,
-                //         amount.into(),
-                //         H5SceneInfo::new(
-                //             ip_addr.to_string().as_str(),
-                //             "公考加油站",
-                //             "https://gwy.dtiku.cn",
-                //         ),
-                //     ))
-                //     .await
-                //     .context("微信订单创建失败")?;
+                let resp = self
+                    .wechat
+                    .native_pay(NativeParams::new(subject, out_trade_no, amount.into()))
+                    .await
+                    .context("微信订单创建失败")?;
 
-                // let H5Response {
-                //     h5_url,
-                //     code,
-                //     message,
-                // } = resp;
-                // tracing::info!("wechat pay resp code ==> {code:?}, message ==> {message:?}");
-                // h5_url
-                Some("https://pay.weixin.qq.com".to_string())
+                let NativeResponse {
+                    code_url,
+                    code,
+                    message,
+                } = resp;
+                tracing::info!("wechat pay resp code ==> {code:?}, message ==> {message:?}");
+                code_url
             }
         };
         Ok(qrcode_url)

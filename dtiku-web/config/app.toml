@@ -1,9 +1,9 @@
 [web]
 port = 18080
 graceful = true
+connect_info = true
 
 [web.middlewares]
-connect_info = true
 static = { enable = true, uri = "/static", path = "static", precompressed = true }
 # 因为和opentelemetry冲突所以写到代码里
 logger = { enable = false, level = "${WEB_LOG_LEVEL:info}", override_filter = "${WEB_LOG_LEVEL_FILTER:info}" }

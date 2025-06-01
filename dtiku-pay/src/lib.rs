@@ -43,10 +43,10 @@ impl Plugin for PayPlugin {
             .build()
             .expect("build alipay client failed");
 
-        // let wechat_pay = WechatPay::from_env();
+        let wechat_pay = WechatPay::from_env();
 
-        app.add_component(Alipay(Arc::new(alipay)));
-            // .add_component(WechatPayClient(Arc::new(wechat_pay)));
+        app.add_component(Alipay(Arc::new(alipay)))
+            .add_component(WechatPayClient(Arc::new(wechat_pay)));
     }
 }
 
