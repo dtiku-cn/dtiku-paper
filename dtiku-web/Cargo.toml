@@ -19,6 +19,7 @@ dtiku-base = { path = "../dtiku-base", version = "0.0.1" }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
 dtiku-bbs = { path = "../dtiku-bbs", version = "0.0.1" }
 dtiku-macros = { path = "../dtiku-macros", version = "0.0.1" }
+dtiku-pay = { path = "../dtiku-pay", version = "0.0.1" }
 askama = { workspace = true, features = ["serde_json"] }
 anyhow = { workspace = true }
 chrono = { workspace = true }
@@ -45,6 +46,7 @@ sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 cookie = { workspace = true }
 reqwest_dav = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
+rustls = { workspace = true }
 
 [build-dependencies]
 minify-html = "0.16"

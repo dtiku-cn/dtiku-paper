@@ -1,0 +1,82 @@
+{%- import "macros/general.html.min.jinja" as general -%}
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>创建订单</title>
+    {% call general::headerfiles() %}
+</head>
+
+<body class="d-flex flex-column align-items-center" style="width: 100%;padding:20px">
+    <form method="post" action="/pay/create/${userId}" style="width:90%;min-width:300px">
+        <input type="hidden" name="userId" value="${userId}">
+        <div class="form-group d-flex flex-wrap w-100">
+            <label class="col-sm-3 col-form-label text-sm-right">时长</label>
+            <div class="col-sm-9">
+                <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                    {%for l in OrderLevel::iter() %}
+                    <label class="btn btn-outline-dark">
+                        <input type="radio" name="level" id="{{l.to_string()}}" value="{{l.to_string()}}"
+                            data-origin-amount="{{l.original_amount_text()}}"
+                            data-amount="{{l.amount_text()}} / {{l.days()}}天" required>
+                        <b>${l.title}</b>
+                    </label>
+                    {%endfor%}
+                </div>
+            </div>
+        </div>
+        <div class="form-group d-flex flex-wrap w-100">
+            <label class="col-sm-3 col-form-label text-sm-right">价格</label>
+            <div class="col-sm-9 d-flex align-items-center" id="price">-</div>
+        </div>
+        <div class="form-group d-flex flex-wrap w-100">
+            <label class="col-sm-3 col-form-label text-sm-right">付款方式</label>
+            <div class="col-sm-9">
+                <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                    {%for p in PayFrom::iter() %}
+                    <label class="btn btn-outline-dark">
+                        <input type="radio" name="tradeFrom" id="{{p.to_string()}}" value="{{p.to_string()}}" required>
+                        <span class="d-flex align-items-center justify-content-center">
+                            <svg class="icon-svg icon-svg-md mr-1">
+                                <use xlink:href="#ic-{{p.to_string()}}"></use>
+                            </svg>
+                            <b>{{p.title()}}</b>
+                        </span>
+                    </label>
+                    {%endfor%}
+                </div>
+            </div>
+        </div>
+        <div class="form-group d-flex flex-wrap w-100">
+            <label class="col-sm-3"></label>
+            <div class="col-sm-9">
+                <input type="submit" class="btn btn-primary btn-block" value="提交">
+            </div>
+        </div>
+    </form>
+    <script src="/static/vendor/bootstrap/4.6.1/js/bootstrap.bundle.min.js"></script>
+    <script>${ system_analyticsScript }</script>
+    <script>
+        $(function () {
+            $("input[name='level']").change(function () {
+                var amount = $(this).data('amount'), originalAmount = $(this).data('origin-amount');
+                if (originalAmount === amount) {
+                    $("#price").text(amount);
+                } else {
+                    $("#price").html("<del>" + originalAmount + "</del><b class='ml-1 text-success'>" + amount + "</b>");
+                }
+            })
+            // $.ajax({
+            //     type: 'post',
+            //     url: "/pay/wait-pay-order/[[${user.id}]]",
+            //     success: function (data) {
+            //         if (data && !data.confirm) {
+            //             console.log("未付款订单", data);
+            //         }
+            //     }
+            // })
+        })
+    </script>
+</body>
+
+</html>

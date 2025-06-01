@@ -60,7 +60,7 @@ impl Entity {
                     if s.is_empty() {
                         None
                     } else {
-                        serde_json::from_str(&format!("{s}"))
+                        serde_json::from_str(&format!("\"{s}\""))
                             .with_context(|| format!("parse json failed for {key:?}"))?
                     }
                 }

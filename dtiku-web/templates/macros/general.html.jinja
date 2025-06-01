@@ -293,7 +293,7 @@
             sessionStorage.setItem('login-pre', location.href);
         });
         $("#payModal").on('show.bs.modal', function () {
-            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"/pay/create/[[${user?.id}]]\" width=\"400\" height=\"400\"" +
+            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"/pay/render\" width=\"400\" height=\"400\"" +
                 " style=\"overflow:hidden;background:url('" + window.loadingGif + "') center center no-repeat\"></iframe>");
         });
         $("#revoke").click(function () {

@@ -3,3 +3,7 @@ port = 8080
 
 [opentelemetry]
 enable = true
+
+[pay]
+alipay_api_url = "${ALIPAY_API_URL:https://openapi.alipay.com/gateway.do}"
+alipay_app_id = "${ALIPAY_APP_ID:2021005156629151}"

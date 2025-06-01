@@ -10,6 +10,7 @@ pub mod bbs;
 pub mod home;
 pub mod idiom;
 pub mod paper;
+pub mod pay;
 pub mod question;
 pub mod shenlun_category;
 pub mod user;

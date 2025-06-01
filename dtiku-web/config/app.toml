@@ -45,3 +45,13 @@ artalk_url = "${ARTALK_GRPC_URL:http://localhost:18090}"
 host = "${WEB_DAV_HOST:https://alist.dtiku.cn/dav}"
 username = "${WEB_DAV_USERNAME:xxx}"
 password = "${WEB_DAV_PASSWORD:xxx}"
+
+[pay]
+## https://openhome.alipay.com/develop/sandbox/app
+alipay_api_url = "${ALIPAY_API_URL:https://openapi-sandbox.dl.alipaydev.com/gateway.do}"
+alipay_app_id = "${ALIPAY_APP_ID:2021000149633962}"
+alipay_root_cert_sn = "${ALIPAY_ROOT_CERT_SN}"
+alipay_public_key = "${ALIPAY_PUBLIC_KEY}"
+alipay_app_cert_sn = "${ALIPAY_APP_CERT_SN}"
+alipay_app_private_key = "${ALIPAY_APP_PRIVATE_KEY}"
+alipay_app_public_key = "${ALIPAY_APP_PUBLIC_KEY}"

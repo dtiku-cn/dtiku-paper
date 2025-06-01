@@ -1,0 +1,21 @@
+[package]
+name = "dtiku-pay"
+version = "0.0.1"
+edition = "2021"
+publish = ["crates-io"]
+
+[dependencies]
+spring = { workspace = true }
+spring-redis = { workspace = true }
+spring-stream = { workspace = true, features = ["json"] }
+sea-orm = { workspace = true, features = ["sqlx-postgres"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+itertools = { workspace = true }
+dtiku-macros = { path = "../dtiku-macros" }
+alipay_sdk_rust = { workspace = true }
+wechat-pay-rust-sdk = { workspace = true }
+derive_more = { workspace = true, features = ["deref", "deref_mut"] }

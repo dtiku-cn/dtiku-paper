@@ -6,6 +6,7 @@ mod paper;
 mod question;
 mod shenlun_category;
 mod user;
+mod pay;
 
 use crate::service::user::UserService;
 use crate::views::GlobalVariables;

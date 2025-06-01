@@ -4,6 +4,7 @@ members = [
     "dtiku-artalk",
     "dtiku-backend",
     "dtiku-web",
+    "dtiku-pay",
     "dtiku-paper",
     "dtiku-bbs",
     "dtiku-stats",
@@ -63,3 +64,4 @@ uuid = "1.16"
 alipay_sdk_rust = "1.0.14"
 wechat-pay-rust-sdk = "0.2.18"
 pinyin = "0.10"
+rustls = "0.23"
