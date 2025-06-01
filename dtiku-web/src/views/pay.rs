@@ -8,4 +8,5 @@ use strum::IntoEnumIterator;
 #[template(path = "pay-trade-create.html.jinja")]
 pub struct PayTradeCreateTemplate {
     pub global: GlobalVariables,
+    pub user_id: i32,
 }

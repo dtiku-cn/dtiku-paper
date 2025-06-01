@@ -19,6 +19,7 @@ use strum::{EnumMessage, EnumProperty};
 )]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "order_level")]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum OrderLevel {
     #[sea_orm(string_value = "monthly")]
     #[strum(props(text = "月度"))]
@@ -96,16 +97,14 @@ impl OrderLevel {
 )]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "pay_from")]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum PayFrom {
     #[sea_orm(string_value = "alipay")]
     #[strum(message = "支付宝")]
     Alipay,
     #[sea_orm(string_value = "wechat")]
     #[strum(message = "微信")]
-    Wechat,
-    #[sea_orm(string_value = "qq")]
-    #[strum(message = "QQ")]
-    Qq,
+    Wechat
 }
 
 impl PayFrom {

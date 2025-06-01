@@ -7,6 +7,7 @@ use anyhow::Context;
 use askama::Template;
 use dtiku_pay::{
     alipay_sdk_rust::biz::{self, BizContenter as _},
+    service::pay_order::PayOrderService,
     Alipay,
 };
 use spring_web::{
@@ -24,26 +25,22 @@ async fn render_pay(
     claims: Claims,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    let t = PayTradeCreateTemplate { global };
+    let t = PayTradeCreateTemplate {
+        global,
+        user_id: claims.user_id,
+    };
     Ok(Html(t.render().context("render failed")?))
 }
 
-#[get("/pay/trade")]
+#[post("/pay/create")]
 async fn create_trade(
     claims: Claims,
-    Component(alipay): Component<Alipay>,
+    Component(ps): Component<PayOrderService>,
     Form(trade): Form<TradeCreateQuery>,
 ) -> Result<impl IntoResponse> {
-    let out_trade_no = chrono::Utc::now().timestamp_nanos().to_string();
-    let timestamp = chrono::Utc::now().format("%Y-%m-%d %H:%M").to_string();
-    let mut biz_content = biz::TradeCreateBiz::new();
-    biz_content.set_subject("huawei Mate50".into());
-    biz_content.set_out_trade_no(out_trade_no.into()); // "1620630871769533112"
-    biz_content.set_total_amount("5".into());
-    biz_content.set_buyer_id("2088722069264875".into());
-    biz_content.set("Timestamp", timestamp.into());
-    let res = alipay.trade_create(&biz_content).context("订单创建失败")?;
-    println!("{}", serde_json::to_string(&res).context("to json failed")?);
+    println!("{trade:?}");
+    ps.create_order(claims.user_id, trade.level, trade.pay_from)
+        .await?;
     Ok("支付接口正在施工中...")
 }
 

@@ -6,6 +6,7 @@
 //! * https://pay.weixin.qq.com/doc/v3/merchant/4012791832
 mod config;
 pub mod model;
+pub mod service;
 
 pub use alipay_sdk_rust;
 use alipay_sdk_rust::pay::{PayClient, Payer};
