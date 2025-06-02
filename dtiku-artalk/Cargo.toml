@@ -11,7 +11,7 @@ path = "src/main.rs"
 [dependencies]
 spring = { workspace = true }
 spring-grpc = { workspace = true }
-spring-sqlx = { workspace = true }
+spring-sqlx = { workspace = true, features = ["postgres"] }
 sqlx = { workspace = true, features = ["postgres"] }
 spring-opentelemetry = { workspace = true }
 tokio = { workspace = true, features = ["full"] }

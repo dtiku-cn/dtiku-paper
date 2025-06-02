@@ -8,7 +8,7 @@ pub mod artalk {
 use super::GrpcClientConfig;
 use ai::{embedding_service_client::EmbeddingServiceClient, TextReq};
 use anyhow::Context;
-use artalk::{artalk_service_client::ArtalkServiceClient, UserResp};
+use artalk::{artalk_service_client::ArtalkServiceClient, UserResp, VoteStats};
 use derive_more::derive::{Deref, DerefMut};
 use spring::{
     app::AppBuilder,
@@ -78,5 +78,25 @@ impl Artalk {
             .await
             .context("artalk service call failed")?;
         Ok(resp.into_inner().user_id)
+    }
+
+    pub async fn vote_stats(&self, page_key: String) -> Result<VoteStats> {
+        let resp = self
+            .0
+            .clone()
+            .vote_stats(artalk::PageReq { page_key })
+            .await
+            .context("artalk service call failed")?;
+        Ok(resp.into_inner())
+    }
+
+    pub async fn batch_vote_stats(&self, pages_key: Vec<String>) -> Result<Vec<VoteStats>> {
+        let resp = self
+            .0
+            .clone()
+            .batch_vote_stats(artalk::MultiPageReq { pages_key })
+            .await
+            .context("artalk service call failed")?;
+        Ok(resp.into_inner().stats)
     }
 }

@@ -3,7 +3,9 @@ pub mod proto {
 }
 
 use proto::artalk_service_server::{ArtalkService, ArtalkServiceServer};
-use proto::{CommentReq, UserIdResp, UserReq, UserResp};
+use proto::{
+    CommentReq, MultiPageReq, MultiVoteStats, PageReq, UserIdResp, UserReq, UserResp, VoteStats,
+};
 use spring::plugin::service::Service;
 use spring_sqlx::{sqlx, ConnectPool};
 use sqlx::FromRow;
@@ -58,6 +60,57 @@ impl ArtalkService for ArtalkServiceImpl {
 
         Ok(tonic::Response::new(UserIdResp { user_id }))
     }
+
+    async fn vote_stats(
+        &self,
+        request: tonic::Request<PageReq>,
+    ) -> std::result::Result<tonic::Response<VoteStats>, tonic::Status> {
+        let page = sqlx::query_as::<_, PageResult>(
+            r#"
+            SELECT key, vote_up, vote_down
+            FROM atk_pages
+            WHERE key = $1
+            "#,
+        )
+        .bind(&request.get_ref().page_key)
+        .fetch_one(&self.db)
+        .await
+        .map_err(|e| Status::internal(format!("sqlx query failed:{e:?}")))?;
+
+        Ok(tonic::Response::new(VoteStats {
+            page_key: page.key,
+            vote_up: page.vote_up,
+            vote_down: page.vote_down,
+        }))
+    }
+
+    async fn batch_vote_stats(
+        &self,
+        request: tonic::Request<MultiPageReq>,
+    ) -> std::result::Result<tonic::Response<MultiVoteStats>, tonic::Status> {
+        let page = sqlx::query_as::<_, PageResult>(
+            r#"
+            SELECT key, vote_up, vote_down
+            FROM atk_pages
+            WHERE key = any($1)
+            "#,
+        )
+        .bind(&request.get_ref().pages_key)
+        .fetch_all(&self.db)
+        .await
+        .map_err(|e| Status::internal(format!("sqlx query failed:{e:?}")))?;
+
+        let stats = page
+            .into_iter()
+            .map(|p| VoteStats {
+                page_key: p.key,
+                vote_up: p.vote_up,
+                vote_down: p.vote_down,
+            })
+            .collect();
+
+        Ok(tonic::Response::new(MultiVoteStats { stats }))
+    }
 }
 
 #[derive(Debug, FromRow)]
@@ -65,4 +118,11 @@ struct AuthIdentity {
     remote_uid: String,
     token: String,
     user_id: i32,
+}
+
+#[derive(Debug, FromRow)]
+struct PageResult {
+    key: String,
+    vote_up: i64,
+    vote_down: i64,
 }

@@ -1,3 +1,4 @@
+use crate::plugins::grpc_client::artalk::VoteStats;
 use super::GlobalVariables;
 use askama::Template;
 use chrono::NaiveDateTime;
@@ -25,6 +26,8 @@ pub struct FullIssue {
     pub modified: NaiveDateTime,
     pub view: i32,
     pub comment: i32,
+    pub vote_up: i64,
+    pub vote_down: i64,
     pub user: Option<user_info::Model>,
 }
 
@@ -33,6 +36,7 @@ impl FullIssue {
         issue: issue::Model,
         page_pv: &std::collections::HashMap<String, i32>,
         page_comment: &std::collections::HashMap<String, i32>,
+        votes: &std::collections::HashMap<String, VoteStats>,
         id_user_map: &mut std::collections::HashMap<i32, user_info::Model>,
     ) -> Self {
         let key = format!("/bbs/issue/{}", issue.id);
@@ -48,6 +52,8 @@ impl FullIssue {
             modified: issue.modified,
             view: page_pv.get(&key).unwrap_or(&0).to_owned(),
             comment: page_comment.get(&key).unwrap_or(&0).to_owned(),
+            vote_up: votes.get(&key).map(|v| v.vote_up).unwrap_or_default(),
+            vote_down: votes.get(&key).map(|v| v.vote_down).unwrap_or_default(),
         }
     }
 
@@ -70,4 +76,15 @@ pub struct IssueTemplate {
 pub struct IssueEditorTemplate {
     pub global: GlobalVariables,
     pub issue: Option<FullIssue>,
+}
+
+trait TopicSelected {
+    fn is_topic(&self, topic: &TopicType) -> bool;
+}
+
+impl TopicSelected for Option<FullIssue> {
+    fn is_topic(&self, topic: &TopicType) -> bool {
+        let t = self.as_ref().map(|i| i.topic);
+        t == Some(topic.clone())
+    }
 }

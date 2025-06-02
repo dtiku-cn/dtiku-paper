@@ -1,3 +1,5 @@
+use crate::plugins::grpc_client::artalk::VoteStats;
+use crate::plugins::grpc_client::Artalk;
 use crate::rpc::artalk::{page_comment, page_pv};
 use crate::views::bbs::FullIssue;
 use dtiku_base::model::{user_info, UserInfo};
@@ -12,6 +14,8 @@ use std::collections::HashMap;
 pub struct IssueService {
     #[inject(component)]
     db: DbConn,
+    #[inject(component)]
+    artalk: Artalk,
 }
 
 impl IssueService {
@@ -25,10 +29,16 @@ impl IssueService {
                     m.insert(user.id, user);
                 }
                 let key = format!("/bbs/issue/{}", i.id);
-                let page_keys = vec![key];
+                let page_keys = vec![key.clone()];
                 let pv = page_pv(&page_keys).await;
                 let cmt = page_comment(&page_keys).await;
-                Ok(Some(FullIssue::new(i, &pv, &cmt, &mut m)))
+                let vote = {
+                    let vote = self.artalk.vote_stats(key).await?;
+                    let mut m = HashMap::new();
+                    m.insert(vote.page_key.clone(), vote);
+                    m
+                };
+                Ok(Some(FullIssue::new(i, &pv, &cmt, &vote, &mut m)))
             }
             None => Ok(None),
         }
@@ -53,6 +63,9 @@ impl IssueService {
             users.into_iter().map(|u| (u.id, u)).collect();
         let pv = page_pv(&page_keys).await;
         let cmt = page_comment(&page_keys).await;
-        Ok(issues.map(|i| FullIssue::new(i, &pv, &cmt, &mut id_u_map)))
+        let votes = self.artalk.batch_vote_stats(page_keys).await?;
+        let votes: HashMap<String, VoteStats> =
+            votes.into_iter().map(|v| (v.page_key.clone(), v)).collect();
+        Ok(issues.map(|i| FullIssue::new(i, &pv, &cmt, &votes, &mut id_u_map)))
     }
 }

@@ -31,10 +31,11 @@
                 <select class="custom-select" name="topic" required>
                     <option selected value="">-选择一个主题-</option>
                     {%for t in TopicType::iter() %}
-                    <option value="{{t}}"
-                        selected="{%if Some(t.clone())==issue.map(|i|i.topic)%}true{%else%}false{%endif%}">
-                        {{t.text()}}
-                    </option>
+                    {%if issue.is_topic(t)%}
+                    <option value="{{t}}" selected>{{t.text()}}</option>
+                    {%else%}
+                    <option value="{{t}}">{{t.text()}}</option>
+                    {%endif%}
                     {%endfor%}
                 </select>
                 <div class='tooltip-topic invalid-tooltip'>不能为空</div>

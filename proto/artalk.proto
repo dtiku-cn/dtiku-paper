@@ -5,6 +5,10 @@ service ArtalkService {
     rpc auth_identity(UserReq) returns (UserResp);
 
     rpc comment_user(CommentReq) returns (UserIdResp);
+
+    rpc vote_stats(PageReq) returns (VoteStats);
+
+    rpc batch_vote_stats(MultiPageReq) returns (MultiVoteStats);
 }
 
 message UserReq{
@@ -22,4 +26,18 @@ message CommentReq{
 }
 message UserIdResp{
     int32 user_id=1;
+}
+message PageReq{
+    string page_key=1;
+}
+message VoteStats{
+    string page_key = 1;
+    int64 vote_up = 2;
+    int64 vote_down = 3;
+}
+message MultiPageReq{
+    repeated string pages_key=1;
+}
+message MultiVoteStats{
+    repeated VoteStats stats=1;
 }
