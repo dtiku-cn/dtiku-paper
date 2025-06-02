@@ -75,7 +75,11 @@
         pageview: pv,
         darkMode,
         pageVote: {
-            activeClass: 'text-primary',
+            activeClass: 'text-success',
+            upBtnEl: '.artalk-page-vote-up',
+            downBtnEl: '.artalk-page-vote-down',
+            upCountEl: '.artalk-page-vote-up-count',
+            downCountEl: '.artalk-page-vote-down-count',
         }
     });
     window.artalk = Artalk.init(config);
