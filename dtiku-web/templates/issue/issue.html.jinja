@@ -88,14 +88,24 @@
                 <b class="d-none d-md-block">{{issue.author_name()}}</b>
                 <span>发布于{{global.format(issue.created, "%Y-%m-%d %H:%M")}}</span>
             </div>
-            <a id="agree" class="card-link d-flex align-items-center artalk-page-vote-up" title="点赞"
-                data-toggle="{%if global.user.is_none()%}modal{%else%}tooltip{%endif%}"
-                href="{%if global.user.is_none()%}#loginModal{%else%}javascript:void(0){%endif%}">
-                <svg class="icon-svg icon-svg-md mr-2">
-                    <use xlink:href="#ic-agree"></use>
-                </svg>
-                <b class="agree-count artalk-page-vote-up-count"></b>
-            </a>
+            <div class="artalk-page-vote d-flex">
+                <a id="agree" class="card-link d-flex align-items-center artalk-page-vote-up" title="赞同数"
+                    data-toggle="{%if global.user.is_none()%}modal{%else%}tooltip{%endif%}"
+                    href="{%if global.user.is_none()%}#loginModal{%else%}javascript:void(0){%endif%}">
+                    <svg class="icon-svg icon-svg-md mr-2">
+                        <use xlink:href="#ic-agree"></use>
+                    </svg>
+                    <b class="agree-count artalk-page-vote-up-count"></b>
+                </a>
+                <a id="disagree" class="card-link d-flex align-items-center artalk-page-vote-down" title="反对数"
+                    data-toggle="{%if global.user.is_none()%}modal{%else%}tooltip{%endif%}"
+                    href="{%if global.user.is_none()%}#loginModal{%else%}javascript:void(0){%endif%}">
+                    <svg class="icon-svg icon-svg-md mr-2">
+                        <use xlink:href="#ic-disagree"></use>
+                    </svg>
+                    <b class="agree-count artalk-page-vote-down-count"></b>
+                </a>
+            </div>
         </footer>
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}

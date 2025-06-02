@@ -103,7 +103,7 @@
 </script>
 {% endif %}
 {% endif %}
-{% if global.config.show_ads %}
-<script>{ { global.config.ads_script } }</script>
+{% if global.config.show_ads && ads %}
+<script>{{ global.config.ads_script }}</script>
 {% endif %}
 {% endmacro comment %}
