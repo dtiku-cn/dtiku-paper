@@ -34,7 +34,7 @@ impl ArtalkService for ArtalkServiceImpl {
         .bind(request.get_ref().user_id)
         .fetch_one(&self.db)
         .await
-        .map_err(|e| Status::internal(format!("sqlx query failed:{e:?}")))?;
+        .map_err(|e| Status::internal(format!("auth_identity sqlx query failed:{e:?}")))?;
         Ok(tonic::Response::new(UserResp {
             user_id: identity.user_id,
             remote_uid: identity.remote_uid,
@@ -46,7 +46,7 @@ impl ArtalkService for ArtalkServiceImpl {
         &self,
         request: tonic::Request<CommentReq>,
     ) -> std::result::Result<tonic::Response<UserIdResp>, tonic::Status> {
-        let user_id = sqlx::query_scalar::<_, i32>(
+        let user_id = sqlx::query_scalar::<_, i64>(
             r#"
             SELECT user_id
             FROM atk_comments
@@ -56,9 +56,11 @@ impl ArtalkService for ArtalkServiceImpl {
         .bind(request.get_ref().comment_id)
         .fetch_one(&self.db)
         .await
-        .map_err(|e| Status::internal(format!("sqlx query failed:{e:?}")))?;
+        .map_err(|e| Status::internal(format!("comment_user sqlx query failed:{e:?}")))?;
 
-        Ok(tonic::Response::new(UserIdResp { user_id }))
+        Ok(tonic::Response::new(UserIdResp {
+            user_id: user_id as i32,
+        }))
     }
 
     async fn vote_stats(
@@ -75,7 +77,7 @@ impl ArtalkService for ArtalkServiceImpl {
         .bind(&request.get_ref().page_key)
         .fetch_one(&self.db)
         .await
-        .map_err(|e| Status::internal(format!("sqlx query failed:{e:?}")))?;
+        .map_err(|e| Status::internal(format!("vote_stats sqlx query failed:{e:?}")))?;
 
         Ok(tonic::Response::new(VoteStats {
             page_key: page.key,
@@ -98,7 +100,7 @@ impl ArtalkService for ArtalkServiceImpl {
         .bind(&request.get_ref().pages_key)
         .fetch_all(&self.db)
         .await
-        .map_err(|e| Status::internal(format!("sqlx query failed:{e:?}")))?;
+        .map_err(|e| Status::internal(format!("batch_vote_stats sqlx query failed:{e:?}")))?;
 
         let stats = page
             .into_iter()
