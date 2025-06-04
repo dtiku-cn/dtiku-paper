@@ -1,10 +1,11 @@
+use askama::Template;
 use axum_extra::extract::CookieJar;
 use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
 use chrono::{Datelike, NaiveDateTime};
 use dtiku_base::{model::user_info, service};
 use dtiku_paper::domain::exam_category::ExamPaperType;
 use paper::PaperType;
-use spring_web::axum::http::Uri;
+use spring_web::axum::http::{StatusCode, Uri};
 
 pub mod bbs;
 pub mod home;
@@ -176,4 +177,12 @@ impl GlobalVariables {
             chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".chars().collect(),
         }
     }
+}
+
+#[derive(Template)]
+#[template(path = "error/err.html.jinja")]
+pub struct ErrorTemplate {
+    pub status: StatusCode,
+    pub msg: String,
+    pub original_host: String,
 }

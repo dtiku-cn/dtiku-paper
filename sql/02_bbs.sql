@@ -6,7 +6,7 @@ create type topic_type as enum(
     'linxuan',
     'sydw',
     'share',
-    'work'
+    'growth'
 );
 create table if not exists issue(
     id serial primary key,

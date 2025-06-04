@@ -9,7 +9,8 @@ mod shenlun_category;
 mod user;
 
 use crate::service::user::UserService;
-use crate::views::GlobalVariables;
+use crate::views::{ErrorTemplate, GlobalVariables};
+use askama::Template;
 use axum_extra::extract::{CookieJar, Host};
 use axum_extra::headers::Cookie;
 use axum_extra::TypedHeader;
@@ -22,8 +23,9 @@ use serde::{Deserialize, Serialize};
 use spring::config::env::Env;
 use spring::tracing::{self, Level};
 use spring_opentelemetry::trace;
-use spring_web::axum::http::request::Parts;
-use spring_web::axum::RequestPartsExt;
+use spring_web::axum::http::{request::Parts, StatusCode};
+use spring_web::axum::response::{Html, IntoResponse};
+use spring_web::axum::{body, RequestPartsExt};
 use spring_web::error::{KnownWebError, WebError};
 use spring_web::extractor::FromRequestParts;
 use spring_web::{
@@ -60,9 +62,42 @@ pub fn routers() -> Router {
 
     let http_tracing_layer = trace::HttpLayer::server(Level::INFO);
     spring_web::handler::auto_router()
+        .route_layer(middleware::from_fn(render_error_page))
         .route_layer(middleware::from_fn(with_context))
         .layer(trace_layer)
         .layer(http_tracing_layer)
+        .fallback(not_found_handler)
+}
+
+async fn render_error_page(Host(original_host): Host, req: Request, next: Next) -> Response {
+    let resp = next.run(req).await;
+    let status = resp.status();
+    if status.is_client_error() || status.is_server_error() {
+        let msg = resp.into_body();
+        let msg = body::to_bytes(msg, usize::MAX)
+            .await
+            .expect("server body read failed");
+        let msg = String::from_utf8(msg.to_vec()).expect("read body to string failed");
+        let t = ErrorTemplate {
+            status,
+            msg,
+            original_host,
+        };
+        let html = t.render().expect("render error template failed");
+        Html(html).into_response()
+    } else {
+        resp
+    }
+}
+
+async fn not_found_handler(Host(original_host): Host) -> Response {
+    let t = ErrorTemplate {
+        status: StatusCode::NOT_FOUND,
+        msg: "Page not found".to_string(),
+        original_host,
+    };
+    let html = t.render().expect("render not found template failed");
+    Html(html).into_response()
 }
 
 task_local! {

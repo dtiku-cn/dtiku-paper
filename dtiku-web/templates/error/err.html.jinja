@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta name="google-site-verification" content="VCjvluBwap6weZ9wjbSywoJxZ0G3meNoyTqlckhYg4M">
+    <meta name="keywords" content="留言板">
+    <meta name="description" content="本站提供公务员考试真题整套在线打印和下载服务，包含行测、申论。">
+    <link rel="shortcut icon" type="image/svg+xml" href="/static/dist/icon.svg">
+    <link rel="apple-touch-icon" type="image/svg+xml" href="/static/dist/icon.svg">
+    <link id="bootstrap-default" rel="stylesheet" href="/static/vendor/bootstrap-4.6.2/css/bootstrap.min.css">
+    <link id="bootstrap-dark" rel="alternate stylesheet"
+        href="/static/vendor/bootswatch/4.6.1/dist/cyborg/bootstrap.min.css">
+    <link rel="stylesheet" href="https://artalk.dtiku.cn/dist/Artalk.css" />
+    <script src="//at.alicdn.com/t/font_3160480_2dowuauqazx.js"></script>
+    <title>404 | 公考加油站</title>
+</head>
+
+<body class="container">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
+            <a class="navbar-brand" href="/" style="color:#CE1126">公考加油站</a>
+        </nav>
+    </header>
+    <div class="d-flex justify-content-center mb-3">
+        <svg class="icon-svg">
+            <use xlink:href="#ic-404"></use>
+        </svg>
+    </div>
+    <h1 class="text-center">{{status.as_str()}}: {{msg}}</h1>
+    <h2 class="text-center text-muted">有问题欢迎在此留言！</h2>
+    <div id="artalk-comments" class="my-2"></div>
+    <div class="text-center font-weight-light my-2">
+        <span class="post-meta-item-text">页面访问量：</span>
+        <span class="artalk-pv-count" data-page-key="/{{status.as_str()}}">加载中...</span>
+    </div>
+    <script>
+        window.addEventListener('load', function () {
+            var config = Object.assign({
+                el: '#artalk-comments',
+                server: 'https://{{original_host}}',
+                avatarURLBuilder: (c) => `https://{{original_host}}/user/comment/${c.id}/avatar`,
+                imgUploader: async (f) => {
+                    const form = new FormData()
+                    form.set('file', f)
+                    const resp = await fetch('https://{{original_host}}/upload', {
+                        method: 'POST',
+                        body: form,
+                    });
+                    return await resp.text();
+                },
+                site: '公考加油站',
+                pageview: pv,
+                darkMode,
+                pageVote: {
+                    activeClass: 'text-success',
+                    upBtnEl: '.artalk-page-vote-up',
+                    downBtnEl: '.artalk-page-vote-down',
+                    upCountEl: '.artalk-page-vote-up-count',
+                    downCountEl: '.artalk-page-vote-down-count',
+                }
+            });
+            window.artalk = Artalk.init(config);
+            window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {
+                artalk.setDarkMode(dark)
+            });
+        }, false);
+    </script>
+    <footer class="text-center d-print-none" style="margin: 20px 0 15px">
+        <a href="https://beian.miit.gov.cn/">赣ICP备17009276号</a>
+        2021 ~ <span>2025</span>
+        ©
+        Holmofy
+    </footer>
+    <script src="/static/vendor/jquery-1.10.2/jquery.min.js"></script>
+    <script src="/static/vendor/bootstrap-4.6.2/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/vendor/js-cookie-3.0.5/js.cookie.min.js"></script>
+    <script src="https://artalk.dtiku.cn/dist/Artalk.js"></script>
+    <script>
+        var _hmt = _hmt || [];
+        (function () {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?30d537f369e2f10940f71724182d30ea";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+
+    <script>
+        function ThemeSwitcher() {
+            var listener = [];
+
+            function getTheme() {
+                return String(Cookies.get("darkTheme")) === "true";
+            }
+
+            function switchTo(dark) {
+                $("#bootstrap-default").attr("rel", dark ? "alternate stylesheet" : "stylesheet");
+                $("#bootstrap-dark").attr("rel", dark ? "stylesheet" : "alternate stylesheet");
+                $(document.body).toggleClass("dark-theme", dark);
+                $("#theme-svg").attr("xlink:href", dark ? "#ic-moon" : "#ic-sun")
+                    .parent().css(dark ? { width: "1.3rem", height: "1.3rem" } : { width: "1.5rem", height: "1.5rem" });
+                $(".navbar").toggleClass("navbar-dark", dark).toggleClass("navbar-light", !dark);
+                Cookies.set("darkTheme", dark);
+                listener.forEach(function (l) {
+                    if (typeof l === 'function') {
+                        l(dark);
+                    } else {
+                        l.onChange && l.onChange(dark);
+                    }
+                });
+                $('iframe').each(function () {
+                    try {
+                        this.contentWindow.postMessage({ type: 'set-theme', dark }, '*');
+                    } catch (e) {
+                        console.warn('无法向 iframe 发送消息:', e);
+                    }
+                });
+            }
+
+            $("#theme").prop("checked", getTheme()).click(function (e) {
+                switchTo($("#theme").is(':checked'));
+            });
+            return {
+                getTheme, switchTo, listener
+            };
+        }
+
+        window.themeSwitcher = new ThemeSwitcher();
+        themeSwitcher.switchTo(themeSwitcher.getTheme());
+    </script>
+
+    {%if status == StatusCode::UNAUTHORIZED %}
+    <script>
+        $(function () {
+            Cookies.remove("token");
+            localStorage.removeItem('ArtalkUser');
+        });
+    </script>
+    {%endif%}
+</body>
+
+</html>
