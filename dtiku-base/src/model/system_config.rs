@@ -32,7 +32,6 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 impl Entity {
-    #[cached(key = "configxxx", expire = 86400)]
     pub async fn find_all<C>(db: &C) -> anyhow::Result<Vec<Model>>
     where
         C: ConnectionTrait,

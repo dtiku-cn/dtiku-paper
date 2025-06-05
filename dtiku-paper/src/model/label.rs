@@ -5,7 +5,6 @@ use dtiku_macros::cached;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
 };
-use spring::tracing;
 
 impl ActiveModel {
     pub async fn insert_on_conflict<C: ConnectionTrait>(self, db: &C) -> Result<Model, DbErr> {
