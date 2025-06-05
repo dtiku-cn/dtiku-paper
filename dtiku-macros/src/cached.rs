@@ -13,7 +13,6 @@ struct CachedArgs {
 pub fn cached(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);
 
-    // ✅ 解析成 NestedMeta，而不是 Meta！
     let args_parsed =
         parse_macro_input!(attr with Punctuated::<NestedMeta, Token![,]>::parse_terminated);
     let args_vec = args_parsed.into_iter().collect::<Vec<_>>();
@@ -48,11 +47,32 @@ pub fn cached(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attrs = &input_fn.attrs;
     let user_block = &input_fn.block;
 
+    let ret_type = match &sig.output {
+        syn::ReturnType::Type(_, ty) => ty,
+        syn::ReturnType::Default => {
+            return syn::Error::new_spanned(sig, "cached function must return a value")
+                .to_compile_error()
+                .into();
+        }
+    };
+
+    let encoder = if let Some(inner_type) = extract_ok_type_from_result(ret_type) {
+        quote! {
+            let json = serde_json::to_string(&result?)
+                .with_context(|| format!("cache encode failed for key {}", cache_key))?;
+        }
+    } else {
+        quote! {
+            let json = serde_json::to_string(&result)
+                .with_context(|| format!("cache encode failed for key {}", cache_key))?;
+        }
+    };
+
     let gen = quote! {
         #(#attrs)*
         #vis #asyncness fn #ident #generics(#inputs) #output #where_clause {
             use anyhow::Context as _;
-            use spring_redis::redis::{self,AsyncCommands};
+            use spring_redis::redis::{self, AsyncCommands};
             use spring::{plugin::ComponentRegistry, tracing, App};
 
             let mut redis = App::global()
@@ -61,31 +81,38 @@ pub fn cached(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             let cache_key = format!(#cache_key_fmt);
 
-            let cached = match redis.get::<_, Option<String>>(&cache_key).await {
-                Ok(val) => val,
-                Err(err) => {
-                    tracing::error!("cache error:{:?}", err);
-                    None
-                }
-            };
-
-            let value = match cached {
-                Some(json) => {
-                    Some(serde_json::from_str(&json).with_context(||format!("cache for '{cache_key}' json decode failed"))?)
-                },
-                None => {
-                    let result = (|| async #user_block)().await?;
-                    if let Some(ref val) = result {
-                        let json = serde_json::to_string(val).with_context(||format!("cache for '{cache_key}' json encode failed"))?;
-                        #redis_set_stmt
+            if let Ok(Some(json)) = redis.get::<_, Option<String>>(&cache_key).await {
+                match serde_json::from_str::<#ret_type>(&json) {
+                    Ok(value) => return Ok(value),
+                    Err(e) => {
+                        tracing::error!("cache decode error for {}: {:?}", cache_key, e);
                     }
-                    result
                 }
-            };
+            }
 
-            Ok(value)
+            let result: #ret_type = (|| async #user_block)().await;
+
+            #encoder
+
+            #redis_set_stmt
+
+            Ok(result)
         }
     };
 
     gen.into()
+}
+
+fn extract_ok_type_from_result(ty: &syn::Type) -> Option<&syn::Type> {
+    if let syn::Type::Path(type_path) = ty {
+        let segment = type_path.path.segments.last()?;
+        if segment.ident == "Result" {
+            if let syn::PathArguments::AngleBracketed(generic_args) = &segment.arguments {
+                if let Some(syn::GenericArgument::Type(ok_ty)) = generic_args.args.first() {
+                    return Some(ok_ty);
+                }
+            }
+        }
+    }
+    None
 }
