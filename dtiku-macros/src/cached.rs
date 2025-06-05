@@ -22,20 +22,6 @@ pub fn cached(attr: TokenStream, item: TokenStream) -> TokenStream {
         Err(e) => return e.write_errors().into(),
     };
 
-    let cache_key_fmt = args.key;
-    let redis_set_stmt = match args.expire {
-        Some(expire_sec) => {
-            quote! {
-                let _: redis::Value = redis.set_ex(&cache_key, json, #expire_sec).await.context("cache error")?;
-            }
-        }
-        None => {
-            quote! {
-                let _: redis::Value = redis.set(&cache_key, json).await.context("cache error")?;
-            }
-        }
-    };
-
     let vis = &input_fn.vis;
     let sig = &input_fn.sig;
     let ident = &sig.ident;
@@ -56,47 +42,97 @@ pub fn cached(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    let encoder = if let Some(inner_type) = extract_ok_type_from_result(ret_type) {
-        quote! {
-            let json = serde_json::to_string(&result?)
-                .with_context(|| format!("cache encode failed for key {}", cache_key))?;
+    let cache_key_fmt = args.key;
+    let redis_set_stmt = match args.expire {
+        Some(expire_sec) => {
+            quote! {
+                let _: Result<redis::Value, ()> = redis.set_ex(&cache_key, cache_value, #expire_sec).await
+                    .map_err(|err| ::spring::tracing::error!("failed to set cache for key {}: {:?}", cache_key, err));
+            }
         }
-    } else {
-        quote! {
-            let json = serde_json::to_string(&result)
-                .with_context(|| format!("cache encode failed for key {}", cache_key))?;
+        None => {
+            quote! {
+                let _: Result<redis::Value, ()> = redis.set(&cache_key, cache_value).await
+                    .map_err(|err| ::spring::tracing::error!("failed to set cache for key {}: {:?}", cache_key, err));
+            }
         }
     };
 
-    let gen = quote! {
-        #(#attrs)*
-        #vis #asyncness fn #ident #generics(#inputs) #output #where_clause {
-            use anyhow::Context as _;
-            use spring_redis::redis::{self, AsyncCommands};
-            use spring::{plugin::ComponentRegistry, tracing, App};
+    let gen = match extract_ok_type_from_result(ret_type) {
+        Some(inner_type) => {
+            quote! {
+                #(#attrs)*
+                #vis #asyncness fn #ident #generics(#inputs) #output #where_clause {
+                    use spring_redis::redis::{self, AsyncCommands};
+                    use spring::{plugin::ComponentRegistry, tracing, App};
 
-            let mut redis = App::global()
-                .get_component::<spring_redis::Redis>()
-                .expect("redis component not found");
+                    let mut redis = App::global()
+                        .get_component::<spring_redis::Redis>()
+                        .expect("redis component not found");
 
-            let cache_key = format!(#cache_key_fmt);
+                    let cache_key = format!(#cache_key_fmt);
 
-            if let Ok(Some(json)) = redis.get::<_, Option<String>>(&cache_key).await {
-                match serde_json::from_str::<#ret_type>(&json) {
-                    Ok(value) => return Ok(value),
-                    Err(e) => {
-                        tracing::error!("cache decode error for {}: {:?}", cache_key, e);
+                    if let Ok(Some(cache_value)) = redis.get::<_, Option<String>>(&cache_key).await {
+                        match ::serde_json::from_str::<#inner_type>(&cache_value) {
+                            Ok(value) => return Ok(value),
+                            Err(e) => {
+                                ::spring::tracing::error!("cache decode error for {}: {:?}", cache_key, e);
+                            }
+                        }
                     }
+
+                    let result: #ret_type = (|| async #user_block)().await;
+                    let result: #inner_type = result?;
+
+                    match ::serde_json::to_string(&result) {
+                        Ok(cache_value) => {
+                            #redis_set_stmt
+                        }
+                        Err(err) => {
+                            ::spring::tracing::error!("cache encode failed for key {}: {:?}", cache_key, err);
+                        }
+                    }
+
+                    Ok(result)
                 }
             }
+        }
+        None => {
+            quote! {
+                #(#attrs)*
+                #vis #asyncness fn #ident #generics(#inputs) #output #where_clause {
+                    use spring_redis::redis::{self, AsyncCommands};
+                    use spring::{plugin::ComponentRegistry, tracing, App};
 
-            let result: #ret_type = (|| async #user_block)().await;
+                    let mut redis = App::global()
+                        .get_component::<spring_redis::Redis>()
+                        .expect("redis component not found");
 
-            #encoder
+                    let cache_key = format!(#cache_key_fmt);
 
-            #redis_set_stmt
+                    if let Ok(Some(cache_value)) = redis.get::<_, Option<String>>(&cache_key).await {
+                        match ::serde_json::from_str::<#ret_type>(&cache_value) {
+                            Ok(value) => return value,
+                            Err(e) => {
+                                ::spring::tracing::error!("cache decode error for {}: {:?}", cache_key, e);
+                            }
+                        }
+                    }
 
-            Ok(result)
+                    let result: #ret_type = (|| async #user_block)().await;
+
+                    match ::serde_json::to_string(&result) {
+                        Ok(cache_value) => {
+                            #redis_set_stmt
+                        }
+                        Err(err) => {
+                            ::spring::tracing::error!("cache encode failed for key {}: {:?}", cache_key, err);
+                        }
+                    }
+
+                    result
+                }
+            }
         }
     };
 

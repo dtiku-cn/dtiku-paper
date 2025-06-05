@@ -8,7 +8,7 @@ use sea_orm::{
 };
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use spring::{async_trait, plugin::ComponentRegistry, tracing, App};
+use spring::{async_trait, plugin::ComponentRegistry, App};
 use spring_redis::{redis::AsyncCommands, Redis};
 
 #[async_trait]
@@ -32,6 +32,7 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 impl Entity {
+    #[cached(key = "configxxx", expire = 86400)]
     pub async fn find_all<C>(db: &C) -> anyhow::Result<Vec<Model>>
     where
         C: ConnectionTrait,
