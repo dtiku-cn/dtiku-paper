@@ -22,7 +22,7 @@ fastembed = { workspace = true, features = ["ort-load-dynamic"] }
 derive_more = { workspace = true, features = ["deref", "deref_mut"] }
 prost = { workspace = true }
 tonic = { workspace = true }
-ort = { workspace = true }
+# ort = { workspace = true }
 
 [build-dependencies]
 tonic-build = "0.13"
