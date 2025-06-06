@@ -1,5 +1,5 @@
 use anyhow::Context;
-use dtiku_macros::cached;
+use spring_redis::cache;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
 };
@@ -29,7 +29,7 @@ impl Entity {
             .context("exam_category::find_all_by_pids() failed")
     }
 
-    #[cached(key = "exam_category:root_exam:{prefix}", expire = 86400)]
+    #[cache("exam_category:root_exam:{prefix}", expire = 86400)]
     pub async fn find_by_root_prefix<C>(db: &C, prefix: &str) -> anyhow::Result<Option<Model>>
     where
         C: ConnectionTrait,
@@ -37,7 +37,7 @@ impl Entity {
         Self::find_by_pid_prefix(db, 0, prefix).await
     }
 
-    #[cached(key = "exam_category:{pid}:{prefix}", expire = 86400)]
+    #[cache("exam_category:{pid}:{prefix}", expire = 86400)]
     pub async fn find_by_pid_prefix<C>(
         db: &C,
         pid: i16,

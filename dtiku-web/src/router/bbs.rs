@@ -48,6 +48,23 @@ async fn new_issue(Extension(global): Extension<GlobalVariables>) -> Result<impl
     Ok(Html(t.render().context("render failed")?))
 }
 
+#[get("/bbs/issue/{id}/edit")]
+async fn new_issue(
+    Path(id): Path<i32>,
+    Component(is): Component<IssueService>,
+    Extension(global): Extension<GlobalVariables>
+) -> Result<impl IntoResponse> {
+    let issue = is
+        .find_issue_by_id(id)
+        .await?
+        .ok_or_else(|| KnownWebError::not_found("issue not found"))?;
+    let t = IssueEditorTemplate {
+        global,
+        issue: Some(issue),
+    };
+    Ok(Html(t.render().context("render failed")?))
+}
+
 #[post("/bbs/issue")]
 async fn submit_issue(
     claims: Claims,

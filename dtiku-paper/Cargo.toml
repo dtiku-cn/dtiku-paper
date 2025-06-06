@@ -16,5 +16,4 @@ strum = { workspace = true, features = ["derive"] }
 itertools = { workspace = true }
 anyhow = { workspace = true }
 fastembed = { workspace = true }
-dtiku-macros = { path = "../dtiku-macros" }
 chinese-number = { workspace = true }

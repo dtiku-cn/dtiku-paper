@@ -15,7 +15,6 @@ strum = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 itertools = { workspace = true }
-dtiku-macros = { path = "../dtiku-macros" }
 alipay_sdk_rust = { workspace = true }
 wechat-pay-rust-sdk = { workspace = true }
 derive_more = { workspace = true, features = ["deref", "deref_mut"] }

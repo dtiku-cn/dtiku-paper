@@ -1,7 +1,7 @@
 pub use super::_entities::key_point::*;
 use crate::util;
 use anyhow::Context;
-use dtiku_macros::cached;
+use spring_redis::cache;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
 };
@@ -66,7 +66,7 @@ impl Entity {
         }
     }
 
-    #[cached(key = "keypoint:{id}",expire = 86400)]
+    #[cache("keypoint:{id}",expire = 86400)]
     pub async fn find_by_id_with_cache<C: ConnectionTrait>(
         db: &C,
         id: i32,

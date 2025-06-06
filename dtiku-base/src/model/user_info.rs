@@ -1,6 +1,6 @@
 pub use super::_entities::user_info::*;
 use anyhow::Context;
-use dtiku_macros::cached;
+use spring_redis::cache;
 use sea_orm::{
     sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ColumnTrait,
     ConnectionTrait, DbErr, EntityTrait, QueryFilter,
@@ -32,7 +32,7 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 impl Entity {
-    #[cached(key = "user:{id}", expire = 86400)]
+    #[cache("user:{id}", expire = 86400)]
     pub async fn find_user_by_id<C: ConnectionTrait>(
         db: &C,
         id: i32,

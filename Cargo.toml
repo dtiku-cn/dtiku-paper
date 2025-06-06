@@ -9,7 +9,6 @@ members = [
     "dtiku-bbs",
     "dtiku-stats",
     "dtiku-base",
-    "dtiku-macros",
 ]
 
 [workspace.dependencies]

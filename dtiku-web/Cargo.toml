@@ -18,7 +18,6 @@ tokio = { workspace = true, features = ["full"] }
 dtiku-base = { path = "../dtiku-base", version = "0.0.1" }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
 dtiku-bbs = { path = "../dtiku-bbs", version = "0.0.1" }
-dtiku-macros = { path = "../dtiku-macros", version = "0.0.1" }
 dtiku-pay = { path = "../dtiku-pay", version = "0.0.1" }
 askama = { workspace = true, features = ["serde_json"] }
 anyhow = { workspace = true }

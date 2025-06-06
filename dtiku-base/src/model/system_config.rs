@@ -1,7 +1,6 @@
 pub use super::_entities::system_config::*;
 use super::enums::SystemConfigKey;
 use anyhow::Context;
-use dtiku_macros::cached;
 use sea_orm::{
     sqlx::types::chrono::Local, ActiveModelBehavior, ColumnTrait, ConnectionTrait, DbErr,
     EntityTrait, QueryFilter, Set,
@@ -9,7 +8,7 @@ use sea_orm::{
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use spring::{async_trait, plugin::ComponentRegistry, App};
-use spring_redis::{redis::AsyncCommands, Redis};
+use spring_redis::{redis::AsyncCommands, Redis, cache};
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -74,7 +73,7 @@ impl Entity {
         Ok(v)
     }
 
-    #[cached(key = "config:{key:?}", expire = 86400)]
+    #[cache("config:{key:?}", expire = 86400)]
     pub async fn find_cached_value_by_key<C>(
         db: &C,
         key: SystemConfigKey,
