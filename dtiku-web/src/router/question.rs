@@ -20,7 +20,7 @@ use spring_web::{
         response::{Html, IntoResponse},
         Extension,
     },
-    error::Result,
+    error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
     get,
 };
@@ -97,11 +97,11 @@ async fn question_detail(
         let t = OnlyCommentTemplate { global };
         Ok(Html(t.render().context("render failed")?))
     } else {
-        let question = qs.full_question_by_id(id).await?;
-        let t = QuestionDetailTemplate {
-            global,
-            question: todo!(),
-        };
+        let question = qs
+            .full_question_by_id(id)
+            .await?
+            .ok_or_else(|| KnownWebError::not_found("题目不存在"))?;
+        let t = QuestionDetailTemplate { global, question };
         Ok(Html(t.render().context("render failed")?))
     }
 }

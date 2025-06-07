@@ -7,6 +7,20 @@ use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 pub use super::_entities::question_material::*;
 
 impl Entity {
+    pub async fn find_by_qid<C>(db: &C, qid: i32) -> anyhow::Result<Vec<i32>>
+    where
+        C: ConnectionTrait,
+    {
+        Ok(Entity::find()
+            .filter(Column::QuestionId.eq(qid))
+            .all(db)
+            .await
+            .context("question_material::find_by_qid() failed")?
+            .into_iter()
+            .map(|r| r.material_id)
+            .collect_vec())
+    }
+
     pub async fn find_by_qids<C>(db: &C, qids: Vec<i32>) -> anyhow::Result<HashMap<i32, Vec<i32>>>
     where
         C: ConnectionTrait,

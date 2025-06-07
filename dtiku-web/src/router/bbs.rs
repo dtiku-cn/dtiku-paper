@@ -52,12 +52,12 @@ async fn new_issue(Extension(global): Extension<GlobalVariables>) -> Result<impl
 async fn edit_issue(
     Path(id): Path<i32>,
     Component(is): Component<IssueService>,
-    Extension(global): Extension<GlobalVariables>
+    Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     let issue = is
         .find_issue_by_id(id)
         .await?
-        .ok_or_else(|| KnownWebError::not_found("issue not found"))?;
+        .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?;
     let t = IssueEditorTemplate {
         global,
         issue: Some(issue),
@@ -94,7 +94,7 @@ async fn issue_detail(
     let issue = is
         .find_issue_by_id(id)
         .await?
-        .ok_or_else(|| KnownWebError::not_found("issue not found"))?;
+        .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?;
 
     let t = IssueTemplate { global, issue };
     Ok(Html(t.render().context("render failed")?))

@@ -1,5 +1,5 @@
 pub use super::_entities::question::*;
-use super::{paper, Paper, PaperQuestion, _entities::solution};
+use super::{paper, Paper, PaperQuestion, _entities::solution, material};
 use crate::domain::question::QuestionSearch;
 use anyhow::Context;
 use itertools::Itertools;
@@ -27,9 +27,26 @@ pub struct QuestionWithPaper {
     pub extra: QuestionExtra,
     pub papers: Vec<PaperWithNum>,
     pub solutions: Option<Vec<solution::Model>>,
+    pub materials: Option<Vec<material::Model>>,
 }
 
 impl QuestionWithPaper {
+    pub fn new(
+        q: Model,
+        papers: Vec<PaperWithNum>,
+        solutions: Option<Vec<solution::Model>>,
+        materials: Option<Vec<material::Model>>,
+    ) -> Self {
+        Self {
+            id: q.id,
+            content: q.content,
+            extra: q.extra,
+            papers,
+            solutions,
+            materials,
+        }
+    }
+
     pub fn option_len(&self) -> usize {
         self.extra.option_len()
     }
@@ -50,6 +67,14 @@ impl QuestionWithPaper {
                 .unwrap_or_default(),
         }
     }
+
+    pub fn abbr(&self, size: usize) -> &str {
+        self.content
+            .char_indices()
+            .nth(size)
+            .map(|(idx, _)| &self.content[..idx])
+            .unwrap_or(&self.content)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -59,7 +84,7 @@ pub struct PaperWithNum {
 }
 
 impl PaperWithNum {
-    fn new(p: &paper::Model, sort: i16) -> Self {
+    pub fn new(p: &paper::Model, sort: i16) -> Self {
         Self {
             paper: p.clone(),
             num: sort,
@@ -117,6 +142,7 @@ impl QuestionSelect {
             extra: self.extra,
             solutions: None,
             papers: papers.unwrap_or_default(),
+            materials: None,
         }
     }
 }

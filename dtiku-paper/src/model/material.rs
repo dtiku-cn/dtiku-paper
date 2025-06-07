@@ -1,10 +1,11 @@
 pub use super::_entities::material::*;
 use super::{PaperMaterial, _entities::paper_material};
+use anyhow::Context;
 use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
 use itertools::Itertools;
 use sea_orm::{
-    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
-    FromJsonQueryResult, FromQueryResult, QueryFilter,
+    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromJsonQueryResult,
+    QueryFilter,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -28,17 +29,6 @@ impl Material {
     }
 }
 
-#[derive(DerivePartialModel, FromQueryResult)]
-#[sea_orm(entity = "Entity")]
-struct MaterialSelect {
-    #[sea_orm(from_col = "id")]
-    id: i32,
-    #[sea_orm(from_col = "content")]
-    content: String,
-    #[sea_orm(from_col = "extra")]
-    extra: Vec<MaterialExtra>,
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(tag = "type")]
 pub enum MaterialExtra {
@@ -54,7 +44,7 @@ pub enum MaterialExtra {
     Transcript(String),
 }
 
-impl MaterialSelect {
+impl Model {
     fn with_num(self, num_map: &HashMap<i32, i16>) -> Material {
         Material {
             id: self.id,
@@ -66,6 +56,17 @@ impl MaterialSelect {
 }
 
 impl Entity {
+    pub async fn find_by_ids<C>(db: &C, material_ids: Vec<i32>) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .filter(Column::Id.is_in(material_ids))
+            .all(db)
+            .await
+            .context("find material failed")
+    }
+
     pub async fn find_by_paper_id<C>(db: &C, paper_id: i32) -> anyhow::Result<Vec<Material>>
     where
         C: ConnectionTrait,
@@ -81,7 +82,6 @@ impl Entity {
 
         let materials = Entity::find()
             .filter(Column::Id.is_in(mids))
-            .into_partial_model::<MaterialSelect>()
             .all(db)
             .await?;
 

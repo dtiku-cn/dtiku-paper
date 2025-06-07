@@ -1,11 +1,27 @@
+pub use super::_entities::paper_question::*;
+use crate::query::question::PaperQuestionQuery;
 use anyhow::Context;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QuerySelect};
 
-use crate::query::question::PaperQuestionQuery;
-
-pub use super::_entities::paper_question::*;
-
 impl Entity {
+    pub async fn find_by_question_id<C>(db: &C, question_id: i32) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .select_only()
+            .columns([
+                Column::PaperId,
+                Column::QuestionId,
+                Column::Sort,
+                Column::PaperType,
+            ])
+            .filter(Column::QuestionId.eq(question_id))
+            .all(db)
+            .await
+            .with_context(|| format!("paper_question::find_by_question_id({question_id}) failed"))
+    }
+
     pub async fn find_by_question_id_in<C>(
         db: &C,
         question_ids: Vec<i32>,

@@ -1,5 +1,6 @@
-use super::{question::FullQuestion, GlobalVariables, IntoTemplate};
+use super::{GlobalVariables, IntoTemplate};
 use askama::Template;
+use dtiku_paper::domain::question::FullQuestion;
 use dtiku_paper::model::question::QuestionExtra;
 use dtiku_paper::{
     domain::{

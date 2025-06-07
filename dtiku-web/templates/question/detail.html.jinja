@@ -8,7 +8,7 @@
 <head>
     {% call general::meta() %}
     {% call general::headerfiles() %}
-    <title th:text="${q.abbr(50)}"></title>
+    <title>{{question.abbr(50)}}</title>
 </head>
 
 <body class="container">
@@ -19,12 +19,17 @@
         </svg>
     </div>
     <div id="printcontent">
-        <div th:if="${q.material!=null}" class="material" th:each="m:${q.material}">
-            <h3 class="text-center mt-2" th:text="|材料${m.chineseNumber()}|"></h3>
-            <div th:utext="${m.html}"></div>
+        {% if let Some(material) = question.materials %}
+        {%for m in material%}
+        <div class="material">
+            <h3 class="text-center mt-2">材料{{global.chinese_num(loop.index)}}</h3>
+            <div>{{m.content | safe}}</div>
         </div>
-        <div class="card my-3" th:include="fragments/question::question_card(${q})"></div>
+        {%endfor%}
+        {% endif %}
+        {% call question::question_card(question) %}
     </div>
+
     <div th:if="${recommends!=null && !recommends.isEmpty()}" class="card my-3">
         <div class="card-header text-white bg-info">类似题目</div>
         <div class="card-body px-0">

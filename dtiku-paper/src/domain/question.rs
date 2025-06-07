@@ -1,7 +1,10 @@
+use crate::model::{
+    self,
+    question::{Column, QuestionExtra},
+};
+use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
 use sea_orm::{sea_query::IntoCondition, ColumnTrait};
 use serde::Deserialize;
-
-use crate::model::question::Column;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct QuestionSearch {
@@ -21,6 +24,66 @@ impl IntoCondition for QuestionSearch {
             q.and(Column::PaperType.eq(paper_type)).into_condition()
         } else {
             q.into_condition()
+        }
+    }
+}
+
+pub struct FullQuestion {
+    pub id: i32,
+    pub content: String,
+    pub extra: QuestionExtra,
+    pub num: i16,
+    pub materials: Option<Vec<model::material::Material>>,
+    pub solutions: Option<Vec<model::solution::Model>>,
+    pub chapter: Option<model::paper::PaperChapter>,
+}
+
+impl FullQuestion {
+    pub fn new(
+        materials: Option<Vec<model::material::Material>>,
+        solutions: Option<Vec<model::solution::Model>>,
+        chapter: Option<model::paper::PaperChapter>,
+        q: model::question::Question,
+    ) -> Self {
+        Self {
+            id: q.id,
+            content: q.content,
+            extra: q.extra,
+            num: q.num,
+            materials,
+            solutions,
+            chapter,
+        }
+    }
+
+    pub fn option_len(&self) -> usize {
+        self.extra.option_len()
+    }
+
+    pub fn chinese_num(&self) -> String {
+        self.num
+            .to_chinese(
+                ChineseVariant::Traditional,
+                ChineseCase::Lower,
+                ChineseCountMethod::TenThousand,
+            )
+            .unwrap()
+    }
+
+    pub fn get_answer(&self) -> Option<String> {
+        match &self.solutions {
+            None => None,
+            Some(ss) => ss.first().and_then(|s| s.extra.get_answer()),
+        }
+    }
+
+    pub fn is_answer(&self, index0: &usize) -> bool {
+        match &self.solutions {
+            None => false,
+            Some(ss) => ss
+                .first()
+                .map(|s| s.extra.is_answer(*index0))
+                .unwrap_or_default(),
         }
     }
 }

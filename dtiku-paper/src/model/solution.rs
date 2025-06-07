@@ -127,6 +127,17 @@ pub struct AnswerAnalysis {
 }
 
 impl Entity {
+    pub async fn find_by_qid<C>(db: &C, question_id: i32) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .filter(Column::QuestionId.eq(question_id))
+            .all(db)
+            .await
+            .with_context(|| format!("find_by_question_id({question_id}) failed"))
+    }
+
     pub async fn find_by_question_ids<C, IDS>(
         db: &C,
         question_ids: IDS,
