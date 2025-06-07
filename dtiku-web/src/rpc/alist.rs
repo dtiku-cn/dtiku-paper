@@ -1,6 +1,6 @@
 use crate::plugins::WebDAVClientConfig;
 use anyhow::Context;
-use spring_redis::cached;
+use spring_redis::cache;
 use feignhttp::post;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};

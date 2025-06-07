@@ -17,6 +17,7 @@ use spring::{
     error::Result,
     plugin::{MutableComponentRegistry, Plugin},
 };
+use std::time::Duration;
 use tonic::transport::Channel;
 
 pub struct GrpcClientPlugin;
@@ -28,13 +29,27 @@ impl Plugin for GrpcClientPlugin {
             .get_config::<GrpcClientConfig>()
             .expect("load grpc config failed");
 
-        let embedding_client = EmbeddingServiceClient::connect(grpc_config.embedding_url)
+        let channel = Channel::from_shared(grpc_config.embedding_url)
+            .expect("url is invalid")
+            .keep_alive_while_idle(true)
+            .keep_alive_timeout(Duration::from_secs(10))
+            .http2_keep_alive_interval(Duration::from_secs(30))
+            .connect()
             .await
-            .expect("embedding service connect failed");
+            .expect("connect embedding server failed");
 
-        let artalk_client = ArtalkServiceClient::connect(grpc_config.artalk_url)
+        let embedding_client = EmbeddingServiceClient::new(channel);
+
+        let channel = Channel::from_shared(grpc_config.artalk_url)
+            .expect("url is invalid")
+            .keep_alive_while_idle(true)
+            .keep_alive_timeout(Duration::from_secs(10))
+            .http2_keep_alive_interval(Duration::from_secs(30))
+            .connect()
             .await
-            .expect("artalk service connect failed");
+            .expect("connect artalk server failed");
+
+        let artalk_client = ArtalkServiceClient::new(channel);
 
         app.add_component(Embedding(embedding_client))
             .add_component(Artalk(artalk_client));

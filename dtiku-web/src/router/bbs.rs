@@ -49,7 +49,7 @@ async fn new_issue(Extension(global): Extension<GlobalVariables>) -> Result<impl
 }
 
 #[get("/bbs/issue/{id}/edit")]
-async fn new_issue(
+async fn edit_issue(
     Path(id): Path<i32>,
     Component(is): Component<IssueService>,
     Extension(global): Extension<GlobalVariables>
