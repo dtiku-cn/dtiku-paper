@@ -1,7 +1,7 @@
 use super::GlobalVariables;
 use askama::Template;
 use dtiku_paper::{
-    domain::question::{FullQuestion, QuestionSearch},
+    domain::question::QuestionSearch,
     model::{
         self,
         question::{QuestionExtra, QuestionWithPaper},

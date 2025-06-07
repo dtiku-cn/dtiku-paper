@@ -1,5 +1,6 @@
 use super::{GlobalVariables, IntoTemplate};
 use askama::Template;
+use dtiku_paper::domain::paper::PaperMode;
 use dtiku_paper::domain::question::FullQuestion;
 use dtiku_paper::model::question::QuestionExtra;
 use dtiku_paper::{
@@ -13,6 +14,7 @@ use dtiku_paper::{
 use itertools::Itertools;
 use spring_sea_orm::pagination::Page;
 use std::collections::HashMap;
+use strum::IntoEnumIterator;
 
 pub struct PaperType {
     pub id: i16,

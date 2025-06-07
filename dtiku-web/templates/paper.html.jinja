@@ -92,7 +92,7 @@
         <div id="answer-list" class="show-answer row">
             {%for q in questions %}
             {%if let Some(answer) = q.get_answer() %}
-            <a th:if="${q.answer!=null}" class="text-reset text-center" href="#q-{{q.num}}">
+            <a class="text-reset text-center" href="#q-{{q.num}}">
                 <b>{{q.num}}</b>、<b class="-answer-">{{answer}}</b>
             </a>
             {%endif%}
@@ -156,8 +156,9 @@
                 {% endif %}
                 <div class="d-flex mt-2">
                     <div id="q-{{qvo.num}}" class="q-number flex-shrink-0"><b>{{qvo.num}}</b>.</div>
-                    <div th:include="fragments/question::xingce_exercise_question(${qvo},${answer})"
-                        class="flex-grow-1 question-wrapper show-answer"></div>
+                    <div class="flex-grow-1 question-wrapper show-answer">
+                        {% call question::xingce_exercise_question(qvo) %}
+                    </div>
                 </div>
                 {% endfor %}
                 <div class="fixed-bottom answer-paper-wrapper d-print-none">

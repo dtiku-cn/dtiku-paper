@@ -1,13 +1,24 @@
-use std::collections::HashMap;
 use serde::Deserialize;
-use strum::{AsRefStr, Display, EnumIter, EnumString};
+use std::collections::HashMap;
+use strum::{AsRefStr, Display, EnumIter, EnumMessage, EnumString};
 
-#[derive(Default, Debug, Clone, Copy, Deserialize, Display, EnumIter, AsRefStr, EnumString)]
+#[derive(
+    Default, Debug, Clone, Copy, Deserialize, Display, EnumIter, AsRefStr, EnumString, EnumMessage,
+)]
 #[strum(serialize_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum PaperMode {
+    #[strum(message = "练习模式")]
     Exercise,
     #[default]
+    #[strum(message = "展示答案")]
     ShowAnswer,
+}
+
+impl PaperMode {
+    pub fn text(&self) -> &'static str {
+        self.get_message().unwrap_or_default()
+    }
 }
 
 pub struct FullPaper {

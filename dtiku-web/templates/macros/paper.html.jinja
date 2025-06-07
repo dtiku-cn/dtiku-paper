@@ -1,7 +1,9 @@
 {% macro paper_meta(p)%}
-<span th:if="${bools.isTrue(system_showVendor)}" th:text="|数据来源：${p.paper.fromType.domain}|"></span>
-<span>分类：<b th:text="|${p.paper.type.text}/${p.paper.area}|"></b></span>
-<a th:each="m:${p.modes}" th:href="'/paper/'+${p.paper.id}+'?mode='+${m.name()}" th:text="${m.text}"></a>
+{% if !p.extra.is_essay() %}
+{% for m in PaperMode::iter() %}
+<a href="/paper/{{p.id}}?mode={{m}}">{{m.text()}}</a>
+{% endfor %}
+{% endif %}
 <a href="{% if global.user.is_none() %}#loginModal{%else%}javascript:window.print(){%endif%}"
     data-toggle="{% if global.user.is_none() %}modal{%endif%}">打印试卷</a>
 {% endmacro paper_meta %}
@@ -11,10 +13,6 @@
     {% for p in papers %}
     <tr>
         <td class="p-2">
-            {% if global.config.show_vendor ~%}
-            <img class="vendor-icon" rel="external nofollow noreferrer" src="${p.fromType.iconUrl()}"
-                alt="${p.fromType.name()}" />
-            {%~ endif %}
             <a target="_blank" href="/paper/{{p.id}}">{{p.title}}</a>
             {% if let Some(topic) = p.extra.topic() %}
             <b class="badge badge-info">{{topic}}</b>
@@ -23,11 +21,6 @@
             <b class="badge badge-success">New</b>
             {%~ endif %}
         </td>
-        {% if global.config.show_vendor ~%}
-        <td class="py-2 d-none d-sm-table-cell" width="75" title="${p.fromType.domain}">
-            <div class="text-truncate" style="max-width:70px">${p.fromType.domain}</div>
-        </td>
-        {%~ endif %}
     </tr>
     {% endfor %}
 </table>

@@ -18,6 +18,13 @@ pub enum PaperExtra {
 }
 
 impl PaperExtra {
+    pub fn is_essay(&self) -> bool {
+        match self {
+            Self::Chapters(_) => false,
+            Self::EssayCluster(_) => true,
+        }
+    }
+
     pub fn compute_chapter_name(&self, num: i32) -> Option<String> {
         self.compute_chapter(num, false).map(|c| c.name)
     }
