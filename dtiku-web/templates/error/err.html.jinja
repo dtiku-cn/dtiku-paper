@@ -54,7 +54,6 @@
                 },
                 site: '公考加油站',
                 pageview: true,
-                darkMode,
                 pageVote: {
                     activeClass: 'text-success',
                     upBtnEl: '.artalk-page-vote-up',
@@ -64,9 +63,6 @@
                 }
             });
             window.artalk = Artalk.init(config);
-            window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {
-                artalk.setDarkMode(dark)
-            });
         }, false);
     </script>
     <footer class="text-center d-print-none" style="margin: 20px 0 15px">
