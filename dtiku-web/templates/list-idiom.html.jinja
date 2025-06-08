@@ -83,19 +83,18 @@
                 th:data="${type.name()}" th:text="${type.text}" th:classappend="${fromType==type?'active':''}"></a>
         </div>
         <div class="input-group">
-            <input type="text" id="search" placeholder="输入成语进行搜索" th:value="${text}"
+            <input type="text" id="search" placeholder="输入成语进行搜索" value="${text}"
                 onkeydown='if(event.keyCode==13){search();}' class="form-control rounded-0"
-                th:data-filter="'/idiom/like?type='+${modelType.name()}+'&q=#QUERY#'">
+                data-filter="'/idiom/like?type='+${modelType.name()}+'&q=#QUERY#'">
             <div class="input-group-append">
                 <button id="submit" type="submit" data-target="#search" class="btn btn-outline-secondary">点我搜索</button>
             </div>
         </div>
-        <p th:if="${lists.isEmpty(stats)}" class="text-center">没有找到这个成语，尝试换个省份或换个成语进行搜索</p>
-        <table th:if="${!#lists.isEmpty(stats)}" class="table table-striped idiom-list">
+        <p if="${lists.isEmpty(stats)}" class="text-center">没有找到这个成语，尝试换个省份或换个成语进行搜索</p>
+        <table if="${!#lists.isEmpty(stats)}" class="table table-striped idiom-list">
             <thead>
                 <tr>
-                    <th class="text-center px-0 py-2" th:width="${strings.equals(modelType.name(),'idiom')?100:70}"
-                        th:text="${modelType.text}"></th>
+                    <th class="text-center px-0 py-2" width="${strings.equals(modelType.name(),'idiom')?100:70}">${modelType.text}</th>
                     <th class="py-2">释义</th>
                     <th class="text-center d-none d-md-table-cell px-0 py-2">出现频次</th>
                     <th class="text-center px-0 py-2">真题<span class="d-none d-md-inline">试卷</span></th>
@@ -117,13 +116,14 @@
             </tbody>
         </table>
 
+        {# {%call elements::pagination(page,"/bbs?{{query.to_qs()}}", false)%} #}
         <th:block
             th:include="fragments/elements::pagination(${page},@{/{type}(type=${modelType.name()},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})},true)"></th:block>
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
     <script src="/static/vendor/bootstrap-autocomplete.js/bootstrap-autocomplete.min.js"></script>
-    <script th:replace="fragments/elements::pager-select"></script>
+    {% call elements::pager_select() %}
     <script>
         function search() {
             const text = $("#search").val();

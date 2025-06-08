@@ -57,7 +57,6 @@ async fn search_question_by_img(
         query.exam_id = Some(EXAM_ID.get());
         qs.search_question(&query).await?
     };
-    println!("{:?}", questions.clone());
     let t = QuestionSearchImgTemplate {
         global,
         questions,

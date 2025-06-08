@@ -162,9 +162,10 @@
     {% else %}
     {% endmatch %}
 </div>
-<div class="d-print-none" th:if="${q.answer!=null || !#maps.isEmpty(q.solution)}">
-    <a class="btn btn-link mt-2" role="button" data-toggle="collapse" th:href="'#answer-'+${q.id}">查看解析</a>
-    <div class="collapse" th:id="'answer-'+${q.id}" th:classappend="${userAnswer!=null?'show':''}">
+{%if let Some(s) = q.solutions%}
+<div class="d-print-none">
+    <a class="btn btn-link mt-2" role="button" data-toggle="collapse" href="#answer-{{q.id}}">查看解析</a>
+    <div class="collapse" id="answer-{{q.id}}" classappend="${userAnswer!=null?'show':''}">
         <div class="d-flex">
             <div class="mr-4" th:if="${q.answer!=null}">
                 参考答案：<b class="-answer-" th:text="${q.answer.answer}"></b>
@@ -173,9 +174,10 @@
                 耗时：<b class="text-info" th:text="${@thymeleafUtils.formatSecond(timeMap.getOrDefault(q.id,0))}"></b>
             </div>
         </div>
-        <th:block th:include="fragments/question::question_solution(${q})"></th:block>
+        {%call question::question_solution(q)%}
     </div>
 </div>
+{%endif%}
 {% endmacro xingce_exercise_question %}
 
 {# 行测 #}
@@ -220,7 +222,7 @@
         {% if let Some(answer) = q.get_answer()%}
         <div>参考答案：<b class="-answer-">{{answer}}</b></div>
         {% endif %}
-        <th:block th:include="fragments/question::question_solution(${q})"></th:block>
+        {%call question::question_solution(q)%}
     </div>
 </div>
 {% endif %}
