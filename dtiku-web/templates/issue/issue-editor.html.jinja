@@ -89,7 +89,7 @@
                 },
                 cache: {
                     enable: true,
-                    id: 'issue-[[${issue?.id}]]' || 'new-issue'
+                    id: '{%if let Some(i)=issue%}issue-{{i.id}}{%else%}new-issue{%endif%}'
                 },
                 focus() {
                     $("#editor").tooltip('toggle').attr("data-original-title", "").tooltip("hide");
