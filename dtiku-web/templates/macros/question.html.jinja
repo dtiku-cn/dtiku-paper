@@ -174,7 +174,7 @@
                 耗时：<b class="text-info" th:text="${@thymeleafUtils.formatSecond(timeMap.getOrDefault(q.id,0))}"></b>
             </div>
         </div>
-        {%call question::question_solution(q)%}
+        {%call question_solution(q)%}
     </div>
 </div>
 {%endif%}
@@ -222,7 +222,7 @@
         {% if let Some(answer) = q.get_answer()%}
         <div>参考答案：<b class="-answer-">{{answer}}</b></div>
         {% endif %}
-        {%call question::question_solution(q)%}
+        {%call question_solution(q)%}
     </div>
 </div>
 {% endif %}
