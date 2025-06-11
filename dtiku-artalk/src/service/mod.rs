@@ -36,7 +36,7 @@ impl ArtalkService for ArtalkServiceImpl {
         .await
         .map_err(|e| Status::internal(format!("auth_identity sqlx query failed:{e:?}")))?;
         Ok(tonic::Response::new(UserResp {
-            user_id: identity.user_id,
+            user_id: identity.user_id as i32,
             remote_uid: identity.remote_uid,
             token: identity.token,
         }))
