@@ -244,7 +244,7 @@ pub fn decode(token: &str) -> anyhow::Result<Claims> {
     let token_data =
         jsonwebtoken::decode::<Claims>(&token, &decode_key, &validation).map_err(|e| {
             tracing::error!("{:?}", e);
-            KnownWebError::unauthorized("invalid token")
+            KnownWebError::unauthorized(format!("invalid token:{token}"))
         })?;
     Ok(token_data.claims)
 }

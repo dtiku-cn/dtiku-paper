@@ -24,6 +24,7 @@ impl ArtalkService for ArtalkServiceImpl {
         &self,
         request: tonic::Request<UserReq>,
     ) -> std::result::Result<tonic::Response<UserResp>, tonic::Status> {
+        let user_id = request.get_ref().user_id;
         let identity = sqlx::query_as::<_, AuthIdentity>(
             r#"
             SELECT remote_uid, token, user_id
@@ -31,10 +32,12 @@ impl ArtalkService for ArtalkServiceImpl {
             WHERE user_id = $1
             "#,
         )
-        .bind(request.get_ref().user_id)
+        .bind(user_id)
         .fetch_one(&self.db)
         .await
-        .map_err(|e| Status::internal(format!("auth_identity sqlx query failed:{e:?}")))?;
+        .map_err(|e| {
+            Status::internal(format!("auth_identity({user_id}) sqlx query failed:{e:?}"))
+        })?;
         Ok(tonic::Response::new(UserResp {
             user_id: identity.user_id as i32,
             remote_uid: identity.remote_uid,
@@ -46,6 +49,7 @@ impl ArtalkService for ArtalkServiceImpl {
         &self,
         request: tonic::Request<CommentReq>,
     ) -> std::result::Result<tonic::Response<UserIdResp>, tonic::Status> {
+        let comment_id = request.get_ref().comment_id;
         let user_id = sqlx::query_scalar::<_, i64>(
             r#"
             SELECT user_id
@@ -56,7 +60,11 @@ impl ArtalkService for ArtalkServiceImpl {
         .bind(request.get_ref().comment_id)
         .fetch_one(&self.db)
         .await
-        .map_err(|e| Status::internal(format!("comment_user sqlx query failed:{e:?}")))?;
+        .map_err(|e| {
+            Status::internal(format!(
+                "comment_user({comment_id}) sqlx query failed:{e:?}"
+            ))
+        })?;
 
         Ok(tonic::Response::new(UserIdResp {
             user_id: user_id as i32,
