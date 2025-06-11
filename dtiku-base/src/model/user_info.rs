@@ -1,11 +1,12 @@
 pub use super::_entities::user_info::*;
 use anyhow::Context;
-use spring_redis::cache;
+use chrono::Days;
 use sea_orm::{
     sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ColumnTrait,
     ConnectionTrait, DbErr, EntityTrait, QueryFilter,
 };
 use spring::async_trait;
+use spring_redis::cache;
 
 impl Model {
     pub fn is_expired(&self) -> bool {
@@ -13,7 +14,7 @@ impl Model {
     }
 
     pub fn due_time(&self) -> String {
-        "2023-10-01".to_string()
+        self.expired.format("%Y%m%d%H%M%S").to_string()
     }
 }
 
@@ -23,10 +24,15 @@ impl ActiveModelBehavior for ActiveModel {
     where
         C: ConnectionTrait,
     {
+        let now = Local::now().naive_local();
         if insert {
-            self.created = Set(Local::now().naive_local());
+            self.created = Set(now);
+            let expired = now
+                .checked_add_days(Days::new(7))
+                .expect("days add overflow");
+            self.expired = Set(expired);
         }
-        self.modified = Set(Local::now().naive_local());
+        self.modified = Set(now);
         Ok(self)
     }
 }

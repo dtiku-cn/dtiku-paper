@@ -1590,6 +1590,7 @@ dependencies = [
  "pinyin",
  "prost",
  "regex",
+ "reqwest-scraper 0.6.2",
  "scraper 0.21.0",
  "sea-orm",
  "search-api",
@@ -1618,6 +1619,7 @@ name = "dtiku-base"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "chrono",
  "itertools 0.14.0",
  "sea-orm",
  "serde",
@@ -5322,7 +5324,7 @@ dependencies = [
  "libxml",
  "mime",
  "reqwest 0.12.19",
- "reqwest-scraper-macros",
+ "reqwest-scraper-macros 0.5.9",
  "scraper 0.23.1",
  "serde",
  "serde_json",
@@ -5330,10 +5332,45 @@ dependencies = [
 ]
 
 [[package]]
+name = "reqwest-scraper"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67dd0bd1a13216fc0025231fdf582e743f876c1fe3326ac79e60a3ef7d636134"
+dependencies = [
+ "async-trait",
+ "encoding_rs",
+ "itertools 0.14.0",
+ "jsonpath_lib",
+ "libxml",
+ "mime",
+ "reqwest 0.12.19",
+ "reqwest-scraper-macros 0.6.2",
+ "scraper 0.23.1",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "reqwest-scraper-macros"
 version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7b41ce02a22f36095a411d390b0ad3073d261381137ac5f82309645b435554b"
+dependencies = [
+ "darling",
+ "lazy_static",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "scraper 0.23.1",
+ "syn 2.0.101",
+]
+
+[[package]]
+name = "reqwest-scraper-macros"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6df2327b886edff6db900a9782f10eeac56c823dd58226d35e3a2c57dfdb345e"
 dependencies = [
  "darling",
  "lazy_static",
@@ -5879,7 +5916,7 @@ checksum = "80a87c69d41000e0d95432335687514f6c7d80fb87215d42434895863ffa5720"
 dependencies = [
  "async-trait",
  "reqwest 0.12.19",
- "reqwest-scraper",
+ "reqwest-scraper 0.5.9",
  "thiserror 1.0.69",
 ]
 

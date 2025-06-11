@@ -10,6 +10,7 @@ pub struct Model {
     pub name: String,
     pub gender: bool,
     pub avatar: String,
+    pub expired: DateTime,
     pub created: DateTime,
     pub modified: DateTime,
 }

@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use askama::Template;
 use axum_extra::extract::CookieJar;
 use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
@@ -33,6 +35,18 @@ pub struct GlobalVariables {
 
 #[allow(dead_code)]
 impl GlobalVariables {
+    pub fn append_params(&self, url: &str, query_str: &str) -> String {
+        let mut url = String::from(url);
+        if url.contains("?") {
+            url.push('&');
+            url.push_str(query_str)
+        } else {
+            url.push('?');
+            url.push_str(query_str);
+        }
+        url
+    }
+
     pub fn range(&self, range_end: &u64) -> std::ops::RangeInclusive<u64> {
         (1..=*range_end).into_iter()
     }

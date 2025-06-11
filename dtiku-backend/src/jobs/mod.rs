@@ -1,6 +1,7 @@
 mod fenbi_sync;
 mod huatu_sync;
 mod offcn_sync;
+mod idiom_fetch;
 
 use crate::plugins::jobs::RunningJobs;
 use anyhow::Context;

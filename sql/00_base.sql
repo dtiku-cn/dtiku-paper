@@ -4,6 +4,7 @@ create table if not exists user_info (
     name varchar(64) not null,
     gender bool not null,
     avatar varchar(255) not null,
+    expired timestamp not null,
     created timestamp not null,
     modified timestamp not null
 );

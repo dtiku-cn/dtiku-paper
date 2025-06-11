@@ -119,7 +119,7 @@ impl ArtalkService for ArtalkServiceImpl {
 struct AuthIdentity {
     remote_uid: String,
     token: String,
-    user_id: i32,
+    user_id: i64,
 }
 
 #[derive(Debug, FromRow)]

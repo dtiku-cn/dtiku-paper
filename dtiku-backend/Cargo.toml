@@ -34,6 +34,7 @@ futures = { workspace = true }
 regex = { workspace = true }
 lazy_static = { workspace = true }
 scraper = { workspace = true }
+reqwest-scraper = { workspace = true }
 hnsw = { workspace = true }
 hnsw_rs = { workspace = true }
 dashmap = { workspace = true }

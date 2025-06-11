@@ -29,7 +29,7 @@
     <ul class="pagination justify-content-center">
         <li class="{%if page.is_first()%}disabled page-item{%else%}page-item{%endif%}">
             <a class="page-link"
-                href="|${strings.contains(url,'?')?url:url+'?'}&page=${page.number}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|"><span>←</span>上一页</a>
+                href='{{global.append_params(url,"page={page.page}&size={page.size}")}}'><span>←</span>上一页</a>
         </li>
         {% if selectable %}
         <li>
@@ -42,7 +42,7 @@
         {%endif%}
         <li class="{%if page.is_last()%}disabled page-item{%else%}page-item{%endif%}">
             <a class="page-link"
-                href="|${strings.contains(url,'?')?url:url+'?'}&page=${page.number+2}&size=${page.size}&${@thymeleafUtils.sortQueryString(page.sort)}|">下一页<span>→</span></a>
+                href='{{global.append_params(url,"page={page.page+2}&size={page.size}")}}'>下一页<span>→</span></a>
         </li>
     </ul>
     <p class="text-center">{{page.page+1}} / {{page.total_pages}}</p>
