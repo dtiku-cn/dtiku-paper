@@ -14,6 +14,10 @@
             margin: 0 auto;
         }
 
+        .vditor-reset {
+            color: inherit;
+        }
+
         .vditor-reset table td,
         .vditor-reset table th {
             word-break: break-word;
@@ -80,6 +84,7 @@
                 toolbarConfig: {
                     pin: true
                 },
+                theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
                 preview: {
                     theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
                     list: { dark: "Dark", light: "Light" },
