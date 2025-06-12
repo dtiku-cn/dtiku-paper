@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use askama::Template;
 use axum_extra::extract::CookieJar;
 use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
@@ -195,8 +193,8 @@ impl GlobalVariables {
 
 #[derive(Template)]
 #[template(path = "error/err.html.jinja")]
-pub struct ErrorTemplate {
+pub struct ErrorTemplate<'a> {
     pub status: StatusCode,
-    pub msg: String,
-    pub original_host: String,
+    pub msg: &'a str,
+    pub original_host: &'a str,
 }

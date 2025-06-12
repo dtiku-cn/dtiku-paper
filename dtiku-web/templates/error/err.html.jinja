@@ -129,11 +129,12 @@
         themeSwitcher.switchTo(themeSwitcher.getTheme());
     </script>
 
-    {%if status == StatusCode::UNAUTHORIZED %}
+    {%if status == StatusCode::UNAUTHORIZED || status == StatusCode::FORBIDDEN %}
     <script>
         $(function () {
             Cookies.remove("token");
             localStorage.removeItem('ArtalkUser');
+            location.reload();
         });
     </script>
     {%endif%}

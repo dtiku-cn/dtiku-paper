@@ -62,15 +62,41 @@ pub fn routers() -> Router {
 
     let http_tracing_layer = trace::HttpLayer::server(Level::INFO);
     spring_web::handler::auto_router()
-        .route_layer(middleware::from_fn(render_error_page))
-        .route_layer(middleware::from_fn(with_context))
+        .route_layer(middleware::from_fn(global_error_page))
         .layer(trace_layer)
         .layer(http_tracing_layer)
         .fallback(not_found_handler)
 }
 
-async fn render_error_page(Host(original_host): Host, req: Request, next: Next) -> Response {
-    let resp = next.run(req).await;
+async fn global_error_page(
+    ec_service: Component<ExamCategoryService>,
+    sc_service: Component<SystemConfigService>,
+    us_service: Component<UserService>,
+    claims: OptionalClaims,
+    host: Host,
+    cookies: CookieJar,
+    req: Request,
+    next: Next,
+) -> Response {
+    let original_host = host.0.clone();
+    let resp = match with_context(
+        &ec_service,
+        &sc_service,
+        &us_service,
+        &claims,
+        host,
+        cookies,
+        req,
+        next,
+    )
+    .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::error!("request error: {e:?}");
+            e.into_response()
+        }
+    };
     let status = resp.status();
     if status.is_client_error() || status.is_server_error() {
         let msg = resp.into_body();
@@ -80,8 +106,8 @@ async fn render_error_page(Host(original_host): Host, req: Request, next: Next) 
         let msg = String::from_utf8(msg.to_vec()).expect("read body to string failed");
         let t = ErrorTemplate {
             status,
-            msg,
-            original_host,
+            msg: msg.as_str(),
+            original_host: original_host.as_str(),
         };
         let html = t.render().expect("render error template failed");
         Html(html).into_response()
@@ -93,8 +119,8 @@ async fn render_error_page(Host(original_host): Host, req: Request, next: Next) 
 async fn not_found_handler(Host(original_host): Host) -> Response {
     let t = ErrorTemplate {
         status: StatusCode::NOT_FOUND,
-        msg: "Page not found".to_string(),
-        original_host,
+        msg: "Page not found",
+        original_host: original_host.as_str(),
     };
     let html = t.render().expect("render not found template failed");
     Html(html).into_response()
@@ -105,11 +131,11 @@ task_local! {
 }
 
 async fn with_context(
-    Component(ec_service): Component<ExamCategoryService>,
-    Component(sc_service): Component<SystemConfigService>,
-    Component(us_service): Component<UserService>,
+    Component(ec_service): &Component<ExamCategoryService>,
+    Component(sc_service): &Component<SystemConfigService>,
+    Component(us_service): &Component<UserService>,
+    OptionalClaims(claims): &OptionalClaims,
     Host(original_host): Host,
-    OptionalClaims(claims): OptionalClaims,
     cookies: CookieJar,
     mut req: Request,
     next: Next,
