@@ -5374,7 +5374,7 @@ dependencies = [
  "libxml",
  "mime",
  "reqwest 0.12.20",
- "reqwest-scraper-macros",
+ "reqwest-scraper-macros 0.5.9",
  "scraper 0.23.1",
  "serde",
  "serde_json",
@@ -5393,7 +5393,7 @@ dependencies = [
  "jsonpath_lib",
  "libxml",
  "mime",
- "reqwest 0.12.19",
+ "reqwest 0.12.20",
  "reqwest-scraper-macros 0.6.2",
  "scraper 0.23.1",
  "serde",
@@ -5428,7 +5428,7 @@ dependencies = [
  "quote",
  "regex",
  "scraper 0.23.1",
- "syn 2.0.101",
+ "syn 2.0.102",
 ]
 
 [[package]]
@@ -5966,7 +5966,7 @@ checksum = "80a87c69d41000e0d95432335687514f6c7d80fb87215d42434895863ffa5720"
 dependencies = [
  "async-trait",
  "reqwest 0.12.20",
- "reqwest-scraper",
+ "reqwest-scraper 0.5.9",
  "thiserror 1.0.69",
 ]
 

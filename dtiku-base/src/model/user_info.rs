@@ -38,7 +38,7 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 impl Entity {
-    #[cache("user:{id}", expire = 86400)]
+    #[cache("user:{id}", expire = 86400, unless = result.is_none())]
     pub async fn find_user_by_id<C: ConnectionTrait>(
         db: &C,
         id: i32,
