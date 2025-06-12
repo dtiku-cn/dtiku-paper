@@ -15,7 +15,7 @@
     <link id="bootstrap-dark" rel="alternate stylesheet"
         href="/static/vendor/bootswatch/4.6.1/dist/cyborg/bootstrap.min.css">
     <link rel="stylesheet" href="https://artalk.dtiku.cn/dist/Artalk.css" />
-    <script src="//at.alicdn.com/t/font_3160480_2dowuauqazx.js"></script>
+    <script src="//at.alicdn.com/t/c/font_4936584_af7gnqk3sfs.js"></script>
     <title>{{status.as_str()}} | 公考加油站</title>
 </head>
 
@@ -27,7 +27,7 @@
     </header>
     <div class="d-flex justify-content-center mb-3">
         <svg class="icon-svg">
-            <use xlink:href="#ic-404"></use>
+            <use xlink:href="#ic-error"></use>
         </svg>
     </div>
     <h1 class="text-center">{{status.as_str()}}: {{msg}}</h1>
@@ -63,6 +63,9 @@
                 }
             });
             window.artalk = Artalk.init(config);
+            window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {
+                artalk.setDarkMode(dark)
+            });
         }, false);
     </script>
     <footer class="text-center d-print-none" style="margin: 20px 0 15px">
