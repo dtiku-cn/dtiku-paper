@@ -1,10 +1,10 @@
 pub use super::_entities::label::*;
 use super::query::label::LabelQuery;
 use anyhow::Context;
-use spring_redis::cache;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
 };
+use spring_redis::cache;
 
 impl ActiveModel {
     pub async fn insert_on_conflict<C: ConnectionTrait>(self, db: &C) -> Result<Model, DbErr> {
@@ -20,7 +20,7 @@ impl ActiveModel {
 }
 
 impl Entity {
-    #[cache("label:{id}",expire = 86400)]
+    #[cache("label:{id}", expire = 86400)]
     pub async fn find_by_id_with_cache<C>(db: &C, id: i32) -> anyhow::Result<Option<Model>>
     where
         C: ConnectionTrait,

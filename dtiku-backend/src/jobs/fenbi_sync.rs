@@ -825,9 +825,10 @@ impl OriginPaper {
         db: &C,
         label_id: i32,
     ) -> anyhow::Result<paper::Model> {
-        let label = Label::find_by_id_with_cache(db, label_id)
+        let label = Label::find_by_id(label_id)
+            .one(db)
             .await
-            .with_context(|| format!("Label::find_by_id_with_cache({label_id}) failed"))?
+            .with_context(|| format!("Label::find_by_id({label_id}) failed"))?
             .expect(&format!("label#{label_id} not exists"));
 
         let year = pick_year(&self.date.expect("date is none")).expect("year not found");
