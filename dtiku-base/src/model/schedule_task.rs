@@ -125,6 +125,10 @@ impl Entity {
     where
         C: ConnectionTrait,
     {
-        Ok(Entity::find().filter(Ty.eq(ty)).one(db).await?)
+        Entity::find()
+            .filter(Ty.eq(ty))
+            .one(db)
+            .await
+            .with_context(|| format!("find_by_type({ty:?}) failed"))
     }
 }

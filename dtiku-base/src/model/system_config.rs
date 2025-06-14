@@ -21,9 +21,7 @@ impl ActiveModelBehavior for ActiveModel {
         }
         self.modified = Set(Local::now().naive_local());
         let config_key = self.key.as_ref();
-        let mut redis = App::global()
-            .get_component::<Redis>()
-            .expect("redis component don't exists");
+        let mut redis = App::global().get_expect_component::<Redis>();
         let _: () = redis.del(format!("config:{config_key:?}")).await.unwrap();
         Ok(self)
     }
