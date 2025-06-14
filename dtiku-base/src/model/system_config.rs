@@ -8,7 +8,7 @@ use sea_orm::{
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use spring::{async_trait, plugin::ComponentRegistry, App};
-use spring_redis::{redis::AsyncCommands, Redis, cache};
+use spring_redis::{cache, redis::AsyncCommands, Redis};
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -18,14 +18,13 @@ impl ActiveModelBehavior for ActiveModel {
     {
         if insert {
             self.created = Set(Local::now().naive_local());
-        } else {
-            let config_key = self.key.as_ref();
-            let mut redis = App::global()
-                .get_component::<Redis>()
-                .expect("redis component don't exists");
-            let _: () = redis.del(format!("config:{config_key:?}")).await.unwrap();
         }
         self.modified = Set(Local::now().naive_local());
+        let config_key = self.key.as_ref();
+        let mut redis = App::global()
+            .get_component::<Redis>()
+            .expect("redis component don't exists");
+        let _: () = redis.del(format!("config:{config_key:?}")).await.unwrap();
         Ok(self)
     }
 }
