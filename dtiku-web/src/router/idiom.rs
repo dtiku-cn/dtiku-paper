@@ -5,7 +5,7 @@ use crate::{
 use anyhow::Context;
 use askama::Template;
 use dtiku_stats::StatsModelType;
-use spring_sea_orm::pagination::Pagination;
+use spring_sea_orm::pagination::{Page, Pagination};
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
@@ -26,7 +26,7 @@ async fn list_idiom(
         global,
         model: StatsModelType::Idiom,
         req,
-        page,
+        page: Page::new(vec![], &page, 0),
     };
     Ok(Html(t.render().context("render failed")?))
 }
@@ -41,7 +41,7 @@ async fn list_word(
         global,
         model: StatsModelType::Word,
         req,
-        page,
+        page: Page::new(vec![], &page, 0),
     };
     Ok(Html(t.render().context("render failed")?))
 }

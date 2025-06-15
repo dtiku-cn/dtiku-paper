@@ -1,8 +1,8 @@
-use crate::query::idiom::IdiomReq;
 use super::GlobalVariables;
+use crate::query::idiom::IdiomReq;
 use askama::Template;
 use dtiku_stats::StatsModelType;
-use spring_sea_orm::pagination::Pagination;
+use spring_sea_orm::pagination::Page;
 use strum::IntoEnumIterator;
 
 #[derive(Template)]
@@ -11,5 +11,5 @@ pub struct ListIdiomTemplate {
     pub global: GlobalVariables,
     pub model: StatsModelType,
     pub req: IdiomReq,
-    pub page: Pagination,
+    pub page: Page<()>,
 }
