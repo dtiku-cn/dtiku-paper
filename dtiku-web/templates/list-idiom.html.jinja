@@ -49,8 +49,9 @@
                     <strong>${modelType.text}</strong>
                 </a>
                 <div class="dropdown-menu shadow-sm" aria-labelledby="modelTypeDropdown">
-                    <a class="dropdown-item" th:each="m:${allModelType}" th:href="'/'+${m.name()}"
-                        th:text="${m.text}"></a>
+                    {%for m in StatsModelType::iter()%}
+                    <a class="dropdown-item" href="/{{m}}">{{m.text()}}</a>
+                    {%endfor%}
                 </div>
             </div>
             <span class="text-muted">（可选择多个省份）</span>
@@ -94,7 +95,8 @@
         <table if="${!#lists.isEmpty(stats)}" class="table table-striped idiom-list">
             <thead>
                 <tr>
-                    <th class="text-center px-0 py-2" width="${strings.equals(modelType.name(),'idiom')?100:70}">${modelType.text}</th>
+                    <th class="text-center px-0 py-2" width="${strings.equals(modelType.name(),'idiom')?100:70}">
+                        ${modelType.text}</th>
                     <th class="py-2">释义</th>
                     <th class="text-center d-none d-md-table-cell px-0 py-2">出现频次</th>
                     <th class="text-center px-0 py-2">真题<span class="d-none d-md-inline">试卷</span></th>
@@ -118,7 +120,8 @@
 
         {# {%call elements::pagination(page,"/bbs?{{query.to_qs()}}", false)%} #}
         <th:block
-            th:include="fragments/elements::pagination(${page},@{/{type}(type=${modelType.name()},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})},true)"></th:block>
+            th:include="fragments/elements::pagination(${page},@{/{type}(type=${modelType.name()},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})},true)">
+        </th:block>
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
