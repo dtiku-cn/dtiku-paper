@@ -84,7 +84,7 @@
                 th:data="${type.name()}" th:text="${type.text}" th:classappend="${fromType==type?'active':''}"></a>
         </div>
         <div class="input-group">
-            <input type="text" id="search" placeholder="输入成语进行搜索" value="${text}"
+            <input type="text" id="search" placeholder="输入成语进行搜索" value="{%if let Some(t)=req.text%}{{t}}{%endif%}"
                 onkeydown='if(event.keyCode==13){search();}' class="form-control rounded-0"
                 data-filter="/idiom/like?type={{model}}&q=#QUERY#">
             <div class="input-group-append">
@@ -95,7 +95,7 @@
         <table if="${!#lists.isEmpty(stats)}" class="table table-striped idiom-list">
             <thead>
                 <tr>
-                    <th class="text-center px-0 py-2" width="{%if model==StatsModelType::Idiom%}100{%else%}70{%endif%}">
+                    <th class="text-center px-0 py-2" width="{%if model.is_idiom()%}100{%else%}70{%endif%}">
                         {{model.text()}}</th>
                     <th class="py-2">释义</th>
                     <th class="text-center d-none d-md-table-cell px-0 py-2">出现频次</th>
@@ -107,8 +107,8 @@
                     <td class="text-center">
                         <a rel="external nofollow" target="_blank" href="/{{model}}/{s.text}">{s.text}</a>
                     </td>
-                    <td th:utext="${s.explain}"></td>
-                    <td class="text-center d-none d-md-table-cell">共${s.questionFrequency}题</td>
+                    <td>{s.explain}</td>
+                    <td class="text-center d-none d-md-table-cell">共{s.questionFrequency}题</td>
                     <td class="text-center">
                         <a th:href="@{/idiom/{text}(text=${s.text},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})}"
                             th:text="${s.paperFrequency}"></a>
@@ -117,10 +117,7 @@
             </tbody>
         </table>
 
-        {# {%call elements::pagination(page,"/bbs?{{query.to_qs()}}", false)%} #}
-        <th:block
-            th:include="fragments/elements::pagination(${page},@{/{type}(type=${modelType.name()},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})},true)">
-        </th:block>
+        {%call elements::pagination(page,"/{{model}}?{{req.to_qs()}}", true)%}
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}

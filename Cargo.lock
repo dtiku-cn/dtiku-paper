@@ -1738,6 +1738,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "spring",
  "spring-opentelemetry",
  "spring-redis",

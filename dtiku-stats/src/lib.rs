@@ -31,6 +31,13 @@ pub enum StatsModelType {
 }
 
 impl StatsModelType {
+    pub fn is_idiom(&self) -> bool {
+        match self {
+            Self::Idiom => true,
+            Self::Word => false,
+        }
+    }
+
     pub fn text(&self) -> &'static str {
         self.get_str("text").unwrap_or_default()
     }
