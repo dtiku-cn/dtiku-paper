@@ -1606,6 +1606,7 @@ dependencies = [
  "pinyin",
  "prost",
  "regex",
+ "reqwest 0.12.20",
  "reqwest-scraper 0.6.2",
  "scraper 0.21.0",
  "sea-orm",
@@ -1702,6 +1703,10 @@ name = "dtiku-stats"
 version = "0.0.1"
 dependencies = [
  "dtiku-paper",
+ "regex",
+ "serde",
+ "serde_json",
+ "strum",
 ]
 
 [[package]]
