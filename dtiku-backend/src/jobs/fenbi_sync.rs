@@ -78,6 +78,10 @@ impl JobScheduler for FenbiSyncService {
     }
 
     async fn inner_start(&mut self) -> anyhow::Result<()> {
+        if self.save_exam_category().await? {
+            return Ok(());
+        }
+
         let mut progress = match &self.task.context {
             Value::Null => {
                 let total = self
@@ -264,7 +268,6 @@ impl FenbiSyncService {
         if progress.total <= 0 {
             return Ok(());
         }
-        self.save_exam_category().await?;
 
         let mut stream = sqlx::query_as::<_, OriginLabel>(r##"
         select
@@ -309,7 +312,7 @@ impl FenbiSyncService {
         Ok(())
     }
 
-    async fn save_exam_category(&mut self) -> anyhow::Result<()> {
+    async fn save_exam_category(&mut self) -> anyhow::Result<bool> {
         if ExamCategory::find()
             .filter(exam_category::Column::FromTy.eq(FromType::Fenbi))
             .count(&self.target_db)
@@ -317,7 +320,7 @@ impl FenbiSyncService {
             > 0
         {
             tracing::info!("exam_category already exists");
-            return Ok(());
+            return Ok(false);
         }
         let category = sqlx::query_as::<_, OriginExamCategory>(
             r##"
@@ -355,7 +358,7 @@ impl FenbiSyncService {
             }
         }
 
-        Ok(())
+        Ok(true)
     }
 
     async fn sync_paper(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
