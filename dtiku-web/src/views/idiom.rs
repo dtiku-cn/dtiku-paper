@@ -7,4 +7,5 @@ use strum::IntoEnumIterator;
 #[template(path = "list-idiom.html.min.jinja")]
 pub struct ListIdiomTemplate {
     pub global: GlobalVariables,
+    pub model: StatsModelType,
 }

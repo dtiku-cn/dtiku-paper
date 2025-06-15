@@ -6,7 +6,7 @@
 
 <head>
     {% call general::meta() %}
-    <title>高频${modelType.text}积累 | {{global.config.site_title}}</title>
+    <title>高频{{model.text()}}积累 | {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
     <style>
         @media (min-width: 768px) {
@@ -46,7 +46,7 @@
                     <svg class="icon-svg icon-svg-sm mr-2">
                         <use xlink:href="#ic-library"></use>
                     </svg>
-                    <strong>${modelType.text}</strong>
+                    <strong>{{model.text()}}</strong>
                 </a>
                 <div class="dropdown-menu shadow-sm" aria-labelledby="modelTypeDropdown">
                     {%for m in StatsModelType::iter()%}
@@ -68,7 +68,7 @@
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-list"></use>
             </svg>
-            <strong>高频${modelType.text}解析</strong>
+            <strong>高频{{model.text()}}解析</strong>
             <div class="flex-grow-1"></div>
             <a class="btn card-link d-flex align-items-center"
                 th:href="@{/idiom-print/{t}(t=${modelType},provinces=${provinces},fromType=${fromType})}">
