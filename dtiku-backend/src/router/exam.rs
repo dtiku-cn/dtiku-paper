@@ -1,3 +1,4 @@
+use crate::views::GetListResult;
 use anyhow::Context;
 use dtiku_paper::model::{query::label::LabelQuery, ExamCategory, Label};
 use spring_sea_orm::DbConn;
@@ -7,8 +8,6 @@ use spring_web::{
     extractor::{Component, Path, Query},
     get,
 };
-
-use crate::views::GetListResult;
 
 #[get("/api/exam/{pid}")]
 async fn list_exam(

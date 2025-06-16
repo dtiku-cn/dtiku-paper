@@ -1,3 +1,4 @@
+use crate::views::GetListResult;
 use anyhow::Context;
 use dtiku_paper::model::KeyPoint;
 use spring_sea_orm::DbConn;
@@ -7,8 +8,6 @@ use spring_web::{
     extractor::{Component, Path},
     get,
 };
-
-use crate::views::GetListResult;
 
 #[get("/api/keypoint/{paper_type}/{pid}")]
 async fn list_exam(
