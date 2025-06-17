@@ -36,8 +36,9 @@ async fn list_all_config(Component(db): Component<DbConn>) -> Result<impl IntoRe
 async fn save_config(
     Component(db): Component<DbConn>,
     Path(key): Path<SystemConfigKey>,
-    Json(value): Json<serde_json::Value>,
+    body: String,
 ) -> Result<impl IntoResponse> {
+    let value: serde_json::Value = serde_json::from_str(&body).context("parse json failed")?;
     let model = SystemConfig::find_by_key(&db, key).await?;
     let active_model = match model {
         Some(m) => system_config::ActiveModel {
