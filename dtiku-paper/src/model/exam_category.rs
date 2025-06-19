@@ -1,5 +1,4 @@
 use anyhow::Context;
-use itertools::Itertools;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
     QueryOrder,

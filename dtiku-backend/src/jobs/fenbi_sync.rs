@@ -557,7 +557,7 @@ impl FenbiSyncService {
                 material_id: Set(m_in_db.id),
                 sort: Set(*num as i16),
             }
-            .insert(&self.target_db)
+            .insert_on_conflict(&self.target_db)
             .await
             .context("insert paper_material failed")?;
 
@@ -604,7 +604,7 @@ impl FenbiSyncService {
                         question_id: Set(q_in_db.id),
                         material_id: Set(target_m_id),
                     }
-                    .insert(&self.target_db)
+                    .insert_on_conflict(&self.target_db)
                     .await
                     .context("insert question_material failed")?;
                 } else {
@@ -638,7 +638,7 @@ impl FenbiSyncService {
                                 question_id: Set(q_in_db.id),
                                 key_point_id: Set(keypoint.id),
                             }
-                            .insert(&self.target_db)
+                            .insert_on_conflict(&self.target_db)
                             .await
                             .context("insert question_keypoint failed")?;
                             keypoint_ids.push(keypoint.id);
@@ -678,7 +678,14 @@ impl FenbiSyncService {
                 Some(path) => Statement::from_sql_and_values(
                     sea_orm::DatabaseBackend::Postgres,
                     r#"INSERT INTO paper_question (paper_id, question_id, sort, paper_type, keypoint_path, correct_ratio)
-                        VALUES ($1, $2, $3, $4, CAST($5 AS ltree), $6)"#,
+                        VALUES ($1, $2, $3, $4, CAST($5 AS ltree), $6)
+                        ON CONFLICT (paper_id, question_id)
+                        DO UPDATE SET 
+                            sort=EXCLUDED.sort, 
+                            paper_type=EXCLUDED.paper_type, 
+                            keypoint_path=EXCLUDED.keypoint_path, 
+                            correct_ratio=EXCLUDED.correct_ratio
+                        "#,
                     vec![
                         paper.id.into(),
                         q_in_db.id.into(),
@@ -691,7 +698,13 @@ impl FenbiSyncService {
                 None => Statement::from_sql_and_values(
                     sea_orm::DatabaseBackend::Postgres,
                     r#"INSERT INTO paper_question (paper_id, question_id, sort, paper_type, correct_ratio)
-                        VALUES ($1, $2, $3, $4, $5)"#,
+                        VALUES ($1, $2, $3, $4, $5)
+                        ON CONFLICT (paper_id, question_id)
+                        DO UPDATE SET 
+                            sort=EXCLUDED.sort, 
+                            paper_type=EXCLUDED.paper_type, 
+                            correct_ratio=EXCLUDED.correct_ratio
+                        "#,
                     vec![
                         paper.id.into(),
                         q_in_db.id.into(),

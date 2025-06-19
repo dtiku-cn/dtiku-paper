@@ -1,7 +1,10 @@
 pub use super::_entities::paper_question::*;
 use crate::query::question::PaperQuestionQuery;
 use anyhow::Context;
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter, QuerySelect};
+use sea_orm::{
+    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
+    QuerySelect,
+};
 
 impl Entity {
     pub async fn find_by_question_id<C>(db: &C, question_id: i32) -> anyhow::Result<Vec<Model>>
@@ -80,5 +83,26 @@ impl Entity {
             .all(db)
             .await
             .with_context(|| format!("paper_question::find_by_query failed"))
+    }
+}
+
+impl ActiveModel {
+    pub async fn insert_on_conflict<C>(self, db: &C) -> Result<Model, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::insert(self)
+            .on_conflict(
+                OnConflict::columns([Column::PaperId, Column::QuestionId])
+                    .update_columns([
+                        Column::Sort,
+                        Column::PaperType,
+                        Column::CorrectRatio,
+                        Column::KeypointPath,
+                    ])
+                    .to_owned(),
+            )
+            .exec_with_returning(db)
+            .await
     }
 }

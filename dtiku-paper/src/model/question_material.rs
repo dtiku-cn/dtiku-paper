@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use anyhow::Context;
 use itertools::Itertools;
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
+use sea_orm::{
+    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
+};
 
 pub use super::_entities::question_material::*;
 
@@ -34,5 +36,21 @@ impl Entity {
             .into_iter()
             .map(|r| (r.question_id, r.material_id))
             .into_group_map())
+    }
+}
+
+impl ActiveModel {
+    pub async fn insert_on_conflict<C>(self, db: &C) -> Result<Model, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::insert(self)
+            .on_conflict(
+                OnConflict::columns([Column::QuestionId, Column::MaterialId])
+                    .do_nothing()
+                    .to_owned(),
+            )
+            .exec_with_returning(db)
+            .await
     }
 }
