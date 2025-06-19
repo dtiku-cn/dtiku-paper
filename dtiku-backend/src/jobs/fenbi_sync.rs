@@ -30,7 +30,7 @@ use futures::StreamExt;
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::prelude::PgVector;
-use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter, Statement};
+use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter, Statement, TransactionTrait};
 use sea_orm::{ConnectionTrait, EntityTrait};
 use sea_orm::{PaginatorTrait, Set};
 use serde::Deserialize;
@@ -206,16 +206,19 @@ impl FenbiSyncService {
                         }
                     };
 
-                    for c in extra.0 {
-                        Self::save_question_category_to_keypoint(
-                            c,
-                            0,
-                            paper_type,
-                            exam_id,
-                            &self.target_db,
-                        )
+                    self.target_db
+                        .transaction::<_, (), anyhow::Error>(|tx| {
+                            Box::pin(async move {
+                                for c in extra.0 {
+                                    Self::save_question_category_to_keypoint(
+                                        c, 0, paper_type, exam_id, tx,
+                                    )
+                                    .await?;
+                                }
+                                Ok(())
+                            })
+                        })
                         .await?;
-                    }
 
                     if progress.increase(1) {
                         self.task = self
@@ -230,12 +233,12 @@ impl FenbiSyncService {
         Ok(())
     }
 
-    async fn save_question_category_to_keypoint(
+    async fn save_question_category_to_keypoint<C: ConnectionTrait>(
         c: QuestionCategory,
         parent_id: i32,
         paper_type: i16,
         exam_id: i16,
-        target_db: &DbConn,
+        target_db: &C,
     ) -> anyhow::Result<()> {
         let kp = key_point::ActiveModel {
             name: Set(c.name),
