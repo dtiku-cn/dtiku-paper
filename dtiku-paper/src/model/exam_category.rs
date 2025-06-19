@@ -1,8 +1,9 @@
 use anyhow::Context;
-use spring_redis::cache;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
+    QueryOrder,
 };
+use spring_redis::cache;
 
 pub use super::_entities::exam_category::*;
 
@@ -13,6 +14,7 @@ impl Entity {
     {
         Entity::find()
             .filter(Column::Pid.eq(pid))
+            .order_by_asc(Column::Id)
             .all(db)
             .await
             .with_context(|| format!("exam_category::find_all_by_pid({pid}) failed"))
