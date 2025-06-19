@@ -250,13 +250,17 @@ impl FenbiSyncService {
         .insert_on_conflict(target_db)
         .await?;
 
-        let parent_id = kp.id;
+        let c_parent_id = kp.id;
 
         if let Some(cs) = c.children {
             for c in cs {
                 Box::pin(async move {
                     Self::save_question_category_to_keypoint(
-                        c, parent_id, paper_type, exam_id, target_db,
+                        c,
+                        c_parent_id,
+                        paper_type,
+                        exam_id,
+                        target_db,
                     )
                     .await
                 })

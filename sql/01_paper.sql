@@ -52,7 +52,7 @@ create table if not exists key_point(
     pid integer not null,
     exam_id int2 not null,
     paper_type int2 not null,
-    unique(pid, name)
+    unique(paper_type, pid, name)
 );
 -- 问题
 drop table if exists question;
