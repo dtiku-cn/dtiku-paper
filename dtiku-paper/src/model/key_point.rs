@@ -1,10 +1,11 @@
 pub use super::_entities::key_point::*;
 use crate::util;
 use anyhow::Context;
-use spring_redis::cache;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
+    QueryOrder,
 };
+use spring_redis::cache;
 
 impl Entity {
     pub async fn find_by_pid<C: ConnectionTrait>(
@@ -14,6 +15,7 @@ impl Entity {
     ) -> anyhow::Result<Vec<Model>> {
         Entity::find()
             .filter(Column::Pid.eq(pid).and(Column::PaperType.eq(paper_type)))
+            .order_by_asc(Column::Id)
             .all(db)
             .await
             .with_context(|| format!("key_point::find_by_pid({paper_type},{pid}) failed"))
@@ -66,7 +68,7 @@ impl Entity {
         }
     }
 
-    #[cache("keypoint:{id}",expire = 86400)]
+    #[cache("keypoint:{id}", expire = 86400)]
     pub async fn find_by_id_with_cache<C: ConnectionTrait>(
         db: &C,
         id: i32,

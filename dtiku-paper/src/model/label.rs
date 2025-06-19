@@ -3,6 +3,7 @@ use super::query::label::LabelQuery;
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
+    QueryOrder,
 };
 use spring_redis::cache;
 
@@ -37,6 +38,7 @@ impl Entity {
     {
         Entity::find()
             .filter(query.clone())
+            .order_by_asc(Column::Id)
             .all(db)
             .await
             .with_context(|| format!("find_all_by_query({query:?}) failed"))
