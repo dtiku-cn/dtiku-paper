@@ -90,7 +90,11 @@
                     src="{{u.avatar}}" title="{{u.name}}" alt="{{u.name}}" />
                 {% endif %}
                 <b class="d-none d-md-block">{{issue.author_name()}}</b>
-                <span>发布于{{global.format(issue.created, "%Y-%m-%d %H:%M")}}</span>
+                <span data-toggle="tooltip" title='{{global.format(issue.created, "%Y-%m-%d %H:%M")}}'>发布于{{global.format_with_now(issue.created)}}</span>
+                {% if issue.created != issue.modified %}
+                <span> | </span>
+                <span data-toggle="tooltip" title='{{global.format(issue.modified, "%Y-%m-%d %H:%M")}}'>更新于{{global.format_with_now(issue.modified)}}</span>
+                {% endif %}
             </div>
             <div class="artalk-page-vote d-flex">
                 <a id="agree" class="card-link d-flex align-items-center artalk-page-vote-up" title="赞同数"

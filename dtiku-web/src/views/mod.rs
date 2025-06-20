@@ -107,7 +107,7 @@ impl GlobalVariables {
             return format!("{}天前", days);
         }
 
-        date_time.format("%Y-%m-%d").to_string()
+        date_time.format("%Y-%-m-%-d").to_string()
     }
 
     pub fn uri_starts_with(&self, prefix: &str) -> bool {
