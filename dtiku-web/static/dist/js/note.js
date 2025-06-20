@@ -435,7 +435,7 @@ window.FloatButton = function (options) {
             }
         }).join("");
         return "<style>#float-buttons {position: fixed;bottom: 4rem;right: 3rem;z-index: 122;color:#007bff;}"+
-            "#float-buttons .icon-svg{font-size:45px;}" +
+            "#float-buttons .icon-svg{margin:2px;font-size:40px;}" +
             "#float-buttons > div {position: fixed;right: 0;z-index: 23;transition: all .2s;box-shadow: 3px 3px 6px 3px rgba(0, 0, 0, .3);}" +
             menuCss +
             "#float-buttons > div:hover {box-shadow: 3px 3px 6px 3px rgba(0, 0, 0, .45);}" +
