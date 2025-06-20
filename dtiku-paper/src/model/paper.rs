@@ -3,7 +3,7 @@ use crate::query::paper::ListPaperQuery;
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromJsonQueryResult,
-    QueryFilter,
+    QueryFilter, QueryOrder,
 };
 use serde::{Deserialize, Serialize};
 use spring_sea_orm::pagination::{Page, PaginationExt};
@@ -126,6 +126,7 @@ impl Entity {
                     .eq(query.label_id)
                     .and(Column::PaperType.eq(query.paper_type)),
             )
+            .order_by_desc(Column::Year)
             .page(db, &query.page)
             .await
             .with_context(|| format!("find_by_query({query:?}) failed"))

@@ -3,7 +3,7 @@ pub use super::_entities::issue::*;
 use anyhow::Context;
 use sea_orm::{
     sea_query::IntoCondition, sqlx::types::chrono::Local, ActiveModelBehavior, ConnectionTrait,
-    DbErr, EntityTrait, QueryFilter, Set,
+    DbErr, EntityTrait, QueryFilter, QueryOrder, Set,
 };
 use spring::async_trait;
 use spring_sea_orm::pagination::{Page, Pagination, PaginationExt};
@@ -40,6 +40,7 @@ impl Entity {
     ) -> anyhow::Result<Page<Model>> {
         Entity::find()
             .filter(query.clone().into_condition())
+            .order_by_desc(Column::Created)
             .page(db, &pagination)
             .await
             .context("find issue failed")
