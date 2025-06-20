@@ -93,7 +93,7 @@
                 <span data-toggle="tooltip"
                     title='{{global.format(issue.created, "%Y-%m-%d %H:%M")}}'>发布于{{global.format_with_now(issue.created)}}</span>
                 {% if issue.created != issue.modified %}
-                <span class="d-sm-none"> | </span>
+                <span class="d-sm-none">&nbsp; | &nbsp;</span>
                 <span class="d-sm-none" data-toggle="tooltip"
                     title='{{global.format(issue.modified, "%Y-%m-%d %H:%M")}}'>更新于{{global.format_with_now(issue.modified)}}</span>
                 {% endif %}
