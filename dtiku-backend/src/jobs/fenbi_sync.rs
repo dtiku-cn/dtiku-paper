@@ -545,28 +545,7 @@ impl FenbiSyncService {
             let num = mid_num_map
                 .get(&m.id)
                 .expect("mid is not exists in mid_num_map");
-            let material = TryInto::<material::ActiveModel>::try_into(m)?;
-
-            let m_in_db = material
-                .insert_on_conflict(&self.target_db)
-                .await
-                .context("insert paper_material failed")?;
-
-            paper_material::ActiveModel {
-                paper_id: Set(paper.id),
-                material_id: Set(m_in_db.id),
-                sort: Set(*num as i16),
-            }
-            .insert_on_conflict(&self.target_db)
-            .await
-            .context("insert paper_material failed")?;
-
-            sqlx::query("update material set target_id=$1 where id=$2 and from_ty='fenbi'")
-                .bind(m_in_db.id)
-                .bind(source_material_id)
-                .execute(&self.source_db)
-                .await
-                .context("update source db paper target_id failed")?;
+            self.save_material(m, paper.id, *num).await?;
         }
 
         for q in questions {
@@ -608,12 +587,16 @@ impl FenbiSyncService {
                     .await
                     .context("insert question_material failed")?;
                 } else {
-                    tracing::error!(
+                    tracing::warn!(
                         "origin_question#{} ==> question#{}: material#{} target_id not exists",
                         q.id,
                         q_in_db.id,
                         origin_m_id
                     );
+                    let num = mid_num_map
+                        .get(&m.id)
+                        .expect("mid is not exists in mid_num_map");
+                    self.save_material(m.0, paper.id, *num).await?;
                 }
             }
 
@@ -723,6 +706,35 @@ impl FenbiSyncService {
             })?;
         }
 
+        Ok(())
+    }
+
+    async fn save_material(
+        &self,
+        m: OriginMaterial,
+        paper_id: i32,
+        num: i32,
+    ) -> Result<(), anyhow::Error> {
+        let source_material_id = m.id;
+        let material = TryInto::<material::ActiveModel>::try_into(m)?;
+        let m_in_db = material
+            .insert_on_conflict(&self.target_db)
+            .await
+            .context("insert paper_material failed")?;
+        paper_material::ActiveModel {
+            paper_id: Set(paper_id),
+            material_id: Set(m_in_db.id),
+            sort: Set(num as i16),
+        }
+        .insert_on_conflict(&self.target_db)
+        .await
+        .context("insert paper_material failed")?;
+        sqlx::query("update material set target_id=$1 where id=$2 and from_ty='fenbi'")
+            .bind(m_in_db.id)
+            .bind(source_material_id)
+            .execute(&self.source_db)
+            .await
+            .context("update source db paper target_id failed")?;
         Ok(())
     }
 }
