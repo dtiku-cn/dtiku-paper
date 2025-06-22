@@ -1,3 +1,4 @@
+use crate::views::GlobalVariables;
 use dtiku_paper::service::keypoint::KeyPointService;
 use spring_web::{
     axum::{response::IntoResponse, Extension, Json},
@@ -5,8 +6,6 @@ use spring_web::{
     extractor::{Component, Path},
     get,
 };
-
-use crate::views::GlobalVariables;
 
 #[get("/kp/{paper_type}/{pid}")]
 async fn list_key_point(
