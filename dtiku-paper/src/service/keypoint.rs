@@ -1,9 +1,10 @@
 use crate::{
-    domain::keypoint::KeyPointNode,
+    domain::keypoint::{KeyPointNode, KeyPointTree},
     model::{key_point, KeyPoint},
 };
 use itertools::Itertools;
 use spring::plugin::service::Service;
+use spring_redis::cache;
 use spring_sea_orm::DbConn;
 use std::collections::HashMap;
 
@@ -14,15 +15,15 @@ pub struct KeyPointService {
 }
 
 impl KeyPointService {
-    pub async fn build_tree_for_paper_type(
-        &self,
-        paper_type: i16,
-    ) -> anyhow::Result<Vec<KeyPointNode>> {
+    #[cache("key_point:tree:{paper_type}")]
+    pub async fn build_tree_for_paper_type(&self, paper_type: i16) -> anyhow::Result<KeyPointTree> {
         let models = KeyPoint::find_by_paper_type(&self.db, paper_type).await?;
 
         let pid_children_map = models.iter().into_group_map_by(|m| m.pid);
 
-        Ok(Self::build_tree(0, &pid_children_map))
+        Ok(KeyPointTree {
+            tree: Self::build_tree(0, &pid_children_map),
+        })
     }
 
     fn build_tree(pid: i32, map: &HashMap<i32, Vec<&key_point::Model>>) -> Vec<KeyPointNode> {

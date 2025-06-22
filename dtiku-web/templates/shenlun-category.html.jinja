@@ -13,37 +13,27 @@
 
 <body class="container">
     {% call general::header() %}
-    <div id="fromType" class="text-center mb-3">
-        <a th:if="${bools.isTrue(system_showVendor)}" class="btn btn-link" href="/shenlun-categories"
-            th:classappend="${fromType==null?'active':''}">全部</a>
-        <a th:if="${bools.isTrue(system_showVendor)}" class="btn btn-link" th:each="type : ${allFromType}"
-            th:href="@{/shenlun-categories(fromType=${type.name()})}" th:data="${type.name()}" th:text="${type.text}"
-            th:classappend="${fromType==type?'active':''}"></a>
-    </div>
     <div class="row mb-4">
         <div class=" col-xs-12 col-md-3 mb-3">
             <div id="accordion" class="accordion position-sticky" style="top:0">
-                {%for kp in kp_tree%}
+                {%for kpp in kp_tree.tree%}
                 <div class="card">
-                    <div class="card-header p-2" id="heading-{{kp.id}}">
-                        <button type="button" class="btn btn-link d-flex align-items-center text-left"
-                            data-toggle="collapse" th:classappend="${category==e.key?'':'collapsed'}"
-                            aria-expanded="${category==e.key}" data-target="#collapse-{{kp.id}}">
+                    <div class="card-header p-2" id="heading-{{kpp.id}}">
+                        <button type="button"
+                            class="btn btn-link d-flex align-items-center text-left {%if kp_pid!=kpp.id%}collapsed{%endif%}"
+                            data-toggle="collapse" aria-expanded="{{kp_pid==kpp.id}}" data-target="#collapse-{{kpp.id}}">
                             <svg class="icon-svg icon-svg-sm icon-svg-arrow mr-2">
                                 <use xlink:href="#ic-arrow"></use>
                             </svg>
-                            <b>{{kp.name}}</b>
+                            <b>{{kpp.name}}</b>
                         </button>
                     </div>
-                    <div class="collapse" data-parent="#accordion" id="collapse-{{kp.id}}"
-                        th:classappend="${category==e.key?'show':''}">
+                    <div class="collapse {%if kp_pid==kpp.id%}show{%endif%}" data-parent="#accordion" id="collapse-{{kpp.id}}">
                         <div class="list-group list-group-flush">
-                            {%for c in kp.children %}
-                            <a class="list-group-item d-flex justify-content-between align-items-center"
-                                th:classappend="${text==v.text?'active':''}"
-                                th:href="@{/shenlun-categories/{category}/{text}(category=${v.category},text=${v.text},fromType=${strings.defaultString(fromType,'')})}">
-                                <strong th:if="${text==v.text}">{{c.name}}</strong>
-                                <span th:if="${text!=v.text}">{{c.name}}</span>
+                            {%for kp in kpp.children %}
+                            <a class="list-group-item d-flex justify-content-between align-items-center {%if kp_id==kp.id%}active{%endif%}"
+                                href="/shenlun-categories/{{kpp.id}}/{{kp.id}}">
+                                {%if kp_id == kp.id%}<strong>{{kp.name}}</strong>{%else%}<span>{{kp.name}}</span>{%endif%}
                                 <span class="badge badge-pill badge-secondary">{v.count}</span>
                             </a>
                             {%endfor%}

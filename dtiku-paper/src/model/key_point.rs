@@ -38,6 +38,7 @@ impl Entity {
     ) -> Result<Vec<Model>, DbErr> {
         Entity::find()
             .filter(Column::PaperType.eq(paper_type))
+            .order_by_asc(Column::Id)
             .all(db)
             .await
     }
