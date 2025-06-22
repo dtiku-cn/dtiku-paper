@@ -1737,6 +1737,7 @@ dependencies = [
  "rustls",
  "sea-orm",
  "serde",
+ "serde_html_form",
  "serde_json",
  "serde_urlencoded",
  "spring",

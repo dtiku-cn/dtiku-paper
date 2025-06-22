@@ -57,9 +57,10 @@
             <span class="text-muted">（可选择多个省份）</span>
         </header>
         <div id="allProvinces" class="card-body d-flex flex-wrap">
-            <a class="btn btn-link" th:each="p : ${allProvinces}"
-                th:href="@{/{t}(t=${modelType.name()},provinces=${strings.setJoin(@thymeleafUtils.addonSet(provinces,p),',')},fromType=${fromType})}"
-                th:text="${p}" th:classappend="${provinces.contains(p)?'active':''}"></a>
+            {% for l in label_tree.labels %}
+            <a class="btn btn-link {% if req.contains_label(l.id) %}active{% endif %}"
+                href="?{{req.to_qs_toggle_label(l.id)}}">{{l.name}}</a>
+            {% endfor %}
         </div>
     </div>
 

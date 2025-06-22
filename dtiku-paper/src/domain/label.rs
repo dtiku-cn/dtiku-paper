@@ -10,6 +10,13 @@ pub struct LabelTree {
 }
 
 impl LabelTree {
+    pub fn none() -> Self {
+        Self {
+            labels: vec![],
+            level: false,
+        }
+    }
+
     pub fn default_label_id(&self) -> i32 {
         if self.level {
             self.labels

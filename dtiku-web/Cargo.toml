@@ -48,6 +48,7 @@ reqwest_dav = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 rustls = { workspace = true }
 serde_urlencoded = { workspace = true }
+serde_html_form = { workspace = true }
 
 [build-dependencies]
 minify-html = "0.16"
