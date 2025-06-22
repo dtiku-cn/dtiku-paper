@@ -8,6 +8,17 @@ use sea_orm::{
 use spring_redis::cache;
 
 impl Entity {
+    #[cache("keypoint:{id}", expire = 86400)]
+    pub async fn find_by_id_with_cache<C: ConnectionTrait>(
+        db: &C,
+        id: i32,
+    ) -> anyhow::Result<Option<Model>> {
+        Entity::find_by_id(id)
+            .one(db)
+            .await
+            .with_context(|| format!("KeyPoint::find_by_id_with_cache({id}) failed"))
+    }
+
     pub async fn find_by_pid<C: ConnectionTrait>(
         db: &C,
         paper_type: i16,
@@ -19,6 +30,16 @@ impl Entity {
             .all(db)
             .await
             .with_context(|| format!("key_point::find_by_pid({paper_type},{pid}) failed"))
+    }
+
+    pub async fn find_by_paper_type<C: ConnectionTrait>(
+        db: &C,
+        paper_type: i16,
+    ) -> Result<Vec<Model>, DbErr> {
+        Entity::find()
+            .filter(Column::PaperType.eq(paper_type))
+            .all(db)
+            .await
     }
 
     pub async fn find_by_paper_type_and_name<C: ConnectionTrait>(
@@ -66,17 +87,6 @@ impl Entity {
                 return Ok(None);
             }
         }
-    }
-
-    #[cache("keypoint:{id}", expire = 86400)]
-    pub async fn find_by_id_with_cache<C: ConnectionTrait>(
-        db: &C,
-        id: i32,
-    ) -> anyhow::Result<Option<Model>> {
-        Entity::find_by_id(id)
-            .one(db)
-            .await
-            .with_context(|| format!("KeyPoint::find_by_id_with_cache({id}) failed"))
     }
 }
 

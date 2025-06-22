@@ -23,30 +23,34 @@
     <div class="row mb-4">
         <div class=" col-xs-12 col-md-3 mb-3">
             <div id="accordion" class="accordion position-sticky" style="top:0">
-                <div class="card" th:each="e:${categoryStats.asMap().entrySet()}">
-                    <div class="card-header p-2" th:id="|heading-${e.key}|">
+                {%for kp in kp_tree%}
+                <div class="card">
+                    <div class="card-header p-2" id="heading-{{kp.id}}">
                         <button type="button" class="btn btn-link d-flex align-items-center text-left"
                             data-toggle="collapse" th:classappend="${category==e.key?'':'collapsed'}"
-                            th:aria-expanded="${category==e.key}" th:data-target="'#collapse-'+${e.key}">
+                            aria-expanded="${category==e.key}" data-target="#collapse-{{kp.id}}">
                             <svg class="icon-svg icon-svg-sm icon-svg-arrow mr-2">
                                 <use xlink:href="#ic-arrow"></use>
                             </svg>
-                            <b th:text="${e.key.category}"></b>
+                            <b>{{kp.name}}</b>
                         </button>
                     </div>
-                    <div class="collapse" data-parent="#accordion" th:id="'collapse-'+${e.key}"
+                    <div class="collapse" data-parent="#accordion" id="collapse-{{kp.id}}"
                         th:classappend="${category==e.key?'show':''}">
                         <div class="list-group list-group-flush">
+                            {%for c in kp.children %}
                             <a class="list-group-item d-flex justify-content-between align-items-center"
-                                th:each="v:${e.value}" th:classappend="${text==v.text?'active':''}"
+                                th:classappend="${text==v.text?'active':''}"
                                 th:href="@{/shenlun-categories/{category}/{text}(category=${v.category},text=${v.text},fromType=${strings.defaultString(fromType,'')})}">
-                                <strong th:if="${text==v.text}" th:text="${v.text}"></strong>
-                                <span th:if="${text!=v.text}" th:text="${v.text}"></span>
-                                <span class="badge badge-pill badge-secondary" th:text="${v.count}"></span>
+                                <strong th:if="${text==v.text}">{{c.name}}</strong>
+                                <span th:if="${text!=v.text}">{{c.name}}</span>
+                                <span class="badge badge-pill badge-secondary">{v.count}</span>
                             </a>
+                            {%endfor%}
                         </div>
                     </div>
                 </div>
+                {%endfor%}
             </div>
         </div>
 
@@ -65,7 +69,8 @@
             <div class="card mb-3" th:each="q : ${page.content}" th:include="fragments/question::question_card(${q})">
             </div>
             <th:block
-                th:include="fragments/elements::pagination(${page},@{/shenlun-categories/{c}/{t}/{y}(c=${category},t=${text},y=${year},fromType=${strings.defaultString(fromType,'')})},true)"></th:block>
+                th:include="fragments/elements::pagination(${page},@{/shenlun-categories/{c}/{t}/{y}(c=${category},t=${text},y=${year},fromType=${strings.defaultString(fromType,'')})},true)">
+            </th:block>
         </div>
     </div>
     {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽")%}
