@@ -7,6 +7,7 @@ mod pay;
 mod question;
 mod shenlun_category;
 mod user;
+mod key_point;
 
 use crate::service::user::UserService;
 use crate::views::{ErrorTemplate, GlobalVariables};

@@ -2,7 +2,9 @@ use crate::{
     domain::keypoint::{KeyPointNode, KeyPointTree},
     model::{key_point, KeyPoint},
 };
+use anyhow::Context;
 use itertools::Itertools;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use spring::plugin::service::Service;
 use spring_redis::cache;
 use spring_sea_orm::DbConn;
@@ -24,6 +26,22 @@ impl KeyPointService {
         Ok(KeyPointTree {
             tree: Self::build_tree(0, &pid_children_map),
         })
+    }
+
+    pub async fn find_key_point_by_pid(
+        &self,
+        paper_type: i16,
+        key_point_id: i32,
+    ) -> anyhow::Result<Vec<key_point::Model>> {
+        KeyPoint::find()
+            .filter(
+                key_point::Column::Pid
+                    .eq(key_point_id)
+                    .and(key_point::Column::PaperType.eq(paper_type)),
+            )
+            .all(&self.db)
+            .await
+            .with_context(|| format!("find_key_point_by_pid({key_point_id})"))
     }
 
     fn build_tree(pid: i32, map: &HashMap<i32, Vec<&key_point::Model>>) -> Vec<KeyPointNode> {
