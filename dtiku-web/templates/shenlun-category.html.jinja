@@ -1,12 +1,14 @@
 {%- import "macros/general.html.min.jinja" as general -%}
 {%- import "macros/artalk.html.min.jinja" as artalk -%}
 {%- import "macros/painter.html.min.jinja" as painter -%}
+{%- import "macros/shenlun-template.html.min.jinja" as shenlun_template -%}
 <!doctype html>
 <html lang="zh">
 
 <head>
     {% call general::meta() %}
-    <title>{{kp_tree.kp_text(kp_id,"申论答案")}} | {{kp_tree.kp_text(kp_pid,"申论答案")}} | 申论题型分类 | {{global.config.site_title}}</title>
+    <title>{{kp_tree.kp_text_or_default(kp_id,"申论答案")}} | {{kp_tree.kp_text_or_default(kp_pid,"申论答案")}} | 申论题型分类 |
+        {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
 </head>
 
@@ -19,7 +21,7 @@
                 <div class="card">
                     <div class="card-header p-2" id="heading-{{kpp.id}}">
                         <button type="button"
-                            class="btn btn-link d-flex align-items-center text-left {%if kp_pid!=kpp.id%}collapsed{%endif%}"
+                            class="btn btn-link btn-block d-flex align-items-center text-left {%if kp_pid!=kpp.id%}collapsed{%endif%}"
                             data-toggle="collapse" aria-expanded="{{kp_pid==kpp.id}}"
                             data-target="#collapse-{{kpp.id}}">
                             <svg class="icon-svg icon-svg-sm icon-svg-arrow mr-2">
@@ -48,7 +50,9 @@
         </div>
 
         <div class="col-xs-12 col-md-9">
-            <th:block th:include="fragments/shenlun-template::shenlun-template(${template})"></th:block>
+            {%if let Some(kp_name) = kp_tree.kp_text(kp_id) %}
+            {%call shenlun_template::shenlun-template(kp_name)%}
+            {%endif%}
             <ul class="nav nav-pills my-3" role="tablist">
                 <li role="presentation" class="nav-item" th:each="y:${yearStats}">
                     <a class="nav-link d-flex justify-content-between align-items-center"

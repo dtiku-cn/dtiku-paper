@@ -20,13 +20,22 @@ impl KeyPointTree {
         }
     }
 
-    pub fn kp_text(&self, kp_id: &i32, default_value: &str) -> String {
+    pub fn kp_text_or_default(&self, kp_id: &i32, default_value: &str) -> String {
         for node in &self.tree {
             if let Some(name) = Self::find_name_by_id(node, kp_id) {
                 return name;
             }
         }
         default_value.to_string()
+    }
+
+    pub fn kp_text(&self, kp_id: &i32) -> Option<String> {
+        for node in &self.tree {
+            if let Some(name) = Self::find_name_by_id(node, kp_id) {
+                return Some(name);
+            }
+        }
+        None
     }
 
     fn find_name_by_id(node: &KeyPointNode, kp_id: &i32) -> Option<String> {
