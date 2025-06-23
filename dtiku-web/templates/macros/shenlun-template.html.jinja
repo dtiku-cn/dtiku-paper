@@ -1,8 +1,8 @@
-{% macro shenlun_template(kp_name) %}
+{%macro shenlun_template(kp_name)%}
+{%match kp_name%}
+{% when "评论类" %}
 <div class="card">
     <div class="card-body">
-        {%match kp_name%}
-        {% when "评论类" %}
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
@@ -16,8 +16,12 @@
             <p style="text-indent:2em">评析论证（根据题干倾向确定内容，结合材料丰富完善。问题、原因、意义）</p>
             <p style="text-indent:2em">结尾（对策、升华等）</p>
         </article>
-        {% endwhen %}
-        {% when "总结类" %}
+    </div>
+</div>
+{% endwhen %}
+{% when "总结类" %}
+<div class="card">
+    <div class="card-body">
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
@@ -34,8 +38,12 @@
             <p style="text-align:right">落款：发文者</p>
             <p style="text-align:right">XX年XX月XX日</p>
         </article>
-        {% endwhen %}
-        {% when "方案类" %}
+    </div>
+</div>
+{% endwhen %}
+{% when "方案类" %}
+<div class="card">
+    <div class="card-body">
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
@@ -52,8 +60,12 @@
             <p style="text-align:right">落款：发文者</p>
             <p style="text-align:right">XX年XX月XX日</p>
         </article>
-        {% endwhen %}
-        {% when "宣传类" %}
+    </div>
+</div>
+{% endwhen %}
+{% when "宣传类" %}
+<div class="card">
+    <div class="card-body">
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
@@ -70,8 +82,12 @@
             <p style="text-align:right">落款：发文者</p>
             <p style="text-align:right">XX年XX月XX日</p>
         </article>
-        {% endwhen %}
-        {% when "提出对策类" %}
+    </div>
+</div>
+{% endwhen %}
+{% when "提出对策类" %}
+<div class="card">
+    <div class="card-body">
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
@@ -122,8 +138,12 @@
             <p>2. XXXX。xxx; xxx; xxx。</p>
             <p>3. XXXX。xxx; xxx; xxx。</p>
         </article>
-        {% endwhen %}
-        {% when "影响类" %}
+    </div>
+</div>
+{% endwhen %}
+{% when "影响类" %}
+<div class="card">
+    <div class="card-body">
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
@@ -137,8 +157,12 @@
             <p>2、XXXX。xxx; xxx; xxx。</p>
             <p>3、XXXX。xxx; xxx; xxx。</p>
         </article>
-        {% endwhen %}
-        {% when "问题类" %}
+    </div>
+</div>
+{% endwhen %}
+{% when "问题类" %}
+<div class="card">
+    <div class="card-body">
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
@@ -152,8 +176,12 @@
             <p>2. XXXX。xxx; xxx; xxx。</p>
             <p>3. XXXX。xxx; xxx; xxx。</p>
         </article>
-        {% endwhen %}
-        {% when "原因类" %}
+    </div>
+</div>
+{% endwhen %}
+{% when "原因类" %}
+<div class="card">
+    <div class="card-body">
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
@@ -167,8 +195,12 @@
             <p>2. XXXX。xxx; xxx; xxx。</p>
             <p>3. XXXX。xxx; xxx; xxx。</p>
         </article>
-        {% endwhen %}
-        {% when "观点现象分析类" | "概括主要内容类" | "词句解释类" %}
+    </div>
+</div>
+{% endwhen %}
+{% when "观点现象分析类" | "概括主要内容类" | "词句解释类" %}
+<div class="card">
+    <div class="card-body">
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
@@ -188,8 +220,8 @@
             <p>为什么。(对策的意义)</p>
             <p>怎么做。(对策具体扩展，重点)</p>
         </article>
-        {% endwhen %}
-        {% endmatch %}
     </div>
 </div>
-{% endmacro shenlun_template %}
+{% endwhen %}
+{% endmatch %}
+{%endmacro shenlun_template%}
