@@ -1,15 +1,15 @@
 {% macro shenlun_template(kp_name) %}
-    <div class="card" th:if="${template!=null}">
-        <div class="card-body">
-            <p class="d-flex align-items-center">
-                <svg class="icon-svg icon-svg-sm mr-2">
-                    <use xlink:href="#ic-question"></use>
-                </svg>
-                <b th:utext="${template.text}"></b>
-            </p>
-            <hr>
-            <p th:if="${template.tip!=null}" class="card-text mb-2" th:utext="${template.tip}"></p>
-            <article th:if="${template.template!=null}" class="shenlun-doc" th:utext="${template.template}"></article>
-        </div>
+<div class="card" th:if="${template!=null}">
+    <div class="card-body">
+        <p class="d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-question"></use>
+            </svg>
+            <b th:utext="${template.text}"></b>
+        </p>
+        <hr>
+        <p th:if="${template.tip!=null}" class="card-text mb-2" th:utext="${template.tip}"></p>
+        <article th:if="${template.template!=null}" class="shenlun-doc" th:utext="${template.template}"></article>
     </div>
+</div>
 {% endmacro shenlun_template %}

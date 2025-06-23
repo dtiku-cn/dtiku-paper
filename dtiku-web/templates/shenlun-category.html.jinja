@@ -50,7 +50,7 @@
         </div>
 
         <div class="col-xs-12 col-md-9">
-            {%if let Some(kp_name) = kp_tree.kp_text(kp_id) %}
+            {%if let Some(kp_name) = kp_tree.kp_text(kp_id)%}
             {%call shenlun_template::shenlun-template(kp_name)%}
             {%endif%}
             <ul class="nav nav-pills my-3" role="tablist">
