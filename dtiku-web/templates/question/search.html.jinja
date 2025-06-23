@@ -94,7 +94,7 @@
             const content = $search.val();
             if (content && content.length && content.length >= 2) {
                 const type = $("#question-type button").attr('value');
-                location.href = "/question/search" + "?type=" + type + "&content=" + encodeURI(content);
+                location.href = "/question/search?content=" + encodeURI(content) + (type ? "&type=" + type : "");
             } else {
                 $search.addClass('is-invalid');
             }
