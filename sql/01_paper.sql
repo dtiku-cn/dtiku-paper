@@ -68,8 +68,22 @@ drop table if exists question_key_point;
 create table if not exists question_key_point(
     question_id integer not null,
     key_point_id integer not null,
+    year int2 not null,
     primary key (question_id, key_point_id)
 );
+create index concurrently if not exists idx_qkp_for_agg
+on question_key_point (key_point_id, year, question_id);
+create materialized view if not exists question_key_point_stats as
+select
+    key_point_id,
+    year,
+    count(distinct question_id) as question_count
+from
+    question_key_point
+group by
+    key_point_id,
+    year;
+
 drop table if exists paper_question;
 create table if not exists paper_question (
     paper_id integer not null,

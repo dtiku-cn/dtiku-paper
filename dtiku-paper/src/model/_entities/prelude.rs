@@ -10,5 +10,6 @@ pub use super::paper_material::Entity as PaperMaterial;
 pub use super::paper_question::Entity as PaperQuestion;
 pub use super::question::Entity as Question;
 pub use super::question_key_point::Entity as QuestionKeyPoint;
+pub use super::question_key_point_stats::Entity as QuestionKeyPointStats;
 pub use super::question_material::Entity as QuestionMaterial;
 pub use super::solution::Entity as Solution;

@@ -15,3 +15,4 @@ pub mod question_key_point;
 pub mod question_material;
 pub mod sea_orm_active_enums;
 pub mod solution;
+pub mod question_key_point_stats;

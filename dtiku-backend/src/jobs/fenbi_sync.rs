@@ -620,6 +620,7 @@ impl FenbiSyncService {
                             question_keypoint::ActiveModel {
                                 question_id: Set(q_in_db.id),
                                 key_point_id: Set(keypoint.id),
+                                year: Set(paper.year),
                             }
                             .insert_on_conflict(&self.target_db)
                             .await

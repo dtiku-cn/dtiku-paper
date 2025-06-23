@@ -6,8 +6,7 @@
 
 <head>
     {% call general::meta() %}
-    <title>strings.defaultString(text,'申论答案') | strings.defaultString(category.category,'申论答案') | 申论题型分类 |
-        {{global.config.site_title}}</title>
+    <title>{{kp_tree.kp_text(kp_id,"申论答案")}} | {{kp_tree.kp_text(kp_pid,"申论答案")}} | 申论题型分类 | {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
 </head>
 
@@ -21,20 +20,24 @@
                     <div class="card-header p-2" id="heading-{{kpp.id}}">
                         <button type="button"
                             class="btn btn-link d-flex align-items-center text-left {%if kp_pid!=kpp.id%}collapsed{%endif%}"
-                            data-toggle="collapse" aria-expanded="{{kp_pid==kpp.id}}" data-target="#collapse-{{kpp.id}}">
+                            data-toggle="collapse" aria-expanded="{{kp_pid==kpp.id}}"
+                            data-target="#collapse-{{kpp.id}}">
                             <svg class="icon-svg icon-svg-sm icon-svg-arrow mr-2">
                                 <use xlink:href="#ic-arrow"></use>
                             </svg>
                             <b>{{kpp.name}}</b>
                         </button>
                     </div>
-                    <div class="collapse {%if kp_pid==kpp.id%}show{%endif%}" data-parent="#accordion" id="collapse-{{kpp.id}}">
+                    <div class="collapse {%if kp_pid==kpp.id%}show{%endif%}" data-parent="#accordion"
+                        id="collapse-{{kpp.id}}">
                         <div class="list-group list-group-flush">
                             {%for kp in kpp.children %}
                             <a class="list-group-item d-flex justify-content-between align-items-center {%if kp_id==kp.id%}active{%endif%}"
                                 href="/shenlun-categories/{{kpp.id}}/{{kp.id}}">
-                                {%if kp_id == kp.id%}<strong>{{kp.name}}</strong>{%else%}<span>{{kp.name}}</span>{%endif%}
-                                <span class="badge badge-pill badge-secondary">{v.count}</span>
+                                {%if kp_id == kp.id%}<strong>{{kp.name}}</strong>
+                                {%else%}<span>{{kp.name}}</span>
+                                {%endif%}
+                                <span class="badge badge-pill badge-secondary">{{kp.qcount}}</span>
                             </a>
                             {%endfor%}
                         </div>

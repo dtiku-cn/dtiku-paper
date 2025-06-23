@@ -11,6 +11,7 @@ pub mod question;
 pub mod question_material;
 pub mod solution;
 pub mod question_keypoint;
+pub mod question_keypoint_stats;
 
 pub use _entities::prelude::*;
 pub use _entities::sea_orm_active_enums::*;
