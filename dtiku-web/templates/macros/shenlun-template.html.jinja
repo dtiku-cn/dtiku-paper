@@ -85,7 +85,7 @@
     </div>
 </div>
 {% endwhen %}
-{% when "提出对策类" %}
+{% when "提出对策类" | "概括措施类" | "经验启示类" %}
 <div class="card">
     <div class="card-body">
         <p class="d-flex align-items-center">
@@ -223,5 +223,6 @@
     </div>
 </div>
 {% endwhen %}
+{% else %}
 {% endmatch %}
 {%endmacro shenlun_template%}

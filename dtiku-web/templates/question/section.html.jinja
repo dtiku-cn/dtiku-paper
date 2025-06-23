@@ -42,6 +42,7 @@
             </div>
 
             <div class="form-group row mx-n2">
+                <input id="kp_path" name="kp_path" type="hidden" />
                 <div id="keypoints" class="input-group col-12 col-md-6 mb-2 px-1">
                     <div class="input-group-prepend">
                         <label for="questionType" class="input-group-text">题型</label>
@@ -151,6 +152,13 @@
 
                     // 当下拉变化时，递归加载下一级
                     $select.on('change', function () {
+                        $("kp_path").val($("#keypoints select")
+                            .map(function () {
+                                return $(this).val();
+                            })
+                            .filter(Boolean)
+                            .join(".")
+                        );
                         const nextPid = $(this).val();
                         if (nextPid) {
                             loadLevel(nextPid, level + 1);

@@ -51,7 +51,7 @@
 
         <div class="col-xs-12 col-md-9">
             {%if let Some(kp_name) = kp_tree.kp_text(kp_id)%}
-            {%call shenlun_template::shenlun_template(kp_name)%}
+            {%call shenlun_template::shenlun_template(kp_name.as_str())%}
             {%endif%}
             <ul class="nav nav-pills my-3" role="tablist">
                 <li role="presentation" class="nav-item" th:each="y:${yearStats}">
