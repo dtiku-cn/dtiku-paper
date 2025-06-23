@@ -152,10 +152,11 @@
 
                     // 当下拉变化时，递归加载下一级
                     $select.on('change', function () {
-                        $("kp_path").val($("#keypoints select")
+                        $("#kp_path").val($("#keypoints select")
                             .map(function () {
                                 return $(this).val();
                             })
+                            .get()
                             .filter(Boolean)
                             .join(".")
                         );
