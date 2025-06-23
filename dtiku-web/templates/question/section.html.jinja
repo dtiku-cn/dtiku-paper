@@ -9,6 +9,7 @@
     {% call general::meta() %}
     <title>真题分类打印 | {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
+    <link rel="stylesheet" href="/static/vendor/bootstrap-slider/11.0.2/bootstrap-slider.min.css">
     <style media="print">
         #printcontent .solution {
             display: block !important;
@@ -41,20 +42,10 @@
             </div>
 
             <div class="form-group row mx-n2">
-                <div class="input-group col-12 col-md-6 mb-2 px-1">
+                <div id="keypoints" class="input-group col-12 col-md-6 mb-2 px-1">
                     <div class="input-group-prepend">
                         <label for="questionType" class="input-group-text">题型</label>
                     </div>
-                    <select id="questionType" name="questionType" class="custom-select">
-                        <option th:each="t:${allQuestionType}" th:value="${t.name()}" th:text="${t.showText}"
-                            th:selected="${questionType==t}"></option>
-                    </select>
-                    <select th:if="${questionType!=null&&categoriesMap.get(questionType) != null}" id="category"
-                        name="category" class="custom-select">
-                        <option value="">-全部-</option>
-                        <option th:each="c:${categoriesMap.get(questionType)}" th:value="${c.name()}"
-                            th:text="${c.text}" th:selected="${category==c}"></option>
-                    </select>
                 </div>
                 <div class="input-group col-12 col-md-6 mb-2 px-1">
                     <div class="input-group-prepend">
@@ -67,15 +58,17 @@
                     </select>
                 </div>
             </div>
+            <div class="form-group mb-2 mx-1">
+                <input id="slider" type="text" data-slider-ticks="[0, 20, 40, 60, 80, 100]"
+                    data-slider-ticks-snap-bounds="30" data-slider-value="[0, 100]"
+                    data-slider-ticks-labels='["0%", "20%", "40%", "60%", "80%", "100%"]' style="width:100%" />
+            </div>
             <div class="d-flex justify-content-center">
                 <button type="submit" class="btn btn-primary">查询</button>
                 <button id="exam" type="button" class="btn btn-link"
                     th:if="${user!=null && sectionType?.name()=='together'}"
                     th:classappend="${sets.isEmpty(paperIds)?'disabled':''}">练习
                 </button>
-                <a id="duplicate" class="btn btn-link" th:if="${duplicate!=null}" data-toggle="tooltip"
-                    th:classappend="${duplicate.size()<=0?'disabled':''}"
-                    th:title="${duplicate.size()<=0?'没有重复题目':questions.size()+'中有'+duplicate.size()+'个重复题目'}">去重</a>
                 <a class="btn btn-link" th:href="${user==null?'#loginModal':'javascript:window.print()'}"
                     th:data-toggle="${user==null?'modal':''}"
                     th:classappend="${sets.isEmpty(paperIds)?'disabled':''}">打印</a>
@@ -119,13 +112,11 @@
     {% call general::footer() %}
     <script src="/static/vendor/select2/4.0.13/js/select2.full.min.js"></script>
     <script src="/static/vendor/select2/4.0.13/js/i18n/zh-CN.min.js"></script>
+    <script src="/static/vendor/bootstrap-slider/11.0.2/bootstrap-slider.min.js"></script>
     {% call painter::painter() %}
     {% call question::answer_collapse_action() %}
     <script src='/static/dist/js/speech.js'></script>
     <script>
-        // var categoriesMap = [(${@thymeleafUtils.toJSON(categoriesDetailMap) })];
-        // var duplicate = [(${@thymeleafUtils.toJSON(duplicate) })];
-
         function renderPaper(p) {
             const icon = p.type ? ([[{ system_showVendor }]] ? "https://www." + p.type + ".com/favicon.ico" : '') : window.loadingGif;
             const vendorIcon = icon ? "<img class='mr-2 vendor-icon' src='" + icon + "'/>" : icon;
@@ -135,8 +126,56 @@
                 "</span>"
             );
         }
+        function loadLevel(pid, level) {
+            $.ajax({
+                url: `/kp/xingce/${pid}`,
+                method: 'GET',
+                success: function (data) {
+                    // 清理当前层级之后的所有下级 Select
+                    $("#keypoints select")
+                        .filter((_, el) => parseInt($(el).data('level')) >= level)
+                        .remove();
 
+                    if (data.length === 0) return; // 没有下一级数据
+
+                    // 创建新的下一级 select
+                    const $select = $(`<select class="custom-select"></select>`)
+                        .attr('data-level', level)
+                        .append(`<option value="">-全部-</option>`);
+
+                    data.forEach(item => {
+                        $select.append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+
+                    $("#keypoints").append($select);
+
+                    // 当下拉变化时，递归加载下一级
+                    $select.on('change', function () {
+                        const nextPid = $(this).val();
+                        if (nextPid) {
+                            loadLevel(nextPid, level + 1);
+                        } else {
+                            // 如果选择为空，清除其下所有级别
+                            $(this).nextAll('select').remove();
+                        }
+                    });
+                },
+                error: function () {
+                    alert("加载失败");
+                }
+            });
+        }
         $(function () {
+            loadLevel(0, 0);
+            $('#slider').slider({
+                formatter: function (value) {
+                    if (Array.isArray(value)) {
+                        return '正确率: ' + value.map(v => v + '%').join(' ~ ');
+                    } else {
+                        return '正确率: ' + value + '%';
+                    }
+                }
+            });
             $("#paperIds").select2({
                 minimumInputLength: 2,
                 maximumSelectionLength: 20,
@@ -162,25 +201,6 @@
                 },
                 templateResult: renderPaper,
                 // templateSelection: p => p.text,
-            });
-            $("#questionType").change(function () {
-                $(this).siblings("#category").remove();
-                var categories = categoriesMap[$(this).val()];
-                if (categories) {
-                    $(this).after(
-                        "<select id=\"category\" name=\"category\" class=\"custom-select\">\n" +
-                        "<option value=\"\">-全部-</option>\n" +
-                        categories.map(c => "<option value='" + c.name + "'>" + c.text + "</option>").join("") +
-                        "</select>");
-                }
-            });
-            $("#duplicate").click(function () {
-                var val = Boolean($(this).data("show-duplicate"));
-                for (var qid of duplicate) {
-                    $("#q-" + qid).toggleClass('d-none', !val);
-                }
-                $("b.q-number").toggleClass('d-none', !val);
-                $(this).data("show-duplicate", !val).text(val ? '去重' : '不去重');
             });
 
             var $printcontent = $("#printcontent");

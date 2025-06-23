@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::Context;
 use itertools::Itertools;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
 use spring::plugin::service::Service;
 use spring_redis::cache;
 use spring_sea_orm::DbConn;
@@ -45,6 +45,7 @@ impl KeyPointService {
                     .eq(key_point_id)
                     .and(key_point::Column::PaperType.eq(paper_type)),
             )
+            .order_by_asc(key_point::Column::Id)
             .all(&self.db)
             .await
             .with_context(|| format!("find_key_point_by_pid({key_point_id})"))
