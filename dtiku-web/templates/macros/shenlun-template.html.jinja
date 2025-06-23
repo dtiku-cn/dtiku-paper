@@ -1,15 +1,195 @@
 {% macro shenlun_template(kp_name) %}
-<div class="card" th:if="${template!=null}">
+<div class="card">
     <div class="card-body">
+        {%match kp_name%}
+        {% when "评论类" %}
         <p class="d-flex align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
                 <use xlink:href="#ic-question"></use>
             </svg>
-            <b th:utext="${template.text}"></b>
+            <b>写一份关于XXX的时评|短评|社评</b>
         </p>
         <hr>
-        <p th:if="${template.tip!=null}" class="card-text mb-2" th:utext="${template.tip}"></p>
-        <article th:if="${template.template!=null}" class="shenlun-doc" th:utext="${template.template}"></article>
+        <article class="shenlun-doc">
+            <header class="text-center mb-2"><b>标题（体现观点，如告别跟风，走向成熟）</b></header>
+            <p style="text-indent:2em">介绍评论对象（含义、表现等）+表明观点</p>
+            <p style="text-indent:2em">评析论证（根据题干倾向确定内容，结合材料丰富完善。问题、原因、意义）</p>
+            <p style="text-indent:2em">结尾（对策、升华等）</p>
+        </article>
+        {% endwhen %}
+        {% when "总结类" %}
+        <p class="d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-question"></use>
+            </svg>
+            <b>写一份《XXX》的总结报告|考察报告|专题报告|工作总结</b>
+        </p>
+        <hr>
+        <article class="shenlun-doc">
+            <header class="text-center mb-2"><b>关于 <u>主题词</u> 的<u>文种</u></b></header>
+            <p><b>主送机关或称呼：</b></p>
+            <p style="text-indent:2em">引出主题（背景，根据，目的等）</p>
+            <p style="text-indent:2em">主体：总结与主题相关的要素（问题、危害、意义、对策等，有啥写啥）</p>
+            <p style="text-indent:2em">结尾（总结或展望）</p>
+            <p style="text-align:right">落款：发文者</p>
+            <p style="text-align:right">XX年XX月XX日</p>
+        </article>
+        {% endwhen %}
+        {% when "方案类" %}
+        <p class="d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-question"></use>
+            </svg>
+            <b>写一份《XXX》的意见|建议|方案</b>
+        </p>
+        <hr>
+        <article class="shenlun-doc">
+            <header class="text-center mb-2"><b>关于 <u>主题词</u> 的<u>文种</u></b></header>
+            <p><b>主送机关或称呼：</b></p>
+            <p style="text-indent:2em">引出主题：背景、问题(是什么)，目的、意义(为什么)</p>
+            <p style="text-indent:2em">主体：对策(怎么做)</p>
+            <p style="text-indent:2em">结尾：期望、展望</p>
+            <p style="text-align:right">落款：发文者</p>
+            <p style="text-align:right">XX年XX月XX日</p>
+        </article>
+        {% endwhen %}
+        {% when "宣传类" %}
+        <p class="d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-question"></use>
+            </svg>
+            <b>写一份《XXX》的倡议书|通知书|发言稿|讲话稿|宣传搞|新闻报道</b>
+        </p>
+        <hr>
+        <article class="shenlun-doc">
+            <header class="text-center mb-2"><b>关于 <u>主题词</u> 的<u>文种</u></b></header>
+            <p><b>称呼：</b></p>
+            <p style="text-indent:2em">开头介绍情况（背景，根据）</p>
+            <p style="text-indent:2em">主体：劝服（问题、危害、意义等）+ 倡议（对策）</p>
+            <p style="text-indent:2em">结尾：呼吁号召的对策</p>
+            <p style="text-align:right">落款：发文者</p>
+            <p style="text-align:right">XX年XX月XX日</p>
+        </article>
+        {% endwhen %}
+        {% when "提出对策类" %}
+        <p class="d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-question"></use>
+            </svg>
+            <b>归纳概括"XXX"的做法|启示|对策|建议|措施|举措|经验|方式|途径</b>
+        </p>
+        <hr>
+        <p class="card-text mb-2">
+        <p>用短句词组进行列举，有明显的分类就按类归纳。</p>
+        常见对策：
+        <ol>
+            <li>
+                <b>观念意识(头)</b>
+                <ol>
+                    <li>加强...的重视，树立正确的政绩观/价值观，培养文明/守法/交通/自律/创新/科学/...意识</li>
+                    <li>科学规划，合理布局，创新模式</li>
+                </ol>
+            </li>
+            <li>
+                <b>制度监督(眼，内)</b>
+                <ol>
+                    <li>完善监督体制，完善法律/政策/规范</li>
+                    <li>加强法律强制性，提高违法成本</li>
+                </ol>
+                <b>舆论监督(眼，外)</b>
+                <ol>
+                    <li>媒体/群众监督，信息公开，开通监督热线和信箱</li>
+                    <li>群众参与、举报、关注、审查、核算</li>
+                </ol>
+            <li>
+                <b>宣传培训(口)</b>
+                <ol>
+                    <li>营造良好氛围，媒体宣传，活动宣传</li>
+                    <li>传播文化，增强文化交流/沟通</li>
+                    <li>普及知识，培训技能，邀请专家开课培训</li>
+                </ol>
+            </li>
+            <li>
+                <b>投入(手)</b>
+                <p>人(才)，财(资金)，物(技术)，地(场地设施)，时</p>
+                <b>管理监管(手)</b>
+                <p>加强管理、处罚力度、打击；成立专门的管理机构、部门协调、联合执法</p>
+            </li>
+        </ol>
+        </p>
+        <article class="shenlun-doc">
+            <p>1. XXXX。xxx; xxx; xxx。</p>
+            <p>2. XXXX。xxx; xxx; xxx。</p>
+            <p>3. XXXX。xxx; xxx; xxx。</p>
+        </article>
+        {% endwhen %}
+        {% when "影响类" %}
+        <p class="d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-question"></use>
+            </svg>
+            <b>归纳概括"XXX"的影响|作用|功能|意义|成效|危害|效果</b>
+        </p>
+        <hr>
+        <p class="card-text mb-2">用短句词组进行列举，有明显的分类就按类归纳。</p>
+        <article class="shenlun-doc">
+            <p>1、XXXX。xxx; xxx; xxx。</p>
+            <p>2、XXXX。xxx; xxx; xxx。</p>
+            <p>3、XXXX。xxx; xxx; xxx。</p>
+        </article>
+        {% endwhen %}
+        {% when "问题类" %}
+        <p class="d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-question"></use>
+            </svg>
+            <b>归纳概括"XXX"的问题|不足|困难|挑战|现象</b>
+        </p>
+        <hr>
+        <p class="card-text mb-2">用短句词组进行列举，有明显的分类就按类归纳。</p>
+        <article class="shenlun-doc">
+            <p>1. XXXX。xxx; xxx; xxx。</p>
+            <p>2. XXXX。xxx; xxx; xxx。</p>
+            <p>3. XXXX。xxx; xxx; xxx。</p>
+        </article>
+        {% endwhen %}
+        {% when "原因类" %}
+        <p class="d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-question"></use>
+            </svg>
+            <b>分析"XXX"的原因|理由|因素</b>
+        </p>
+        <hr>
+        <p class="card-text mb-2">用短句词组进行列举，有明显的分类就按类归纳。</p>
+        <article class="shenlun-doc">
+            <p>1. XXXX。xxx; xxx; xxx。</p>
+            <p>2. XXXX。xxx; xxx; xxx。</p>
+            <p>3. XXXX。xxx; xxx; xxx。</p>
+        </article>
+        {% endwhen %}
+        {% when "观点现象分析类" | "概括主要内容类" | "词句解释类" %}
+        <p class="d-flex align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-question"></use>
+            </svg>
+            <b>分析"XXX"的意思|内涵|含义 / 谈谈你对"XXX"的看法|认识|见解|理解 / 为什么说"XXX"</b>
+        </p>
+        <hr>
+        <p class="card-text mb-2">用短句词组进行列举，有明显的分类就按类归纳。</p>
+        <article class="shenlun-doc">
+            <b>问题类</b>
+            <p>XXX是什么。</p>
+            <p>为什么？(问题原因)</p>
+            <p>影响，会导致什么(危害)</p>
+            <p>怎么做(简要概括对策，不是重点)</p>
+            <b>对策类</b>
+            <p>XXX是什么。</p>
+            <p>为什么。(对策的意义)</p>
+            <p>怎么做。(对策具体扩展，重点)</p>
+        </article>
+        {% endwhen %}
+        {% endmatch %}
     </div>
 </div>
 {% endmacro shenlun_template %}
