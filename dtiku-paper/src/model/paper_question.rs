@@ -76,8 +76,7 @@ impl Entity {
                     .eq(query.paper_type)
                     .and(Column::PaperId.is_in(query.paper_ids.clone()))
                     .and(
-                        Column::CorrectRatio
-                            .between(query.correct_ratio_start, query.correct_ratio_end),
+                        Column::CorrectRatio.between(query.correct_ratio.0, query.correct_ratio.1),
                     ),
             )
             .all(db)
