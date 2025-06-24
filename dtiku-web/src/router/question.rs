@@ -25,6 +25,7 @@ use spring_web::{
     extractor::{Component, Path, Query},
     get,
 };
+use validator::Validate;
 
 #[get("/question/search")]
 async fn search_question(
@@ -73,6 +74,9 @@ async fn question_section(
     Component(ls): Component<LabelService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
+    query
+        .validate()
+        .map_err(|e| KnownWebError::bad_request(e.to_string()))?;
     if query.paper_type == 0 {
         let paper_type = global
             .get_paper_type_by_prefix("xingce")

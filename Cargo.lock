@@ -1668,6 +1668,8 @@ dependencies = [
  "anyhow",
  "fastembed",
  "itertools 0.14.0",
+ "once_cell",
+ "regex",
  "sea-orm",
  "serde",
  "serde_json",

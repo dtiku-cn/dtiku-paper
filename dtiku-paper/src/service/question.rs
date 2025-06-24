@@ -3,7 +3,7 @@ use crate::{
     model::{
         self, paper_question,
         question::{self, PaperWithNum, QuestionSinglePaper, QuestionWithPaper},
-        Label, Material, Paper, PaperQuestion, Question, QuestionMaterial, Solution,
+        Material, Paper, PaperQuestion, Question, QuestionMaterial, Solution,
     },
     query::question::PaperQuestionQuery,
 };
