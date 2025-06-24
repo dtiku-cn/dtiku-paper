@@ -4,7 +4,7 @@ use dtiku_paper::{
     domain::question::QuestionSearch,
     model::{
         self,
-        question::{QuestionExtra, QuestionWithPaper},
+        question::{QuestionExtra, QuestionSinglePaper, QuestionWithPaper},
     },
 };
 
@@ -29,7 +29,7 @@ pub struct QuestionSearchImgTemplate {
 pub struct QuestionSectionTemplate {
     pub global: GlobalVariables,
     pub papers: Vec<model::paper::Model>,
-    pub questions: Vec<QuestionWithPaper>,
+    pub questions: Vec<QuestionSinglePaper>,
 }
 
 #[derive(Template)]

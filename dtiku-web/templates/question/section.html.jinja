@@ -91,14 +91,18 @@
         <div class="carousel-inner">
             {%for q in questions%}
             <div class="{%if loop.index==1%}active{%endif%}">
-                <div th:if="${q.material!=null}" class="material" th:each="m:${q.material}">
-                    <h4 class="text-center mt-2" th:text="${m.chineseNumber()}"></h4>
-                    <div>${m.html}</div>
+                {% if let Some(materials) = q.materials%}
+                {%for m in materials%}
+                <div class="material">
+                    <h4 class="text-center mt-2">{{m.chinese_num()}}</h4>
+                    <div>{{m.content}}</div>
                 </div>
+                {%endfor%}
+                {%endif%}
                 <div id="q-{{q.id}}" class="clearfix mt-3 p-1">
                     <b class="q-number float-left">{{loop.index}}、</b>
-                    <a class="q-number float-left text-reset" href="/paper/{q.paper.id}#{q.number}">
-                        <b>({q.paper.year}${q.paper.area}第${q.number}题)</b>
+                    <a class="q-number float-left text-reset" href="/paper/{{q.paper.paper.id}}#{{q.paper.num}}">
+                        <b>({{q.paper.paper.year}}${q.paper.area}第{{q.paper.num}}题)</b>
                     </a>
                     <div class="question-wrapper">
                         {%call question::xingce_question(q)%}

@@ -1,6 +1,6 @@
 pub use super::_entities::question::*;
 use super::{paper, Paper, PaperQuestion, _entities::solution, material};
-use crate::domain::question::QuestionSearch;
+use crate::{domain::question::QuestionSearch, model};
 use anyhow::Context;
 use itertools::Itertools;
 use sea_orm::{
@@ -18,6 +18,64 @@ pub struct Question {
     pub extra: QuestionExtra,
     pub paper_id: i32,
     pub num: i16,
+}
+
+#[derive(Clone, Debug)]
+pub struct QuestionSinglePaper {
+    pub id: i32,
+    pub content: String,
+    pub extra: QuestionExtra,
+    pub paper: PaperWithNum,
+    pub solutions: Option<Vec<solution::Model>>,
+    pub materials: Option<Vec<material::Model>>,
+}
+
+impl QuestionSinglePaper {
+    pub(crate) fn new(
+        q: Model,
+        pid_map: &HashMap<i32, &paper::Model>,
+        qid_map: &mut HashMap<i32, model::paper_question::Model>,
+    ) -> Self {
+        let pq = qid_map.remove(&q.id).unwrap();
+        let p = pid_map.get(&pq.paper_id).unwrap();
+        Self {
+            id: q.id,
+            content: q.content,
+            extra: q.extra,
+            paper: PaperWithNum::new(p, pq.sort),
+            solutions: None,
+            materials: None,
+        }
+    }
+
+    pub fn option_len(&self) -> usize {
+        self.extra.option_len()
+    }
+
+    pub fn get_answer(&self) -> Option<String> {
+        match &self.solutions {
+            None => None,
+            Some(ss) => ss.first().and_then(|s| s.extra.get_answer()),
+        }
+    }
+
+    pub fn is_answer(&self, index0: &usize) -> bool {
+        match &self.solutions {
+            None => false,
+            Some(ss) => ss
+                .first()
+                .map(|s| s.extra.is_answer(*index0))
+                .unwrap_or_default(),
+        }
+    }
+
+    pub fn abbr(&self, size: usize) -> &str {
+        self.content
+            .char_indices()
+            .nth(size)
+            .map(|(idx, _)| &self.content[..idx])
+            .unwrap_or(&self.content)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -234,35 +292,6 @@ impl Entity {
             .all(db)
             .await
             .context("question::find_by_ids() failed")
-    }
-
-    pub async fn find_by_ids_with_paper<C: ConnectionTrait>(
-        db: &C,
-        ids: Vec<i32>,
-    ) -> anyhow::Result<Vec<QuestionWithPaper>> {
-        if ids.is_empty() {
-            return Ok(vec![]);
-        }
-        let questions = Entity::find()
-            .filter(Column::Id.is_in(ids))
-            .into_partial_model::<QuestionSelect>()
-            .all(db)
-            .await?;
-
-        let qids = questions.iter().map(|q| q.id).collect_vec();
-        let pqs = PaperQuestion::find_by_question_id_in(db, qids).await?;
-        let pids = pqs.iter().map(|pq| pq.paper_id).collect_vec();
-        let qid_map = pqs
-            .into_iter()
-            .map(|pq| (pq.question_id, pq))
-            .into_group_map();
-        let papers = Paper::find_by_ids(db, pids).await?;
-        let id_paper: HashMap<i32, paper::Model> = papers.into_iter().map(|p| (p.id, p)).collect();
-
-        Ok(questions
-            .into_iter()
-            .map(|q| q.with_paper(&qid_map, &id_paper))
-            .collect())
     }
 
     pub async fn search_question<C>(

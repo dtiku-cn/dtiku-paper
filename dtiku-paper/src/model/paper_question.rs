@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 pub use super::_entities::paper_question::*;
 use crate::query::question::PaperQuestionQuery;
 use anyhow::Context;
@@ -67,13 +69,18 @@ impl Entity {
     pub async fn find_question_id_by_query<C>(
         db: &C,
         query: &PaperQuestionQuery,
-    ) -> anyhow::Result<Vec<i32>>
+    ) -> anyhow::Result<Vec<Model>>
     where
         C: ConnectionTrait,
     {
         Entity::find()
             .select_only()
-            .column(Column::QuestionId)
+            .columns([
+                Column::PaperId,
+                Column::QuestionId,
+                Column::Sort,
+                Column::PaperType,
+            ])
             .filter(
                 Column::PaperType
                     .eq(query.paper_type)
@@ -82,7 +89,6 @@ impl Entity {
                         Column::CorrectRatio.between(query.correct_ratio.0, query.correct_ratio.1),
                     ),
             )
-            .into_tuple()
             .all(db)
             .await
             .with_context(|| format!("paper_question::find_by_query failed"))

@@ -2,7 +2,7 @@ use crate::{
     domain::question::QuestionSearch,
     model::{
         self, paper_question,
-        question::{self, PaperWithNum, QuestionWithPaper},
+        question::{self, PaperWithNum, QuestionSinglePaper, QuestionWithPaper},
         Material, Paper, PaperQuestion, Question, QuestionMaterial, Solution,
     },
     query::question::PaperQuestionQuery,
@@ -30,14 +30,23 @@ impl QuestionService {
     pub async fn search_question_by_section(
         &self,
         query: &PaperQuestionQuery,
-    ) -> anyhow::Result<(Vec<QuestionWithPaper>, Vec<model::paper::Model>)> {
+    ) -> anyhow::Result<(Vec<QuestionSinglePaper>, Vec<model::paper::Model>)> {
         if query.paper_ids.is_empty() {
             return Ok((vec![], vec![]));
         }
         let ps = Paper::find_by_ids(&self.db, query.paper_ids.clone()).await?;
-        let qids = PaperQuestion::find_question_id_by_query(&self.db, query).await?;
-        let qs = Question::find_by_ids_with_paper(&self.db, qids).await?;
-        Ok((qs, ps))
+        let paper_id_map: HashMap<i32, &model::paper::Model> =
+            ps.iter().map(|p| (p.id, p)).collect();
+        let pqs = PaperQuestion::find_question_id_by_query(&self.db, query).await?;
+        let mut question_id_map: HashMap<i32, model::paper_question::Model> =
+            pqs.into_iter().map(|pq| (pq.question_id, pq)).collect();
+        let qids = question_id_map.keys().cloned().collect_vec();
+        let qs = Question::find_by_ids(&self.db, qids).await?;
+        let qsp = qs
+            .into_iter()
+            .map(|q| QuestionSinglePaper::new(q, &paper_id_map, &mut question_id_map))
+            .collect_vec();
+        Ok((qsp, ps))
     }
 
     pub async fn full_question_by_id(&self, id: i32) -> anyhow::Result<Option<QuestionWithPaper>> {
