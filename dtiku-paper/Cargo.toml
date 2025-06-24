@@ -16,3 +16,4 @@ strum = { workspace = true, features = ["derive"] }
 itertools = { workspace = true }
 anyhow = { workspace = true }
 fastembed = { workspace = true }
+validator = { workspace = true, features = ["derive"] }

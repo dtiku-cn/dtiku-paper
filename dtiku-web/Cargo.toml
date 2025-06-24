@@ -49,6 +49,7 @@ uuid = { workspace = true, features = ["v4"] }
 rustls = { workspace = true }
 serde_urlencoded = { workspace = true }
 serde_html_form = { workspace = true }
+validator = { workspace = true, features = ["derive"] }
 
 [build-dependencies]
 minify-html = "0.16"

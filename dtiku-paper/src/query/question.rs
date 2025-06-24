@@ -2,12 +2,16 @@ use crate::model::paper_question;
 use sea_orm::{prelude::Expr, sea_query::IntoCondition, ColumnTrait, Value};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+static KEY_POINT_PATH: Lazy<Regex> = Lazy::new(|| Regex::new(r"\d+(.\d+)?").unwrap());
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Validate)]
 pub struct PaperQuestionQuery {
     #[serde(default)]
     pub paper_type: i16,
+    #[validate(length(min = 1, max = 20))]
     #[serde(default, rename = "pid")]
     pub paper_ids: Vec<i32>,
+    #[validate(regex(path = *KEY_POINT_PATH))]
     #[serde(default, rename = "kp_path")]
     pub keypoint_path: String,
     #[serde(default, rename = "correct_ratio")]
@@ -24,10 +28,10 @@ impl IntoCondition for PaperQuestionQuery {
             cond = cond.add(paper_question::Column::PaperId.is_in(self.paper_ids));
         }
         if !self.keypoint_path.is_empty() {
-            cond = cond.add(Expr::cust_with_values(
-                "keypoint_path <@ CAST(?::ltree)",
-                vec![Value::from(self.keypoint_path)],
-            ));
+            cond = cond.add(Expr::cust(format!(
+                "keypoint_path <@ '{}'::ltree",
+                self.keypoint_path
+            )));
         }
         if self.correct_ratio.0 != 0.0 || self.correct_ratio.1 != 100.0 {
             let ratio = self.correct_ratio;
