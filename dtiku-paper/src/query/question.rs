@@ -25,7 +25,7 @@ impl IntoCondition for PaperQuestionQuery {
         }
         if !self.keypoint_path.is_empty() {
             cond = cond.add(Expr::cust_with_values(
-                "keypoint_path <@ CAST(? AS ltree)",
+                "keypoint_path <@ CAST(?::ltree)",
                 vec![Value::from(self.keypoint_path)],
             ));
         }
