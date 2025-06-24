@@ -1,3 +1,9 @@
+use crate::model::paper_question;
+use sea_orm::{
+    prelude::Expr,
+    sea_query::{extension::postgres::PgBinOper, IntoCondition},
+    ColumnTrait,
+};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -10,6 +16,29 @@ pub struct PaperQuestionQuery {
     pub keypoint_path: String,
     #[serde(default, rename = "correct_ratio")]
     pub correct_ratio: CorrectRatio,
+}
+
+impl IntoCondition for PaperQuestionQuery {
+    fn into_condition(self) -> sea_orm::sea_query::Condition {
+        let mut cond = sea_orm::sea_query::Condition::all();
+        if self.paper_type != 0 {
+            cond = cond.add(paper_question::Column::PaperType.eq(self.paper_type));
+        }
+        if !self.paper_ids.is_empty() {
+            cond = cond.add(paper_question::Column::PaperId.is_in(self.paper_ids));
+        }
+        if !self.keypoint_path.is_empty() {
+            cond = cond.add(
+                Expr::col(paper_question::Column::KeypointPath)
+                    .binary(PgBinOper::Contained, self.keypoint_path),
+            );
+        }
+        if self.correct_ratio.0 != 0.0 || self.correct_ratio.1 != 100.0 {
+            let ratio = self.correct_ratio;
+            cond = cond.add(paper_question::Column::CorrectRatio.between(ratio.0, ratio.1));
+        }
+        cond
+    }
 }
 
 #[derive(Debug, Clone)]

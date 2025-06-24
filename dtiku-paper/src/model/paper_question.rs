@@ -4,8 +4,8 @@ pub use super::_entities::paper_question::*;
 use crate::query::question::PaperQuestionQuery;
 use anyhow::Context;
 use sea_orm::{
-    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
-    QuerySelect,
+    sea_query::{IntoCondition, OnConflict},
+    ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter, QuerySelect,
 };
 
 impl Entity {
@@ -81,14 +81,7 @@ impl Entity {
                 Column::Sort,
                 Column::PaperType,
             ])
-            .filter(
-                Column::PaperType
-                    .eq(query.paper_type)
-                    .and(Column::PaperId.is_in(query.paper_ids.clone()))
-                    .and(
-                        Column::CorrectRatio.between(query.correct_ratio.0, query.correct_ratio.1),
-                    ),
-            )
+            .filter(query.clone().into_condition())
             .all(db)
             .await
             .with_context(|| format!("paper_question::find_by_query failed"))
