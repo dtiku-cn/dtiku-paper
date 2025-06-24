@@ -541,7 +541,6 @@ impl FenbiSyncService {
         mid_num_map: &HashMap<i64, i32>,
     ) -> anyhow::Result<()> {
         for m in materials {
-            let source_material_id = m.id;
             let num = mid_num_map
                 .get(&m.id)
                 .expect("mid is not exists in mid_num_map");
