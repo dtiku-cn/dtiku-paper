@@ -1,10 +1,9 @@
+pub use super::_entities::question_key_point_stats::*;
 use anyhow::Context;
 use sea_orm::{
     prelude::Expr, ColumnTrait, ConnectionTrait, EntityTrait, FromQueryResult, QueryFilter,
     QuerySelect,
 };
-
-pub use super::_entities::question_key_point_stats::*;
 
 #[derive(Debug, FromQueryResult)]
 pub struct KeyPointSummary {

@@ -236,6 +236,35 @@ impl Entity {
             .context("question::find_by_ids() failed")
     }
 
+    pub async fn find_by_ids_with_paper<C: ConnectionTrait>(
+        db: &C,
+        ids: Vec<i32>,
+    ) -> anyhow::Result<Vec<QuestionWithPaper>> {
+        if ids.is_empty() {
+            return Ok(vec![]);
+        }
+        let questions = Entity::find()
+            .filter(Column::Id.is_in(ids))
+            .into_partial_model::<QuestionSelect>()
+            .all(db)
+            .await?;
+
+        let qids = questions.iter().map(|q| q.id).collect_vec();
+        let pqs = PaperQuestion::find_by_question_id_in(db, qids).await?;
+        let pids = pqs.iter().map(|pq| pq.paper_id).collect_vec();
+        let qid_map = pqs
+            .into_iter()
+            .map(|pq| (pq.question_id, pq))
+            .into_group_map();
+        let papers = Paper::find_by_ids(db, pids).await?;
+        let id_paper: HashMap<i32, paper::Model> = papers.into_iter().map(|p| (p.id, p)).collect();
+
+        Ok(questions
+            .into_iter()
+            .map(|q| q.with_paper(&qid_map, &id_paper))
+            .collect())
+    }
+
     pub async fn search_question<C>(
         db: &C,
         search: &QuestionSearch,

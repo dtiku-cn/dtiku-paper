@@ -29,7 +29,7 @@ pub struct QuestionSearchImgTemplate {
 pub struct QuestionSectionTemplate {
     pub global: GlobalVariables,
     pub papers: Vec<model::paper::Model>,
-    pub questions: Vec<model::question::Model>,
+    pub questions: Vec<QuestionWithPaper>,
 }
 
 #[derive(Template)]

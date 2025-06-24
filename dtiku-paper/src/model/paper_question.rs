@@ -64,7 +64,10 @@ impl Entity {
             .with_context(|| format!("paper_question::find_by_paper_id({paper_id}) failed"))
     }
 
-    pub async fn find_by_query<C>(db: &C, query: &PaperQuestionQuery) -> anyhow::Result<Vec<Model>>
+    pub async fn find_question_id_by_query<C>(
+        db: &C,
+        query: &PaperQuestionQuery,
+    ) -> anyhow::Result<Vec<i32>>
     where
         C: ConnectionTrait,
     {
@@ -79,6 +82,7 @@ impl Entity {
                         Column::CorrectRatio.between(query.correct_ratio.0, query.correct_ratio.1),
                     ),
             )
+            .into_tuple()
             .all(db)
             .await
             .with_context(|| format!("paper_question::find_by_query failed"))

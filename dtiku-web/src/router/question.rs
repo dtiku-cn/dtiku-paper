@@ -67,10 +67,16 @@ async fn search_question_by_img(
 
 #[get("/question/section")]
 async fn question_section(
-    query: axum_extra::extract::Query<PaperQuestionQuery>,
+    mut query: axum_extra::extract::Query<PaperQuestionQuery>,
     Component(qs): Component<QuestionService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
+    if query.paper_type == 0 {
+        let paper_type = global
+            .get_paper_type_by_prefix("xingce")
+            .ok_or_else(|| KnownWebError::bad_request("请指定试卷类型"))?;
+        query.paper_type = paper_type.id;
+    }
     let (questions, papers) = qs.search_question_by_section(&query).await?;
     let t = QuestionSectionTemplate {
         global,

@@ -3,7 +3,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct PaperQuestionQuery {
     #[serde(default)]
-    pub paper_type: i32,
+    pub paper_type: i16,
     #[serde(default, rename = "pid")]
     pub paper_ids: Vec<i32>,
     #[serde(default, rename = "kp_path")]

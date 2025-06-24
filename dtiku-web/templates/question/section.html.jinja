@@ -98,8 +98,11 @@
                 <div id="q-{{q.id}}" class="clearfix mt-3 p-1">
                     <b class="q-number float-left">{{loop.index}}、</b>
                     <a class="q-number float-left text-reset" href="/paper/{q.paper.id}#{q.number}">
-                        <b>(${q.paper.year}${q.paper.area}第${q.number}题)</b>
+                        <b>({q.paper.year}${q.paper.area}第${q.number}题)</b>
                     </a>
+                    <div class="question-wrapper">
+                        {%call question::xingce_question(q)%}
+                    </div>
                     <div class="question-wrapper" th:include="${sectionType.name()=='question'}?
                         ~{fragments/question::xingce_question(${q})}:(
                         ${sectionType.name()=='explain'}?~{fragments/question::raw_question_solution(${q})}:
