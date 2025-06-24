@@ -148,9 +148,10 @@
 
                     // 创建新的下一级 select
                     const $select = $(`<select class="custom-select"></select>`)
-                        .attr('data-level', level)
-                        .append(`<option value="">-全部-</option>`);
-
+                        .attr('data-level', level);
+                    if (level > 0) {
+                        $select.append(`<option value="">-全部-</option>`);
+                    }
                     data.forEach(item => {
                         $select.append(`<option value="${item.id}">${item.name}</option>`);
                     });
