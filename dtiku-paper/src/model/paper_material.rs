@@ -1,6 +1,5 @@
-use sea_orm::{sea_query::OnConflict, ConnectionTrait, DbErr, EntityTrait};
-
 pub use super::_entities::paper_material::*;
+use sea_orm::{sea_query::OnConflict, ConnectionTrait, DbErr, EntityTrait};
 
 impl ActiveModel {
     pub async fn insert_on_conflict<C>(self, db: &C) -> Result<Model, DbErr>

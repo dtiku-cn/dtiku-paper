@@ -12,8 +12,9 @@ use crate::{
 use anyhow::Context;
 use askama::Template;
 use dtiku_paper::{
-    domain::question::QuestionSearch, query::question::PaperQuestionQuery,
-    service::question::QuestionService,
+    domain::question::QuestionSearch,
+    query::question::PaperQuestionQuery,
+    service::{label::LabelService, question::QuestionService},
 };
 use spring_web::{
     axum::{
@@ -69,6 +70,7 @@ async fn search_question_by_img(
 async fn question_section(
     mut query: axum_extra::extract::Query<PaperQuestionQuery>,
     Component(qs): Component<QuestionService>,
+    Component(ls): Component<LabelService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     if query.paper_type == 0 {
@@ -77,11 +79,13 @@ async fn question_section(
             .ok_or_else(|| KnownWebError::bad_request("请指定试卷类型"))?;
         query.paper_type = paper_type.id;
     }
+    let label_tree = ls.find_all_label_by_paper_type(query.paper_type).await?;
     let (questions, papers) = qs.search_question_by_section(&query).await?;
     let t = QuestionSectionTemplate {
         global,
         papers,
         questions,
+        label_tree,
     };
     Ok(Html(t.render().context("render failed")?))
 }

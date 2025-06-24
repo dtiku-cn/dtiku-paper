@@ -33,6 +33,10 @@ impl LabelTree {
         }
     }
 
+    pub fn label_text(&self, label_id: i32) -> String {
+        self.get_label(label_id).map(|l| l.name).unwrap_or_default()
+    }
+
     pub fn get_label(&self, label_id: i32) -> Option<LabelNode> {
         Self::inner_get_label(&self.labels, label_id)
     }

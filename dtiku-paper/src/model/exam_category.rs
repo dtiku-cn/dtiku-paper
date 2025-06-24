@@ -1,11 +1,10 @@
+pub use super::_entities::exam_category::*;
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
     QueryOrder,
 };
 use spring_redis::cache;
-
-pub use super::_entities::exam_category::*;
 
 impl Entity {
     pub async fn find_children_by_pid<C>(db: &C, pid: i16) -> anyhow::Result<Vec<Model>>

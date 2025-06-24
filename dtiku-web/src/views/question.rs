@@ -1,7 +1,7 @@
 use super::GlobalVariables;
 use askama::Template;
 use dtiku_paper::{
-    domain::question::QuestionSearch,
+    domain::{label::LabelTree, question::QuestionSearch},
     model::{
         self,
         question::{QuestionExtra, QuestionSinglePaper, QuestionWithPaper},
@@ -30,6 +30,7 @@ pub struct QuestionSectionTemplate {
     pub global: GlobalVariables,
     pub papers: Vec<model::paper::Model>,
     pub questions: Vec<QuestionSinglePaper>,
+    pub label_tree: LabelTree,
 }
 
 #[derive(Template)]
