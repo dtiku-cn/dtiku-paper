@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 pub use super::_entities::paper_question::*;
 use crate::query::question::PaperQuestionQuery;
 use anyhow::Context;
