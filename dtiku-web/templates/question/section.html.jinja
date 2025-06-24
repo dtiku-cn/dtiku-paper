@@ -151,6 +151,8 @@
                         .attr('data-level', level);
                     if (level > 0) {
                         $select.append(`<option value="">-全部-</option>`);
+                    } else {
+                        $("#kp_path").val(data[0].id);
                     }
                     data.forEach(item => {
                         $select.append(`<option value="${item.id}">${item.name}</option>`);
