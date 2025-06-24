@@ -12,7 +12,7 @@ use crate::{
 use anyhow::Context;
 use askama::Template;
 use dtiku_paper::{
-    domain::question::QuestionSearch,
+    domain::{label::LabelTree, question::QuestionSearch},
     query::question::PaperQuestionQuery,
     service::{label::LabelService, question::QuestionService},
 };
@@ -74,6 +74,15 @@ async fn question_section(
     Component(ls): Component<LabelService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
+    if query.paper_ids.is_empty() {
+        let t = QuestionSectionTemplate {
+            global,
+            papers: vec![],
+            questions: vec![],
+            label_tree: LabelTree::none(),
+        };
+        return Ok(Html(t.render().context("render failed")?));
+    }
     query
         .validate()
         .map_err(|e| KnownWebError::bad_request(e.to_string()))?;
