@@ -1,7 +1,6 @@
 pub use super::_entities::material::*;
 use super::{PaperMaterial, _entities::paper_material};
 use anyhow::Context;
-use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
 use itertools::Itertools;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromJsonQueryResult,
@@ -10,23 +9,12 @@ use sea_orm::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[derive(Debug, Clone)]
 pub struct Material {
     pub id: i32,
     pub content: String,
     pub extra: Vec<MaterialExtra>,
-    pub num: i16,
-}
-
-impl Material {
-    pub fn chinese_num(&self) -> String {
-        self.num
-            .to_chinese(
-                ChineseVariant::Traditional,
-                ChineseCase::Lower,
-                ChineseCountMethod::TenThousand,
-            )
-            .unwrap()
-    }
+    pub num: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
@@ -50,7 +38,7 @@ impl Model {
             id: self.id,
             content: self.content,
             extra: self.extra,
-            num: num_map.get(&self.id).cloned().unwrap_or_default(),
+            num: num_map.get(&self.id).cloned().unwrap_or_default() as usize,
         }
     }
 }

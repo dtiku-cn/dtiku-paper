@@ -94,7 +94,7 @@
                 {% if let Some(materials) = q.materials%}
                 {%for m in materials%}
                 <div class="material">
-                    <h4 class="text-center mt-2">{{m.chinese_num()}}</h4>
+                    <h4 class="text-center mt-2">{{global.chinese_num(m.num)}}</h4>
                     <div>{{m.content}}</div>
                 </div>
                 {%endfor%}

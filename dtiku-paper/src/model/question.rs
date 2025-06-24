@@ -27,7 +27,7 @@ pub struct QuestionSinglePaper {
     pub extra: QuestionExtra,
     pub paper: PaperWithNum,
     pub solutions: Option<Vec<solution::Model>>,
-    pub materials: Option<Vec<material::Model>>,
+    pub materials: Option<Vec<material::Material>>,
 }
 
 impl QuestionSinglePaper {

@@ -1666,7 +1666,6 @@ name = "dtiku-paper"
 version = "0.0.1"
 dependencies = [
  "anyhow",
- "chinese-number",
  "fastembed",
  "itertools 0.14.0",
  "sea-orm",

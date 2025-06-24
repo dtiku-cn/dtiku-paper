@@ -2,7 +2,6 @@ use crate::model::{
     self,
     question::{Column, QuestionExtra},
 };
-use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
 use sea_orm::{sea_query::IntoCondition, ColumnTrait};
 use serde::Deserialize;
 
@@ -32,7 +31,7 @@ pub struct FullQuestion {
     pub id: i32,
     pub content: String,
     pub extra: QuestionExtra,
-    pub num: i16,
+    pub num: usize,
     pub materials: Option<Vec<model::material::Material>>,
     pub solutions: Option<Vec<model::solution::Model>>,
     pub chapter: Option<model::paper::PaperChapter>,
@@ -49,7 +48,7 @@ impl FullQuestion {
             id: q.id,
             content: q.content,
             extra: q.extra,
-            num: q.num,
+            num: q.num as usize,
             materials,
             solutions,
             chapter,
@@ -58,16 +57,6 @@ impl FullQuestion {
 
     pub fn option_len(&self) -> usize {
         self.extra.option_len()
-    }
-
-    pub fn chinese_num(&self) -> String {
-        self.num
-            .to_chinese(
-                ChineseVariant::Traditional,
-                ChineseCase::Lower,
-                ChineseCountMethod::TenThousand,
-            )
-            .unwrap()
     }
 
     pub fn get_answer(&self) -> Option<String> {

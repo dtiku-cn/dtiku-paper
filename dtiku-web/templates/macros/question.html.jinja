@@ -232,7 +232,7 @@
 {% macro shenlun_question(q) %}
 <div id="question-{{q.id}}" class="clearfix question mt-3">
     <div id="q-{{q.num}}" class="q-number float-left">
-        <b>{{q.chinese_num()}}</b>、
+        <b>{{global.chinese_num(q.num)}}</b>、
     </div>
     <div class="question-content">{{q.content|safe}}</div>
 </div>
