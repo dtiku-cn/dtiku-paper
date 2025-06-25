@@ -1672,6 +1672,7 @@ dependencies = [
  "itertools 0.14.0",
  "once_cell",
  "regex",
+ "scraper 0.21.0",
  "sea-orm",
  "serde",
  "serde_json",

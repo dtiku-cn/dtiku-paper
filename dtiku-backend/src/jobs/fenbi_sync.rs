@@ -26,6 +26,7 @@ use dtiku_paper::model::{key_point, material};
 use dtiku_paper::model::{label, ExamCategory};
 use dtiku_paper::model::{paper, question_material};
 use dtiku_paper::model::{paper_material, question_keypoint};
+use dtiku_paper::util::html::replace_img_src;
 use futures::StreamExt;
 use itertools::Itertools;
 use scraper::Html;
@@ -711,11 +712,15 @@ impl FenbiSyncService {
 
     async fn save_material(
         &self,
-        m: OriginMaterial,
+        mut m: OriginMaterial,
         paper_id: i32,
         num: i32,
     ) -> Result<(), anyhow::Error> {
         let source_material_id = m.id;
+        m.content = replace_img_src(&m.content, |str| {
+            // todo!()
+            format!("//s.dtiku.cn/{}", str)
+        });
         let material = TryInto::<material::ActiveModel>::try_into(m)?;
         let m_in_db = material
             .insert_on_conflict(&self.target_db)
