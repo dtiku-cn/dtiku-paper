@@ -1,5 +1,5 @@
 use crate::{
-    domain::keypoint::{KeyPointNode, KeyPointTree},
+    domain::keypoint::{KeyPointNode, KeyPointPath, KeyPointTree},
     model::{key_point, KeyPoint, QuestionKeyPointStats},
 };
 use anyhow::Context;
@@ -8,7 +8,7 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
 use spring::plugin::service::Service;
 use spring_redis::cache;
 use spring_sea_orm::DbConn;
-use std::collections::HashMap;
+use std::{collections::HashMap, num::ParseIntError};
 
 #[derive(Clone, Service)]
 pub struct KeyPointService {
@@ -32,6 +32,43 @@ impl KeyPointService {
         Ok(KeyPointTree {
             tree: Self::build_tree(0, &pid_children_map, &kp_qcount_map),
         })
+    }
+
+    pub async fn find_key_point_by_path(
+        &self,
+        paper_type: i16,
+        path: &str,
+    ) -> anyhow::Result<Vec<KeyPointPath>> {
+        let kp_ids = path
+            .split(".")
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .map(|s| s.parse::<i32>())
+            .collect::<Result<Vec<i32>, ParseIntError>>()
+            .context("invalid keypoint path format")?;
+
+        let mut pid = 0;
+        let mut kpp = vec![];
+        for kp_id in kp_ids {
+            let kps = self
+                .find_key_point_by_pid_with_cache(paper_type, pid)
+                .await?;
+            pid = kp_id;
+            kpp.push(KeyPointPath {
+                kps,
+                selected: kp_id,
+            });
+        }
+        Ok(kpp)
+    }
+
+    #[cache("key_point:by_pid:{paper_type}:{key_point_id}")]
+    pub async fn find_key_point_by_pid_with_cache(
+        &self,
+        paper_type: i16,
+        key_point_id: i32,
+    ) -> anyhow::Result<Vec<key_point::Model>> {
+        self.find_key_point_by_pid(paper_type, key_point_id).await
     }
 
     pub async fn find_key_point_by_pid(

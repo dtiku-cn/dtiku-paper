@@ -47,6 +47,20 @@
                     <div class="input-group-prepend">
                         <label for="questionType" class="input-group-text">题型</label>
                     </div>
+                    {%for kp in kp_paths%}
+                    <select class="custom-select" data-level="{{loop.index0}}">
+                        {%if loop.index0!=0%}
+                        <option value="">-全部-</option>
+                        {%endif%}
+                        {%for k in kp.kps%}
+                        {%if kp.selected == k.id%}
+                        <option value="{{k.id}}" selected>{{k.name}}</option>
+                        {%else%}
+                        <option value="{{k.id}}">{{k.name}}</option>
+                        {%endif%}
+                        {%endfor%}
+                    </select>
+                    {%endfor%}
                 </div>
                 <div class="input-group col-12 col-md-6 mb-2 px-1">
                     <div class="input-group-prepend">
@@ -134,7 +148,7 @@
                 "</span>"
             );
         }
-        function loadLevel(pid, level, selected) {
+        function loadLevel(pid, level) {
             $.ajax({
                 url: `/kp/xingce/${pid}`,
                 method: 'GET',
@@ -155,11 +169,7 @@
                         $("#kp_path").val(data[0].id);
                     }
                     data.forEach(item => {
-                        if (selected && item.id == selected) {
-                            $select.append(`<option value="${item.id}" selected>${item.name}</option>`);
-                        } else {
-                            $select.append(`<option value="${item.id}">${item.name}</option>`);
-                        }
+                        $select.append(`<option value="${item.id}">${item.name}</option>`);
                     });
 
                     $("#keypoints").append($select);
@@ -190,18 +200,7 @@
         }
         $(function () {
             var kp_path = $("#kp_path").val();
-            if (kp_path) {
-                var paths = kp_path.split('.');
-                for (let i = 0; i < paths.length; i++) {
-                    let pid = 0;
-                    if (i === 0) {
-                        pid = 0
-                    } else {
-                        pid = parseInt(paths[i - 1]);
-                    }
-                    loadLevel(pid, i, paths[i]);
-                }
-            } else {
+            if (!kp_path) {
                 loadLevel(0, 0);
             }
             $('#slider').slider({

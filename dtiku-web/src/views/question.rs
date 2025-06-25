@@ -1,11 +1,12 @@
 use super::GlobalVariables;
 use askama::Template;
 use dtiku_paper::{
-    domain::{label::LabelTree, question::QuestionSearch},
+    domain::{keypoint::KeyPointPath, label::LabelTree, question::QuestionSearch},
     model::{
         self,
         question::{QuestionExtra, QuestionSinglePaper, QuestionWithPaper},
-    }, query::question::PaperQuestionQuery,
+    },
+    query::question::PaperQuestionQuery,
 };
 
 #[derive(Template)]
@@ -32,6 +33,7 @@ pub struct QuestionSectionTemplate {
     pub questions: Vec<QuestionSinglePaper>,
     pub label_tree: LabelTree,
     pub query: PaperQuestionQuery,
+    pub kp_paths: Vec<KeyPointPath>,
 }
 
 #[derive(Template)]

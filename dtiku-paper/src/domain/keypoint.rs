@@ -1,3 +1,4 @@
+use crate::model::key_point;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,4 +61,10 @@ pub struct KeyPointNode {
     pub paper_type: i16,
     pub qcount: i64,
     pub children: Vec<KeyPointNode>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyPointPath {
+    pub kps: Vec<key_point::Model>,
+    pub selected: i32,
 }

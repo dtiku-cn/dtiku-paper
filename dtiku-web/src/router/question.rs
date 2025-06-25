@@ -14,7 +14,7 @@ use askama::Template;
 use dtiku_paper::{
     domain::{label::LabelTree, question::QuestionSearch},
     query::question::PaperQuestionQuery,
-    service::{label::LabelService, question::QuestionService},
+    service::{keypoint::KeyPointService, label::LabelService, question::QuestionService},
 };
 use spring_web::{
     axum::{
@@ -71,6 +71,7 @@ async fn search_question_by_img(
 async fn question_section(
     mut query: axum_extra::extract::Query<PaperQuestionQuery>,
     Component(qs): Component<QuestionService>,
+    Component(ks): Component<KeyPointService>,
     Component(ls): Component<LabelService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
@@ -81,6 +82,7 @@ async fn question_section(
             questions: vec![],
             label_tree: LabelTree::none(),
             query: query.0,
+            kp_paths: vec![],
         };
         return Ok(Html(t.render().context("render failed")?));
     }
@@ -93,6 +95,9 @@ async fn question_section(
             .ok_or_else(|| KnownWebError::bad_request("请指定试卷类型"))?;
         query.paper_type = paper_type.id;
     }
+    let kp_paths = ks
+        .find_key_point_by_path(query.paper_type, &query.keypoint_path)
+        .await?;
     let label_tree = ls.find_all_label_by_paper_type(query.paper_type).await?;
     let (questions, papers) = qs.search_question_by_section(&query).await?;
     let t = QuestionSectionTemplate {
@@ -101,6 +106,7 @@ async fn question_section(
         questions,
         label_tree,
         query: query.0,
+        kp_paths,
     };
     Ok(Html(t.render().context("render failed")?))
 }
