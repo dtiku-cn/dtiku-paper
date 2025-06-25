@@ -5,7 +5,7 @@ use dtiku_paper::{
     model::{
         self,
         question::{QuestionExtra, QuestionSinglePaper, QuestionWithPaper},
-    },
+    }, query::question::PaperQuestionQuery,
 };
 
 #[derive(Template)]
@@ -31,6 +31,7 @@ pub struct QuestionSectionTemplate {
     pub papers: Vec<model::paper::Model>,
     pub questions: Vec<QuestionSinglePaper>,
     pub label_tree: LabelTree,
+    pub query: PaperQuestionQuery,
 }
 
 #[derive(Template)]

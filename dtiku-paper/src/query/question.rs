@@ -1,4 +1,5 @@
 use crate::model::paper_question;
+use derive_more::Display;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use sea_orm::{prelude::Expr, sea_query::IntoCondition, ColumnTrait};
@@ -44,7 +45,8 @@ impl IntoCondition for PaperQuestionQuery {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Display)]
+#[display("{_0},{_1}")]
 pub struct CorrectRatio(pub f32, pub f32);
 
 impl Default for CorrectRatio {

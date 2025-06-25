@@ -80,6 +80,7 @@ async fn question_section(
             papers: vec![],
             questions: vec![],
             label_tree: LabelTree::none(),
+            query: query.0,
         };
         return Ok(Html(t.render().context("render failed")?));
     }
@@ -99,6 +100,7 @@ async fn question_section(
         papers,
         questions,
         label_tree,
+        query: query.0,
     };
     Ok(Html(t.render().context("render failed")?))
 }
