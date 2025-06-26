@@ -540,10 +540,12 @@ impl FenbiSyncService {
         qid_num_map: &HashMap<i64, i32>,
         mid_num_map: &HashMap<i64, i32>,
     ) -> anyhow::Result<()> {
+        let mut material_num = 1;
         for m in materials {
             let num = mid_num_map
                 .get(&m.id)
                 .expect("mid is not exists in mid_num_map");
+            material_num = material_num.max(*num);
             self.save_material(m, paper.id, *num).await?;
         }
 
@@ -592,9 +594,17 @@ impl FenbiSyncService {
                         q_in_db.id,
                         origin_m_id
                     );
-                    let num = mid_num_map
-                        .get(&m.id)
-                        .expect("mid is not exists in mid_num_map");
+                    let num = match mid_num_map.get(&m.id) {
+                        Some(num) => {
+                            material_num = material_num.max(*num);
+                            *num
+                        }
+                        None => {
+                            let num = material_num;
+                            material_num += 1;
+                            num
+                        }
+                    };
                     self.save_material(m.0, paper.id, *num).await?;
                 }
             }
