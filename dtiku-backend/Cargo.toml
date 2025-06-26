@@ -45,6 +45,7 @@ prost = { workspace = true }
 tonic = { workspace = true }
 search-api = { workspace = true }
 pinyin = { workspace = true }
+sha2 = { workspace = true }
 
 [build-dependencies]
 tonic-build = "0.13"

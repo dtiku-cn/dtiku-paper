@@ -128,7 +128,8 @@ create table if not exists assets(
     src_type src_type not null,
     src_id integer not null,
     src_url text not null,
+    src_hash char(64) not null,
     created timestamp not null,
     modified timestamp not null,
-    unique(src_type, src_id)
+    unique(src_type, src_id, src_hash)
 );

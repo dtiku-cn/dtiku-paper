@@ -13,6 +13,7 @@ pub struct Model {
     pub src_id: i32,
     #[sea_orm(column_type = "Text")]
     pub src_url: String,
+    pub src_hash: String,
     pub created: DateTime,
     pub modified: DateTime,
 }
