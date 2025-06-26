@@ -605,7 +605,7 @@ impl FenbiSyncService {
                             num
                         }
                     };
-                    self.save_material(m.0, paper.id, *num).await?;
+                    self.save_material(m.0, paper.id, num).await?;
                 }
             }
 
