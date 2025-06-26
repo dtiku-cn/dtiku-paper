@@ -411,8 +411,11 @@ impl FenbiSyncService {
                             .update_progress(&progress, &self.target_db)
                             .await?;
                     }
-                    Err(e) => tracing::error!("find label failed: {:?}", e),
+                    Err(e) => tracing::error!("fetch origin paper row failed: {:?}", e),
                 };
+            }
+            if progress.current < next_step_id {
+                progress.current = next_step_id;
             }
         }
         Ok(())
