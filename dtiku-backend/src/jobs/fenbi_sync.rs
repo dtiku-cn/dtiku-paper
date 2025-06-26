@@ -1234,6 +1234,7 @@ struct SolutionAccessory {
     #[serde(rename = "type")]
     pub ty: i64,
     pub label: String,
+    #[serde(default)]
     pub content: String,
 }
 
