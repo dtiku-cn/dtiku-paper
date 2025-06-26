@@ -275,7 +275,7 @@ impl FenbiSyncService {
         if progress.total <= 0 {
             return Ok(());
         }
-
+        tracing::info!("start sync label");
         let mut stream = sqlx::query_as::<_, OriginLabel>(r##"
         select
             jsonb_extract_path_text(extra,'course_set','liveConfigItem','name') as exam_root,
@@ -329,6 +329,7 @@ impl FenbiSyncService {
             tracing::info!("exam_category already exists");
             return Ok(false);
         }
+        tracing::info!("start sync exam category");
         let category = sqlx::query_as::<_, OriginExamCategory>(
             r##"
                 select extra
@@ -369,6 +370,7 @@ impl FenbiSyncService {
     }
 
     async fn sync_paper(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
+        tracing::info!("start sync paper");
         while progress.current < progress.total {
             let current = progress.current;
             let next_step_id: i64 = current + 1000;
