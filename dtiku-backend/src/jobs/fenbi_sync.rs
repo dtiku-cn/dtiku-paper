@@ -373,7 +373,7 @@ impl FenbiSyncService {
         tracing::info!("start sync paper");
         while progress.current < progress.total {
             let current = progress.current;
-            let next_step_id: i64 = current + 1000;
+            let next_step_id: i64 = current + 100;
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
                     select
