@@ -128,7 +128,6 @@ create table if not exists assets(
     src_type src_type not null,
     src_id integer not null,
     src_url text not null,
-    storage_url text not null,
     created timestamp not null,
     modified timestamp not null,
     unique(src_type, src_id)

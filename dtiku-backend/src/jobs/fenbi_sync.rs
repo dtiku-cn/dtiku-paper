@@ -10,7 +10,6 @@ use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
 use dtiku_paper::model::paper::{Chapters, PaperExtra};
 use dtiku_paper::model::question;
-use dtiku_paper::model::solution;
 use dtiku_paper::model::solution::AnswerAnalysis;
 use dtiku_paper::model::solution::FillBlank;
 use dtiku_paper::model::solution::MultiChoice;
@@ -19,13 +18,14 @@ use dtiku_paper::model::solution::SingleChoice;
 use dtiku_paper::model::solution::StepAnalysis;
 use dtiku_paper::model::solution::StepByStepAnswer;
 use dtiku_paper::model::solution::TrueFalseChoice;
-use dtiku_paper::model::FromType;
 use dtiku_paper::model::Label;
+use dtiku_paper::model::{assets, solution};
 use dtiku_paper::model::{exam_category, KeyPoint};
 use dtiku_paper::model::{key_point, material};
 use dtiku_paper::model::{label, ExamCategory};
 use dtiku_paper::model::{paper, question_material};
 use dtiku_paper::model::{paper_material, question_keypoint};
+use dtiku_paper::model::{FromType, SrcType};
 use dtiku_paper::util::html::replace_img_src;
 use futures::StreamExt;
 use itertools::Itertools;
@@ -717,9 +717,17 @@ impl FenbiSyncService {
         num: i32,
     ) -> Result<(), anyhow::Error> {
         let source_material_id = m.id;
-        m.content = replace_img_src(&m.content, |str| {
-            // todo!()
-            format!("//s.dtiku.cn/{}", str)
+        m.content = replace_img_src(&m.content, async |str| {
+            let assets = assets::ActiveModel {
+                src_type: Set(SrcType::Material),
+                src_id: Set(0),
+                src_url: Set(str.to_string()),
+                ..Default::default()
+            }
+            .insert(&self.target_db)
+            .await
+            .context("insert material asset failed")?;
+            assets.compute_storage_url()
         });
         let material = TryInto::<material::ActiveModel>::try_into(m)?;
         let m_in_db = material

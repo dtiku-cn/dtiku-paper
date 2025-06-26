@@ -13,15 +13,19 @@ use serde::{Deserialize, Serialize};
     Serialize,
     Deserialize,
     strum :: EnumString,
+    strum :: Display,
 )]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "src_type")]
 #[serde(rename_all = "snake_case")]
 pub enum SrcType {
     #[sea_orm(string_value = "question")]
+    #[strum(serialize = "q")]
     Question,
     #[sea_orm(string_value = "material")]
+    #[strum(serialize = "m")]
     Material,
     #[sea_orm(string_value = "solution")]
+    #[strum(serialize = "s")]
     Solution,
 }
 

@@ -13,13 +13,9 @@ pub struct Model {
     pub src_id: i32,
     #[sea_orm(column_type = "Text")]
     pub src_url: String,
-    #[sea_orm(column_type = "Text")]
-    pub storage_url: String,
     pub created: DateTime,
     pub modified: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
-
-impl ActiveModelBehavior for ActiveModel {}
