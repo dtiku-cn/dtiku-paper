@@ -1020,7 +1020,7 @@ impl OriginQuestion {
         } else if STEP_BY_STEP_ANSWER.contains(ty) {
             let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
             let os = list.last().expect(&format!(
-                "q#{id} BlankChoice don't contains 182 options:{list:?}"
+                "q#{id} StepByStepQA don't contains 182 options:{list:?}"
             ));
             question::QuestionExtra::StepByStepQA(question::QA {
                 title: content.clone(),
