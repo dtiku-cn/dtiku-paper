@@ -228,6 +228,10 @@ pub enum QuestionExtra {
     #[serde(rename = "fb")]
     #[strum(serialize = "fb")]
     FillBlank,
+    // 填空问答题
+    #[serde(rename = "ba")]
+    #[strum(serialize = "ba")]
+    BlankAnswer,
     // 是非判断题
     #[serde(rename = "tf")]
     #[strum(serialize = "tf")]

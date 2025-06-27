@@ -23,6 +23,9 @@ pub enum SolutionExtra {
     // 填空题
     #[serde(rename = "fb")]
     FillBlank(FillBlank),
+    // 填空题
+    #[serde(rename = "ba")]
+    BlankAnswer(BlankAnswer),
     // 是非判断题
     #[serde(rename = "tf")]
     TrueFalse(TrueFalseChoice),
@@ -98,6 +101,12 @@ pub struct TrueFalseChoice {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct FillBlank {
     pub blanks: Vec<String>,
+    pub analysis: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
+pub struct BlankAnswer {
+    pub answer: String,
     pub analysis: String,
 }
 

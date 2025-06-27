@@ -10,7 +10,6 @@ use dtiku_paper::model::paper::PaperBlock;
 use dtiku_paper::model::paper::PaperChapter;
 use dtiku_paper::model::paper::{Chapters, PaperExtra};
 use dtiku_paper::model::question;
-use dtiku_paper::model::solution;
 use dtiku_paper::model::solution::AnswerAnalysis;
 use dtiku_paper::model::solution::FillBlank;
 use dtiku_paper::model::solution::MultiChoice;
@@ -19,6 +18,7 @@ use dtiku_paper::model::solution::SingleChoice;
 use dtiku_paper::model::solution::StepAnalysis;
 use dtiku_paper::model::solution::StepByStepAnswer;
 use dtiku_paper::model::solution::TrueFalseChoice;
+use dtiku_paper::model::solution::{self, BlankAnswer};
 use dtiku_paper::model::FromType;
 use dtiku_paper::model::Label;
 use dtiku_paper::model::{exam_category, KeyPoint};
@@ -52,6 +52,7 @@ static INDEFINITE_CHOICE: [i16; 1] = [3];
 static BLANK_CHOICE: [i16; 2] = [4, 6];
 static TRUE_FALSE: [i16; 1] = [5];
 static FILL_BLANK: [i16; 2] = [61, 64];
+static BLANK_ANSWER: [i16; 1] = [50];
 static STEP_BY_STEP_ANSWER: [i16; 13] = [11, 12, 16, 21, 22, 23, 24, 25, 26, 101, 102, 301, 302];
 static CLOSED_ENDED_ANSWER: [i16; 1] = [13];
 static OPEN_ENDED_ANSWER: [i16; 3] = [14, 15, 303];
@@ -1044,7 +1045,7 @@ impl OriginQuestion {
             let os = list.last().expect(&format!(
                 "q#{id} BlankChoice don't contains 182 options:{list:?}"
             ));
-            question::QuestionExtra::ClosedEndedQA(question::QA {
+            question::QuestionExtra::OpenEndedQA(question::QA {
                 title: os
                     .title
                     .clone()
@@ -1053,18 +1054,9 @@ impl OriginQuestion {
                 material_ids: os.material_indexes.clone(),
             })
         } else if FILL_BLANK.contains(ty) {
-            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list.last().expect(&format!(
-                "q#{id} BlankChoice don't contains 182 options:{list:?}"
-            ));
-            question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os
-                    .title
-                    .clone()
-                    .expect(&format!("q#{id} StepByStepQA title is none:{list:?}")),
-                word_count: os.word_count,
-                material_ids: os.material_indexes.clone(),
-            })
+            question::QuestionExtra::FillBlank
+        } else if BLANK_ANSWER.contains(ty) {
+            question::QuestionExtra::BlankAnswer
         } else {
             Err(anyhow::anyhow!("ty#{ty} is not defined"))?
         };
@@ -1157,6 +1149,16 @@ impl OriginQuestion {
                 .expect(&format!("q#{id} correct_answer.blanks is none"));
             solution::SolutionExtra::FillBlank(FillBlank {
                 blanks,
+                analysis: solution.clone().expect(&format!("q#{id} solution is none")),
+            })
+        } else if BLANK_ANSWER.contains(ty) {
+            let answer = correct_answer
+                .expect(&format!("q#{id} correct_answer is none"))
+                .answer
+                .clone()
+                .expect(&format!("q#{id} correct_answer.blanks is none"));
+            solution::SolutionExtra::BlankAnswer(BlankAnswer {
+                answer,
                 analysis: solution.clone().expect(&format!("q#{id} solution is none")),
             })
         } else {
