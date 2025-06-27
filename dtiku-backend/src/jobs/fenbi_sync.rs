@@ -1043,7 +1043,7 @@ impl OriginQuestion {
         } else if OPEN_ENDED_ANSWER.contains(ty) {
             let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
             let os = list.last().expect(&format!(
-                "q#{id} BlankChoice don't contains 182 options:{list:?}"
+                "q#{id} OpenEndedQA don't contains 182 options:{list:?}"
             ));
             question::QuestionExtra::OpenEndedQA(question::QA {
                 title: os
