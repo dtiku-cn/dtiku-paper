@@ -1036,7 +1036,7 @@ impl OriginQuestion {
                 title: os
                     .title
                     .clone()
-                    .expect(&format!("q#{id} StepByStepQA title is none:{list:?}")),
+                    .expect(&format!("q#{id} ClosedEndedQA title is none:{list:?}")),
                 word_count: os.word_count,
                 material_ids: os.material_indexes.clone(),
             })
@@ -1049,7 +1049,7 @@ impl OriginQuestion {
                 title: os
                     .title
                     .clone()
-                    .expect(&format!("q#{id} StepByStepQA title is none:{list:?}")),
+                    .expect(&format!("q#{id} OpenEndedQA title is none:{list:?}")),
                 word_count: os.word_count,
                 material_ids: os.material_indexes.clone(),
             })
