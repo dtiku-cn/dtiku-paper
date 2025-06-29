@@ -1018,15 +1018,22 @@ impl OriginQuestion {
         } else if TRUE_FALSE.contains(ty) {
             question::QuestionExtra::TrueFalse
         } else if STEP_BY_STEP_ANSWER.contains(ty) {
-            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list.last().expect(&format!(
-                "q#{id} StepByStepQA don't contains 182 options:{list:?}"
-            ));
-            question::QuestionExtra::StepByStepQA(question::QA {
-                title: content.clone(),
-                word_count: os.word_count,
-                material_ids: os.material_indexes.clone(),
-            })
+            let qa = self
+                .accessories
+                .0
+                .iter()
+                .map(|qa| question::QA {
+                    title: qa
+                        .content
+                        .as_ref()
+                        .or(qa.title.as_ref())
+                        .map(|s| s.clone())
+                        .unwrap_or_default(),
+                    word_count: qa.word_count,
+                    material_ids: qa.material_indexes.clone(),
+                })
+                .collect_vec();
+            question::QuestionExtra::StepByStepQA { qa }
         } else if CLOSED_ENDED_ANSWER.contains(ty) {
             let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
             let os = list.last().expect(&format!(

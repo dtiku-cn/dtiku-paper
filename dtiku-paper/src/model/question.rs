@@ -239,7 +239,7 @@ pub enum QuestionExtra {
     // 分步式解答题
     #[serde(rename = "sqa")]
     #[strum(serialize = "sqa")]
-    StepByStepQA(QA),
+    StepByStepQA { qa: Vec<QA> },
     // 封闭式解答题
     #[serde(rename = "cqa")]
     #[strum(serialize = "cqa")]
