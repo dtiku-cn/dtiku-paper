@@ -1,5 +1,6 @@
 {%- import "macros/general.html.min.jinja" as general -%}
 {%- import "macros/artalk.html.min.jinja" as artalk -%}
+{%- import "macros/paper.html.min.jinja" as paper -%}
 <!DOCTYPE html>
 <html lang="zh">
 
@@ -63,7 +64,7 @@
                         <em>查看更多</em>
                     </a>
                 </header>
-                <th:block th:include="fragments/paper::paper-table(${xPapers})"></th:block>
+                {%call paper::paper_table(xingce)%}
                 <footer class="card-footer">
                     <a class="card-link" href="/paper?ty=xingce">查看更多</a>
                 </footer>
@@ -82,7 +83,7 @@
                         <em>查看更多</em>
                     </a>
                 </header>
-                <th:block th:include="fragments/paper::paper-table(${sPapers})"></th:block>
+                {%call paper::paper_table(shenlun)%}
                 <footer class="card-footer">
                     <a class="card-link" href="/paper?ty=shenlun">查看更多</a>
                 </footer>
