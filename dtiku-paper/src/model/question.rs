@@ -243,11 +243,11 @@ pub enum QuestionExtra {
     // 封闭式解答题
     #[serde(rename = "cqa")]
     #[strum(serialize = "cqa")]
-    ClosedEndedQA(QA),
+    ClosedEndedQA { qa: Vec<QA> },
     // 开放式解答题
     #[serde(rename = "oqa")]
     #[strum(serialize = "oqa")]
-    OpenEndedQA(QA),
+    OpenEndedQA { qa: Vec<QA> },
     // 听力题
     #[serde(rename = "lq")]
     #[strum(serialize = "lq")]

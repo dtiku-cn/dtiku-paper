@@ -1035,31 +1035,39 @@ impl OriginQuestion {
                 .collect_vec();
             question::QuestionExtra::StepByStepQA { qa }
         } else if CLOSED_ENDED_ANSWER.contains(ty) {
-            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list.last().expect(&format!(
-                "q#{id} ClosedEndedQA don't contains 182 options:{list:?}"
-            ));
-            question::QuestionExtra::ClosedEndedQA(question::QA {
-                title: os
-                    .title
-                    .clone()
-                    .expect(&format!("q#{id} ClosedEndedQA title is none:{list:?}")),
-                word_count: os.word_count,
-                material_ids: os.material_indexes.clone(),
-            })
+            let qa = self
+                .accessories
+                .0
+                .iter()
+                .map(|qa| question::QA {
+                    title: qa
+                        .content
+                        .as_ref()
+                        .or(qa.title.as_ref())
+                        .map(|s| s.clone())
+                        .unwrap_or_default(),
+                    word_count: qa.word_count,
+                    material_ids: qa.material_indexes.clone(),
+                })
+                .collect_vec();
+            question::QuestionExtra::ClosedEndedQA { qa }
         } else if OPEN_ENDED_ANSWER.contains(ty) {
-            let list = self.filter_accessory(|a| [182i16].contains(&a.ty));
-            let os = list.last().expect(&format!(
-                "q#{id} OpenEndedQA don't contains 182 options:{list:?}"
-            ));
-            question::QuestionExtra::OpenEndedQA(question::QA {
-                title: os
-                    .title
-                    .clone()
-                    .expect(&format!("q#{id} OpenEndedQA title is none:{list:?}")),
-                word_count: os.word_count,
-                material_ids: os.material_indexes.clone(),
-            })
+            let qa = self
+                .accessories
+                .0
+                .iter()
+                .map(|qa| question::QA {
+                    title: qa
+                        .content
+                        .as_ref()
+                        .or(qa.title.as_ref())
+                        .map(|s| s.clone())
+                        .unwrap_or_default(),
+                    word_count: qa.word_count,
+                    material_ids: qa.material_indexes.clone(),
+                })
+                .collect_vec();
+            question::QuestionExtra::OpenEndedQA { qa }
         } else if FILL_BLANK.contains(ty) {
             question::QuestionExtra::FillBlank
         } else if BLANK_ANSWER.contains(ty) {
