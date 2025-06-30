@@ -4,9 +4,40 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use sea_orm::{prelude::Expr, sea_query::IntoCondition, ColumnTrait};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use strum::{EnumIter, EnumMessage};
 use validator::Validate;
 
 static KEY_POINT_PATH: Lazy<Regex> = Lazy::new(|| Regex::new(r"\d+(.\d+)?").unwrap());
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    EnumIter,
+    Serialize,
+    Deserialize,
+    Default,
+    strum::EnumString,
+    strum::Display,
+    strum::EnumMessage,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum SectionType {
+    #[default]
+    #[strum(message = "题目")]
+    Question,
+    #[strum(message = "答案解析")]
+    Explain,
+    #[strum(message = "题目+解析")]
+    Together,
+}
+
+impl SectionType {
+    pub fn text(&self) -> &'static str {
+        self.get_message().unwrap_or_default()
+    }
+}
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Validate)]
 pub struct PaperQuestionQuery {
@@ -20,6 +51,8 @@ pub struct PaperQuestionQuery {
     pub keypoint_path: String,
     #[serde(default, rename = "correct_ratio")]
     pub correct_ratio: CorrectRatio,
+    #[serde(default)]
+    pub section_type: SectionType,
 }
 
 impl IntoCondition for PaperQuestionQuery {

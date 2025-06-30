@@ -6,8 +6,9 @@ use dtiku_paper::{
         self,
         question::{QuestionExtra, QuestionSinglePaper, QuestionWithPaper},
     },
-    query::question::PaperQuestionQuery,
+    query::question::{PaperQuestionQuery, SectionType},
 };
+use strum::IntoEnumIterator;
 
 #[derive(Template)]
 #[template(path = "question/search.html.min.jinja")]

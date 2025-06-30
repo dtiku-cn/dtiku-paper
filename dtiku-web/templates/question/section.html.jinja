@@ -67,9 +67,13 @@
                         <label for="sectionType" class="input-group-text">题目/答案</label>
                     </div>
                     <select id="sectionType" name="sectionType" class="custom-select">
-                        <option th:each="s:${allSections}" value="${s.name()}" th:selected="${sectionType==s}">
-                            ${s.text}
-                        </option>
+                        {%for s in SectionType::iter()%}
+                        {%if s == query.section_type%}
+                        <option value="{{s}}" selected>{{s.text()}}</option>
+                        {%else%}
+                        <option value="{{s}}">{{s.text()}}</option>
+                        {%endif%}
+                        {%endfor%}
                     </select>
                 </div>
             </div>
