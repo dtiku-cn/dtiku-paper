@@ -1318,7 +1318,7 @@ impl TryInto<material::MaterialExtra> for MaterialAccessory {
                 "materialExplain" => Ok(material::MaterialExtra::MaterialExplain(
                     self.content.expect("materialExplain content is none"),
                 )),
-                "transcript" => Ok(material::MaterialExtra::Transcript(
+                "clyw"|"transcript" => Ok(material::MaterialExtra::Transcript(
                     self.content.expect("transcript content is none"),
                 )),
                 "zdch" => Ok(material::MaterialExtra::Dictionary(
