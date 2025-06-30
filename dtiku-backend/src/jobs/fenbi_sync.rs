@@ -36,7 +36,7 @@ use sea_orm::{PaginatorTrait, Set};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
-use serde_with::{formats::CommaSeparator, serde_as, StringWithSeparator};
+use serde_with::{formats::CommaSeparator, serde_as, DefaultOnNull, StringWithSeparator};
 use spring::plugin::service::Service;
 use spring::{async_trait, tracing};
 use spring_sea_orm::DbConn;
@@ -1229,6 +1229,7 @@ impl OriginQuestion {
     }
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct QuestionAccessory {
@@ -1244,6 +1245,7 @@ struct QuestionAccessory {
     pub blank_type: Option<i64>,
     pub word_count: Option<i16>,
     #[serde(default)]
+    #[serde_as(as = "DefaultOnNull<_>")]
     pub material_indexes: Vec<i32>,
     pub url: Option<String>,
     pub audio_id: Option<String>,
