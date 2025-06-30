@@ -66,7 +66,7 @@
                     <div class="input-group-prepend">
                         <label for="sectionType" class="input-group-text">题目/答案</label>
                     </div>
-                    <select id="sectionType" name="sectionType" class="custom-select">
+                    <select id="sectionType" name="section_type" class="custom-select">
                         {%for s in SectionType::iter()%}
                         {%if s == query.section_type%}
                         <option value="{{s}}" selected>{{s.text()}}</option>

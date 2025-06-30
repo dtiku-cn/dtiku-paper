@@ -23,6 +23,7 @@ static KEY_POINT_PATH: Lazy<Regex> = Lazy::new(|| Regex::new(r"\d+(.\d+)?").unwr
     strum::EnumMessage,
 )]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum SectionType {
     #[default]
     #[strum(message = "题目")]
@@ -51,7 +52,7 @@ pub struct PaperQuestionQuery {
     pub keypoint_path: String,
     #[serde(default, rename = "correct_ratio")]
     pub correct_ratio: CorrectRatio,
-    #[serde(default)]
+    #[serde(default, rename = "section_type")]
     pub section_type: SectionType,
 }
 
