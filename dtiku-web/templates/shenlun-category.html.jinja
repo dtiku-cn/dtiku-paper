@@ -2,6 +2,7 @@
 {%- import "macros/artalk.html.min.jinja" as artalk -%}
 {%- import "macros/painter.html.min.jinja" as painter -%}
 {%- import "macros/shenlun-template.html.min.jinja" as shenlun_template -%}
+{%- import "macros/question.html.min.jinja" as question -%}
 <!doctype html>
 <html lang="zh">
 
@@ -54,21 +55,24 @@
             {%call shenlun_template::shenlun_template(kp_name.as_str())%}
             {%endif%}
             <ul class="nav nav-pills my-3" role="tablist">
-                <li role="presentation" class="nav-item" th:each="y:${yearStats}">
-                    <a class="nav-link d-flex justify-content-between align-items-center"
-                        th:classappend="${year==y.year?'active':''}"
-                        th:href="@{/shenlun-categories/{category}/{text}/{year}(category=${category},text=${text},year=${y.year},fromType=${strings.defaultString(fromType,'')})}">
-                        <span class="d-inline-block mr-1" th:text="${y.year}"></span>
-                        <span class="badge badge-pill badge-secondary" th:text="${y.count}"></span>
+                {%for y in years%}
+                <li role="presentation" class="nav-item">
+                    <a class="nav-link d-flex justify-content-between align-items-center {%if year==Some(*y.year)%}active{%endif%}"
+                        href="/shenlun-categories/{{kp_pid}}/{{kp_id}}/{{y.year}}">
+                        <span class="d-inline-block mr-1">{{y.year}}</span>
+                        <span class="badge badge-pill badge-secondary">{{y.question_count}}</span>
                     </a>
                 </li>
+                {%endfor%}
             </ul>
-            <div class="card mb-3" th:each="q : ${page.content}" th:include="fragments/question::question_card(${q})">
-            </div>
-            <th:block
-                th:include="fragments/elements::pagination(${page},@{/shenlun-categories/{c}/{t}/{y}(c=${category},t=${text},y=${year},fromType=${strings.defaultString(fromType,'')})},true)">
-            </th:block>
+            {%for q in questions%}
+            {%call question::question_card(q)%}
+            {%endfor%}
         </div>
+        <th:block
+            th:include="fragments/elements::pagination(${page},@{/shenlun-categories/{c}/{t}/{y}(c=${category},t=${text},y=${year},fromType=${strings.defaultString(fromType,'')})},true)">
+        </th:block>
+    </div>
     </div>
     {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽")%}
     {% call general::footer() %}

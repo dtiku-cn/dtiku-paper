@@ -80,4 +80,60 @@ impl QuestionService {
             }
         })
     }
+
+    pub async fn full_question_by_ids(
+        &self,
+        ids: Vec<i32>,
+    ) -> anyhow::Result<Vec<QuestionWithPaper>> {
+        if ids.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let qs = Question::find_by_ids(&self.db, ids.clone()).await?;
+
+        let all_solutions = Solution::find_by_question_ids(&self.db, ids.clone()).await?;
+
+        let all_pq = PaperQuestion::find_by_question_id_in(&self.db, ids.clone())
+            .await
+            .context("find question papers failed")?;
+
+        let pid_list: Vec<i32> = all_pq.iter().map(|pq| pq.paper_id).collect();
+        let all_papers = Paper::find_by_ids(&self.db, pid_list).await?;
+
+        let solution_map = all_solutions
+            .into_iter()
+            .into_group_map_by(|s| s.question_id);
+
+        let pq_map = all_pq.into_iter().into_group_map_by(|pq| pq.question_id);
+
+        let paper_map = all_papers
+            .into_iter()
+            .map(|p| (p.id, p))
+            .collect::<HashMap<_, _>>();
+
+        let mut result = Vec::with_capacity(qs.len());
+
+        for q in qs {
+            let qid = q.id;
+
+            let ss = solution_map.get(&qid).cloned().unwrap_or_default();
+
+            let papers = pq_map
+                .get(&qid)
+                .map(|v| {
+                    v.iter()
+                        .filter_map(|pq| {
+                            paper_map
+                                .get(&pq.paper_id)
+                                .map(|p| PaperWithNum::new(p, pq.sort))
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+
+            result.push(QuestionWithPaper::new(q, papers, Some(ss), None));
+        }
+
+        Ok(result)
+    }
 }

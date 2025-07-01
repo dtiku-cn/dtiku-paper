@@ -1,13 +1,16 @@
 use crate::{
     domain::keypoint::{KeyPointNode, KeyPointPath, KeyPointTree},
-    model::{key_point, KeyPoint, QuestionKeyPointStats},
+    model::{
+        key_point, question_keypoint, question_keypoint_stats, KeyPoint, QuestionKeyPoint,
+        QuestionKeyPointStats,
+    },
 };
 use anyhow::Context;
 use itertools::Itertools;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
+use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
 use spring::plugin::service::Service;
 use spring_redis::cache;
-use spring_sea_orm::DbConn;
+use spring_sea_orm::{pagination::Pagination, DbConn};
 use std::{collections::HashMap, num::ParseIntError};
 
 #[derive(Clone, Service)]
@@ -32,6 +35,18 @@ impl KeyPointService {
         Ok(KeyPointTree {
             tree: Self::build_tree(0, &pid_children_map, &kp_qcount_map),
         })
+    }
+
+    pub async fn find_year_stats_for_category(
+        &self,
+        kp_id: i32,
+    ) -> anyhow::Result<Vec<question_keypoint_stats::Model>> {
+        QuestionKeyPointStats::find()
+            .filter(question_keypoint_stats::Column::KeyPointId.eq(kp_id)) // Assuming 1 is the paper type for year stats
+            .order_by_asc(question_keypoint_stats::Column::Year)
+            .all(&self.db)
+            .await
+            .context("find_year_stats_for_category")
     }
 
     pub async fn find_key_point_by_path(
@@ -86,6 +101,28 @@ impl KeyPointService {
             .all(&self.db)
             .await
             .with_context(|| format!("find_key_point_by_pid({key_point_id})"))
+    }
+
+    pub async fn find_qid_by_kp(
+        &self,
+        key_point_id: i32,
+        year: Option<i16>,
+        page: &Pagination,
+    ) -> anyhow::Result<Vec<i32>> {
+        let mut condition = question_keypoint::Column::KeyPointId.eq(key_point_id);
+        if let Some(y) = year {
+            condition = condition.and(question_keypoint::Column::Year.eq(y))
+        }
+        QuestionKeyPoint::find()
+            .select_only()
+            .column(question_keypoint::Column::QuestionId)
+            .filter(condition)
+            .order_by_asc(key_point::Column::Id)
+            .into_tuple()
+            .paginate(&self.db, page.size)
+            .fetch_page(page.page)
+            .await
+            .with_context(|| format!("find_qid_by_kp({key_point_id}, {year:?})"))
     }
 
     fn build_tree(
