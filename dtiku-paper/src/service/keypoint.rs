@@ -117,7 +117,6 @@ impl KeyPointService {
             .select_only()
             .column(question_keypoint::Column::QuestionId)
             .filter(condition)
-            .order_by_asc(key_point::Column::Id)
             .into_tuple()
             .paginate(&self.db, page.size)
             .fetch_page(page.page)
