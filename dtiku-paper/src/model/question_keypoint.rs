@@ -10,7 +10,7 @@ impl ActiveModel {
         Entity::insert(self)
             .on_conflict(
                 OnConflict::columns([Column::QuestionId, Column::KeyPointId])
-                    .do_nothing()
+                    .update_column(Column::Year)
                     .to_owned(),
             )
             .exec_with_returning(db)
