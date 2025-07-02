@@ -42,7 +42,7 @@ impl StatsModelType {
         self.get_str("text").unwrap_or_default()
     }
 
-    pub fn title(&self) -> Regex {
+    pub fn regex(&self) -> Regex {
         let regex = self.get_str("regex").unwrap_or_default();
 
         RegexBuilder::new(regex).multi_line(true).build().unwrap()
