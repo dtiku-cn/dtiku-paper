@@ -1290,6 +1290,7 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
         let extra = match self.accessories {
             Some(a) => Some(
                 a.0.into_iter()
+                    .filter(|a| a.ty != 152) // 152 is none
                     .map(|a| a.try_into())
                     .collect::<anyhow::Result<Vec<material::MaterialExtra>>>()?,
             ),
@@ -1318,7 +1319,7 @@ impl TryInto<material::MaterialExtra> for MaterialAccessory {
                 "materialExplain" => Ok(material::MaterialExtra::MaterialExplain(
                     self.content.expect("materialExplain content is none"),
                 )),
-                "clyw"|"transcript" => Ok(material::MaterialExtra::Transcript(
+                "clyw" | "transcript" => Ok(material::MaterialExtra::Transcript(
                     self.content.expect("transcript content is none"),
                 )),
                 "zdch" => Ok(material::MaterialExtra::Dictionary(
