@@ -1,3 +1,6 @@
+pub mod model;
+pub mod service;
+
 use regex::{Regex, RegexBuilder};
 use serde::Deserialize;
 use strum::{AsRefStr, Display, EnumIter, EnumMessage, EnumProperty, EnumString};

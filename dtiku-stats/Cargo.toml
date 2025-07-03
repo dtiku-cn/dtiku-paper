@@ -4,6 +4,9 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
+spring = { workspace = true }
+spring-sea-orm = { workspace = true }
+sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
 strum = { workspace = true, features = ["derive"] }
 serde = { workspace = true }
