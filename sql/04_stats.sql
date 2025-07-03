@@ -20,13 +20,14 @@ create table if not exists idiom_ref(
     ty idiom_type not null
 );
 
-create index concurrently if not exists idx_idiom_ref_label_id_idiom_id on idiom_ref (label_id, idiom_id);
+create index concurrently if not exists idx_idiom_ref_ty_label_id_idiom_id on idiom_ref (ty, label_id, idiom_id);
 
 create materialized view idiom_ref_stats as
 select
+  ty,
   label_id,
   idiom_id,
   count(distinct question_id) as question_count,
   count(distinct paper_id) as paper_count
 from idiom_ref
-group by label_id, idiom_id;
+group by ty, label_id, idiom_id;

@@ -1,4 +1,4 @@
-use super::_entities::idiom::*;
+pub use super::_entities::idiom::*;
 use sea_orm::{
     sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ConnectionTrait, DbErr,
 };

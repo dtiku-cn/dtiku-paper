@@ -2,3 +2,4 @@
 
 pub use super::idiom::Entity as Idiom;
 pub use super::idiom_ref::Entity as IdiomRef;
+pub use super::idiom_ref_stats::Entity as IdiomRefStats;

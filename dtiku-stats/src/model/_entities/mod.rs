@@ -4,4 +4,5 @@ pub mod prelude;
 
 pub mod idiom;
 pub mod idiom_ref;
+pub mod idiom_ref_stats;
 pub mod sea_orm_active_enums;

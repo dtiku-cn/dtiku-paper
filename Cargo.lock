@@ -1708,7 +1708,9 @@ dependencies = [
 name = "dtiku-stats"
 version = "0.0.1"
 dependencies = [
+ "anyhow",
  "dtiku-paper",
+ "itertools 0.14.0",
  "regex",
  "sea-orm",
  "serde",
