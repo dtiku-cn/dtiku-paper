@@ -25,6 +25,7 @@ impl IdiomQuery {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct IdiomSearch {
+    #[serde(default, rename = "type")]
     pub ty: IdiomType,
     #[serde(default, rename = "q")]
     pub text: String,
