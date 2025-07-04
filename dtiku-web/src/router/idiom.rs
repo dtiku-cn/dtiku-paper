@@ -6,12 +6,12 @@ use anyhow::Context;
 use askama::Template;
 use axum_extra::extract::Query;
 use dtiku_paper::{domain::label::LabelTree, service::label::LabelService};
-use dtiku_stats::StatsModelType;
+use dtiku_stats::{query::IdiomSearch, service::idiom::IdiomService, StatsModelType};
 use spring_sea_orm::pagination::{Page, Pagination};
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
-        Extension,
+        Extension, Json,
     },
     error::Result,
     extractor::Component,
@@ -38,6 +38,14 @@ async fn list_idiom(
         page: Page::new(vec![], &page, 0),
     };
     Ok(Html(t.render().context("render failed")?))
+}
+
+#[get("/idiom/like")]
+async fn idiom_like(
+    Component(is): Component<IdiomService>,
+    Query(search): Query<IdiomSearch>,
+) -> Result<impl IntoResponse> {
+    Ok(Json(is.search_idiom(search).await?))
 }
 
 #[get("/word")]

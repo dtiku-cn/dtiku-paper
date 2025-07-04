@@ -1,13 +1,13 @@
 use crate::{
     domain::IdiomStats,
-    model::{idiom, idiom_ref_stats, Idiom, IdiomRefStats},
-    query::IdiomQuery,
+    model::{idiom, idiom_ref_stats, sea_orm_active_enums::IdiomType, Idiom, IdiomRefStats},
+    query::{IdiomQuery, IdiomSearch},
 };
 use anyhow::Context;
 use itertools::Itertools;
 use sea_orm::{
-    sea_query::IntoCondition, ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect,
+    prelude::Expr, sea_query::IntoCondition, ColumnTrait, DbConn, EntityTrait, QueryFilter,
+    QueryOrder, QuerySelect,
 };
 use spring::plugin::service::Service;
 use spring_sea_orm::pagination::{Page, PaginationExt};
@@ -20,9 +20,24 @@ pub struct IdiomService {
 }
 
 impl IdiomService {
-    pub async fn get_idiom_stats(&self, query: &IdiomQuery) -> anyhow::Result<Page<IdiomStats>> {
+    pub async fn get_idiom_stats(
+        &self,
+        ty: IdiomType,
+        query: &IdiomQuery,
+    ) -> anyhow::Result<Page<IdiomStats>> {
         let page = IdiomRefStats::find()
-            .filter(query.clone().into_condition())
+            .select_only()
+            .column(idiom_ref_stats::Column::IdiomId)
+            .column_as(
+                Expr::col(idiom_ref_stats::Column::QuestionCount).sum(),
+                "question_count",
+            )
+            .column_as(
+                Expr::col(idiom_ref_stats::Column::PaperCount).sum(),
+                "paper_count",
+            )
+            .filter(query.into_condition(ty))
+            .group_by(idiom_ref_stats::Column::IdiomId)
             .order_by_desc(idiom_ref_stats::Column::QuestionCount)
             .page(&self.db, &query.page)
             .await
@@ -47,5 +62,21 @@ impl IdiomService {
         let id_text_map: HashMap<i32, String> = idioms.into_iter().collect();
 
         Ok(page.map(|m| IdiomStats::from(id_text_map.get(&m.idiom_id), m)))
+    }
+
+    pub async fn search_idiom(&self, search: IdiomSearch) -> anyhow::Result<Vec<String>> {
+        Idiom::find()
+            .select_only()
+            .column(idiom::Column::Text)
+            .filter(
+                idiom::Column::Text
+                    .like(search.text)
+                    .and(idiom::Column::Ty.eq(search.ty)),
+            )
+            .limit(10)
+            .into_tuple()
+            .all(&self.db)
+            .await
+            .context("Idiom::search_idiom() failed")
     }
 }
