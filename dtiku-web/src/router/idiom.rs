@@ -9,7 +9,9 @@ use anyhow::Context;
 use askama::Template;
 use axum_extra::extract::Query;
 use dtiku_paper::{domain::label::LabelTree, service::label::LabelService};
-use dtiku_stats::{query::IdiomSearch, service::idiom::IdiomService, StatsModelType};
+use dtiku_stats::{
+    model::sea_orm_active_enums::IdiomType, query::IdiomSearch, service::idiom::IdiomService,
+};
 use spring_sea_orm::pagination::{Page, Pagination};
 use spring_web::{
     axum::{
@@ -35,7 +37,7 @@ async fn list_idiom(
 
     let t = ListIdiomTemplate {
         global,
-        model: StatsModelType::Idiom,
+        model: IdiomType::Idiom,
         label_tree,
         req,
         page: Page::new(vec![], &page, 0),
@@ -64,7 +66,7 @@ async fn list_word(
     };
     let t = ListIdiomTemplate {
         global,
-        model: StatsModelType::Word,
+        model: IdiomType::Word,
         label_tree,
         req,
         page: Page::new(vec![], &page, 0),

@@ -49,7 +49,7 @@
                     <strong>{{model.text()}}</strong>
                 </a>
                 <div class="dropdown-menu shadow-sm" aria-labelledby="modelTypeDropdown">
-                    {%for m in StatsModelType::iter()%}
+                    {%for m in IdiomType::iter()%}
                     <a class="dropdown-item" href="/{{m}}">{{m.text()}}</a>
                     {%endfor%}
                 </div>
