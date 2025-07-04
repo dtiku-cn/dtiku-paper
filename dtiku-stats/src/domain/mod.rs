@@ -26,8 +26,8 @@ impl IdiomStats {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IdiomDetail {
-    detail: idiom::Model,
-    refs: Vec<PaperQuestionRef>,
+    pub detail: idiom::Model,
+    pub refs: Vec<PaperQuestionRef>,
 }
 
 impl IdiomDetail {
