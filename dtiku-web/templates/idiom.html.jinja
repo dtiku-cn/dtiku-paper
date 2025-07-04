@@ -53,8 +53,8 @@
         <table class="table idiom-list" th:if="${!#lists.isEmpty(idiom.idiom.synonym)}">
             <tr class="table-secondary">
                 <th class="text-center px-0 py-2">近义词</th>
-                <th class="py-2" th:classappend="${#lists.isEmpty(idiom.synonym)?'d-none':''}">释义</th>
-                <th class="text-center px-0 py-2" th:classappend="${#lists.isEmpty(idiom.synonym)?'d-none':''}">真题</th>
+                <th class="py-2" th:classappend="${lists.isEmpty(idiom.synonym)?'d-none':''}">释义</th>
+                <th class="text-center px-0 py-2" th:classappend="${lists.isEmpty(idiom.synonym)?'d-none':''}">真题</th>
             </tr>
             <tr th:each="s : ${idiom.synonym}">
                 <td class="text-center px-0">
@@ -63,7 +63,7 @@
                 </td>
                 <td th:utext="${s.explain}"></td>
                 <td class="text-center px-0">
-                    <a th:href="'/idiom/'+${s.text}+'?provinces='+${#strings.setJoin(provinces,',')}+'&fromType='+${#strings.defaultString(fromType,'')}"
+                    <a th:href="'/idiom/'+${s.text}+'?provinces='+${strings.setJoin(provinces,',')}+'&fromType='+${strings.defaultString(fromType,'')}"
                         th:text="${s.paperFrequency}"></a>
                 </td>
             </tr>
@@ -79,8 +79,8 @@
         <table class="table idiom-list" th:if="${!#lists.isEmpty(idiom.idiom.antonym)}">
             <tr class="table-secondary">
                 <th class="text-center px-0 py-2">反义词</th>
-                <th class="py-2" th:classappend="${#lists.isEmpty(idiom.antonym)?'d-none':''}">释义</th>
-                <th class="text-center px-0 py-2" th:classappend="${#lists.isEmpty(idiom.antonym)?'d-none':''}">真题</th>
+                <th class="py-2" th:classappend="${lists.isEmpty(idiom.antonym)?'d-none':''}">释义</th>
+                <th class="text-center px-0 py-2" th:classappend="${lists.isEmpty(idiom.antonym)?'d-none':''}">真题</th>
             </tr>
             <tr th:each="s : ${idiom.antonym}">
                 <td class="text-center px-0">
@@ -90,7 +90,7 @@
                 <td th:utext="${s.explain}"></td>
                 <td class="text-center px-0">
                     <a rel="external nofollow" target="_blank"
-                        th:href="'/idiom/'+${s.text}+'?provinces='+${#strings.setJoin(provinces,',')}+'&fromType='+${#strings.defaultString(fromType,'')}"
+                        th:href="'/idiom/'+${s.text}+'?provinces='+${strings.setJoin(provinces,',')}+'&fromType='+${strings.defaultString(fromType,'')}"
                         th:text="${s.paperFrequency}"></a>
                 </td>
             </tr>
@@ -126,7 +126,7 @@
                 <tr th:id="|q-${r.question.id}|">
                     <td class="p-1">
                         <img class="vendor-icon" rel="external nofollow noreferrer"
-                            th:if="${#bools.isTrue(system_showVendor)}" th:src="${r.refPaper.fromType.iconUrl()}"
+                            th:if="${bools.isTrue(system_showVendor)}" th:src="${r.refPaper.fromType.iconUrl()}"
                             th:alt="${r.refPaper.fromType.name()}" />
                         <a th:href="'/paper/'+${r.refPaper.id}+'#q-'+${r.question.number}"
                             th:text="${r.refPaper.title}"></a>
