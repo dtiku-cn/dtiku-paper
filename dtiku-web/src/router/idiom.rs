@@ -26,6 +26,7 @@ use spring_web::{
 #[get("/idiom")]
 async fn list_idiom(
     Component(ls): Component<LabelService>,
+    Component(is): Component<IdiomService>,
     Query(req): Query<IdiomReq>,
     page: Pagination,
     Extension(global): Extension<GlobalVariables>,
@@ -56,6 +57,7 @@ async fn idiom_like(
 #[get("/word")]
 async fn list_word(
     Component(ls): Component<LabelService>,
+    Component(is): Component<IdiomService>,
     Query(req): Query<IdiomReq>,
     page: Pagination,
     Extension(global): Extension<GlobalVariables>,
