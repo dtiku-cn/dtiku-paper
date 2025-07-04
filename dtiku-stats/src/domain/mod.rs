@@ -1,4 +1,4 @@
-use crate::model::{idiom_ref_stats, sea_orm_active_enums::IdiomType};
+use crate::model::{idiom, idiom_ref_stats, sea_orm_active_enums::IdiomType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,3 +23,21 @@ impl IdiomStats {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IdiomDetail {
+    detail: idiom::Model,
+    refs: Vec<PaperQuestionRef>,
+}
+
+impl IdiomDetail {
+    pub(crate) fn new(detail: idiom::Model, refs: Vec<crate::model::idiom_ref::Model>) -> Self {
+        Self {
+            detail,
+            refs: vec![],
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaperQuestionRef {}

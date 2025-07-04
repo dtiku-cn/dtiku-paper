@@ -1,13 +1,15 @@
 use crate::{
-    domain::IdiomStats,
-    model::{idiom, idiom_ref_stats, sea_orm_active_enums::IdiomType, Idiom, IdiomRefStats},
+    domain::{IdiomDetail, IdiomStats},
+    model::{
+        idiom, idiom_ref, idiom_ref_stats, sea_orm_active_enums::IdiomType, Idiom, IdiomRef,
+        IdiomRefStats,
+    },
     query::{IdiomQuery, IdiomSearch},
 };
 use anyhow::Context;
 use itertools::Itertools;
 use sea_orm::{
-    prelude::Expr, sea_query::IntoCondition, ColumnTrait, DbConn, EntityTrait, QueryFilter,
-    QueryOrder, QuerySelect,
+    prelude::Expr, ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
 };
 use spring::plugin::service::Service;
 use spring_sea_orm::pagination::{Page, PaginationExt};
@@ -62,6 +64,25 @@ impl IdiomService {
         let id_text_map: HashMap<i32, String> = idioms.into_iter().collect();
 
         Ok(page.map(|m| IdiomStats::from(id_text_map.get(&m.idiom_id), m)))
+    }
+
+    pub async fn get_idiom_detail(&self, idiom_id: i32) -> anyhow::Result<Option<IdiomDetail>> {
+        let idiom = Idiom::find_by_id(idiom_id)
+            .one(&self.db)
+            .await
+            .context("Idiom::get_idiom_detail() failed")?;
+
+        if let Some(idiom) = idiom {
+            let refs = IdiomRef::find()
+                .filter(idiom_ref::Column::IdiomId.eq(idiom_id))
+                .all(&self.db)
+                .await
+                .context("IdiomRef::find() failed")?;
+
+            Ok(Some(IdiomDetail::new(idiom, refs)))
+        } else {
+            Ok(None)
+        }
     }
 
     pub async fn search_idiom(&self, search: IdiomSearch) -> anyhow::Result<Vec<String>> {

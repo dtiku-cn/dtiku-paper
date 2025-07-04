@@ -1,0 +1,167 @@
+{%- import "macros/general.html.min.jinja" as general -%}
+{%- import "macros/artalk.html.min.jinja" as artalk -%}
+{%- import "macros/elements.html.min.jinja" as elements -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>{{idiom.detail.text}} | 高频{{idiom.detail.ty.text()}}积累 | {{global.config.site_title}}</title>
+    {% call general::headerfiles() %}
+    <style>
+        .idiom-list {
+            margin: 0;
+        }
+
+        .idiom-list td {
+            vertical-align: middle !important;
+        }
+
+        .idiom-list tr>td:first-child {
+            width: 5em;
+        }
+
+        .idiom-list tr>td:last-child {
+            width: 4em;
+        }
+
+        .idiom-list td>p {
+            margin: 0 !important;
+        }
+
+        .table .dropdown-toggle::after {
+            transition: all .3s;
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <h1 id="idiom-{{idiom.detail.id}}" title="{{idiom.detail.text}}" class="text-center">
+        <a rel="external nofollow" target="_blank"
+            href="'http://dict.baidu.com/s?wd='+${idiom.idiom.text}">{{idiom.detail.text}}</a>
+    </h1>
+    <div class="m-4 text-muted" th:utext="${idiom.idiom.explain}"></div>
+
+    <div th:if="${!#lists.isEmpty(idiom.idiom.synonym) && !#lists.isEmpty(idiom.idiom.antonym)}" class="card mb-3">
+        <header class="d-flex card-header align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-list"></use>
+            </svg>
+            <b>词语辨析</b>
+        </header>
+        <table class="table idiom-list" th:if="${!#lists.isEmpty(idiom.idiom.synonym)}">
+            <tr class="table-secondary">
+                <th class="text-center px-0 py-2">近义词</th>
+                <th class="py-2" th:classappend="${#lists.isEmpty(idiom.synonym)?'d-none':''}">释义</th>
+                <th class="text-center px-0 py-2" th:classappend="${#lists.isEmpty(idiom.synonym)?'d-none':''}">真题</th>
+            </tr>
+            <tr th:each="s : ${idiom.synonym}">
+                <td class="text-center px-0">
+                    <a rel="external nofollow" target="_blank"
+                        th:href="'https://dict.baidu.com/s?ptype=zici&wd='+${s.text}" th:text="${s.text}"></a>
+                </td>
+                <td th:utext="${s.explain}"></td>
+                <td class="text-center px-0">
+                    <a th:href="'/idiom/'+${s.text}+'?provinces='+${#strings.setJoin(provinces,',')}+'&fromType='+${#strings.defaultString(fromType,'')}"
+                        th:text="${s.paperFrequency}"></a>
+                </td>
+            </tr>
+            <tr th:if="${!#lists.isEmpty(idiom.otherSynonym)}">
+                <td colspan="3" class="p-3">
+                    <a class="mr-2" rel="external nofollow" target="_blank" th:each="t : ${idiom.otherSynonym}"
+                        th:href="'https://dict.baidu.com/s?ptype=zici&wd='+${t}" th:text="${t}"></a>
+                    <a rel="external nofollow" target="_blank"
+                        th:href="'http://dict.baidu.com/s?wd='+${idiom.idiom.text}">...</a>
+                </td>
+            </tr>
+        </table>
+        <table class="table idiom-list" th:if="${!#lists.isEmpty(idiom.idiom.antonym)}">
+            <tr class="table-secondary">
+                <th class="text-center px-0 py-2">反义词</th>
+                <th class="py-2" th:classappend="${#lists.isEmpty(idiom.antonym)?'d-none':''}">释义</th>
+                <th class="text-center px-0 py-2" th:classappend="${#lists.isEmpty(idiom.antonym)?'d-none':''}">真题</th>
+            </tr>
+            <tr th:each="s : ${idiom.antonym}">
+                <td class="text-center px-0">
+                    <a rel="external nofollow" target="_blank"
+                        th:href="'https://dict.baidu.com/s?ptype=zici&wd='+${s.text}" th:text="${s.text}"></a>
+                </td>
+                <td th:utext="${s.explain}"></td>
+                <td class="text-center px-0">
+                    <a rel="external nofollow" target="_blank"
+                        th:href="'/idiom/'+${s.text}+'?provinces='+${#strings.setJoin(provinces,',')}+'&fromType='+${#strings.defaultString(fromType,'')}"
+                        th:text="${s.paperFrequency}"></a>
+                </td>
+            </tr>
+            <tr th:if="${!#lists.isEmpty(idiom.otherAntonym)}">
+                <td colspan="3" class="p-3">
+                    <a class="mr-2" rel="external nofollow" target="_blank" th:each="t : ${idiom.otherAntonym}"
+                        th:href="'https://dict.baidu.com/s?ptype=zici&wd='+${t}" th:text="${t}"></a>
+                    <a rel="external nofollow" target="_blank"
+                        th:href="'http://dict.baidu.com/s?wd='+${idiom.idiom.text}">...</a>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card mb-3">
+        <header class="d-flex card-header align-items-center">
+            <svg class="icon-svg icon-svg-sm mr-2">
+                <use xlink:href="#ic-list"></use>
+            </svg>
+            <b class="mr-auto">出处</b>
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="unique-question">
+                <label class="custom-control-label" for="unique-question" data-toggle="tooltip"
+                    th:title="|${idiom.refs.size()}中有${idiom.duplicate.size()}题重复|">去除重复题目</label>
+            </div>
+        </header>
+        <table class="table">
+            <tr>
+                <th>真题试卷</th>
+                <th class="text-center px-0" style="width:5em">题号</th>
+            </tr>
+            <th:block th:each="r : ${idiom.refs}">
+                <tr th:id="|q-${r.question.id}|">
+                    <td class="p-1">
+                        <img class="vendor-icon" rel="external nofollow noreferrer"
+                            th:if="${#bools.isTrue(system_showVendor)}" th:src="${r.refPaper.fromType.iconUrl()}"
+                            th:alt="${r.refPaper.fromType.name()}" />
+                        <a th:href="'/paper/'+${r.refPaper.id}+'#q-'+${r.question.number}"
+                            th:text="${r.refPaper.title}"></a>
+                    </td>
+                    <td class="text-center px-0 py-1">
+                        <a class="btn btn-link dropdown-toggle" role="button" data-toggle="collapse"
+                            th:href="'#idiom-ref'+${r.ref.id}" th:text="|第${r.question.number}题|"></a>
+                    </td>
+                </tr>
+                <tr class="well collapse bg-light" th:id="'idiom-ref'+${r.ref.id}">
+                    <td colspan="2" class="question-wrapper"
+                        th:include="fragments/question::xingce_question(${r.question})"></td>
+                </tr>
+            </th:block>
+        </table>
+    </div>
+    <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
+    <th:block th:include="fragments/general::footer" />
+    <th:block th:replace="fragments/painter::painter" />
+    <script th:replace="fragments/question::answer-collapse-action"></script>
+    <script>
+        var d = [(${@thymeleafUtils.toJSON(idiom.duplicate) })];
+
+        $(function () {
+            $("#unique-question").click(function () {
+                var val = $(this).is(':checked');
+                for (var qid of d) {
+                    $("#q-" + qid).toggleClass('d-none', val).next().toggleClass('d-none', val);
+                }
+            });
+            $('a[data-toggle="collapse"]').click(function () {
+                $(this).closest('tr').toggleClass('dropup');
+            });
+        })
+    </script>
+</body>
+
+</html>

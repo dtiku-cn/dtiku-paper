@@ -1,6 +1,9 @@
 use crate::{
     query::idiom::IdiomReq,
-    views::{idiom::ListIdiomTemplate, GlobalVariables},
+    views::{
+        idiom::{IdiomDetailTemplate, ListIdiomTemplate},
+        GlobalVariables,
+    },
 };
 use anyhow::Context;
 use askama::Template;
@@ -13,9 +16,9 @@ use spring_web::{
         response::{Html, IntoResponse},
         Extension, Json,
     },
-    error::Result,
-    extractor::Component,
-    get,
+    error::{KnownWebError, Result},
+    extractor::{Component, Path},
+    get, routes,
 };
 
 #[get("/idiom")]
@@ -66,5 +69,22 @@ async fn list_word(
         req,
         page: Page::new(vec![], &page, 0),
     };
+    Ok(Html(t.render().context("render failed")?))
+}
+
+#[routes]
+#[get("/word/{idiom_id}")]
+#[get("/idiom/{idiom_id}")]
+async fn idiom_detail(
+    Component(is): Component<IdiomService>,
+    Path(idiom_id): Path<i32>,
+    Extension(global): Extension<GlobalVariables>,
+) -> Result<impl IntoResponse> {
+    let idiom = is
+        .get_idiom_detail(idiom_id)
+        .await?
+        .ok_or_else(|| KnownWebError::not_found("成语未找到"))?;
+
+    let t = IdiomDetailTemplate { global, idiom };
     Ok(Html(t.render().context("render failed")?))
 }
