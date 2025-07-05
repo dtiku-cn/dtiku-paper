@@ -74,11 +74,7 @@ async fn render_list(
     let origin_req = req.clone();
     let page = if let Some(text) = req.text {
         let search = IdiomSearch { ty, text };
-        let query = IdiomQuery {
-            label_id: req.labels,
-            page,
-        };
-        is.search_idiom_stats(&search, &query).await?
+        is.search_idiom_stats(&search, req.labels, &page).await?
     } else {
         let query = IdiomQuery {
             label_id: req.labels,

@@ -1,25 +1,40 @@
-use crate::model::{idiom, idiom_ref_stats, sea_orm_active_enums::IdiomType};
+use crate::model::{idiom, sea_orm_active_enums::IdiomType};
+use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IdiomStats {
     pub text: String,
-    pub ty: IdiomType,
-    pub label_id: i32,
     pub idiom_id: i32,
     pub question_count: i64,
     pub paper_count: i64,
 }
 
-impl IdiomStats {
-    pub fn from(idiom: Option<&String>, stats: idiom_ref_stats::Model) -> Self {
-        Self {
+#[derive(Debug, Clone, Serialize, Deserialize, FromQueryResult)]
+pub struct IdiomRefStatsWithoutLabel {
+    pub idiom_id: i32,
+    pub question_count: i64,
+    pub paper_count: i64,
+}
+
+impl IdiomRefStatsWithoutLabel {
+    pub fn with_idiom(self, idiom: Option<&String>) -> IdiomStats {
+        IdiomStats {
             text: idiom.cloned().unwrap_or_default(),
-            ty: stats.ty,
-            label_id: stats.label_id,
-            idiom_id: stats.idiom_id,
-            question_count: stats.question_count,
-            paper_count: stats.paper_count,
+            idiom_id: self.idiom_id,
+            question_count: self.question_count,
+            paper_count: self.paper_count,
+        }
+    }
+}
+
+impl IdiomStats {
+    pub fn from(stats: Option<&IdiomRefStatsWithoutLabel>, m: idiom::Model) -> Self {
+        Self {
+            text: m.text,
+            idiom_id: m.id,
+            question_count: stats.map(|s| s.question_count).unwrap_or_default(),
+            paper_count: stats.map(|s| s.paper_count).unwrap_or_default(),
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::{
-    domain::{IdiomDetail, IdiomStats},
+    domain::{IdiomDetail, IdiomRefStatsWithoutLabel, IdiomStats},
     model::{
         idiom, idiom_ref, idiom_ref_stats, sea_orm_active_enums::IdiomType, Idiom, IdiomRef,
         IdiomRefStats,
@@ -12,7 +12,7 @@ use sea_orm::{
     prelude::Expr, ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
 };
 use spring::plugin::service::Service;
-use spring_sea_orm::pagination::{Page, PaginationExt};
+use spring_sea_orm::pagination::{Page, Pagination, PaginationExt};
 use std::collections::HashMap;
 
 #[derive(Clone, Service)]
@@ -41,6 +41,7 @@ impl IdiomService {
             .filter(query.into_condition(ty))
             .group_by(idiom_ref_stats::Column::IdiomId)
             .order_by_desc(idiom_ref_stats::Column::QuestionCount)
+            .into_model::<IdiomRefStatsWithoutLabel>()
             .page(&self.db, &query.page)
             .await
             .context("IdiomRefStats::get_idiom_stats() failed")?;
@@ -63,16 +64,58 @@ impl IdiomService {
 
         let id_text_map: HashMap<i32, String> = idioms.into_iter().collect();
 
-        Ok(page.map(|m| IdiomStats::from(id_text_map.get(&m.idiom_id), m)))
+        Ok(page.map(|m| m.with_idiom(id_text_map.get(&m.idiom_id))))
     }
 
     pub async fn search_idiom_stats(
         &self,
         search: &IdiomSearch,
-        query: &IdiomQuery,
+        labels: Vec<i32>,
+        pagination: &Pagination,
     ) -> anyhow::Result<Page<IdiomStats>> {
-        
-        todo!()
+        let page = Idiom::find()
+            .filter(
+                idiom::Column::Ty
+                    .eq(search.ty)
+                    .and(idiom::Column::Text.contains(search.text.as_str())),
+            )
+            .page(&self.db, pagination)
+            .await?;
+
+        if page.is_empty() {
+            return Ok(Page::new(vec![], &pagination, page.total_elements));
+        }
+
+        let idiom_ids = page.content.iter().map(|m| m.id).collect_vec();
+        let mut filter = idiom_ref_stats::Column::Ty
+            .eq(search.ty)
+            .add(idiom_ref_stats::Column::IdiomId.is_in(idiom_ids));
+        if !labels.is_empty() {
+            filter = filter.and(idiom_ref_stats::Column::LabelId.is_in(labels));
+        }
+        let stats = IdiomRefStats::find()
+            .select_only()
+            .column(idiom_ref_stats::Column::IdiomId)
+            .column_as(
+                Expr::col(idiom_ref_stats::Column::QuestionCount).sum(),
+                "question_count",
+            )
+            .column_as(
+                Expr::col(idiom_ref_stats::Column::PaperCount).sum(),
+                "paper_count",
+            )
+            .filter(filter)
+            .group_by(idiom_ref_stats::Column::IdiomId)
+            .order_by_desc(idiom_ref_stats::Column::QuestionCount)
+            .into_model::<IdiomRefStatsWithoutLabel>()
+            .all(&self.db)
+            .await
+            .context("IdiomRefStats::get_idiom_stats() failed")?;
+
+        let id_stats_map: HashMap<i32, IdiomRefStatsWithoutLabel> =
+            stats.into_iter().map(|s| (s.idiom_id, s)).collect();
+
+        Ok(page.map(|m| IdiomStats::from(id_stats_map.get(&m.id), m)))
     }
 
     pub async fn get_idiom_detail(&self, idiom_id: i32) -> anyhow::Result<Option<IdiomDetail>> {
