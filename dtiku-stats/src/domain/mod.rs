@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-
-use crate::model::{idiom, sea_orm_active_enums::IdiomType};
+use crate::model::idiom;
 use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IdiomStats {

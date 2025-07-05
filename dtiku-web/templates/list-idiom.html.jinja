@@ -104,17 +104,18 @@
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="s : ${stats}">
+                {%for s in page.content%}
+                <tr>
                     <td class="text-center">
-                        <a rel="external nofollow" target="_blank" href="/{{model}}/{s.text}">{s.text}</a>
+                        <a rel="external nofollow" target="_blank" href="/{{model}}/{{s.text}}">{{s.text}}</a>
                     </td>
-                    <td>{s.explain}</td>
-                    <td class="text-center d-none d-md-table-cell">共{s.questionFrequency}题</td>
+                    <td>${s.explain}</td>
+                    <td class="text-center d-none d-md-table-cell">共{{s.question_count}}题</td>
                     <td class="text-center">
-                        <a th:href="@{/idiom/{text}(text=${s.text},provinces=${strings.setJoin(provinces,',')},fromType=${strings.defaultString(fromType,'')})}"
-                            th:text="${s.paperFrequency}"></a>
+                        <a href="/{{model}}/{{s.text}}?lid=${strings.setJoin(provinces,',')}">{{s.paper_count}}</a>
                     </td>
                 </tr>
+                {%endfor%}
             </tbody>
         </table>
 
