@@ -64,7 +64,7 @@ impl IdiomService {
 
         let id_text_map: HashMap<i32, String> = idioms.into_iter().collect();
 
-        Ok(page.map(|m| m.with_idiom(id_text_map.get(&m.idiom_id))))
+        Ok(page.map(|m| m.with_idiom(&id_text_map)))
     }
 
     pub async fn search_idiom_stats(

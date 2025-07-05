@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::model::{idiom, sea_orm_active_enums::IdiomType};
 use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
@@ -18,9 +20,9 @@ pub struct IdiomRefStatsWithoutLabel {
 }
 
 impl IdiomRefStatsWithoutLabel {
-    pub fn with_idiom(self, idiom: Option<&String>) -> IdiomStats {
+    pub fn with_idiom(self, id_text_map: &HashMap<i32, String>) -> IdiomStats {
         IdiomStats {
-            text: idiom.cloned().unwrap_or_default(),
+            text: id_text_map.get(&self.idiom_id).cloned().unwrap_or_default(),
             idiom_id: self.idiom_id,
             question_count: self.question_count,
             paper_count: self.paper_count,
