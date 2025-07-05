@@ -40,7 +40,7 @@ impl IdiomService {
             )
             .filter(query.into_condition(ty))
             .group_by(idiom_ref_stats::Column::IdiomId)
-            .order_by_desc(idiom_ref_stats::Column::QuestionCount)
+            .order_by_desc(Expr::col("question_count"))
             .into_model::<IdiomRefStatsWithoutLabel>()
             .page(&self.db, &query.page)
             .await
@@ -106,11 +106,11 @@ impl IdiomService {
             )
             .filter(filter)
             .group_by(idiom_ref_stats::Column::IdiomId)
-            .order_by_desc(idiom_ref_stats::Column::QuestionCount)
+            .order_by_desc(Expr::col("question_count"))
             .into_model::<IdiomRefStatsWithoutLabel>()
             .all(&self.db)
             .await
-            .context("IdiomRefStats::get_idiom_stats() failed")?;
+            .context("IdiomRefStats::search_idiom_stats() failed")?;
 
         let id_stats_map: HashMap<i32, IdiomRefStatsWithoutLabel> =
             stats.into_iter().map(|s| (s.idiom_id, s)).collect();
