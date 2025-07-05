@@ -10,9 +10,11 @@ use askama::Template;
 use axum_extra::extract::Query;
 use dtiku_paper::{domain::label::LabelTree, service::label::LabelService};
 use dtiku_stats::{
-    model::sea_orm_active_enums::IdiomType, query::IdiomSearch, service::idiom::IdiomService,
+    model::sea_orm_active_enums::IdiomType,
+    query::{IdiomQuery, IdiomSearch},
+    service::idiom::IdiomService,
 };
-use spring_sea_orm::pagination::{Page, Pagination};
+use spring_sea_orm::pagination::Pagination;
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
@@ -31,19 +33,9 @@ async fn list_idiom(
     page: Pagination,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    let label_tree = match global.get_paper_type_by_prefix("xingce") {
-        Some(paper_type) => ls.find_all_label_by_paper_type(paper_type.id).await?,
-        None => LabelTree::none(),
-    };
-
-    let t = ListIdiomTemplate {
-        global,
-        model: IdiomType::Idiom,
-        label_tree,
-        req,
-        page: Page::new(vec![], &page, 0),
-    };
-    Ok(Html(t.render().context("render failed")?))
+    Ok(Html(
+        render_list(&ls, &is, IdiomType::Idiom, global, req, page).await?,
+    ))
 }
 
 #[get("/idiom/like")]
@@ -62,18 +54,46 @@ async fn list_word(
     page: Pagination,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
+    Ok(Html(
+        render_list(&ls, &is, IdiomType::Word, global, req, page).await?,
+    ))
+}
+
+async fn render_list(
+    ls: &LabelService,
+    is: &IdiomService,
+    ty: IdiomType,
+    global: GlobalVariables,
+    req: IdiomReq,
+    page: Pagination,
+) -> anyhow::Result<String> {
     let label_tree = match global.get_paper_type_by_prefix("xingce") {
         Some(paper_type) => ls.find_all_label_by_paper_type(paper_type.id).await?,
         None => LabelTree::none(),
     };
+    let origin_req = req.clone();
+    let page = if let Some(text) = req.text {
+        let search = IdiomSearch { ty, text };
+        let query = IdiomQuery {
+            label_id: req.labels,
+            page,
+        };
+        is.search_idiom_stats(&search, &query).await?
+    } else {
+        let query = IdiomQuery {
+            label_id: req.labels,
+            page,
+        };
+        is.get_idiom_stats(ty, &query).await?
+    };
     let t = ListIdiomTemplate {
         global,
-        model: IdiomType::Word,
+        model: ty,
         label_tree,
-        req,
-        page: Page::new(vec![], &page, 0),
+        req: origin_req,
+        page,
     };
-    Ok(Html(t.render().context("render failed")?))
+    t.render().context("render failed")
 }
 
 #[routes]

@@ -66,6 +66,15 @@ impl IdiomService {
         Ok(page.map(|m| IdiomStats::from(id_text_map.get(&m.idiom_id), m)))
     }
 
+    pub async fn search_idiom_stats(
+        &self,
+        search: &IdiomSearch,
+        query: &IdiomQuery,
+    ) -> anyhow::Result<Page<IdiomStats>> {
+        
+        todo!()
+    }
+
     pub async fn get_idiom_detail(&self, idiom_id: i32) -> anyhow::Result<Option<IdiomDetail>> {
         let idiom = Idiom::find_by_id(idiom_id)
             .one(&self.db)
