@@ -3,7 +3,7 @@ use super::query::label::LabelQuery;
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
-    QueryOrder,
+    QueryOrder, QuerySelect,
 };
 use spring_redis::cache;
 
@@ -44,16 +44,12 @@ impl Entity {
             .with_context(|| format!("find_all_by_query({query:?}) failed"))
     }
 
-    pub async fn find_by_exam_id_and_paper_type_and_name<C, S>(
+    pub async fn find_by_exam_id_and_paper_type_and_name<C: ConnectionTrait, S: Into<String>>(
         db: &C,
         exam_id: i16,
         paper_type: i16,
         name: S,
-    ) -> anyhow::Result<Option<Model>>
-    where
-        C: ConnectionTrait,
-        S: Into<String>,
-    {
+    ) -> anyhow::Result<Option<Model>> {
         let name = name.into();
         Entity::find()
             .filter(
@@ -70,14 +66,30 @@ impl Entity {
             })
     }
 
-    pub async fn find_by_paper_type_and_pids<C>(
+    #[cache("label:hidden:{paper_type}", expire = 86400)]
+    pub async fn find_hidden_label_id_by_paper_type<C: ConnectionTrait>(
+        db: &C,
+        paper_type: i16,
+    ) -> anyhow::Result<Vec<i32>> {
+        Entity::find()
+            .select_only()
+            .column(Column::Id)
+            .filter(
+                Column::PaperType
+                    .eq(paper_type)
+                    .and(Column::Hidden.eq(true)),
+            )
+            .into_tuple()
+            .all(db)
+            .await
+            .with_context(|| format!("find_hidden_label_id_by_paper_type({paper_type}) failed"))
+    }
+
+    pub async fn find_by_paper_type_and_pids<C: ConnectionTrait>(
         db: &C,
         paper_type: i16,
         pids: Vec<i32>,
-    ) -> anyhow::Result<Vec<Model>>
-    where
-        C: ConnectionTrait,
-    {
+    ) -> anyhow::Result<Vec<Model>> {
         Entity::find()
             .filter(
                 Column::PaperType
