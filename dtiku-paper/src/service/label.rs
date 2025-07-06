@@ -22,6 +22,7 @@ impl LabelService {
             LabelQuery {
                 paper_type,
                 pid: root_pid,
+                hidden: Some(false),
             },
         )
         .await?;

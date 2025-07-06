@@ -4,15 +4,20 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct LabelQuery {
-    pub(crate) pid: i32,
-    pub(crate) paper_type: i16,
+    pub pid: i32,
+    pub paper_type: i16,
+    pub hidden: Option<bool>,
 }
 
 impl IntoCondition for LabelQuery {
     fn into_condition(self) -> sea_orm::Condition {
-        Column::Pid
+        let filter = Column::Pid
             .eq(self.pid)
-            .and(Column::PaperType.eq(self.paper_type).and(Column::Hidden.eq(false)))
-            .into_condition()
+            .and(Column::PaperType.eq(self.paper_type));
+        if let Some(hidden) = self.hidden {
+            filter.and(Column::Hidden.eq(self.hidden)).into_condition()
+        } else {
+            filter.into_condition()
+        }
     }
 }
