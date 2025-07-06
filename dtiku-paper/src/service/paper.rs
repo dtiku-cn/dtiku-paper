@@ -56,13 +56,13 @@ impl PaperService {
 
     pub async fn search_by_name(
         &self,
-        exam_id: i16,
+        paper_type: i16,
         name: &str,
     ) -> anyhow::Result<Vec<paper::Model>> {
         Paper::find()
             .filter(
-                paper::Column::ExamId
-                    .eq(exam_id)
+                paper::Column::PaperType
+                    .eq(paper_type)
                     .and(paper::Column::Title.contains(name)),
             )
             .limit(100)

@@ -1,6 +1,5 @@
 use crate::{
     query::paper::{ListPaperQuery, PaperQuery, PaperTitleLikeQuery},
-    router::EXAM_ID,
     views::{
         paper::{ChapterPaperTemplate, ClusterPaperTemplate, ListPaperTemplate},
         GlobalVariables, IntoTemplate,
@@ -96,12 +95,16 @@ async fn paper_exercise(
     Ok(Html(t.render().context("render failed")?))
 }
 
-#[get("/paper/title/like")]
+#[get("/paper/{prefix}/title/like")]
 async fn paper_title_like(
+    Path(prefix): Path<String>,
     Component(ps): Component<PaperService>,
     Query(query): Query<PaperTitleLikeQuery>,
+    Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    let exam_id = EXAM_ID.get();
-    let ps = ps.search_by_name(exam_id, &query.title).await?;
+    let paper_type = global
+        .get_paper_type_by_prefix(&prefix)
+        .ok_or_else(|| KnownWebError::bad_request("试卷类型不存在"))?;
+    let ps = ps.search_by_name(paper_type.id, &query.title).await?;
     Ok(Json(ps))
 }
