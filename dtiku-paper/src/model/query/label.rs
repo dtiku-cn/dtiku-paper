@@ -15,7 +15,7 @@ impl IntoCondition for LabelQuery {
             .eq(self.pid)
             .and(Column::PaperType.eq(self.paper_type));
         if let Some(hidden) = self.hidden {
-            filter.and(Column::Hidden.eq(self.hidden)).into_condition()
+            filter.and(Column::Hidden.eq(hidden)).into_condition()
         } else {
             filter.into_condition()
         }
