@@ -2,12 +2,12 @@ mod bbs;
 mod home;
 mod idiom;
 mod img;
+mod key_point;
 mod paper;
 mod pay;
 mod question;
 mod shenlun_category;
 mod user;
-mod key_point;
 
 use crate::service::user::UserService;
 use crate::views::{ErrorTemplate, GlobalVariables};
@@ -141,8 +141,13 @@ async fn with_context(
     mut req: Request,
     next: Next,
 ) -> Result<Response, WebError> {
+    let prefix = if let Some(pos) = original_host.find(".dtiku.cn") {
+        &original_host[..pos] // "gwy "
+    } else {
+        "gwy"
+    };
     let root_exam = ec_service
-        .find_root_exam("gwy")
+        .find_root_exam(prefix)
         .await
         .map_err(|e| KnownWebError::internal_server_error(format!("{e:?}")))?;
     let exam_id = match root_exam {
