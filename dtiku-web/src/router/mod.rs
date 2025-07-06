@@ -142,7 +142,12 @@ async fn with_context(
     next: Next,
 ) -> Result<Response, WebError> {
     let prefix = if let Some(pos) = original_host.find(".dtiku.cn") {
-        &original_host[..pos] // "gwy "
+        let prefix = &original_host[..pos]; // "gwy"
+        if prefix == "www" {
+            "gwy"
+        } else {
+            prefix
+        }
     } else {
         "gwy"
     };
