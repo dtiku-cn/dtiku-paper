@@ -1,5 +1,6 @@
 use crate::{
     query::paper::{ListPaperQuery, PaperQuery, PaperTitleLikeQuery},
+    router::EXAM_ID,
     views::{
         paper::{ChapterPaperTemplate, ClusterPaperTemplate, ListPaperTemplate},
         GlobalVariables, IntoTemplate,
@@ -100,6 +101,7 @@ async fn paper_title_like(
     Component(ps): Component<PaperService>,
     Query(query): Query<PaperTitleLikeQuery>,
 ) -> Result<impl IntoResponse> {
-    let ps = ps.search_by_name(&query.title).await?;
+    let exam_id = EXAM_ID.get();
+    let ps = ps.search_by_name(exam_id, &query.title).await?;
     Ok(Json(ps))
 }

@@ -54,9 +54,17 @@ impl PaperService {
         Paper::find_by_query(&self.db, &query).await
     }
 
-    pub async fn search_by_name(&self, name: &str) -> anyhow::Result<Vec<paper::Model>> {
+    pub async fn search_by_name(
+        &self,
+        exam_id: i16,
+        name: &str,
+    ) -> anyhow::Result<Vec<paper::Model>> {
         Paper::find()
-            .filter(paper::Column::Title.contains(name))
+            .filter(
+                paper::Column::ExamId
+                    .eq(exam_id)
+                    .and(paper::Column::Title.contains(name)),
+            )
             .limit(100)
             .all(&self.db)
             .await
