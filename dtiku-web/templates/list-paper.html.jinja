@@ -37,13 +37,37 @@
                 </div>
             </div>
         </header>
-        <div id="allProvinces" class="card-body d-flex flex-wrap">
+        <div id="allProvinces" class="card-body d-flex flex-wrap nav nav-pills" role="tablist">
             {% for l in label_tree.labels %}
+            {% if l.children.is_some() %}
+            <button class="btn btn-link {%if l.active(query.label_id)%}active{%endif%}" type="button" role="tab"
+                data-toggle="tab" data-target="#sub_labels_{{l.id}}">{{l.name}}</button>
+            {%else%}
             <a class="btn btn-link {% if l.id == query.label_id %}active{% endif %}"
                 href="?ty={{paper_type.prefix}}&lid={{l.id}}">{{l.name}}</a>
+            {%endif%}
             {% endfor %}
         </div>
     </div>
+    {%if label_tree.level%}
+    <div class="card mb-3" id="sub_labels_tab_content">
+        <div class="card-body tab-content">
+            {% for l in label_tree.labels %}
+            {%if let Some(children) = l.children%}
+            <div id="sub_labels_{{l.id}}" class="tab-pane fade {%if l.active(query.label_id)%}active show{%endif%}"
+                role="tabpanel">
+                <div class="d-flex flex-wrap">
+                    {% for sl in children %}
+                    <a class="btn btn-link {% if sl.id == query.label_id %}active{% endif %}"
+                        href="?ty={{paper_type.prefix}}&lid={{sl.id}}">{{sl.name}}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {%endif%}
 
     <div class="card mb-3">
         <header class="d-flex card-header align-items-center">

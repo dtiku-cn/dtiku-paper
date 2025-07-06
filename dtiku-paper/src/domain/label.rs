@@ -76,8 +76,19 @@ impl LabelNode {
             pid: m.pid,
             exam_id: m.exam_id,
             paper_type: m.paper_type,
-            children: children
-                .map(|c| c.into_iter().map(|m| LabelNode::new(None, m)).collect_vec()),
+            children: children.map(|c| {
+                c.into_iter()
+                    .map(|m| LabelNode::new(None, m))
+                    .sorted_by_key(|n| n.name.clone())
+                    .collect_vec()
+            }),
+        }
+    }
+
+    pub fn active(&self, label_id: &i32) -> bool {
+        match &self.children {
+            None => false,
+            Some(children) => children.iter().any(|n| n.id == *label_id),
         }
     }
 }
