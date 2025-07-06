@@ -27,6 +27,7 @@ create table if not exists label(
     pid integer not null,
     exam_id int2 not null,
     paper_type int2 not null,
+	hidden bool not null default false,
     unique(paper_type, pid, name)
 );
 -- 试卷

@@ -12,6 +12,7 @@ pub struct Model {
     pub pid: i32,
     pub exam_id: i16,
     pub paper_type: i16,
+    pub hidden: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

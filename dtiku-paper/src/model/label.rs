@@ -82,6 +82,7 @@ impl Entity {
             .filter(
                 Column::PaperType
                     .eq(paper_type)
+                    .and(Column::Hidden.eq(false))
                     .and(Column::Pid.is_in(pids)),
             )
             .all(db)

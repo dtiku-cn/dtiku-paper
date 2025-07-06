@@ -12,7 +12,7 @@ impl IntoCondition for LabelQuery {
     fn into_condition(self) -> sea_orm::Condition {
         Column::Pid
             .eq(self.pid)
-            .and(Column::PaperType.eq(self.paper_type))
+            .and(Column::PaperType.eq(self.paper_type).and(Column::Hidden.eq(false)))
             .into_condition()
     }
 }
