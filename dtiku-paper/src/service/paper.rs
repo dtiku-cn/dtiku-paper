@@ -59,12 +59,15 @@ impl PaperService {
         paper_type: i16,
         name: &str,
     ) -> anyhow::Result<Vec<paper::Model>> {
+        let hidden_labels = Label::find_hidden_label_id_by_paper_type(&self.db, paper_type).await?;
+        let mut filter = paper::Column::PaperType
+            .eq(paper_type)
+            .and(paper::Column::Title.contains(name));
+        if !hidden_labels.is_empty() {
+            filter = filter.and(paper::Column::LabelId.is_not_in(hidden_labels));
+        }
         Paper::find()
-            .filter(
-                paper::Column::PaperType
-                    .eq(paper_type)
-                    .and(paper::Column::Title.contains(name)),
-            )
+            .filter(filter)
             .limit(100)
             .all(&self.db)
             .await

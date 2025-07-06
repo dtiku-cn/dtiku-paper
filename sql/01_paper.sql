@@ -1,13 +1,7 @@
 create extension if not exists vector;
 create extension if not exists ltree;
 create extension if not exists pg_trgm;
-
-CREATE TYPE from_type AS ENUM (
-	'fenbi',
-	'huatu',
-	'offcn',
-	'chinagwy'
-);
+CREATE TYPE from_type AS ENUM ('fenbi', 'huatu', 'offcn', 'chinagwy');
 create type src_type as enum('question', 'material', 'solution');
 -- 考试类型：root_id为exam_id; leaf_id为paper_type
 drop table if exists exam_category;
@@ -27,7 +21,7 @@ create table if not exists label(
     pid integer not null,
     exam_id int2 not null,
     paper_type int2 not null,
-	hidden bool not null default false,
+    hidden bool not null default false,
     unique(paper_type, pid, name)
 );
 -- 试卷
@@ -42,9 +36,7 @@ create table if not exists paper(
     extra jsonb not null,
     unique(label_id, title)
 );
-create index if not exists idx_paper_title_trgm
-on paper
-using gin (title gin_trgm_ops);
+create index if not exists idx_paper_title_trgm on paper using gin (title gin_trgm_ops);
 -- 知识点
 drop table if exists key_point;
 create table if not exists key_point(
@@ -72,19 +64,14 @@ create table if not exists question_key_point(
     year int2 not null,
     primary key (question_id, key_point_id)
 );
-create index concurrently if not exists idx_qkp_for_agg
-on question_key_point (key_point_id, year, question_id);
+create index concurrently if not exists idx_qkp_for_agg on question_key_point (key_point_id, year, question_id);
 create materialized view if not exists question_key_point_stats as
-select
-    key_point_id,
+select key_point_id,
     year,
     count(distinct question_id) as question_count
-from
-    question_key_point
-group by
-    key_point_id,
+from question_key_point
+group by key_point_id,
     year;
-
 drop table if exists paper_question;
 create table if not exists paper_question (
     paper_id integer not null,
@@ -122,6 +109,7 @@ create table if not exists solution (
     question_id integer not null,
     extra jsonb not null
 );
+create index if not exists idx_solution_question_id on solution (question_id);
 --  图片,可能包含音频
 drop table if exists assets;
 create table if not exists assets(
