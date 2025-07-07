@@ -57,7 +57,7 @@
             id="sub_labels_{{l.id}}" role="tabpanel">
             <div class="card-body d-flex flex-wrap">
                 {% for sl in children %}
-                <a class="btn btn-link {% if sl.id == query.label_id %}active{% endif %}"
+                <a class="btn btn-link {%if sl.id == query.label_id%}active{% endif %}"
                     href="?ty={{paper_type.prefix}}&lid={{sl.id}}">{{sl.name}}</a>
                 {% endfor %}
             </div>
