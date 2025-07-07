@@ -35,7 +35,7 @@ impl LabelService {
             .into_group_map_by(|m| m.pid);
         let nodes = ls
             .into_iter()
-            .sorted_by(|a, b| Ord::cmp(&a.name, &b.name))
+            .sorted_by(|a, b| Ord::cmp(&a.id, &b.id))
             .map(|m| LabelNode::new(grouped.remove(&m.id), m))
             .collect();
         Ok(LabelTree {

@@ -32,11 +32,11 @@ impl ExamCategoryService {
         let leaf = ExamCategory::find_children_by_pids(&self.db, pids).await?;
         let mut grouped = leaf
             .into_iter()
-            .sorted_by(|a, b| Ord::cmp(&a.id, &b.id))
+            .sorted_by(|a, b| Ord::cmp(&a.name, &b.name))
             .into_group_map_by(|m| m.pid);
         Ok(ecs
             .into_iter()
-            .sorted_by(|a, b| Ord::cmp(&a.id, &b.id))
+            .sorted_by(|a, b| Ord::cmp(&a.name, &b.name))
             .map(|m| ExamPaperType::new(grouped.remove(&m.id), m))
             .collect())
     }
