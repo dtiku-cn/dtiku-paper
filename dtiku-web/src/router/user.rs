@@ -44,7 +44,7 @@ async fn user_login_callback(
         },
     };
     let mut token_cookie = Cookie::new("token", token);
-    token_cookie.set_domain("dtiku.cn"); // 站点下所有子域都能访问
+    token_cookie.set_domain(".dtiku.cn"); // 站点下所有子域都能访问
     token_cookie.set_path("/"); // 所有请求路径都生效
     token_cookie.set_same_site(SameSite::Lax); // 部分跨站请求（如 GET 的链接跳转）可以携带 Cookie，适度平衡安全与体验。
     token_cookie.set_secure(true); // 仅 HTTPS 发送
