@@ -37,7 +37,7 @@
             }
             location.reload();
         });
-        ctx.on('page-loaded', () => {
+        ctx.on('page-loaded', async () => {
             // 禁用Artalk默认的登录
             if ($("#artalk-comments .atk-send-btn").text() == "登录") {
                 const oldBtn = document.querySelector("#artalk-comments .atk-send-btn");
