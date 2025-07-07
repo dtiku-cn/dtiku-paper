@@ -52,7 +52,10 @@
                 });
             }
             const token = Cookies.get("token");
-            if (Cookies.get("token") && !localStorage.getItem("ArtalkUser")) {
+            if (!token && localStorage.getItem("ArtalkUser")) {
+                localStorage.removeItem("ArtalkUser");
+            }
+            if (token && !localStorage.getItem("ArtalkUser")) {
                 const resp = await fetch("https://artalk.dtiku.cn/api/v2/user", {
                     method: 'GET', // 或 POST、PUT 等
                     headers: {
