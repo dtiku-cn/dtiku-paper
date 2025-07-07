@@ -79,7 +79,7 @@ impl LabelNode {
             children: children.map(|c| {
                 c.into_iter()
                     .map(|m| LabelNode::new(None, m))
-                    .sorted_by_key(|n| n.name.clone())
+                    .sorted_by(|a, b| Ord::cmp(&a.name, &b.name))
                     .collect_vec()
             }),
         }
