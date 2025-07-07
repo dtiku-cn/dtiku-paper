@@ -50,23 +50,19 @@
         </div>
     </div>
     {%if label_tree.level%}
-    <div class="card mb-3" id="sub_labels_tab_content">
-        <div class="card-body tab-content">
-            {% for l in label_tree.labels %}
-            {%if let Some(children) = l.children%}
-            <div id="sub_labels_{{l.id}}" class="tab-pane fade {%if l.active(query.label_id)%}active show{%endif%}"
-                role="tabpanel">
-                <div class="d-flex flex-wrap">
-                    {% for sl in children %}
-                    <a class="btn btn-link {% if sl.id == query.label_id %}active{% endif %}"
-                        href="?ty={{paper_type.prefix}}&lid={{sl.id}}">{{sl.name}}</a>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
+    {% for l in label_tree.labels %}
+    {%if let Some(children) = l.children%}
+    <div class="card mb-3 tab-pane fade {%if l.active(query.label_id)%}active show{%endif%}" id="sub_labels_{{l.id}}"
+        role="tabpanel">
+        <div class="card-body tab-content d-flex flex-wrap">
+            {% for sl in children %}
+            <a class="btn btn-link {% if sl.id == query.label_id %}active{% endif %}"
+                href="?ty={{paper_type.prefix}}&lid={{sl.id}}">{{sl.name}}</a>
             {% endfor %}
         </div>
     </div>
+    {% endif %}
+    {% endfor %}
     {%endif%}
 
     <div class="card mb-3">
