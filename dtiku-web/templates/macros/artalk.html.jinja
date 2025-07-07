@@ -51,7 +51,23 @@
                     $('#loginModal').modal('show');
                 });
             }
-
+            const token = Cookies.get("token");
+            if (Cookies.get("token") && !localStorage.getItem("ArtalkUser")) {
+                const resp = await fetch("https://artalk.dtiku.cn/api/v2/user", {
+                    method: 'GET', // 或 POST、PUT 等
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`  // 通常使用 Bearer 方案
+                    }
+                });
+                const data = await resp.json();
+                if (data.is_login) {
+                    const { email, is_admin, link, name } = data.user;
+                    localStorage.setItem("ArtalkUser", JSON.stringify({ email, is_admin, link, name, token }));
+                } else {
+                    Cookies.remove("token");
+                }
+            }
         })
     });
     window.addEventListener('load', function () {
@@ -108,6 +124,6 @@
 {% endif %}
 {% endif %}
 {% if global.config.show_ads && ads %}
-<script>{{ global.config.ads_script }}</script>
+<script>{ { global.config.ads_script } }</script>
 {% endif %}
 {% endmacro comment %}
