@@ -17,20 +17,22 @@ async fn home(
     Component(ps): Component<PaperService>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    let xingce = if let Some(paper_type) = global.get_paper_type_by_prefix("xingce") {
-        ps.find_paper_by_type(paper_type.id).await?
-    } else {
-        vec![]
-    };
-    let shenlun = if let Some(paper_type) = global.get_paper_type_by_prefix("shenlun") {
-        ps.find_paper_by_type(paper_type.id).await?
-    } else {
-        vec![]
-    };
     let t = HomeTemplate {
         global,
-        xingce,
-        shenlun,
+        xingce: get_papers(&ps, &global, "xingce").await?,
+        shenlun: get_papers(&ps, &global, "shenlun").await?,
     };
     Ok(Html(t.render().context("render failed")?))
+}
+
+async fn get_papers(
+    ps: &PaperService,
+    global: &GlobalVariables,
+    prefix: &str,
+) -> anyhow::Result<Vec<paper::Model>> {
+    if let Some(paper_type) = global.get_paper_type_by_prefix(prefix) {
+        ps.find_paper_by_type(paper_type.id).await?
+    } else {
+        vec![]
+    }
 }
