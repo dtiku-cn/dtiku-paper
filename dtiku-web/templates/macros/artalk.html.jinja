@@ -26,6 +26,34 @@
 <script src="https://artalk.dtiku.cn/dist/Artalk.js"></script>
 {% if global.config.show_comments && comments %}
 <script>
+    function artalkInit(){
+        var darkMode = !!{{ global.cookie("darkTheme")}};
+        var config = Object.assign({
+            el: '#artalk-comments',
+            server: 'https://{{global.original_host}}',
+            avatarURLBuilder: (c) => `https://{{global.original_host}}/user/comment/${c.id}/avatar`,
+            imgUploader: async (f) => {
+                const form = new FormData()
+                form.set('file', f)
+                const resp = await fetch('https://{{global.original_host}}/upload', {
+                    method: 'POST',
+                    body: form,
+                });
+                return await resp.text();
+            },
+            site: '公考加油站',
+            pageview: pv,
+            darkMode,
+            pageVote: {
+                activeClass: 'text-success',
+                upBtnEl: '.artalk-page-vote-up',
+                downBtnEl: '.artalk-page-vote-down',
+                upCountEl: '.artalk-page-vote-up-count',
+                downCountEl: '.artalk-page-vote-down-count',
+            }
+        });
+        window.artalk = Artalk.init(config);
+    }
     Artalk.use((ctx) => {
         ctx.on('user-changed', () => {
             console.log('用户登录信息已修改')
@@ -51,57 +79,31 @@
                     $('#loginModal').modal('show');
                 });
             }
-            const token = Cookies.get("token");
-            if (!token && localStorage.getItem("ArtalkUser")) {
-                localStorage.removeItem("ArtalkUser");
-            }
-            if (token && !localStorage.getItem("ArtalkUser")) {
-                const resp = await fetch("https://artalk.dtiku.cn/api/v2/user", {
-                    method: 'GET', // 或 POST、PUT 等
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`  // 通常使用 Bearer 方案
-                    }
-                });
-                const data = await resp.json();
-                if (data.is_login) {
-                    const { email, is_admin, link, name } = data.user;
-                    localStorage.setItem("ArtalkUser", JSON.stringify({ email, is_admin, link, name, token }));
-                } else {
-                    Cookies.remove("token");
-                }
-            }
         })
     });
-    window.addEventListener('load', function () {
-        var pv = {{ global.config.show_comments && comments
-    }};
-    var darkMode = !!{{ global.cookie("darkTheme")}};
-    var config = Object.assign({
-        el: '#artalk-comments',
-        server: 'https://{{global.original_host}}',
-        avatarURLBuilder: (c) => `https://{{global.original_host}}/user/comment/${c.id}/avatar`,
-        imgUploader: async (f) => {
-            const form = new FormData()
-            form.set('file', f)
-            const resp = await fetch('https://{{global.original_host}}/upload', {
-                method: 'POST',
-                body: form,
-            });
-            return await resp.text();
-        },
-        site: '公考加油站',
-        pageview: pv,
-        darkMode,
-        pageVote: {
-            activeClass: 'text-success',
-            upBtnEl: '.artalk-page-vote-up',
-            downBtnEl: '.artalk-page-vote-down',
-            upCountEl: '.artalk-page-vote-up-count',
-            downCountEl: '.artalk-page-vote-down-count',
+    const token = Cookies.get("token");
+    if (!token && localStorage.getItem("ArtalkUser")) {
+        localStorage.removeItem("ArtalkUser");
+    }
+    if (token && !localStorage.getItem("ArtalkUser")) {
+        const resp = await fetch("https://artalk.dtiku.cn/api/v2/user", {
+            method: 'GET', // 或 POST、PUT 等
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`  // 通常使用 Bearer 方案
+            }
+        });
+        const data = await resp.json();
+        if (data.is_login) {
+            const { email, is_admin, link, name } = data.user;
+            localStorage.setItem("ArtalkUser", JSON.stringify({ email, is_admin, link, name, token }));
+        } else {
+            Cookies.remove("token");
         }
-    });
-    window.artalk = Artalk.init(config);
+    }
+    artalkInit();
+    window.addEventListener('load', function () {
+        var pv = {{ global.config.show_comments && comments }};
     window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {
         artalk.setDarkMode(dark)
     });
