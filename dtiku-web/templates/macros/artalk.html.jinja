@@ -65,7 +65,7 @@
             }
             location.reload();
         });
-        ctx.on('page-loaded', async () => {
+        ctx.on('page-loaded', () => {
             // 禁用Artalk默认的登录
             if ($("#artalk-comments .atk-send-btn").text() == "登录") {
                 const oldBtn = document.querySelector("#artalk-comments .atk-send-btn");
@@ -81,7 +81,7 @@
             }
         })
     });
-    window.addEventListener('load', function () {
+    window.addEventListener('load', async () => {
         const token = Cookies.get("token");
         if (!token && localStorage.getItem("ArtalkUser")) {
             localStorage.removeItem("ArtalkUser");
