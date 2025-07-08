@@ -1,7 +1,7 @@
 use crate::views::{home::HomeTemplate, GlobalVariables};
 use anyhow::Context;
 use askama::Template;
-use dtiku_paper::service::paper::PaperService;
+use dtiku_paper::{model::paper, service::paper::PaperService};
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
