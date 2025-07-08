@@ -109,12 +109,14 @@
                         <th class="p-2">成语</th>
                         <th class="p-2 text-right">次数</th>
                     </tr>
-                    <tr th:each="s:${idioms}">
+                    {%for s in idioms%}
+                    <tr>
                         <td class="p-2">
-                            <a th:href="@{/idiom/{t}(t=${s.text})}" th:text="${s.text}"></a>
+                            <a href="/idiom/{{s.idiom_id}}">{{s.text}}</a>
                         </td>
-                        <td class="p-2 text-right" th:text="${s.questionFrequency}"></td>
+                        <td class="p-2 text-right">{{s.question_count}}</td>
                     </tr>
+                    {%endfor%}
                 </table>
                 <footer class="card-footer">
                     <a class="card-link" href="/idiom">查看更多</a>
@@ -139,15 +141,17 @@
                         <th class="p-2">词语</th>
                         <th class="p-2 text-right">次数</th>
                     </tr>
-                    <tr th:each="s:${words}">
+                    {%for s in words%}
+                    <tr>
                         <td class="p-2">
-                            <a th:href="@{/idiom/{t}(t=${s.text})}" th:text="${s.text}"></a>
+                            <a href="/word/{{s.idiom_id}}">{{s.text}}</a>
                         </td>
-                        <td class="p-2 text-right" th:text="${s.questionFrequency}"></td>
+                        <td class="p-2 text-right">{{s.question_count}}</td>
                     </tr>
+                    {%endfor%}
                 </table>
                 <footer class="card-footer">
-                    <a class="card-link" href="/idiom">查看更多</a>
+                    <a class="card-link" href="/word">查看更多</a>
                 </footer>
             </div>
         </div>
