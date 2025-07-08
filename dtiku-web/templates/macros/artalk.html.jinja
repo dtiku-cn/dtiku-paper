@@ -27,6 +27,7 @@
 {% if global.config.show_comments && comments %}
 <script>
     function artalkInit(){
+        var pv = {{ global.config.show_comments && comments }};
         var darkMode = !!{{ global.cookie("darkTheme")}};
         var config = Object.assign({
             el: '#artalk-comments',
@@ -103,7 +104,6 @@
             }
         }
         artalkInit();
-        var pv = {{ global.config.show_comments && comments }};
         window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {
             artalk.setDarkMode(dark)
         });
