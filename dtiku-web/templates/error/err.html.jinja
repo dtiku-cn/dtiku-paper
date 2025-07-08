@@ -140,7 +140,10 @@
     {%if status == StatusCode::UNAUTHORIZED || status == StatusCode::FORBIDDEN %}
     <script>
         $(function () {
-            Cookies.remove("token");
+            Cookies.remove('token', {
+                path: '/',
+                domain: '.dtiku.cn',
+            });
             localStorage.removeItem('ArtalkUser');
             location.reload();
         });

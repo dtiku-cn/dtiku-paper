@@ -61,7 +61,7 @@
             if (u && u.token) {
                 Cookies.set("token", u.token);
             } else {
-                Cookies.remove("token");
+                removeToken();
             }
             location.reload();
         });
@@ -99,7 +99,7 @@
                 const { email, is_admin, link, name } = data.user;
                 localStorage.setItem("ArtalkUser", JSON.stringify({ email, is_admin, link, name, token }));
             } else {
-                Cookies.remove("token");
+                removeToken();
             }
         }
         artalkInit();
