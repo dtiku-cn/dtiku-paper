@@ -1679,6 +1679,7 @@ dependencies = [
  "serde_json",
  "spring",
  "spring-redis",
+ "spring-sea-orm",
  "spring-stream",
  "strum",
  "thiserror 2.0.12",

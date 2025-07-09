@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 spring = { workspace = true }
 spring-redis = { workspace = true }
+spring-sea-orm = { workspace = true }
 spring-stream = { workspace = true, features = ["json"] }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 serde = { workspace = true }

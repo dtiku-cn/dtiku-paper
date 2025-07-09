@@ -1,16 +1,26 @@
 pub use super::_entities::user_info::*;
+use crate::query::UserQuery;
 use anyhow::Context;
 use chrono::Days;
+use sea_orm::entity::prelude::*;
 use sea_orm::{
     sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ColumnTrait,
-    ConnectionTrait, DbErr, EntityTrait, QueryFilter,
+    ConnectionTrait, DbErr, EntityTrait, FromQueryResult, QueryFilter, Statement,
 };
+use serde::Serialize;
 use spring::async_trait;
 use spring_redis::cache;
+use spring_sea_orm::pagination::{Page, Pagination, PaginationExt};
+
+#[derive(Debug, FromQueryResult, Serialize)]
+pub struct UserStatsByDay {
+    pub day: DateTime,
+    pub count: i64,
+}
 
 impl Model {
     pub fn is_expired(&self) -> bool {
-        true
+        self.expired < Local::now().naive_local()
     }
 
     pub fn due_time(&self) -> String {
@@ -58,5 +68,38 @@ impl Entity {
             .all(db)
             .await
             .context("UserInfo::find_user_by_ids() failed")
+    }
+
+    pub async fn find_page_by_query<C: ConnectionTrait>(
+        db: &C,
+        query: UserQuery,
+        pagination: &Pagination,
+    ) -> anyhow::Result<Page<Model>> {
+        Entity::find()
+            .filter(query)
+            .page(db, &pagination)
+            .await
+            .context("UserInfo::find_page_by_query() failed")
+    }
+
+    pub async fn stats_by_day<C: ConnectionTrait>(db: &C) -> anyhow::Result<Vec<UserStatsByDay>> {
+        let db_backend = db.get_database_backend();
+
+        let stmt = Statement::from_sql_and_values(
+            db_backend,
+            r#"
+            SELECT date_trunc('day', created) as day, COUNT(*) as count
+            FROM user_info
+            GROUP BY day
+            ORDER BY day
+            "#
+            .to_owned(),
+            vec![],
+        );
+
+        UserStatsByDay::find_by_statement(stmt)
+            .all(db)
+            .await
+            .context("UserStatsByDay execute failed")
     }
 }
