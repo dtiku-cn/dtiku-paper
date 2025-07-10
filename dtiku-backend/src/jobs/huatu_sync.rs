@@ -2,6 +2,7 @@ use super::{JobScheduler, PaperSyncer};
 use crate::plugins::embedding::Embedding;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
+use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
 use dtiku_paper::model::{exam_category, paper, ExamCategory, FromType};
 use futures::StreamExt;
 use itertools::Itertools;
@@ -192,9 +193,9 @@ impl HuatuSyncService {
                             coalesce(jsonb_extract_path_text(extra,'area'), jsonb_extract_path_text(extra,'areaName')) as area,
                             coalesce(jsonb_extract_path_text(extra,'name'), jsonb_extract_path_text(extra,'paperName')) as name,
                             coalesce(jsonb_extract_path_text(extra,'type'), '-1') as ty,
-                            coalesce(jsonb_extract_path_text(extra,'year'), jsonb_extract_path_text(extra,'paperYear')) as year,
-                            coalesce(jsonb_extract_path_text(extra,'modules'), jsonb_extract_path_text(extra,'topicNameList')) as modules,
-                            extra
+                            coalesce(jsonb_extract_path_text(extra,'year'), jsonb_extract_path_text(extra,'paperYear'))::integer as year,
+                            jsonb_extract_path_text(extra,'modules') as modules,
+                            jsonb_extract_path_text(extra,'topicNameList') as topics
                     from paper p 
                     where from_ty ='huatu' and id > $1 and id <= $2
                     "##,
@@ -342,11 +343,12 @@ impl OriginLabel {
 
 #[derive(Debug, sqlx::FromRow)]
 struct OriginPaper {
+    area: Option<String>,
     name: Option<String>,
-    date: Option<String>,
-    topic: Option<String>,
-    ty: Option<i32>,
-    chapters: Option<String>,
+    ty: i32,
+    year: Option<i32>,
+    modules: Option<Json<Vec<PaperBlock>>>,
+    topics: Option<Json<Vec<String>>>,
     id: i64,
     label_id: i64,
 }
@@ -355,22 +357,45 @@ impl OriginPaper {
     async fn save_paper<C: ConnectionTrait>(
         self,
         db: &C,
-        label_id: i32,
+        exam_paper_id: i32,
     ) -> anyhow::Result<paper::Model> {
-        // todo
+        let extra = if self.ty > 0 {
+            let chapters = self
+                .modules
+                .expect(&format!("paper#{} modules 不存在", self.id));
+            let cs = Chapters {
+                desc: None,
+                chapters: chapters.iter().map(|m| m.into()).collect(),
+            };
+            PaperExtra::Chapters(cs)
+        } else {
+            let topics = self.topics.map(|ts| ts.iter().join(","));
+            let ec = EssayCluster {
+                topic: topics,
+                blocks: vec![],
+            };
+            PaperExtra::EssayCluster(ec)
+        };
+        paper::ActiveModel {
+            year: Set(self.year.expect(&format!("paper#{} year 不存在", self.id)) as i16),
+            title: Set(self.name.expect(&format!("paper#{} name 不存在", self.id))),
+
+            extra: Set(extra),
+            ..Default::default()
+        };
         todo!()
     }
 }
 
-enum Modules {
-    Blocks(Vec<PaperBlock>),
-    Topics(Vec<String>),
-}
-
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 struct PaperBlock {
     name: String,
     qcount: i32,
     category: i32,
-    judgeFlag: i32,
+}
+
+impl Into<PaperChapter> for &PaperBlock {
+    fn into(self) -> PaperChapter {
+        todo!()
+    }
 }
