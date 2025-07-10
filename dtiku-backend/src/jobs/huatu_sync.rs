@@ -419,11 +419,14 @@ impl OriginPaper {
 struct PaperBlock {
     name: String,
     qcount: i32,
-    category: i32,
 }
 
 impl Into<PaperChapter> for &PaperBlock {
     fn into(self) -> PaperChapter {
-        todo!()
+        PaperChapter {
+            name: self.name.clone(),
+            desc: "".to_string(),
+            count: self.qcount as i16,
+        }
     }
 }
