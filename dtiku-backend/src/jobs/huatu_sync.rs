@@ -3,7 +3,7 @@ use crate::plugins::embedding::Embedding;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
-use dtiku_paper::model::{exam_category, paper, ExamCategory, FromType};
+use dtiku_paper::model::{exam_category, label, paper, ExamCategory, FromType, Label};
 use futures::StreamExt;
 use itertools::Itertools;
 use pinyin::ToPinyin;
@@ -365,7 +365,7 @@ impl OriginPaper {
                 .expect(&format!("paper#{} modules 不存在", self.id));
             let cs = Chapters {
                 desc: None,
-                chapters: chapters.iter().map(|m| m.into()).collect(),
+                chapters: chapters.iter().map(|m: &PaperBlock| m.into()).collect(),
             };
             PaperExtra::Chapters(cs)
         } else {
@@ -376,14 +376,42 @@ impl OriginPaper {
             };
             PaperExtra::EssayCluster(ec)
         };
+        let paper_type = exam_paper_id as i16;
+        let exam = ExamCategory::find_root_by_id(db, paper_type)
+            .await?
+            .expect(&format!(
+                "paper_type#{} exam root_id not found",
+                exam_paper_id
+            ));
+        let area = self.area.expect(&format!("paper#{} area 不存在", self.id));
+        let label =
+            Label::find_by_exam_id_and_paper_type_and_name(db, exam.id, paper_type, &area).await?;
+        let label = match label {
+            Some(l) => l,
+            None => label::ActiveModel {
+                name: Set(area),
+                pid: Set(0),
+                exam_id: Set(exam.id),
+                paper_type: Set(paper_type),
+                hidden: Set(false),
+                ..Default::default()
+            }
+            .insert_on_conflict(db)
+            .await
+            .context("label insert failed")?,
+        };
         paper::ActiveModel {
             year: Set(self.year.expect(&format!("paper#{} year 不存在", self.id)) as i16),
             title: Set(self.name.expect(&format!("paper#{} name 不存在", self.id))),
-
+            exam_id: Set(exam.id),
+            paper_type: Set(paper_type),
+            label_id: Set(label.id),
             extra: Set(extra),
             ..Default::default()
-        };
-        todo!()
+        }
+        .insert_on_conflict(db)
+        .await
+        .context("paper insert failed")
     }
 }
 
