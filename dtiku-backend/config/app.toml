@@ -15,6 +15,9 @@ uri = "${SRC_DATABASE_URL}"
 [sea-orm]
 uri = "${DATABASE_URL}"
 
+[sea-orm-web]
+one_indexed = true
+
 [stream]
 uri = "${REDIS_URL:redis://localhost}"
 

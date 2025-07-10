@@ -13,7 +13,7 @@ spring = { workspace = true }
 spring-web = { workspace = true }
 spring-stream = { workspace = true, features = ["redis"] }
 spring-job = { workspace = true }
-spring-sea-orm = { workspace = true }
+spring-sea-orm = { workspace = true, features = ["postgres", "with-web"] }
 spring-sqlx = { workspace = true, features = ["postgres"] }
 spring-redis = { workspace = true }
 spring-opentelemetry = { workspace = true }
