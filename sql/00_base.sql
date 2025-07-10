@@ -2,7 +2,6 @@ create table if not exists user_info (
     id serial primary key,
     wechat_id varchar(32) not null,
     name varchar(64) not null,
-    gender bool not null,
     avatar varchar(255) not null,
     expired timestamp not null,
     created timestamp not null,

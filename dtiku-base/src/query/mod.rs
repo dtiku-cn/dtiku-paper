@@ -5,7 +5,6 @@ use sea_orm::{sea_query::IntoCondition, ColumnTrait};
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct UserQuery {
     name: Option<String>,
-    gender: Option<bool>,
     expired: Option<bool>,
 }
 
@@ -16,11 +15,12 @@ impl IntoCondition for UserQuery {
         if let Some(name) = self.name {
             condition = condition.add(user_info::Column::Name.contains(name));
         }
-        if let Some(gender) = self.gender {
-            condition = condition.add(user_info::Column::Gender.eq(gender));
-        }
         if let Some(expired) = self.expired {
-            condition = condition.add(user_info::Column::Expired.lt(Local::now().naive_local()));
+            condition = if expired {
+                condition.add(user_info::Column::Expired.lte(Local::now().naive_local()))
+            } else {
+                condition.add(user_info::Column::Expired.gt(Local::now().naive_local()))
+            }
         }
         condition
     }

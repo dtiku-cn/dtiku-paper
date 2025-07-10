@@ -8,7 +8,6 @@ pub struct Model {
     pub id: i32,
     pub wechat_id: String,
     pub name: String,
-    pub gender: bool,
     pub avatar: String,
     pub expired: DateTime,
     pub created: DateTime,

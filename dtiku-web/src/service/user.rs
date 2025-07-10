@@ -59,7 +59,6 @@ impl UserService {
                 user_info::ActiveModel {
                     id: Set(user_id),
                     wechat_id: Set(remote_uid),
-                    gender: Set(wechat_user.sex == 1),
                     name: Set(wechat_user.nickname),
                     avatar: Set(wechat_user.headimgurl),
                     ..Default::default()
