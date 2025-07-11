@@ -10,7 +10,7 @@
         } catch (e) {
             console.log(e);
         }
-        var loginPre = sessionStorage.getItem('login-pre') || '/';
+        var loginPre = Cookies.get('login-pre', { domain: ".dtiku.cn", path: '/' }) || '/';
         location.href = loginPre;
     </script>
 </head>

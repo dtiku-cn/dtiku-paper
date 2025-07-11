@@ -33,7 +33,7 @@
         var s = document.getElementsByTagName("script")[0];
         s.parentNode.insertBefore(hm, s);
     })();
-    function removeToken(){
+    function removeToken() {
         Cookies.remove('token', {
             path: '/',
             domain: '.dtiku.cn',
@@ -59,6 +59,7 @@
     .dark-theme #float-buttons>div {
         background-color: #282828 !important;
     }
+
     @media print {
         body {
             background: white !important;
@@ -301,11 +302,11 @@
         themeSwitcher.switchTo(themeSwitcher.getTheme());
 
         $("#loginModal").on('show.bs.modal', function () {
-            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"https://{{global.original_host}}/api/v2/auth/wechat\" width=\"400\" height=\"400\"" +
+            $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"https://artalk.dtiku.cn/api/v2/auth/wechat\" width=\"400\" height=\"400\"" +
                 " style=\"overflow:hidden;background:url('" + window.loadingGif + "') center center no-repeat\"></iframe>" +
                 "<p class=\"text-center\">微信截图扫码无效哦</p>");
         }).on('shown.bs.modal', function () {
-            sessionStorage.setItem('login-pre', location.href);
+            Cookies.set('login-pre', location.href, { domain: ".dtiku.cn", path: '/' });
         });
         $("#payModal").on('show.bs.modal', function () {
             $(this).find(".modal-body").html("<iframe class=\"border-0\" src=\"/pay/render\" width=\"400\" height=\"400\"" +
