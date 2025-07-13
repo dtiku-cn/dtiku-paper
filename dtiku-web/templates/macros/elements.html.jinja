@@ -15,15 +15,6 @@
 </th:block>
 {% endmacro divide %}
 
-{% macro paperTypeStats(stats) %}
-<td th:text="${stats.paperCount}"></td>
-<td th:include="fragments/elements::divide(${stats.chapterCount},${stats.paperCount})"></td>
-<td th:text="${stats.materialCount}"></td>
-<td th:include="fragments/elements::divide(${stats.questionCount},${stats.paperCount})"></td>
-<td th:text="${stats.solutionCount}"></td>
-{% endmacro paperTypeStats %}
-
-
 {% macro pagination(page,url,selectable) %}
 <nav>
     <ul class="pagination justify-content-center">
@@ -98,29 +89,3 @@
     })
 </script>
 {% endmacro sortable %}
-
-{% macro json2table() %}
-<script src="/dist/js/json2table.js"></script>
-<script>
-    $(function () {
-        function obj2arr(obj) {
-            const arr = [];
-            for (let [key, value] of Object.entries(obj)) {
-                if (typeof value === 'object') {
-                    value = obj2arr(value);
-                }
-                arr.push({ key, value });
-            }
-            return arr;
-        }
-
-        $(".json2table").each(function () {
-            var $this = $(this),
-                json = $this.data('json2table'),
-                obj = typeof json === 'string' ? JSON.parse(json) : json,
-                arr = obj2arr(obj);
-            $this.html(ConvertJsonToTable(arr))
-        })
-    })
-</script>
-{% endmacro json2table %}

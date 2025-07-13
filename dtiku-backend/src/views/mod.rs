@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod config;
 pub mod task;
+pub mod test;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

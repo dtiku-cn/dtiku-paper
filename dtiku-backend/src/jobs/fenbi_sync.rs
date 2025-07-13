@@ -1,7 +1,7 @@
 use super::PaperSyncer;
 use crate::jobs::JobScheduler;
 use crate::plugins::embedding::Embedding;
-use crate::utils::regex::pick_year;
+use crate::utils::regex as regex_util;
 use anyhow::Context;
 use dtiku_base::model::schedule_task;
 use dtiku_base::model::schedule_task::{Progress, TaskInstance};
@@ -555,11 +555,12 @@ impl FenbiSyncService {
             self.save_material(m, paper.id, *num).await?;
         }
 
-        for q in questions {
+        for mut q in questions {
             let correct_ratio = q.correct_ratio;
             let num = qid_num_map
                 .get(&q.id)
                 .expect("qid is not exists in qid_num_map");
+            q.content = regex_util::replace_material_id_ref(&q.content, mid_num_map);
             let mut question = q.to_question(&self.embedding).await?;
             question.exam_id = Set(paper.exam_id);
             question.paper_type = Set(paper.paper_type);
@@ -882,7 +883,7 @@ impl OriginPaper {
             .with_context(|| format!("Label::find_by_id({label_id}) failed"))?
             .expect(&format!("label#{label_id} not exists"));
 
-        let year = pick_year(&self.date.expect("date is none")).expect("year not found");
+        let year = regex_util::pick_year(&self.date.expect("date is none")).expect("year not found");
         let mut active_model = paper::ActiveModel {
             title: Set(self.name.expect("name is none")),
             year: Set(year),
