@@ -69,7 +69,11 @@ async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoRes
 #[get("/api/web_text_extract")]
 async fn test_web_text_extract(Query(req): Query<WebLabelReq>) -> Result<impl IntoResponse> {
     let url = url::Url::parse(&req.url).with_context(|| format!("parse url failed:{}", req.url))?;
-    let html = reqwest::get(url.clone())
+    let html = reqwest::Client::builder().user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0")
+        .build()
+        .unwrap()
+        .get(url.clone())
+        .send()
         .await
         .context("reqwest::get failed")?
         .text()
