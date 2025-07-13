@@ -83,13 +83,14 @@ async fn test_web_text_extract(Query(req): Query<WebLabelReq>) -> Result<impl In
     let readability_page = readability::extractor::extract(&mut html_reader, &url)
         .context("readability::extractor::extract failed")?;
 
-    let mut readability = dom_smoothie::Readability::new(html, Some(&req.url), None)
+    let mut readability = dom_smoothie::Readability::new(html.clone(), Some(&req.url), None)
         .context("create dom_smoothie::Readability failed")?;
     let dom_smoothie_article: dom_smoothie::Article =
         readability.parse().context("parse html failed")?;
     //let extractor = extractous::Extractor::new();
 
     Ok(Json(json!({
+        "raw_html": html,
         "readability_page": {
             "title": readability_page.title,
             "content": readability_page.content,
