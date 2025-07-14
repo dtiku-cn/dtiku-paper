@@ -29,7 +29,7 @@ impl HNSWIndex {
             sentences_map,
             hnsw_builder: |sm| {
                 let hnsw =
-                    Hnsw::<f32, DistCosine>::new(16, sm.len() + 1, 0, 160, DistCosine::default());
+                    Hnsw::<f32, DistCosine>::new(48, sm.len() + 1, 16, 800, DistCosine::default());
                 for sentence in sm.values() {
                     hnsw.insert((&sentence.embedding, sentence.id));
                 }
