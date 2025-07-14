@@ -2,6 +2,7 @@ mod config;
 mod jobs;
 mod plugins;
 mod router;
+mod service;
 mod utils;
 mod views;
 

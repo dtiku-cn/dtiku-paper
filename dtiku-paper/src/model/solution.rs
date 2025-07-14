@@ -76,6 +76,23 @@ impl SolutionExtra {
         let c = (b'A' + answer) as char;
         c.to_string()
     }
+
+    pub fn get_html(&self) -> String {
+        match self {
+            Self::SingleChoice(SingleChoice { analysis, .. })
+            | Self::BlankChoice(SingleChoice { analysis, .. })
+            | Self::MultiChoice(MultiChoice { analysis, .. })
+            | Self::IndefiniteChoice(MultiChoice { analysis, .. })
+            | Self::TrueFalse(TrueFalseChoice { analysis, .. })
+            | Self::FillBlank(FillBlank { analysis, .. })
+            | Self::BlankAnswer(BlankAnswer { analysis, .. })
+            | Self::ClosedEndedQA(AnswerAnalysis { analysis, .. }) => analysis.to_string(),
+            Self::OpenEndedQA(StepByStepAnswer { analysis, .. })
+            | Self::OtherQA(OtherAnswer { analysis, .. }) => {
+                analysis.iter().map(|a| a.content.as_str()).join("。")
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
