@@ -1,6 +1,6 @@
 use dtiku_base::model::schedule_task;
 use dtiku_paper::model::{paper, paper_question, ExamCategory, Paper, PaperQuestion, Question};
-use dtiku_stats::model::idiom;
+use dtiku_stats::model::{idiom, idiom_ref};
 use reqwest;
 use reqwest_scraper::{FromCssSelector, ScraperResponse};
 use sea_orm::sea_query::ExprTrait;
@@ -96,6 +96,7 @@ impl IdiomStatsService {
             return Ok(());
         }
         let mut idioms = Vec::<idiom::ActiveModel>::new();
+        let mut idiom_refs = Vec::<idiom_ref::ActiveModel>::new();
 
         let questions = Question::find_by_ids(&self.db, qids).await?;
 
