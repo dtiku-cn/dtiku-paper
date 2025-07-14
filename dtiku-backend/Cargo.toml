@@ -49,6 +49,7 @@ sha2 = { workspace = true }
 url = { workspace = true }
 readability = { workspace = true }
 dom_smoothie = { workspace = true, features = ["serde"] }
+ouroboros = { workspace = true }
 # extractous = { workspace = true }
 
 [build-dependencies]

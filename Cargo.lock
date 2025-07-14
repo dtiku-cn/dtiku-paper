@@ -1704,6 +1704,7 @@ dependencies = [
  "hnsw_rs",
  "itertools 0.14.0",
  "lazy_static",
+ "ouroboros",
  "pinyin",
  "prost",
  "readability",

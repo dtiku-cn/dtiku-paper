@@ -1,3 +1,7 @@
+use std::sync::Arc;
+
+use crate::plugins::embedding::Embedding;
+use crate::utils::regex as regex_util;
 use crate::{
     service::nlp::NLPService,
     views::test::{TextCompare, WebLabelReq},
@@ -108,10 +112,14 @@ async fn test_web_text_extract(Query(req): Query<WebLabelReq>) -> Result<impl In
 #[get("/api/web_text_label/{question_id}")]
 async fn test_web_text_label(
     Component(nlp): Component<NLPService>,
+    Component(embedding): Component<Embedding>,
     Path(question_id): Path<i32>,
     Query(req): Query<WebLabelReq>,
 ) -> Result<impl IntoResponse> {
-    nlp.build_hnsw_index_for_question(question_id).await?;
+    let hnsw = nlp
+        .build_hnsw_index_for_question(question_id)
+        .await?
+        .ok_or_else(|| KnownWebError::not_found("问题不存在"))?;
     let url = url::Url::parse(&req.url).with_context(|| format!("parse url failed:{}", req.url))?;
     let html = reqwest::Client::builder().user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0")
         .build()
@@ -129,5 +137,28 @@ async fn test_web_text_label(
         .context("readability::extractor::extract failed")?;
     let text = &readability_page.text;
 
-    Ok("")
+    let hnsw = Arc::new(hnsw);
+    let labeled_text = regex_util::replace_sentences(&text, |sentence| {
+        let embedding = embedding.clone();
+        let hnsw = hnsw.clone();
+        let sentence = sentence.to_string();
+        async move {
+            let vec = embedding
+                .text_embedding(&sentence)
+                .await
+                .expect(&format!("embedding failed for: {sentence}"));
+            let s = hnsw.search(&vec, 1);
+            if s.is_empty() {
+                sentence
+            } else {
+                let label = s[0].label.as_str();
+                format!("<span class='{label}'>{sentence}</span>")
+            }
+        }
+    })
+    .await;
+    Ok(Json(json!({
+        "text":text,
+        "labeled_text":labeled_text
+    })))
 }

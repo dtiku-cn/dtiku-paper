@@ -1,4 +1,4 @@
-use crate::utils::hnsw::{build_hnsw_index, HNSWIndex};
+use crate::utils::hnsw::HNSWIndex;
 use crate::utils::regex as regex_util;
 use crate::{plugins::embedding::Embedding, utils::hnsw::LabeledSentence};
 use anyhow::Context;
@@ -41,6 +41,7 @@ impl NLPService {
             all_sentences.push(LabeledSentence {
                 id,
                 label: "question".into(),
+                outer_id: question_id,
                 text: s.clone(),
                 embedding: self.embedding.text_embedding(&s).await?, // 假设你有 embed(text) -> Vec<f32>
             });
@@ -51,13 +52,14 @@ impl NLPService {
                 all_sentences.push(LabeledSentence {
                     id,
                     label: "solution".into(),
+                    outer_id: solution.id,
                     text: s.clone(),
                     embedding: self.embedding.text_embedding(&s).await?,
                 });
                 id += 1;
             }
         }
-        let hnsw = build_hnsw_index(&all_sentences);
+        let hnsw = HNSWIndex::build(&all_sentences);
 
         Ok(Some(hnsw))
     }
