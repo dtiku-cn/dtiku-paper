@@ -1,8 +1,9 @@
 mod fenbi_sync;
 mod huatu_sync;
-mod offcn_sync;
 mod idiom_fetch;
+mod offcn_sync;
 
+use crate::jobs::idiom_fetch::IdiomStatsService;
 use crate::plugins::jobs::RunningJobs;
 use anyhow::Context;
 use dtiku_base::model::ScheduleTask;
@@ -34,6 +35,12 @@ async fn task_schedule(
         ScheduleTaskType::FenbiSync => {
             FenbiSyncService::build(task, instance)
                 .expect("build fenbi sync service failed")
+                .start()
+                .await
+        }
+        ScheduleTaskType::IdiomStats => {
+            IdiomStatsService::build(task)
+                .expect("build idiom stats service failed")
                 .start()
                 .await
         }

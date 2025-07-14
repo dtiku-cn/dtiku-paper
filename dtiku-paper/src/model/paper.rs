@@ -3,7 +3,7 @@ use crate::query::paper::ListPaperQuery;
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromJsonQueryResult,
-    QueryFilter, QueryOrder,
+    QueryFilter, QueryOrder, QuerySelect,
 };
 use serde::{Deserialize, Serialize};
 use spring_sea_orm::pagination::{Page, PaginationExt};
@@ -55,6 +55,10 @@ impl PaperExtra {
             Self::Chapters(_) => None,
             Self::EssayCluster(ec) => ec.topic.clone(),
         }
+    }
+
+    pub fn compute_question_range(&self, arg: &str) -> (i16, i16) {
+        todo!()
     }
 }
 
@@ -127,9 +131,27 @@ impl Entity {
                     .and(Column::PaperType.eq(query.paper_type)),
             )
             .order_by_desc(Column::Year)
+            .order_by_desc(Column::Id)
             .page(db, &query.page)
             .await
             .with_context(|| format!("find_by_query({query:?}) failed"))
+    }
+
+    pub async fn find_by_paper_type_and_id_gt<C>(
+        db: &C,
+        paper_id: i16,
+        last_id: i32,
+    ) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .filter(Column::PaperType.eq(paper_id).and(Column::Id.gt(last_id)))
+            .order_by_asc(Column::Id)
+            .limit(50)
+            .all(db)
+            .await
+            .with_context(|| format!("find_by_paper_type_and_id_gt({paper_id},{last_id}) failed"))
     }
 }
 

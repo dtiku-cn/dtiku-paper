@@ -64,6 +64,25 @@ impl Entity {
             .with_context(|| format!("paper_question::find_by_paper_id({paper_id}) failed"))
     }
 
+    pub async fn find_question_ids_by_paper_id_and_sort_between<C>(
+        db: &C,
+        paper_id: i32,
+        start: i16,
+        end: i16,
+    ) -> anyhow::Result<Vec<i32>>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .select_only()
+            .column(Column::QuestionId)
+            .filter(Column::PaperId.eq(paper_id).and(Column::Sort.between(start, end)))
+            .into_tuple()
+            .all(db)
+            .await
+            .with_context(|| format!("paper_question::find_question_ids_by_paper_id_and_sort_between({paper_id}, {start}, {end}) failed"))
+    }
+
     pub async fn find_question_id_by_query<C>(
         db: &C,
         query: &PaperQuestionQuery,

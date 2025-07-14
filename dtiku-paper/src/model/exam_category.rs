@@ -54,6 +54,40 @@ impl Entity {
             .with_context(|| format!("exam_category::find_by_prefix({prefix}) failed"))
     }
 
+    /// 逐级查找 exam_category 的 ID，比如输入 "gwy/xingce"，
+    /// 实际执行：
+    ///   find_by_pid_prefix(0, "gwy") => id1
+    ///   find_by_pid_prefix(id1, "xingce") => id2
+    /// 返回最终找到的 id2
+    pub async fn find_category_id_by_path<C>(db: &C, path: &str) -> anyhow::Result<Option<i16>>
+    where
+        C: ConnectionTrait,
+    {
+        if path.is_empty() {
+            return Ok(None);
+        }
+        let mut pid: i16 = 0;
+        let mut final_id = None;
+
+        for prefix in path.split('/') {
+            if prefix.is_empty() {
+                continue;
+            }
+
+            let category = Entity::find_by_pid_prefix(db, pid, prefix).await?;
+
+            match category {
+                Some(model) => {
+                    pid = model.id; // 更新 pid 继续查子级
+                    final_id = Some(model.id);
+                }
+                None => return Ok(None), // 中途未匹配上直接返回 None
+            }
+        }
+
+        Ok(final_id)
+    }
+
     pub async fn find_root_by_id<C>(db: &C, mut id: i16) -> anyhow::Result<Option<Model>>
     where
         C: ConnectionTrait,

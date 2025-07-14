@@ -1698,6 +1698,7 @@ dependencies = [
  "dom_smoothie",
  "dtiku-base",
  "dtiku-paper",
+ "dtiku-stats",
  "futures",
  "hnsw",
  "hnsw_rs",
