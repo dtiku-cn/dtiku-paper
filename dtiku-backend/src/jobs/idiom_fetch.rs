@@ -1,9 +1,9 @@
 use dtiku_base::model::schedule_task;
 use dtiku_paper::model::{paper, paper_question, ExamCategory, Paper, PaperQuestion, Question};
-use dtiku_stats::model::{idiom, idiom_ref};
+use dtiku_stats::model::{idiom, idiom_ref, sea_orm_active_enums::IdiomType};
 use reqwest;
 use reqwest_scraper::{FromCssSelector, ScraperResponse};
-use sea_orm::sea_query::ExprTrait;
+use sea_orm::{sea_query::ExprTrait, Iterable};
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 
@@ -95,14 +95,18 @@ impl IdiomStatsService {
             );
             return Ok(());
         }
-        let mut idioms = Vec::<idiom::ActiveModel>::new();
+        let mut idiom_count = 0;
         let mut idiom_refs = Vec::<idiom_ref::ActiveModel>::new();
 
         let questions = Question::find_by_ids(&self.db, qids).await?;
 
-        for q in questions {}
+        for q in questions {
+            for ty in IdiomType::iter() {
+                // ty.regex()
+            }
+        }
 
-        tracing::info!("paper_id: {}, idiom_count: {}", paper.id, idioms.len());
+        tracing::info!("paper_id: {}, idiom_count: {}", paper.id, idiom_count);
 
         Ok(())
     }
