@@ -141,7 +141,7 @@ async fn test_web_text_label(
         .expect(&format!("embedding failed for: {sentences:?}"));
     let mut label_sentences = vec![];
     for (index, embedding) in s_embeddings.into_iter().enumerate() {
-        let sentence = sentences[index].clone();
+        let sentence = sentences[index];
         let s = hnsw.search(&embedding, 1);
         let ls = if s.is_empty() {
             json!({
