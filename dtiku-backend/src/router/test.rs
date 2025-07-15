@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::plugins::embedding::Embedding;
 use crate::utils::regex as regex_util;
 use crate::{
@@ -7,8 +5,6 @@ use crate::{
     views::test::{TextCompare, WebLabelReq},
 };
 use anyhow::Context as _;
-use dtiku_paper::model::{Question, Solution};
-use sea_orm::{DbConn, EntityTrait};
 use serde_json::json;
 use spring_web::{
     axum::{response::IntoResponse, Json},
@@ -137,28 +133,29 @@ async fn test_web_text_label(
         .context("readability::extractor::extract failed")?;
     let text = &readability_page.text;
 
-    let hnsw = Arc::new(hnsw);
-    let labeled_text = regex_util::replace_sentences(&text, |sentence| {
-        let embedding = embedding.clone();
-        let hnsw = hnsw.clone();
-        let sentence = sentence.to_string();
-        async move {
-            let vec = embedding
-                .text_embedding(&sentence)
-                .await
-                .expect(&format!("embedding failed for: {sentence}"));
-            let s = hnsw.search(&vec, 1);
-            if s.is_empty() {
-                sentence
-            } else {
-                let label = s[0].label.as_str();
-                format!("<span class='{label}'>{sentence}</span>")
-            }
-        }
-    })
-    .await;
+    let sentences = regex_util::split_sentences(&text);
+    let mut label_sentences = vec![];
+    for sentence in sentences {
+        let vec = embedding
+            .text_embedding(&sentence)
+            .await
+            .expect(&format!("embedding failed for: {sentence}"));
+        let s = hnsw.search(&vec, 1);
+        let ls = if s.is_empty() {
+            json!({
+                "sentence":sentence
+            })
+        } else {
+            let label = s[0].label.clone();
+            json!({
+                "sentence":sentence,
+                "label": label
+            })
+        };
+        label_sentences.push(ls);
+    }
     Ok(Json(json!({
         "text":text,
-        "labeled_text":labeled_text
+        "labeled_text":label_sentences
     })))
 }

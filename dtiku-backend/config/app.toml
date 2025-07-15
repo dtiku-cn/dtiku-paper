@@ -3,7 +3,7 @@ port = 8000
 graceful = true
 
 [web.middlewares]
-static = { enable = true, uri = "/", path = "static" }
+static = { enable = true, uri = "/", path = "frontend/dist" }
 
 [logger]
 # level = "debug"
