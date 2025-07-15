@@ -56,7 +56,7 @@ impl Embedding {
             .clone()
             .batch_text_embedding(BatchTextReq {
                 texts: texts.iter().cloned().map(Into::into).collect(),
-                batch_size,
+                batch_size: batch_size.min(5), // 默认5条文本为一批
             })
             .await
             .context("embedding service call failed")?;
