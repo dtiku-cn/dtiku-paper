@@ -5,6 +5,7 @@ use crate::{
     views::test::{TextCompare, WebLabelReq},
 };
 use anyhow::Context as _;
+use reqwest_scraper::ScraperResponse;
 use serde_json::json;
 use spring_web::{
     axum::{response::IntoResponse, Json},
@@ -81,7 +82,7 @@ async fn test_web_text_extract(Query(req): Query<WebLabelReq>) -> Result<impl In
         .send()
         .await
         .context("reqwest::get failed")?
-        .text()
+        .html()
         .await
         .context("get response text failed")?;
     let mut html_reader = std::io::Cursor::new(html.clone());
@@ -124,7 +125,7 @@ async fn test_web_text_label(
         .send()
         .await
         .context("reqwest::get failed")?
-        .text()
+        .html()
         .await
         .context("get response text failed")?;
     let mut html_reader = std::io::Cursor::new(html.clone());
