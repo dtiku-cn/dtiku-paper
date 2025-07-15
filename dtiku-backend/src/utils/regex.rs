@@ -33,13 +33,13 @@ pub fn replace_material_id_ref(string: &str, mid_num_map: &HashMap<i64, i32>) ->
 }
 
 /// 将一段中文按句子切分
-pub fn split_sentences(text: &str) -> Vec<String> {
+pub fn split_sentences(text: &str) -> Vec<&str> {
     let mut result = Vec::new();
 
     for cap in SENTENCE_SPLITTER.captures_iter(text) {
         let s = cap.get(0).unwrap().as_str().trim();
         if !s.is_empty() {
-            result.push(s.to_string());
+            result.push(s);
         }
     }
 

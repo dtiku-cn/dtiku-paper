@@ -2,7 +2,7 @@ pub mod proto {
     tonic::include_proto!("embedding");
 }
 
-use crate::config::embedding::EmbeddingConfig;
+use crate::{config::embedding::EmbeddingConfig, plugins::embedding::proto::BatchTextReq};
 use anyhow::Context;
 use derive_more::derive::{Deref, DerefMut};
 use proto::{embedding_service_client::EmbeddingServiceClient, TextReq};
@@ -44,5 +44,27 @@ impl Embedding {
             .await
             .context("embedding service call failed")?;
         Ok(resp.into_inner().embedding)
+    }
+
+    pub async fn batch_text_embedding<S: Into<String> + Clone>(
+        &self,
+        texts: &[S],
+    ) -> Result<Vec<Vec<f32>>> {
+        let batch_size = texts.len() as u32;
+        let resp = self
+            .0
+            .clone()
+            .batch_text_embedding(BatchTextReq {
+                texts: texts.iter().cloned().map(Into::into).collect(),
+                batch_size,
+            })
+            .await
+            .context("embedding service call failed")?;
+        Ok(resp
+            .into_inner()
+            .embeddings
+            .into_iter()
+            .map(|e| e.embedding)
+            .collect())
     }
 }

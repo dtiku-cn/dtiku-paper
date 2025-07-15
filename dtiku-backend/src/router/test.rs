@@ -135,13 +135,13 @@ async fn test_web_text_label(
     let text = &readability_page.text;
 
     let sentences = regex_util::split_sentences(&text);
+    let s_embeddings = embedding
+        .batch_text_embedding(&sentences)
+        .await
+        .expect(&format!("embedding failed for: {sentences:?}"));
     let mut label_sentences = vec![];
-    for sentence in sentences {
-        let vec = embedding
-            .text_embedding(&sentence)
-            .await
-            .expect(&format!("embedding failed for: {sentence}"));
-        let s = hnsw.search(&vec, 1);
+    for (index, sentence) in s_embeddings.into_iter().enumerate() {
+        let s = hnsw.search(&sentence, 1);
         let ls = if s.is_empty() {
             json!({
                 "sentence":sentence
