@@ -134,14 +134,9 @@ async fn test_web_text_label(
         .context("readability::extractor::extract failed")?;
     let text = &readability_page.text;
 
-    let sentences = regex_util::split_sentences(&text);
-    let s_embeddings = embedding
-        .batch_text_embedding(&sentences)
-        .await
-        .expect(&format!("embedding failed for: {sentences:?}"));
     let mut label_sentences = vec![];
-    for (index, embedding) in s_embeddings.into_iter().enumerate() {
-        let sentence = sentences[index];
+    for sentence in regex_util::split_sentences(&text) {
+        let embedding = embedding.text_embedding(sentence).await?;
         let s = hnsw.search(&embedding, 1);
         let ls = if s.is_empty() {
             json!({
@@ -150,7 +145,7 @@ async fn test_web_text_label(
         } else {
             let label = s[0].label.clone();
             json!({
-                "sentence":sentence,
+                "sentence": sentence,
                 "label": label
             })
         };

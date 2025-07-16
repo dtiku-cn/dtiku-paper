@@ -37,29 +37,25 @@ impl NLPService {
 
         let mut all_sentences = vec![];
         let mut id = 0;
-        let qs = regex_util::split_sentences(&question.content);
-        let q_embeddings = self.embedding.batch_text_embedding(&qs).await?;
-        for (index, qe) in q_embeddings.into_iter().enumerate() {
+        for sentence in regex_util::split_sentences(&question.content) {
             all_sentences.push(LabeledSentence {
                 id,
                 label: "question".into(),
                 outer_id: question_id,
-                text: qs[index].to_string(),
-                embedding: qe,
+                text: sentence.to_string(),
+                embedding: self.embedding.text_embedding(sentence).await?,
             });
             id += 1;
         }
         for solution in solutions {
             let solution_html = solution.extra.get_html();
-            let ss = regex_util::split_sentences(&solution_html);
-            let s_embeddings = self.embedding.batch_text_embedding(&ss).await?;
-            for (index, se) in s_embeddings.into_iter().enumerate() {
+            for sentence in regex_util::split_sentences(&solution_html) {
                 all_sentences.push(LabeledSentence {
                     id,
                     label: "solution".into(),
                     outer_id: solution.id,
-                    text: ss[index].to_string(),
-                    embedding: se,
+                    text: sentence.to_string(),
+                    embedding: self.embedding.text_embedding(sentence).await?,
                 });
                 id += 1;
             }

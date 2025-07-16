@@ -51,6 +51,7 @@ readability = { workspace = true }
 dom_smoothie = { workspace = true, features = ["serde"] }
 ouroboros = { workspace = true }
 # extractous = { workspace = true }
+openai-api-rs = { workspace = true }
 
 [build-dependencies]
 tonic-build = "0.13"
