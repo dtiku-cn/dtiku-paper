@@ -1,7 +1,7 @@
 pub use super::_entities::idiom::*;
 use sea_orm::{
-    sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
-    ConnectionTrait, DbErr, EntityTrait as _, FromJsonQueryResult,
+    sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveModelTrait,
+    ActiveValue::Set, ConnectionTrait, DbErr, EntityTrait as _, FromJsonQueryResult,
 };
 use serde::{Deserialize, Serialize};
 use spring::async_trait;
@@ -31,13 +31,15 @@ impl ActiveModelBehavior for ActiveModel {
 
 impl ActiveModel {
     pub async fn insert_on_conflict<C: ConnectionTrait>(self, db: &C) -> Result<Model, DbErr> {
-        Entity::insert(self)
+        let am = ActiveModelBehavior::before_save(self, db, true).await?;
+        let model = Entity::insert(am)
             .on_conflict(
                 OnConflict::columns([Column::Text])
                     .update_columns([Column::Ty, Column::Content, Column::Modified])
                     .to_owned(),
             )
             .exec_with_returning(db)
-            .await
+            .await?;
+        Self::after_save(model, db, true).await
     }
 }

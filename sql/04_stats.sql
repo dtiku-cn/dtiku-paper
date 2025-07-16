@@ -6,7 +6,8 @@ create table if not exists idiom(
     ty idiom_type not null,
     content jsonb not null,
     created timestamp not null,
-    modified timestamp not null
+    modified timestamp not null,
+    unique(text)
 );
 
 create table if not exists idiom_ref(
