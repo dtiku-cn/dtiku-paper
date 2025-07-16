@@ -9,7 +9,7 @@ use dtiku_stats::model::{
     idiom::{self, IdiomExplain as IdiomExplainModel},
     idiom_ref,
     sea_orm_active_enums::IdiomType,
-    IdiomRef,
+    Idiom, IdiomRef,
 };
 use itertools::Itertools;
 use reqwest;
@@ -157,9 +157,14 @@ impl IdiomStatsService {
                             .collect_vec();
 
                         for idiom in idioms {
+                            if Idiom::exists_by_text(&self.db, idiom).await? {
+                                continue;
+                            }
                             let explain = IdiomExplain::fetch(idiom).await?;
                             if explain.idiom == "<undefined>" {
                                 continue;
+                            } else {
+                                tokio::time::sleep(Duration::from_secs(1)).await;
                             }
                             let idiom = idiom::ActiveModel {
                                 text: Set(idiom.to_string()),
@@ -186,7 +191,6 @@ impl IdiomStatsService {
                     }
                     _ => {}
                 }
-                tokio::time::sleep(Duration::from_secs(10)).await;
             }
         }
         IdiomRef::insert_many(idiom_refs)

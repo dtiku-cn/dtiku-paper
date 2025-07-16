@@ -1,7 +1,7 @@
 pub use super::_entities::idiom::*;
 use sea_orm::{
-    sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveModelTrait,
-    ActiveValue::Set, ConnectionTrait, DbErr, EntityTrait as _, FromJsonQueryResult,
+    sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
+    ColumnTrait, ConnectionTrait, DbErr, EntityTrait as _, FromJsonQueryResult, QueryFilter,
 };
 use serde::{Deserialize, Serialize};
 use spring::async_trait;
@@ -41,5 +41,15 @@ impl ActiveModel {
             .exec_with_returning(db)
             .await?;
         Self::after_save(model, db, true).await
+    }
+}
+
+impl Entity {
+    pub async fn exists_by_text<C: ConnectionTrait>(db: &C, text: &str) -> anyhow::Result<bool> {
+        Ok(Self::find()
+            .filter(Column::Text.eq(text))
+            .one(db)
+            .await?
+            .is_some())
     }
 }
