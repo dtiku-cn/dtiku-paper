@@ -134,7 +134,13 @@ impl IdiomStatsService {
                 let idioms = ty
                     .regex()
                     .captures_iter(&q.content)
-                    .map(|cap| cap.get(0).unwrap().as_str().trim())
+                    .map(|res| {
+                        let cap = res?; // Result<Captures>
+                        Ok(cap.get(0).map(|m| m.as_str().trim()))
+                    })
+                    .collect::<Result<Vec<_>, fancy_regex::Error>>()?
+                    .into_iter()
+                    .flatten()
                     .collect_vec();
 
                 for idiom in idioms {

@@ -33,6 +33,7 @@ sqlx = { workspace = true, features = ["postgres"] }
 anyhow = { workspace = true }
 futures = { workspace = true }
 regex = { workspace = true }
+fancy-regex = { workspace = true }
 lazy_static = { workspace = true }
 scraper = { workspace = true }
 reqwest = { workspace = true }
