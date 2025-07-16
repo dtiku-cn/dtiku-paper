@@ -143,7 +143,7 @@ impl IdiomService {
             .column(idiom::Column::Text)
             .filter(
                 idiom::Column::Text
-                    .like(search.text)
+                    .starts_with(search.text)
                     .and(idiom::Column::Ty.eq(search.ty)),
             )
             .limit(10)
