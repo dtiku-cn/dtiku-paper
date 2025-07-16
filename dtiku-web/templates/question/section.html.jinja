@@ -84,13 +84,13 @@
             </div>
             <div class="d-flex justify-content-center">
                 <button type="submit" class="btn btn-primary">查询</button>
-                <button id="exam" type="button" class="btn btn-link"
-                    th:if="${user!=null && sectionType?.name()=='together'}"
-                    th:classappend="${sets.isEmpty(paperIds)?'disabled':''}">练习
-                </button>
-                <a class="btn btn-link" th:href="${user==null?'#loginModal':'javascript:window.print()'}"
-                    th:data-toggle="${user==null?'modal':''}"
-                    th:classappend="${sets.isEmpty(paperIds)?'disabled':''}">打印</a>
+                {%if query.section_type == SectionType::Together%}
+                <button id="exam" type="button"
+                    class="btn btn-link {%if papers.is_empty()%}disabled{%endif%}">练习</button>
+                {%endif%}
+                <a class="btn btn-link {%if papers.is_empty()%}disabled{%endif%}"
+                    href="{%if global.user.is_none()%}#loginModal{%else%}javascript:window.print(){%endif%}"
+                    data-toggle="{%if global.user.is_none()%}modal{%endif%}">打印</a>
             </div>
         </form>
     </div>
