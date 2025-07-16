@@ -10,7 +10,6 @@ use spring::{
     app::AppBuilder,
     async_trait,
     config::ConfigRegistry,
-    error::Result,
     plugin::{MutableComponentRegistry, Plugin},
 };
 use tonic::transport::Channel;
@@ -36,7 +35,7 @@ impl Plugin for EmbeddingPlugin {
 pub struct Embedding(EmbeddingServiceClient<Channel>);
 
 impl Embedding {
-    pub async fn text_embedding<S: Into<String>>(&self, text: S) -> Result<Vec<f32>> {
+    pub async fn text_embedding<S: Into<String>>(&self, text: S) -> anyhow::Result<Vec<f32>> {
         let resp = self
             .0
             .clone()
@@ -49,7 +48,7 @@ impl Embedding {
     pub async fn batch_text_embedding<S: Into<String> + Clone>(
         &self,
         texts: &[S],
-    ) -> Result<Vec<Vec<f32>>> {
+    ) -> anyhow::Result<Vec<Vec<f32>>> {
         let batch_size = texts.len() as u32;
         let resp = self
             .0
