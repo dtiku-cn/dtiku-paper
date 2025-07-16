@@ -95,7 +95,7 @@
         </form>
     </div>
 
-    <div id="printcontent" class="paper slide" data-interval="false" th:classappend="${user==null?'d-print-none':''}">
+    <div id="printcontent" class="paper slide {%if global.user.is_none()%}d-print-none{%endif%}" data-interval="false">
         <div class="exam-operator d-none justify-content-center my-2 d-print-none">
             <div class="btn-group">
                 <button class="btn btn-primary" type="button" data-target="#printcontent" data-slide="prev">上一题</button>
