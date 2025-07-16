@@ -63,7 +63,7 @@ impl PaperExtra {
                 let mut start = 1;
                 for c in &cs.chapters {
                     if c.name == arg {
-                        return Some((start, start + c.count));
+                        return Some((start, start + c.count - 1));
                     } else {
                         start += c.count;
                     }
