@@ -13,6 +13,7 @@ use itertools::Itertools;
 use reqwest;
 use reqwest_scraper::{FromCssSelector, ScraperResponse};
 use sea_orm::{sea_query::ExprTrait, ActiveValue::Set, EntityTrait, Iterable};
+use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 
@@ -72,11 +73,16 @@ impl IdiomStatsService {
             .expect("gwy/xingce category found failed")
             .expect("gwy/xingce category id not found");
 
-        self.stats_for_papers(paper_type).await.expect("");
+        self.stats_for_papers(paper_type)
+            .await
+            .expect(&format!("stats idiom for paper_type#{paper_type} failed"));
     }
 
     pub async fn stats_for_papers(&mut self, paper_type: i16) -> anyhow::Result<()> {
-        let mut last_id = 0;
+        let mut last_id = match &self.task.context {
+            Value::Number(last_id) => last_id.as_i64().unwrap_or_default() as i32,
+            _ => 0,
+        };
         loop {
             let papers = Paper::find_by_paper_type_and_id_gt(&self.db, paper_type, last_id)
                 .await
@@ -92,6 +98,7 @@ impl IdiomStatsService {
                     tracing::error!("stats_for_paper_detail({}) error: {:?}", paper_id, e);
                 }
                 last_id = paper_id;
+                self.task = self.task.update_context(last_id, &self.db).await?;
             }
         }
     }

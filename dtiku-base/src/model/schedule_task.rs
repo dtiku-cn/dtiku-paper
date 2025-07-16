@@ -106,6 +106,23 @@ impl Model {
         .context("update progress failed")?;
         Ok(model)
     }
+
+    pub async fn update_context<T, C>(&self, context: T, db: &C) -> anyhow::Result<Model>
+    where
+        T: Serialize,
+        C: ConnectionTrait,
+    {
+        let model = ActiveModel {
+            id: Set(self.id),
+            version: Set(self.version + 1),
+            context: Set(serde_json::to_value(context)?),
+            ..Default::default()
+        }
+        .optimistic_update(db)
+        .await
+        .context("update progress failed")?;
+        Ok(model)
+    }
 }
 
 impl Entity {
