@@ -57,8 +57,21 @@ impl PaperExtra {
         }
     }
 
-    pub fn compute_question_range(&self, arg: &str) -> (i16, i16) {
-        todo!()
+    pub fn compute_question_range(&self, arg: &str) -> Option<(i16, i16)> {
+        match self {
+            Self::Chapters(cs) => {
+                let mut start = 1;
+                for c in &cs.chapters {
+                    if c.name == arg {
+                        return Some((start, start + c.count));
+                    } else {
+                        start += c.count;
+                    }
+                }
+                None
+            }
+            Self::EssayCluster(ec) => None,
+        }
     }
 }
 

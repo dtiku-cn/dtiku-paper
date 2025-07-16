@@ -1,17 +1,23 @@
+use std::time::Duration;
+
+use anyhow::Context as _;
 use dtiku_base::model::schedule_task;
 use dtiku_paper::model::{paper, paper_question, ExamCategory, Paper, PaperQuestion, Question};
-use dtiku_stats::model::{idiom, idiom_ref, sea_orm_active_enums::IdiomType};
+use dtiku_stats::model::{
+    idiom::{self, IdiomExplain as IdiomExplainModel},
+    idiom_ref,
+    sea_orm_active_enums::IdiomType,
+    IdiomRef,
+};
+use itertools::Itertools;
 use reqwest;
 use reqwest_scraper::{FromCssSelector, ScraperResponse};
-use sea_orm::{sea_query::ExprTrait, Iterable};
+use sea_orm::{sea_query::ExprTrait, ActiveValue::Set, EntityTrait, Iterable};
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 
 #[derive(Debug, FromCssSelector)]
-pub struct Idiom {
-    #[selector(path = "#main div.words-details h4>span", default = "<uname>", text)]
-    idiom: String,
-
+pub struct IdiomExplain {
     #[selector(path = "#shiyiDiv", inner_html)]
     shiyi: Option<String>,
 
@@ -28,14 +34,26 @@ pub struct Idiom {
     fyc: Vec<String>,
 }
 
-impl Idiom {
-    pub async fn fetch_explain(idiom: &str) -> anyhow::Result<Self> {
+impl IdiomExplain {
+    pub async fn fetch(idiom: &str) -> anyhow::Result<Self> {
         let html = reqwest::get(format!("https://hanyu.sogou.com/result?query={idiom}"))
             .await?
             .css_selector()
             .await?;
 
         Ok(Self::from_html(html)?)
+    }
+}
+
+impl Into<IdiomExplainModel> for IdiomExplain {
+    fn into(self) -> IdiomExplainModel {
+        IdiomExplainModel {
+            shiyi: self.shiyi.unwrap_or_default(),
+            shiyidetail: self.shiyidetail.unwrap_or_default(),
+            liju: self.liju.unwrap_or_default(),
+            jyc: self.jyc,
+            fyc: self.fyc,
+        }
     }
 }
 
@@ -79,7 +97,11 @@ impl IdiomStatsService {
     }
 
     pub async fn stats_for_paper_detail(&mut self, paper: paper::Model) -> anyhow::Result<()> {
-        let (start, end) = paper.extra.compute_question_range("言语理解");
+        let (start, end) = if let Some(range) = paper.extra.compute_question_range("言语理解") {
+            range
+        } else {
+            return Ok(());
+        };
 
         let qids = PaperQuestion::find_question_ids_by_paper_id_and_sort_between(
             &self.db, paper.id, start, end,
@@ -102,9 +124,43 @@ impl IdiomStatsService {
 
         for q in questions {
             for ty in IdiomType::iter() {
-                // ty.regex()
+                let idioms = ty
+                    .regex()
+                    .captures_iter(&q.content)
+                    .map(|cap| cap.get(0).unwrap().as_str().trim())
+                    .collect_vec();
+
+                for idiom in idioms {
+                    let idiom = idiom::ActiveModel {
+                        text: Set(idiom.to_string()),
+                        ty: Set(ty),
+                        content: Set(IdiomExplain::fetch(idiom).await?.into()),
+                        ..Default::default()
+                    }
+                    .insert_on_conflict(&self.db)
+                    .await
+                    .context("insert idiom failed")?;
+                    idiom_count += 1;
+
+                    idiom_refs.push(idiom_ref::ActiveModel {
+                        ty: Set(idiom.ty),
+                        idiom_id: Set(idiom.id),
+                        question_id: Set(q.id),
+                        paper_id: Set(paper.id),
+                        label_id: Set(paper.label_id),
+                        exam_id: Set(paper.exam_id),
+                        paper_type: Set(paper.paper_type),
+                        ..Default::default()
+                    });
+                }
+
+                tokio::time::sleep(Duration::from_secs(10)).await;
             }
         }
+        IdiomRef::insert_many(idiom_refs)
+            .exec(&self.db)
+            .await
+            .context("insert idiom_refs failed")?;
 
         tracing::info!("paper_id: {}, idiom_count: {}", paper.id, idiom_count);
 

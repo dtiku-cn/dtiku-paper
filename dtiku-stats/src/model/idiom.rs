@@ -1,8 +1,19 @@
 pub use super::_entities::idiom::*;
 use sea_orm::{
-    sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ConnectionTrait, DbErr,
+    sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
+    ConnectionTrait, DbErr, EntityTrait as _, FromJsonQueryResult,
 };
+use serde::{Deserialize, Serialize};
 use spring::async_trait;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+pub struct IdiomExplain {
+    pub shiyi: String,
+    pub shiyidetail: String,
+    pub liju: String,
+    pub jyc: Vec<String>,
+    pub fyc: Vec<String>,
+}
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -15,5 +26,18 @@ impl ActiveModelBehavior for ActiveModel {
         }
         self.modified = Set(Local::now().naive_local());
         Ok(self)
+    }
+}
+
+impl ActiveModel {
+    pub async fn insert_on_conflict<C: ConnectionTrait>(self, db: &C) -> Result<Model, DbErr> {
+        Entity::insert(self)
+            .on_conflict(
+                OnConflict::columns([Column::Text])
+                    .update_columns([Column::Ty, Column::Content, Column::Modified])
+                    .to_owned(),
+            )
+            .exec_with_returning(db)
+            .await
     }
 }
