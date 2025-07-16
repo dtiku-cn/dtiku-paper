@@ -89,7 +89,7 @@ impl IdiomService {
         let idiom_ids = page.content.iter().map(|m| m.id).collect_vec();
         let mut filter = idiom_ref_stats::Column::Ty
             .eq(search.ty)
-            .add(idiom_ref_stats::Column::IdiomId.is_in(idiom_ids));
+            .and(idiom_ref_stats::Column::IdiomId.is_in(idiom_ids));
         if !labels.is_empty() {
             filter = filter.and(idiom_ref_stats::Column::LabelId.is_in(labels));
         }
