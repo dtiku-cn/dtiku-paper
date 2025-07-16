@@ -2,7 +2,9 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use dtiku_base::model::schedule_task;
-use dtiku_paper::model::{paper, paper_question, ExamCategory, Paper, PaperQuestion, Question};
+use dtiku_paper::model::{
+    paper, question::QuestionExtra, ExamCategory, Paper, PaperQuestion, Question,
+};
 use dtiku_stats::model::{
     idiom::{self, IdiomExplain as IdiomExplainModel},
     idiom_ref,
@@ -12,13 +14,20 @@ use dtiku_stats::model::{
 use itertools::Itertools;
 use reqwest;
 use reqwest_scraper::{FromCssSelector, ScraperResponse};
-use sea_orm::{sea_query::ExprTrait, ActiveValue::Set, EntityTrait, Iterable};
+use sea_orm::{ActiveValue::Set, EntityTrait, Iterable};
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 
 #[derive(Debug, FromCssSelector)]
 pub struct IdiomExplain {
+    #[selector(
+        path = "#main div.words-details h4>span",
+        default = "<undefined>",
+        text
+    )]
+    idiom: String,
+
     #[selector(path = "#shiyiDiv", inner_html)]
     shiyi: Option<String>,
 
@@ -131,42 +140,52 @@ impl IdiomStatsService {
 
         for q in questions {
             for ty in IdiomType::iter() {
-                let idioms = ty
-                    .regex()
-                    .captures_iter(&q.content)
-                    .map(|res| {
-                        let cap = res?; // Result<Captures>
-                        Ok(cap.get(0).map(|m| m.as_str().trim()))
-                    })
-                    .collect::<Result<Vec<_>, fancy_regex::Error>>()?
-                    .into_iter()
-                    .flatten()
-                    .collect_vec();
+                match &q.extra {
+                    QuestionExtra::SingleChoice { options }
+                    | QuestionExtra::MultiChoice { options } => {
+                        let options = options.join(" \t");
+                        let idioms = ty
+                            .regex()
+                            .captures_iter(&options)
+                            .map(|res| {
+                                let cap = res?; // Result<Captures>
+                                Ok(cap.get(0).map(|m| m.as_str().trim()))
+                            })
+                            .collect::<Result<Vec<_>, fancy_regex::Error>>()?
+                            .into_iter()
+                            .flatten()
+                            .collect_vec();
 
-                for idiom in idioms {
-                    let idiom = idiom::ActiveModel {
-                        text: Set(idiom.to_string()),
-                        ty: Set(ty),
-                        content: Set(IdiomExplain::fetch(idiom).await?.into()),
-                        ..Default::default()
+                        for idiom in idioms {
+                            let explain = IdiomExplain::fetch(idiom).await?;
+                            if explain.idiom == "<undefined>" {
+                                continue;
+                            }
+                            let idiom = idiom::ActiveModel {
+                                text: Set(idiom.to_string()),
+                                ty: Set(ty),
+                                content: Set(explain.into()),
+                                ..Default::default()
+                            }
+                            .insert_on_conflict(&self.db)
+                            .await
+                            .context("insert idiom failed")?;
+                            idiom_count += 1;
+
+                            idiom_refs.push(idiom_ref::ActiveModel {
+                                ty: Set(idiom.ty),
+                                idiom_id: Set(idiom.id),
+                                question_id: Set(q.id),
+                                paper_id: Set(paper.id),
+                                label_id: Set(paper.label_id),
+                                exam_id: Set(paper.exam_id),
+                                paper_type: Set(paper.paper_type),
+                                ..Default::default()
+                            });
+                        }
                     }
-                    .insert_on_conflict(&self.db)
-                    .await
-                    .context("insert idiom failed")?;
-                    idiom_count += 1;
-
-                    idiom_refs.push(idiom_ref::ActiveModel {
-                        ty: Set(idiom.ty),
-                        idiom_id: Set(idiom.id),
-                        question_id: Set(q.id),
-                        paper_id: Set(paper.id),
-                        label_id: Set(paper.label_id),
-                        exam_id: Set(paper.exam_id),
-                        paper_type: Set(paper.paper_type),
-                        ..Default::default()
-                    });
+                    _ => {}
                 }
-
                 tokio::time::sleep(Duration::from_secs(10)).await;
             }
         }
