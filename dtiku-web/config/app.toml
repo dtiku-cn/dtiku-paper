@@ -11,6 +11,9 @@ logger = { enable = false, level = "${WEB_LOG_LEVEL:info}", override_filter = "$
 [sea-orm]
 uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/empty_tiku}"
 
+[sea-orm-web]
+one_indexed = true
+
 [redis]
 uri = "${REDIS_URL:redis://localhost}"
 
