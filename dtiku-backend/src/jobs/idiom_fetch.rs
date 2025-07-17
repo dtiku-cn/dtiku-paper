@@ -9,12 +9,12 @@ use dtiku_stats::model::{
     idiom::{self, IdiomExplain as IdiomExplainModel},
     idiom_ref,
     sea_orm_active_enums::IdiomType,
-    Idiom, IdiomRef,
+    Idiom,
 };
 use itertools::Itertools;
 use reqwest;
 use reqwest_scraper::{FromCssSelector, ScraperResponse};
-use sea_orm::{ActiveValue::Set, EntityTrait, Iterable};
+use sea_orm::{ActiveValue::Set, Iterable};
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
@@ -28,7 +28,7 @@ pub struct IdiomExplain {
     )]
     idiom: String,
 
-    #[selector(path = "#shiyiDiv", inner_html)]
+    #[selector(path = "#shiyiDiv", text)]
     shiyi: Option<String>,
 
     #[selector(path = "#shiyidetailDiv", inner_html)]
@@ -58,9 +58,8 @@ impl IdiomExplain {
 impl Into<IdiomExplainModel> for IdiomExplain {
     fn into(self) -> IdiomExplainModel {
         IdiomExplainModel {
-            shiyi: self.shiyi.unwrap_or_default(),
-            shiyidetail: self.shiyidetail.unwrap_or_default(),
-            liju: self.liju.unwrap_or_default(),
+            shiyidetail: self.shiyidetail.unwrap_or_default().replace(" ", ""),
+            liju: self.liju.unwrap_or_default().replace(" ", ""),
             jyc: self.jyc,
             fyc: self.fyc,
         }
@@ -165,9 +164,11 @@ impl IdiomStatsService {
                             } else {
                                 tokio::time::sleep(Duration::from_secs(1)).await;
                             }
+                            let main_explain = explain.shiyi.clone();
                             let saved_idiom = idiom::ActiveModel {
                                 text: Set(idiom.to_string()),
                                 ty: Set(ty),
+                                explain: Set(main_explain.unwrap_or_default()),
                                 content: Set(explain.into()),
                                 ..Default::default()
                             }

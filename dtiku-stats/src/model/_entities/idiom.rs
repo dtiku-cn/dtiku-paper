@@ -11,6 +11,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub text: String,
+    pub explain: String,
     pub ty: IdiomType,
     #[sea_orm(column_type = "JsonBinary", nullable)]
     pub content: IdiomExplain,

@@ -1,8 +1,10 @@
 use crate::{
     domain::{IdiomDetail, IdiomRefStatsWithoutLabel, IdiomStats},
     model::{
-        idiom, idiom_ref, idiom_ref_stats, sea_orm_active_enums::IdiomType, Idiom, IdiomRef,
-        IdiomRefStats,
+        idiom::{self, BriefIdiom},
+        idiom_ref, idiom_ref_stats,
+        sea_orm_active_enums::IdiomType,
+        Idiom, IdiomRef, IdiomRefStats,
     },
     query::{IdiomQuery, IdiomSearch},
 };
@@ -46,17 +48,9 @@ impl IdiomService {
 
         let idiom_ids = page.content.iter().map(|m| m.idiom_id).collect_vec();
 
-        let idioms = Idiom::find()
-            .select_only()
-            .column(idiom::Column::Id)
-            .column(idiom::Column::Text)
-            .filter(idiom::Column::Id.is_in(idiom_ids))
-            .into_tuple::<(i32, String)>()
-            .all(&self.db)
-            .await
-            .context("Idiom::find() failed")?;
+        let idioms = Idiom::find_brief_in_ids(&self.db, idiom_ids).await?;
 
-        let id_text_map: HashMap<i32, String> = idioms.into_iter().collect();
+        let id_text_map: HashMap<i32, BriefIdiom> = idioms.into_iter().map(|i| (i.id, i)).collect();
 
         Ok(page.map(|m| m.with_idiom(&id_text_map)))
     }
@@ -106,15 +100,14 @@ impl IdiomService {
         Ok(page.map(|m| IdiomStats::from(id_stats_map.get(&m.id), m)))
     }
 
-    pub async fn get_idiom_detail(&self, idiom_id: i32) -> anyhow::Result<Option<IdiomDetail>> {
-        let idiom = Idiom::find_by_id(idiom_id)
-            .one(&self.db)
+    pub async fn get_idiom_detail(&self, text: &str) -> anyhow::Result<Option<IdiomDetail>> {
+        let idiom = Idiom::find_by_text(&self.db, text)
             .await
             .context("Idiom::get_idiom_detail() failed")?;
 
         if let Some(idiom) = idiom {
             let refs = IdiomRef::find()
-                .filter(idiom_ref::Column::IdiomId.eq(idiom_id))
+                .filter(idiom_ref::Column::IdiomId.eq(idiom.id))
                 .all(&self.db)
                 .await
                 .context("IdiomRef::find() failed")?;

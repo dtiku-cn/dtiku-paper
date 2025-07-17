@@ -79,11 +79,6 @@
                 <b>打印</b>
             </a>
         </header>
-        <div id="fromType" class="text-center">
-            <a th:if="${bools.isTrue(system_showVendor)}" class="btn btn-link" th:each="type : ${allFromType}"
-                th:href="@{/idiom(provinces=${strings.setJoin(provinces,',')},fromType=${type})}"
-                th:data="${type.name()}" th:text="${type.text}" th:classappend="${fromType==type?'active':''}"></a>
-        </div>
         <div class="input-group">
             <input type="text" id="search" placeholder="输入成语进行搜索" value="{%if let Some(t)=req.text%}{{t}}{%endif%}"
                 onkeydown='if(event.keyCode==13){search();}' class="form-control rounded-0"
@@ -92,8 +87,10 @@
                 <button id="submit" type="submit" data-target="#search" class="btn btn-outline-secondary">点我搜索</button>
             </div>
         </div>
-        <p if="${lists.isEmpty(stats)}" class="text-center">没有找到这个成语，尝试换个省份或换个成语进行搜索</p>
-        <table if="${!#lists.isEmpty(stats)}" class="table table-striped idiom-list">
+        {%if page.is_empty()%}
+        <p class="text-center">没有找到这个成语，尝试换个省份或换个成语进行搜索</p>
+        {%else%}
+        <table class="table table-striped idiom-list">
             <thead>
                 <tr>
                     <th class="text-center px-0 py-2" width="{%if model.is_idiom()%}100{%else%}70{%endif%}">
@@ -109,7 +106,7 @@
                     <td class="text-center">
                         <a rel="external nofollow" target="_blank" href="/{{model}}/{{s.text}}">{{s.text}}</a>
                     </td>
-                    <td>${s.explain}</td>
+                    <td>{{s.explain}}</td>
                     <td class="text-center d-none d-md-table-cell">共{{s.question_count}}题</td>
                     <td class="text-center">
                         <a href="/{{model}}/{{s.text}}?lid=${strings.setJoin(provinces,',')}">{{s.paper_count}}</a>
@@ -118,7 +115,7 @@
                 {%endfor%}
             </tbody>
         </table>
-
+        {%endif%}
         {%call elements::pagination(page,"/{{model}}?{{req.to_qs()}}", true)%}
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}

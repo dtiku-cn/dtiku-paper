@@ -3,6 +3,7 @@ create type idiom_type as enum('idiom', 'word');
 create table if not exists idiom(
     id serial primary key,
     text varchar(6) not null,
+    explain varchar(255) not null,
     ty idiom_type not null,
     content jsonb not null,
     created timestamp not null,
@@ -21,6 +22,8 @@ create table if not exists idiom_ref(
     ty idiom_type not null,
     unique(ty, label_id, idiom_id, paper_id, question_id)
 );
+
+create index if not exists idx_idiom_ref_idiom_id on idiom_ref(idiom_id);
 
 create materialized view idiom_ref_stats as
 select

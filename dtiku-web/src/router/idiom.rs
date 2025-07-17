@@ -93,15 +93,15 @@ async fn render_list(
 }
 
 #[routes]
-#[get("/word/{idiom_id}")]
-#[get("/idiom/{idiom_id}")]
+#[get("/word/{text}")]
+#[get("/idiom/{text}")]
 async fn idiom_detail(
     Component(is): Component<IdiomService>,
-    Path(idiom_id): Path<i32>,
+    Path(text): Path<String>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     let idiom = is
-        .get_idiom_detail(idiom_id)
+        .get_idiom_detail(&text)
         .await?
         .ok_or_else(|| KnownWebError::not_found("成语未找到"))?;
 
