@@ -18,10 +18,9 @@ create table if not exists idiom_ref(
     label_id int not null,
     exam_id int2 not null,
     paper_type int2 not null,
-    ty idiom_type not null
+    ty idiom_type not null,
+    unique(ty, label_id, idiom_id, paper_id, question_id)
 );
-
-create index concurrently if not exists idx_idiom_ref_ty_label_id_idiom_id on idiom_ref (ty, label_id, idiom_id);
 
 create materialized view idiom_ref_stats as
 select

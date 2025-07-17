@@ -134,7 +134,6 @@ impl IdiomStatsService {
             return Ok(());
         }
         let mut idiom_count = 0;
-        let mut idiom_refs = Vec::<idiom_ref::ActiveModel>::new();
 
         let questions = Question::find_by_ids(&self.db, qids).await?;
 
@@ -166,7 +165,7 @@ impl IdiomStatsService {
                             } else {
                                 tokio::time::sleep(Duration::from_secs(1)).await;
                             }
-                            let idiom = idiom::ActiveModel {
+                            let saved_idiom = idiom::ActiveModel {
                                 text: Set(idiom.to_string()),
                                 ty: Set(ty),
                                 content: Set(explain.into()),
@@ -177,26 +176,25 @@ impl IdiomStatsService {
                             .context("insert idiom failed")?;
                             idiom_count += 1;
 
-                            idiom_refs.push(idiom_ref::ActiveModel {
-                                ty: Set(idiom.ty),
-                                idiom_id: Set(idiom.id),
+                            idiom_ref::ActiveModel {
+                                ty: Set(saved_idiom.ty),
+                                idiom_id: Set(saved_idiom.id),
                                 question_id: Set(q.id),
                                 paper_id: Set(paper.id),
                                 label_id: Set(paper.label_id),
                                 exam_id: Set(paper.exam_id),
                                 paper_type: Set(paper.paper_type),
                                 ..Default::default()
-                            });
+                            }
+                            .insert_on_conflict(&self.db)
+                            .await
+                            .context("insert idiom failed")?;
                         }
                     }
                     _ => {}
                 }
             }
         }
-        IdiomRef::insert_many(idiom_refs)
-            .exec(&self.db)
-            .await
-            .context("insert idiom_refs failed")?;
 
         tracing::info!("paper_id: {}, idiom_count: {}", paper.id, idiom_count);
 

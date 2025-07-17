@@ -30,14 +30,8 @@ impl IdiomService {
         let page = IdiomRefStats::find()
             .select_only()
             .column(idiom_ref_stats::Column::IdiomId)
-            .column_as(
-                Expr::col(idiom_ref_stats::Column::QuestionCount).sum(),
-                "question_count",
-            )
-            .column_as(
-                Expr::col(idiom_ref_stats::Column::PaperCount).sum(),
-                "paper_count",
-            )
+            .column_as(Expr::cust("SUM(question_count)::BIGINT"), "question_count")
+            .column_as(Expr::cust("SUM(paper_count)::BIGINT"), "paper_count")
             .filter(query.into_condition(ty))
             .group_by(idiom_ref_stats::Column::IdiomId)
             .order_by_desc(Expr::col("question_count"))
@@ -96,14 +90,8 @@ impl IdiomService {
         let stats = IdiomRefStats::find()
             .select_only()
             .column(idiom_ref_stats::Column::IdiomId)
-            .column_as(
-                Expr::col(idiom_ref_stats::Column::QuestionCount).sum(),
-                "question_count",
-            )
-            .column_as(
-                Expr::col(idiom_ref_stats::Column::PaperCount).sum(),
-                "paper_count",
-            )
+            .column_as(Expr::cust("SUM(question_count)::BIGINT"), "question_count")
+            .column_as(Expr::cust("SUM(paper_count)::BIGINT"), "paper_count")
             .filter(filter)
             .group_by(idiom_ref_stats::Column::IdiomId)
             .order_by_desc(Expr::col("question_count"))
