@@ -39,12 +39,11 @@ async fn search_question(
         query.exam_id = Some(EXAM_ID.get());
         qs.search_question(&query).await?
     };
-    let t = QuestionSearchTemplate {
+    Ok(QuestionSearchTemplate {
         global,
         questions,
         query,
-    };
-    Ok(Html(t.render().context("render failed")?))
+    })
 }
 
 #[get("/question/search/image")]
@@ -59,12 +58,11 @@ async fn search_question_by_img(
         query.exam_id = Some(EXAM_ID.get());
         qs.search_question(&query).await?
     };
-    let t = QuestionSearchImgTemplate {
+    Ok(QuestionSearchImgTemplate {
         global,
         questions,
         query,
-    };
-    Ok(Html(t.render().context("render failed")?))
+    })
 }
 
 #[get("/question/section")]
@@ -76,15 +74,14 @@ async fn question_section(
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     if query.paper_ids.is_empty() {
-        let t = QuestionSectionTemplate {
+        return Ok(QuestionSectionTemplate {
             global,
             papers: vec![],
             questions: vec![],
             label_tree: LabelTree::none(),
             query: query.0,
             kp_paths: vec![],
-        };
-        return Ok(Html(t.render().context("render failed")?));
+        });
     }
     query
         .validate()
@@ -100,15 +97,14 @@ async fn question_section(
         .await?;
     let label_tree = ls.find_all_label_by_paper_type(query.paper_type).await?;
     let (questions, papers) = qs.search_question_by_section(&query).await?;
-    let t = QuestionSectionTemplate {
+    Ok(QuestionSectionTemplate {
         global,
         papers,
         questions,
         label_tree,
         query: query.0,
         kp_paths,
-    };
-    Ok(Html(t.render().context("render failed")?))
+    })
 }
 
 #[get("/question/recommend/{id}")]

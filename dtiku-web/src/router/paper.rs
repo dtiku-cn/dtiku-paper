@@ -53,8 +53,9 @@ async fn list_paper(
     };
     let label = label_tree.get_label(query.label_id);
     let list = ps.find_paper_by_query(&query).await?;
-    let t = ListPaperTemplate::new(global, query, label_tree, paper_type, label, list);
-    Ok(Html(t.render().context("render failed")?))
+    Ok(ListPaperTemplate::new(
+        global, query, label_tree, paper_type, label, list,
+    ))
 }
 
 #[get("/paper/{id}")]

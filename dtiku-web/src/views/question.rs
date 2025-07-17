@@ -1,5 +1,6 @@
 use super::GlobalVariables;
 use askama::Template;
+use askama_web::WebTemplate;
 use dtiku_paper::{
     domain::{keypoint::KeyPointPath, label::LabelTree, question::QuestionSearch},
     model::{
@@ -10,7 +11,7 @@ use dtiku_paper::{
 };
 use strum::IntoEnumIterator;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "question/search.html.min.jinja")]
 pub struct QuestionSearchTemplate {
     pub global: GlobalVariables,
@@ -18,7 +19,7 @@ pub struct QuestionSearchTemplate {
     pub query: QuestionSearch,
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "question/search-img.html.min.jinja")]
 pub struct QuestionSearchImgTemplate {
     pub global: GlobalVariables,
@@ -26,7 +27,7 @@ pub struct QuestionSearchImgTemplate {
     pub query: QuestionSearch,
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "question/section.html.min.jinja")]
 pub struct QuestionSectionTemplate {
     pub global: GlobalVariables,
@@ -37,14 +38,14 @@ pub struct QuestionSectionTemplate {
     pub kp_paths: Vec<KeyPointPath>,
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "question/detail.html.min.jinja")]
 pub struct QuestionDetailTemplate {
     pub global: GlobalVariables,
     pub question: QuestionWithPaper,
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "question/only-comment.html.min.jinja")]
 pub struct OnlyCommentTemplate {
     pub global: GlobalVariables,

@@ -8,14 +8,13 @@ use crate::{
     },
 };
 use anyhow::Context;
-use askama::Template;
 use dtiku_bbs::model::{issue, IssueQuery};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, ActiveValue::Unchanged};
 use spring_sea_orm::{pagination::Pagination, DbConn};
 use spring_web::{
     axum::{
-        response::{Html, IntoResponse, Redirect},
+        response::{IntoResponse, Redirect},
         Extension, Form,
     },
     error::{KnownWebError, Result},
@@ -31,21 +30,19 @@ async fn list_issue(
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     let page = is.search(&query, &pagination).await?;
-    let t = ListIssueTemplate {
+    Ok(ListIssueTemplate {
         global,
         page,
         query,
-    };
-    Ok(Html(t.render().context("render failed")?))
+    })
 }
 
 #[get("/bbs/issue")]
-async fn new_issue(Extension(global): Extension<GlobalVariables>) -> Result<impl IntoResponse> {
-    let t = IssueEditorTemplate {
+async fn new_issue(Extension(global): Extension<GlobalVariables>) -> impl IntoResponse {
+    IssueEditorTemplate {
         global,
         issue: None,
-    };
-    Ok(Html(t.render().context("render failed")?))
+    }
 }
 
 #[get("/bbs/issue/{id}/edit")]
@@ -58,11 +55,10 @@ async fn edit_issue(
         .find_issue_by_id(id)
         .await?
         .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?;
-    let t = IssueEditorTemplate {
+    Ok(IssueEditorTemplate {
         global,
         issue: Some(issue),
-    };
-    Ok(Html(t.render().context("render failed")?))
+    })
 }
 
 #[post("/bbs/issue")]
@@ -96,8 +92,7 @@ async fn issue_detail(
         .await?
         .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?;
 
-    let t = IssueTemplate { global, issue };
-    Ok(Html(t.render().context("render failed")?))
+    Ok(IssueTemplate { global, issue })
 }
 
 #[post("/bbs/issue/{id}")]

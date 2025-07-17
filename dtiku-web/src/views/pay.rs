@@ -1,17 +1,18 @@
 use super::GlobalVariables;
 use askama::Template;
+use askama_web::WebTemplate;
 use dtiku_pay::model::OrderLevel;
 use dtiku_pay::model::PayFrom;
 use strum::IntoEnumIterator;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "pay-trade-create.html.jinja")]
 pub struct PayTradeCreateTemplate {
     pub global: GlobalVariables,
     pub user_id: i32,
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "pay-redirect.html.jinja")]
 pub struct PayRedirectTemplate {
     pub global: GlobalVariables,

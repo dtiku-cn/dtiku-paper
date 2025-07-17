@@ -1,12 +1,13 @@
 use super::GlobalVariables;
 use askama::Template;
+use askama_web::WebTemplate;
 use dtiku_paper::model::question::QuestionExtra;
 use dtiku_paper::{
     domain::keypoint::KeyPointTree,
     model::{question::QuestionWithPaper, question_keypoint_stats},
 };
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "shenlun-category.html.min.jinja")]
 pub struct ShenlunCategoryTemplate {
     pub global: GlobalVariables,

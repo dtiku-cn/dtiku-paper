@@ -2,13 +2,14 @@ use super::GlobalVariables;
 use super::PageExt;
 use crate::plugins::grpc_client::artalk::VoteStats;
 use askama::Template;
+use askama_web::WebTemplate;
 use chrono::NaiveDateTime;
 use dtiku_base::model::user_info;
 use dtiku_bbs::model::{issue, IssueQuery, TopicType};
 use spring_sea_orm::pagination::Page;
 use strum::IntoEnumIterator;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "issue/list.html.min.jinja")]
 pub struct ListIssueTemplate {
     pub global: GlobalVariables,
@@ -65,14 +66,14 @@ impl FullIssue {
     }
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "issue/issue.html.min.jinja")]
 pub struct IssueTemplate {
     pub global: GlobalVariables,
     pub issue: FullIssue,
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "issue/issue-editor.html.min.jinja")]
 pub struct IssueEditorTemplate {
     pub global: GlobalVariables,

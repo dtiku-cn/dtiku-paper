@@ -6,14 +6,9 @@ use crate::{
         GlobalVariables,
     },
 };
-use anyhow::Context;
-use askama::Template;
 use dtiku_pay::service::pay_order::PayOrderService;
 use spring_web::{
-    axum::{
-        response::{Html, IntoResponse},
-        Extension, Form,
-    },
+    axum::{response::IntoResponse, Extension, Form},
     error::{KnownWebError, Result},
     extractor::Component,
     get, post,
@@ -24,11 +19,10 @@ async fn render_pay(
     claims: Claims,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    let t = PayTradeCreateTemplate {
+    Ok(PayTradeCreateTemplate {
         global,
         user_id: claims.user_id,
-    };
-    Ok(Html(t.render().context("render failed")?))
+    })
 }
 
 #[post("/pay/create")]
@@ -42,12 +36,11 @@ async fn create_trade(
         .create_order(claims.user_id, trade.level, trade.pay_from)
         .await?
         .ok_or_else(|| KnownWebError::internal_server_error("支付码生成失败"))?;
-    let t = PayRedirectTemplate {
+    Ok(PayRedirectTemplate {
         global,
         qrcode_url,
         pay_from: trade.pay_from,
-    };
-    Ok(Html(t.render().context("render failed")?))
+    })
 }
 
 #[post("/pay/alipay/callback")]

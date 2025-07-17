@@ -5,8 +5,6 @@ use crate::{
         GlobalVariables,
     },
 };
-use anyhow::Context;
-use askama::Template;
 use axum_extra::extract::Query;
 use dtiku_paper::{domain::label::LabelTree, service::label::LabelService};
 use dtiku_stats::{
@@ -54,9 +52,7 @@ async fn list_word(
     page: Pagination,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
-    Ok(Html(
-        render_list(&ls, &is, IdiomType::Word, global, req, page).await?,
-    ))
+    Ok(render_list(&ls, &is, IdiomType::Word, global, req, page).await?)
 }
 
 async fn render_list(
@@ -66,7 +62,7 @@ async fn render_list(
     global: GlobalVariables,
     req: IdiomReq,
     page: Pagination,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<ListIdiomTemplate> {
     let label_tree = match global.get_paper_type_by_prefix("xingce") {
         Some(paper_type) => ls.find_all_label_by_paper_type(paper_type.id).await?,
         None => LabelTree::none(),
@@ -82,14 +78,13 @@ async fn render_list(
         };
         is.get_idiom_stats(ty, &query).await?
     };
-    let t = ListIdiomTemplate {
+    Ok(ListIdiomTemplate {
         global,
         model: ty,
         label_tree,
         req: origin_req,
         page,
-    };
-    t.render().context("render failed")
+    })
 }
 
 #[routes]
@@ -105,6 +100,5 @@ async fn idiom_detail(
         .await?
         .ok_or_else(|| KnownWebError::not_found("成语未找到"))?;
 
-    let t = IdiomDetailTemplate { global, idiom };
-    Ok(Html(t.render().context("render failed")?))
+    Ok(IdiomDetailTemplate { global, idiom })
 }

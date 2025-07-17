@@ -21,6 +21,7 @@ dtiku-bbs = { path = "../dtiku-bbs", version = "0.0.1" }
 dtiku-pay = { path = "../dtiku-pay", version = "0.0.1" }
 dtiku-stats = { path = "../dtiku-stats", version = "0.0.1" }
 askama = { workspace = true, features = ["serde_json"] }
+askama_web = { workspace = true, features = ["axum-0.8"] }
 anyhow = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }

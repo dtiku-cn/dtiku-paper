@@ -1,9 +1,10 @@
 use super::GlobalVariables;
 use askama::Template;
+use askama_web::WebTemplate;
 use dtiku_paper::model::paper;
 use dtiku_stats::domain::IdiomStats;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "home.html.min.jinja")]
 pub struct HomeTemplate {
     pub global: GlobalVariables,

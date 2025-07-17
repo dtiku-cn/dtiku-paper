@@ -1,16 +1,11 @@
 use crate::views::{home::HomeTemplate, GlobalVariables};
-use anyhow::Context;
-use askama::Template;
 use dtiku_paper::{model::paper, service::paper::PaperService};
 use dtiku_stats::{
     model::sea_orm_active_enums::IdiomType, query::IdiomQuery, service::idiom::IdiomService,
 };
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
-    axum::{
-        response::{Html, IntoResponse},
-        Extension,
-    },
+    axum::{response::IntoResponse, Extension},
     error::Result,
     extractor::Component,
     get,
@@ -30,14 +25,13 @@ async fn home(
     let shenlun = get_papers(&ps, &global, "shenlun").await?;
     let idioms = is.get_idiom_stats(IdiomType::Idiom, query).await?;
     let words = is.get_idiom_stats(IdiomType::Word, query).await?;
-    let t = HomeTemplate {
+    Ok(HomeTemplate {
         global,
         xingce,
         shenlun,
         idioms: idioms.content,
         words: words.content,
-    };
-    Ok(Html(t.render().context("render failed")?))
+    })
 }
 
 async fn get_papers(

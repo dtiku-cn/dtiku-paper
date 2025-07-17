@@ -2,6 +2,7 @@ use super::GlobalVariables;
 use super::PageExt;
 use crate::query::idiom::IdiomReq;
 use askama::Template;
+use askama_web::WebTemplate;
 use dtiku_paper::domain::label::LabelTree;
 use dtiku_stats::{
     domain::{IdiomDetail, IdiomStats},
@@ -10,7 +11,7 @@ use dtiku_stats::{
 use spring_sea_orm::pagination::Page;
 use strum::IntoEnumIterator;
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "list-idiom.html.min.jinja")]
 pub struct ListIdiomTemplate {
     pub global: GlobalVariables,
@@ -20,7 +21,7 @@ pub struct ListIdiomTemplate {
     pub page: Page<IdiomStats>,
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "idiom.html.min.jinja")]
 pub struct IdiomDetailTemplate {
     pub global: GlobalVariables,

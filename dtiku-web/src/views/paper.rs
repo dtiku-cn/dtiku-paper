@@ -1,5 +1,6 @@
 use super::{GlobalVariables, IntoTemplate};
 use askama::Template;
+use askama_web::WebTemplate;
 use dtiku_paper::domain::paper::PaperMode;
 use dtiku_paper::domain::question::FullQuestion;
 use dtiku_paper::model::question::QuestionExtra;
@@ -24,7 +25,7 @@ pub struct PaperType {
     pub from_ty: FromType,
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "list-paper.html.min.jinja")]
 pub struct ListPaperTemplate {
     pub global: GlobalVariables,
@@ -65,7 +66,7 @@ impl ListPaperTemplate {
     }
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "paper.html.min.jinja")]
 pub struct ChapterPaperTemplate {
     pub global: GlobalVariables,
@@ -74,7 +75,7 @@ pub struct ChapterPaperTemplate {
     pub questions: Vec<FullQuestion>,
 }
 
-#[derive(Template)]
+#[derive(Template, WebTemplate)]
 #[template(path = "cluster-paper.html.min.jinja")]
 pub struct ClusterPaperTemplate {
     pub global: GlobalVariables,

@@ -1,16 +1,11 @@
 use crate::views::{shenlun_category::ShenlunCategoryTemplate, GlobalVariables};
-use anyhow::Context;
-use askama::Template;
 use dtiku_paper::{
     domain::keypoint::KeyPointTree,
     service::{keypoint::KeyPointService, question::QuestionService},
 };
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
-    axum::{
-        response::{Html, IntoResponse},
-        Extension,
-    },
+    axum::{response::IntoResponse, Extension},
     error::Result,
     extractor::{Component, Path},
     get,
@@ -74,7 +69,7 @@ async fn inner_shenlun_category(
     let years = kps.find_year_stats_for_category(kp_id).await?;
     let qids = kps.find_qid_by_kp(kp_id, year, page).await?;
     let questions = qs.full_question_by_ids(qids).await?;
-    let t = ShenlunCategoryTemplate {
+    Ok(ShenlunCategoryTemplate {
         global,
         kp_tree,
         kp_pid,
@@ -82,6 +77,5 @@ async fn inner_shenlun_category(
         year,
         years,
         questions,
-    };
-    Ok(Html(t.render().context("render failed")?))
+    })
 }
