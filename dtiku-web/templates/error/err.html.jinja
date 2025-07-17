@@ -46,7 +46,7 @@
         window.addEventListener('load', function () {
             var config = Object.assign({
                 el: '#artalk-comments',
-                server: 'https://{{original_host}}',
+                server: 'https://artalk.dtiku.cn',
                 avatarURLBuilder: (c) => `https://{{original_host}}/user/comment/${c.id}/avatar`,
                 imgUploader: async (f) => {
                     const form = new FormData()
