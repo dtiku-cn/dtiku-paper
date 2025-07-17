@@ -1,5 +1,6 @@
-use crate::plugins::grpc_client::artalk::VoteStats;
 use super::GlobalVariables;
+use super::PageExt;
+use crate::plugins::grpc_client::artalk::VoteStats;
 use askama::Template;
 use chrono::NaiveDateTime;
 use dtiku_base::model::user_info;

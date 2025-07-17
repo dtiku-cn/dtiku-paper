@@ -1,4 +1,5 @@
 use super::GlobalVariables;
+use super::PageExt;
 use crate::query::idiom::IdiomReq;
 use askama::Template;
 use dtiku_paper::domain::label::LabelTree;

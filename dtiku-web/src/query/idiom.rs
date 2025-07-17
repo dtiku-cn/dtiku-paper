@@ -1,3 +1,5 @@
+use dtiku_stats::model::sea_orm_active_enums::IdiomType;
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct IdiomReq {
     pub text: Option<String>,
@@ -6,6 +8,10 @@ pub struct IdiomReq {
 }
 
 impl IdiomReq {
+    pub fn build_url(&self, model: &IdiomType) -> String {
+        format!("/{model}?{}", self.to_qs())
+    }
+
     pub fn to_qs(&self) -> String {
         serde_html_form::to_string(self).ok().unwrap_or_default()
     }

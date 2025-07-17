@@ -5,6 +5,7 @@ use chrono::{Datelike, NaiveDateTime};
 use dtiku_base::{model::user_info, service};
 use dtiku_paper::domain::exam_category::ExamPaperType;
 use paper::PaperType;
+use spring_sea_orm::pagination::Page;
 use spring_web::axum::http::{StatusCode, Uri};
 
 pub mod bbs;
@@ -15,6 +16,21 @@ pub mod pay;
 pub mod question;
 pub mod shenlun_category;
 pub mod user;
+
+pub trait PageExt {
+    fn prev_qs(&self) -> String;
+    fn next_qs(&self) -> String;
+}
+
+impl<T> PageExt for Page<T> {
+    fn prev_qs(&self) -> String {
+        format!("page={}&size={}", self.page, self.size)
+    }
+
+    fn next_qs(&self) -> String {
+        format!("page={}&size={}", self.page + 2, self.size)
+    }
+}
 
 pub trait IntoTemplate<T> {
     fn to_template(self, global: GlobalVariables) -> T;
@@ -36,7 +52,9 @@ impl GlobalVariables {
     pub fn append_params(&self, url: &str, query_str: &str) -> String {
         let mut url = String::from(url);
         if url.contains("?") {
-            url.push('&');
+            if !url.ends_with("?") {
+                url.push('&');
+            }
             url.push_str(query_str)
         } else {
             url.push('?');

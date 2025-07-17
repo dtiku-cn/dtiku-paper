@@ -19,21 +19,23 @@
 <nav>
     <ul class="pagination justify-content-center">
         <li class="{%if page.is_first()%}disabled page-item{%else%}page-item{%endif%}">
-            <a class="page-link"
-                href='{{global.append_params(url,"page={page.page}&size={page.size}")}}'><span>←</span>上一页</a>
+            <a class="page-link" href='{{global.append_params(url,&page.prev_qs())}}'><span>←</span>上一页</a>
         </li>
         {% if selectable %}
         <li>
             <select class="page-selector custom-select rounded-0 border-left-0 border-right-0">
                 {%for p in global.range(page.total_pages)%}
-                <option value="{{p}}" selected="{{p==page.page+1}}">{{p}}</option>
+                {%if p==page.page+1%}
+                <option value="{{p}}" selected>{{p}}</option>
+                {%else%}
+                <option value="{{p}}">{{p}}</option>
+                {%endif%}
                 {%endfor%}
             </select>
         </li>
         {%endif%}
         <li class="{%if page.is_last()%}disabled page-item{%else%}page-item{%endif%}">
-            <a class="page-link"
-                href='{{global.append_params(url,"page={page.page+2}&size={page.size}")}}'>下一页<span>→</span></a>
+            <a class="page-link" href='{{global.append_params(url,&page.next_qs())}}'>下一页<span>→</span></a>
         </li>
     </ul>
     <p class="text-center">{{page.page+1}} / {{page.total_pages}}</p>

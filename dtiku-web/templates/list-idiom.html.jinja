@@ -116,7 +116,7 @@
             </tbody>
         </table>
         {%endif%}
-        {%call elements::pagination(page,"/{{model}}?{{req.to_qs()}}", true)%}
+        {%call elements::pagination(page, req.build_url(model), true)%}
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
