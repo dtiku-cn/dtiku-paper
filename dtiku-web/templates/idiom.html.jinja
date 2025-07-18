@@ -75,7 +75,7 @@
                 </td>
             </tr>
             {%endfor%}
-            {%if idiom.other_jyc().is_empty() %}
+            {%if !idiom.other_jyc().is_empty() %}
             <tr>
                 <td colspan="3" class="p-3">
                     {%for t in idiom.other_jyc()%}
@@ -109,7 +109,7 @@
                 </td>
             </tr>
             {%endfor%}
-            {%if idiom.other_fyc().is_empty() %}
+            {%if !idiom.other_fyc().is_empty() %}
             <tr>
                 <td colspan="3" class="p-3">
                     {%for t in idiom.other_fyc()%}
