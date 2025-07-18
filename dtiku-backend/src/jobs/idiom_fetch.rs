@@ -103,6 +103,7 @@ impl IdiomStatsService {
             Value::Number(last_id) => last_id.as_i64().unwrap_or_default() as i32,
             _ => 0,
         };
+        tracing::warn!("stats_for_papers({paper_type}) started");
         loop {
             let papers = Paper::find_by_paper_type_and_id_gt(&self.db, paper_type, last_id)
                 .await
