@@ -1,7 +1,5 @@
-use std::time::Duration;
-
 use anyhow::Context as _;
-use dtiku_base::model::schedule_task;
+use dtiku_base::model::{schedule_task, ScheduleTask};
 use dtiku_paper::model::{
     paper, question::QuestionExtra, ExamCategory, Paper, PaperQuestion, Question,
 };
@@ -14,10 +12,11 @@ use dtiku_stats::model::{
 use itertools::Itertools;
 use reqwest;
 use reqwest_scraper::{FromCssSelector, ScraperResponse};
-use sea_orm::{ActiveValue::Set, Iterable};
+use sea_orm::{ActiveValue::Set, EntityTrait, Iterable};
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
+use std::time::Duration;
 
 #[derive(Debug, FromCssSelector)]
 pub struct IdiomExplain {
@@ -84,6 +83,19 @@ impl IdiomStatsService {
         self.stats_for_papers(paper_type)
             .await
             .expect(&format!("stats idiom for paper_type#{paper_type} failed"));
+
+        let _ = ScheduleTask::update(schedule_task::ActiveModel {
+            id: Set(self.task.id),
+            version: Set(self.task.version + 1),
+            active: Set(false),
+            ..Default::default()
+        })
+        .exec(&self.db)
+        .await
+        .is_err_and(|e| {
+            tracing::error!("update task error: {:?}", e);
+            false
+        });
     }
 
     pub async fn stats_for_papers(&mut self, paper_type: i16) -> anyhow::Result<()> {
@@ -97,6 +109,7 @@ impl IdiomStatsService {
                 .expect("find_by_paper_type_and_id_gt failed");
 
             if papers.is_empty() {
+                tracing::warn!("stats_for_papers({paper_type}) finished");
                 return Ok(());
             }
 
