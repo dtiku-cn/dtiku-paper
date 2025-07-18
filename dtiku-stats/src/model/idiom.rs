@@ -16,7 +16,7 @@ pub struct IdiomExplain {
     pub fyc: Vec<String>,
 }
 
-#[derive(Clone, Debug, DerivePartialModel, FromQueryResult)]
+#[derive(Clone, Debug, DerivePartialModel, FromQueryResult, Serialize, Deserialize)]
 #[sea_orm(entity = "Entity")]
 pub struct BriefIdiom {
     #[sea_orm(from_col = "id")]
@@ -62,6 +62,20 @@ impl Entity {
         text: &str,
     ) -> anyhow::Result<Option<Model>> {
         Ok(Self::find().filter(Column::Text.eq(text)).one(db).await?)
+    }
+
+    pub async fn find_by_texts<C: ConnectionTrait>(
+        db: &C,
+        texts: Vec<String>,
+    ) -> anyhow::Result<Vec<BriefIdiom>> {
+        Entity::find()
+            .select_only()
+            .columns([Column::Id, Column::Text, Column::Explain])
+            .filter(Column::Text.is_in(texts))
+            .into_partial_model::<BriefIdiom>()
+            .all(db)
+            .await
+            .context("Idiom::find_by_texts() failed")
     }
 
     pub async fn find_brief_in_ids<C: ConnectionTrait>(

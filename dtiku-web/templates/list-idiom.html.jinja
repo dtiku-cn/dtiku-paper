@@ -109,7 +109,7 @@
                     <td>{{s.explain}}</td>
                     <td class="text-center d-none d-md-table-cell">共{{s.question_count}}题</td>
                     <td class="text-center">
-                        <a href="/{{model}}/{{s.text}}?lid=${strings.setJoin(provinces,',')}">{{s.paper_count}}</a>
+                        <a href="/{{model}}/{{s.text}}?{{req.to_qs()}}">{{s.paper_count}}</a>
                     </td>
                 </tr>
                 {%endfor%}

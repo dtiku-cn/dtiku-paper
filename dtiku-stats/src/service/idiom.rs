@@ -106,13 +106,16 @@ impl IdiomService {
             .context("Idiom::get_idiom_detail() failed")?;
 
         if let Some(idiom) = idiom {
+            let jyc = Idiom::find_by_texts(&self.db, idiom.content.jyc.clone()).await?;
+            let fyc = Idiom::find_by_texts(&self.db, idiom.content.fyc.clone()).await?;
+
             let refs = IdiomRef::find()
                 .filter(idiom_ref::Column::IdiomId.eq(idiom.id))
                 .all(&self.db)
                 .await
                 .context("IdiomRef::find() failed")?;
 
-            Ok(Some(IdiomDetail::new(idiom, refs)))
+            Ok(Some(IdiomDetail::new(idiom, refs, jyc, fyc)))
         } else {
             Ok(None)
         }

@@ -1,6 +1,8 @@
 {%- import "macros/general.html.min.jinja" as general -%}
 {%- import "macros/artalk.html.min.jinja" as artalk -%}
 {%- import "macros/elements.html.min.jinja" as elements -%}
+{%- import "macros/painter.html.min.jinja" as painter -%}
+{%- import "macros/question.html.min.jinja" as question -%}
 <!doctype html>
 <html lang="zh">
 
@@ -39,7 +41,7 @@
     {% call general::header() %}
     <h1 id="idiom-{{idiom.detail.id}}" title="{{idiom.detail.text}}" class="text-center">
         <a rel="external nofollow" target="_blank"
-            href="'http://dict.baidu.com/s?wd='+${idiom.idiom.text}">{{idiom.detail.text}}</a>
+            href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">{{idiom.detail.text}}</a>
     </h1>
     <div class="m-4 text-muted">{{idiom.detail.explain}}</div>
 
@@ -58,17 +60,18 @@
                 <th class="py-2" th:classappend="${lists.isEmpty(idiom.synonym)?'d-none':''}">释义</th>
                 <th class="text-center px-0 py-2" th:classappend="${lists.isEmpty(idiom.synonym)?'d-none':''}">真题</th>
             </tr>
-            <tr th:each="s : ${idiom.synonym}">
+            {%for s in idiom.jyc%}
+            <tr>
                 <td class="text-center px-0">
                     <a rel="external nofollow" target="_blank"
-                        th:href="'https://dict.baidu.com/s?ptype=zici&wd='+${s.text}" th:text="${s.text}"></a>
+                        href="https://hanyu.sogou.com/result?query={{s.text}}">{{s.text}}</a>
                 </td>
-                <td th:utext="${s.explain}"></td>
+                <td>{{s.explain}}</td>
                 <td class="text-center px-0">
-                    <a th:href="'/idiom/'+${s.text}+'?provinces='+${strings.setJoin(provinces,',')}+'&fromType='+${strings.defaultString(fromType,'')}"
-                        th:text="${s.paperFrequency}"></a>
+                    <a href="/{{idiom.detail.ty}}/{{s.text}}?">{s.paperFrequency}</a>
                 </td>
             </tr>
+            {%endfor%}
             <tr th:if="${!#lists.isEmpty(idiom.otherSynonym)}">
                 <td colspan="3" class="p-3">
                     <a class="mr-2" rel="external nofollow" target="_blank" th:each="t : ${idiom.otherSynonym}"
@@ -86,18 +89,19 @@
                 <th class="py-2" th:classappend="${lists.isEmpty(idiom.antonym)?'d-none':''}">释义</th>
                 <th class="text-center px-0 py-2" th:classappend="${lists.isEmpty(idiom.antonym)?'d-none':''}">真题</th>
             </tr>
-            <tr th:each="s : ${idiom.antonym}">
+            {%for s in idiom.fyc%}
+            <tr>
                 <td class="text-center px-0">
                     <a rel="external nofollow" target="_blank"
-                        th:href="'https://dict.baidu.com/s?ptype=zici&wd='+${s.text}" th:text="${s.text}"></a>
+                        href="'https://dict.baidu.com/s?ptype=zici&wd='+${s.text}">{{s.text}}</a>
                 </td>
-                <td th:utext="${s.explain}"></td>
+                <td>{{s.explain}}</td>
                 <td class="text-center px-0">
                     <a rel="external nofollow" target="_blank"
-                        th:href="'/idiom/'+${s.text}+'?provinces='+${strings.setJoin(provinces,',')}+'&fromType='+${strings.defaultString(fromType,'')}"
-                        th:text="${s.paperFrequency}"></a>
+                        href="'/idiom/'+${s.text}+'?provinces='+${strings.setJoin(provinces,',')}+'&fromType='+${strings.defaultString(fromType,'')}">{s.paperFrequency}</a>
                 </td>
             </tr>
+            {%endfor%}
             <tr th:if="${!#lists.isEmpty(idiom.otherAntonym)}">
                 <td colspan="3" class="p-3">
                     <a class="mr-2" rel="external nofollow" target="_blank" th:each="t : ${idiom.otherAntonym}"
@@ -128,35 +132,33 @@
                 <th>真题试卷</th>
                 <th class="text-center px-0" style="width:5em">题号</th>
             </tr>
-            <th:block th:each="r : ${idiom.refs}">
-                <tr th:id="|q-${r.question.id}|">
-                    <td class="p-1">
-                        <img class="vendor-icon" rel="external nofollow noreferrer"
-                            th:if="${bools.isTrue(system_showVendor)}" th:src="${r.refPaper.fromType.iconUrl()}"
-                            th:alt="${r.refPaper.fromType.name()}" />
-                        <a th:href="'/paper/'+${r.refPaper.id}+'#q-'+${r.question.number}"
-                            th:text="${r.refPaper.title}"></a>
-                    </td>
-                    <td class="text-center px-0 py-1">
-                        <a class="btn btn-link dropdown-toggle" role="button" data-toggle="collapse"
-                            th:href="'#idiom-ref'+${r.ref.id}" th:text="|第${r.question.number}题|"></a>
-                    </td>
-                </tr>
-                <tr class="well collapse bg-light" th:id="'idiom-ref'+${r.ref.id}">
-                    <td colspan="2" class="question-wrapper"
-                        th:include="fragments/question::xingce_question(${r.question})"></td>
-                </tr>
-            </th:block>
+            {%for r in idiom.refs%}
+            <tr id="q-{r.question.id}">
+                <td class="p-1">
+                    <img class="vendor-icon" rel="external nofollow noreferrer"
+                        th:if="${bools.isTrue(system_showVendor)}" th:src="${r.refPaper.fromType.iconUrl()}"
+                        th:alt="${r.refPaper.fromType.name()}" />
+                    <a href="'/paper/'+${r.refPaper.id}+'#q-'+${r.question.number}">{r.refPaper.title}</a>
+                </td>
+                <td class="text-center px-0 py-1">
+                    <a class="btn btn-link dropdown-toggle" role="button" data-toggle="collapse"
+                        href="#idiom-ref-{r.ref.id}">第{r.question.number}题</a>
+                </td>
+            </tr>
+            <tr class="well collapse bg-light" id="idiom-ref-{r.ref.id}">
+                <td colspan="2" class="question-wrapper"
+                    th:include="fragments/question::xingce_question(${r.question})"></td>
+            </tr>
+            {%endfor%}
         </table>
     </div>
-    <th:block th:include="fragments/waline-comment::waline_comments(true,true,true,true,null)" />
-    <th:block th:include="fragments/general::footer" />
-    <th:block th:replace="fragments/painter::painter" />
-    <script th:replace="fragments/question::answer-collapse-action"></script>
+    {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
+    {% call general::footer() %}
+    {% call painter::painter() %}
+    {% call question::answer_collapse_action() %}
     <script>
-        var d = [(${@thymeleafUtils.toJSON(idiom.duplicate) })];
-
         $(function () {
+            var d = "";
             $("#unique-question").click(function () {
                 var val = $(this).is(':checked');
                 for (var qid of d) {

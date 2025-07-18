@@ -53,13 +53,22 @@ impl IdiomStats {
 pub struct IdiomDetail {
     pub detail: idiom::Model,
     pub refs: Vec<PaperQuestionRef>,
+    pub jyc: Vec<BriefIdiom>,
+    pub fyc: Vec<BriefIdiom>,
 }
 
 impl IdiomDetail {
-    pub(crate) fn new(detail: idiom::Model, refs: Vec<crate::model::idiom_ref::Model>) -> Self {
+    pub(crate) fn new(
+        detail: idiom::Model,
+        refs: Vec<crate::model::idiom_ref::Model>,
+        jyc: Vec<BriefIdiom>,
+        fyc: Vec<BriefIdiom>,
+    ) -> Self {
         Self {
             detail,
             refs: vec![],
+            jyc,
+            fyc,
         }
     }
 }
