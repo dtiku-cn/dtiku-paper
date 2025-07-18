@@ -46,7 +46,7 @@
     <div class="m-4 text-muted">{{idiom.detail.explain}}</div>
     {%if !idiom.detail.content.liju.is_empty()%}
     <h3>例句</h3>
-    <div class="m-4 text-muted">{{idiom.detail.content.liju}}</div>
+    <div class="m-4 text-muted">{{idiom.detail.content.liju | safe}}</div>
     {%endif%}
     {%if !idiom.detail.content.jyc.is_empty() && !idiom.detail.content.fyc.is_empty() %}
     <div class="card mb-3">
@@ -75,14 +75,18 @@
                 </td>
             </tr>
             {%endfor%}
-            <tr th:if="${!#lists.isEmpty(idiom.otherSynonym)}">
+            {%if idiom.other_jyc().is_empty() %}
+            <tr>
                 <td colspan="3" class="p-3">
-                    <a class="mr-2" rel="external nofollow" target="_blank" th:each="t : ${idiom.otherSynonym}"
-                        th:href="'https://dict.baidu.com/s?ptype=zici&wd='+${t}" th:text="${t}"></a>
+                    {%for t in idiom.other_jyc()%}
+                    <a class="mr-2" rel="external nofollow" target="_blank"
+                        href="https://hanyu.sogou.com/result?query={{t}}">{{t}}</a>
+                    {%endfor%}
                     <a rel="external nofollow" target="_blank"
-                        th:href="'http://dict.baidu.com/s?wd='+${idiom.idiom.text}">...</a>
+                        href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">...</a>
                 </td>
             </tr>
+            {%endif%}
         </table>
         {%endif%}
         {%if !idiom.detail.content.fyc.is_empty() %}
@@ -101,18 +105,22 @@
                 <td>{{s.explain}}</td>
                 <td class="text-center px-0">
                     <a rel="external nofollow" target="_blank"
-                        href="'/idiom/'+${s.text}+'?provinces='+${strings.setJoin(provinces,',')}+'&fromType='+${strings.defaultString(fromType,'')}">{s.paperFrequency}</a>
+                        href="/{{idiom.detail.ty}}/{{s.text}}">{s.paperFrequency}</a>
                 </td>
             </tr>
             {%endfor%}
-            <tr th:if="${!#lists.isEmpty(idiom.otherAntonym)}">
+            {%if idiom.other_fyc().is_empty() %}
+            <tr>
                 <td colspan="3" class="p-3">
-                    <a class="mr-2" rel="external nofollow" target="_blank" th:each="t : ${idiom.otherAntonym}"
-                        th:href="'https://dict.baidu.com/s?ptype=zici&wd='+${t}" th:text="${t}"></a>
+                    {%for t in idiom.other_fyc()%}
+                    <a class="mr-2" rel="external nofollow" target="_blank"
+                        href="https://hanyu.sogou.com/result?query={{t}}">{{t}}</a>
+                    {%endfor%}
                     <a rel="external nofollow" target="_blank"
-                        th:href="'http://dict.baidu.com/s?wd='+${idiom.idiom.text}">...</a>
+                        href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">...</a>
                 </td>
             </tr>
+            {%endif%}
         </table>
         {%endif%}
     </div>

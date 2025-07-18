@@ -1,4 +1,5 @@
 use crate::model::idiom::{self, BriefIdiom};
+use itertools::Itertools;
 use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -70,6 +71,26 @@ impl IdiomDetail {
             jyc,
             fyc,
         }
+    }
+
+    pub fn other_jyc(&self) -> Vec<&String> {
+        let jyc = self.jyc.iter().map(|i| &i.text).collect_vec();
+        self.detail
+            .content
+            .jyc
+            .iter()
+            .filter(|t| !jyc.contains(t))
+            .collect_vec()
+    }
+
+    pub fn other_fyc(&self) -> Vec<&String> {
+        let fyc = self.fyc.iter().map(|i| &i.text).collect_vec();
+        self.detail
+            .content
+            .fyc
+            .iter()
+            .filter(|t| !fyc.contains(t))
+            .collect_vec()
     }
 }
 
