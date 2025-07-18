@@ -144,13 +144,13 @@
                 <th class="text-center px-0" style="width:5em">题号</th>
             </tr>
             {%for r in idiom.refs%}
-            <tr id="q-{r.question.id}">
+            <tr id="q-{{r.question.id}}">
                 <td class="p-1">
                     {%if global.config.show_vendor%}
                     <img class="vendor-icon" rel="external nofollow noreferrer" src="{r.refPaper.fromType.iconUrl()}"
                         alt="{r.refPaper.fromType.name()}" />
                     {%endif%}
-                    <a href="/paper/{{r.paper.id}}#q-{{r.sort}}">{{r.paper.title}}</a>
+                    <a href="/paper/{{r.paper.id}}#q-{{r.sort}}" target="_blank">{{r.paper.title}}</a>
                 </td>
                 <td class="text-center px-0 py-1">
                     <a class="btn btn-link dropdown-toggle" role="button" data-toggle="collapse"
