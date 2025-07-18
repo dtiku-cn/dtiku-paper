@@ -44,7 +44,10 @@
             href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">{{idiom.detail.text}}</a>
     </h1>
     <div class="m-4 text-muted">{{idiom.detail.explain}}</div>
-
+    {%if !idiom.detail.liju.is_empty()%}
+    <h3>例句</h3>
+    <div class="m-4 text-muted">{{idiom.detail.liju}}</div>
+    {%endif%}
     {%if !idiom.detail.content.jyc.is_empty() && !idiom.detail.content.fyc.is_empty() %}
     <div class="card mb-3">
         <header class="d-flex card-header align-items-center">
@@ -57,8 +60,8 @@
         <table class="table idiom-list">
             <tr class="table-secondary">
                 <th class="text-center px-0 py-2">近义词</th>
-                <th class="py-2" th:classappend="${lists.isEmpty(idiom.synonym)?'d-none':''}">释义</th>
-                <th class="text-center px-0 py-2" th:classappend="${lists.isEmpty(idiom.synonym)?'d-none':''}">真题</th>
+                <th class="py-2 {%if idiom.jyc.is_empty()%}d-none{%endif%}">释义</th>
+                <th class="text-center px-0 py-2 {%if idiom.jyc.is_empty()%}d-none{%endif%}">真题</th>
             </tr>
             {%for s in idiom.jyc%}
             <tr>
@@ -86,8 +89,8 @@
         <table class="table idiom-list">
             <tr class="table-secondary">
                 <th class="text-center px-0 py-2">反义词</th>
-                <th class="py-2" th:classappend="${lists.isEmpty(idiom.antonym)?'d-none':''}">释义</th>
-                <th class="text-center px-0 py-2" th:classappend="${lists.isEmpty(idiom.antonym)?'d-none':''}">真题</th>
+                <th class="py-2 {%if idiom.fyc.is_empty()%}d-none{%endif%}">释义</th>
+                <th class="text-center px-0 py-2 {%if idiom.fyc.is_empty()%}d-none{%endif%}">真题</th>
             </tr>
             {%for s in idiom.fyc%}
             <tr>
