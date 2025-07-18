@@ -57,12 +57,12 @@ impl PaperExtra {
         }
     }
 
-    pub fn compute_question_range(&self, arg: &str) -> Option<(i16, i16)> {
+    pub fn compute_question_range(&self, pattern: &str) -> Option<(i16, i16)> {
         match self {
             Self::Chapters(cs) => {
                 let mut start = 1;
                 for c in &cs.chapters {
-                    if c.name == arg {
+                    if c.name.contains(pattern) {
                         return Some((start, start + c.count - 1));
                     } else {
                         start += c.count;
@@ -70,7 +70,7 @@ impl PaperExtra {
                 }
                 None
             }
-            Self::EssayCluster(ec) => None,
+            Self::EssayCluster(_) => None,
         }
     }
 }
