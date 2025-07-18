@@ -1744,6 +1744,7 @@ dependencies = [
  "ouroboros",
  "pinyin",
  "prost",
+ "rand 0.9.1",
  "readability",
  "regex",
  "reqwest 0.12.22",

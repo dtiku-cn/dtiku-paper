@@ -64,14 +64,6 @@ impl Entity {
         Ok(Self::find().filter(Column::Text.eq(text)).one(db).await?)
     }
 
-    pub async fn exists_by_text<C: ConnectionTrait>(db: &C, text: &str) -> anyhow::Result<bool> {
-        Ok(Self::find()
-            .filter(Column::Text.eq(text))
-            .one(db)
-            .await?
-            .is_some())
-    }
-
     pub async fn find_brief_in_ids<C: ConnectionTrait>(
         db: &C,
         idiom_ids: Vec<i32>,

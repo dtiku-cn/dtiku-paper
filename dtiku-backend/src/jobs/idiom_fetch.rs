@@ -118,21 +118,19 @@ impl IdiomStatsService {
             return Ok(());
         };
 
+        let paper_id = paper.id;
+
         let qids = PaperQuestion::find_question_ids_by_paper_id_and_sort_between(
-            &self.db, paper.id, start, end,
+            &self.db, paper_id, start, end,
         )
         .await?;
 
         if qids.is_empty() {
-            tracing::warn!(
-                "paper_id: {}, no questions found in range {}-{}",
-                paper.id,
-                start,
-                end
-            );
+            tracing::warn!("paper_id: {paper_id}, no questions found in range {start}-{end}");
             return Ok(());
         }
         let mut idiom_count = 0;
+        let mut idiom_ref_count = 0;
 
         let questions = Question::find_by_ids(&self.db, qids).await?;
 
@@ -155,31 +153,35 @@ impl IdiomStatsService {
                             .collect_vec();
 
                         for idiom in idioms {
-                            if Idiom::exists_by_text(&self.db, idiom).await? {
-                                continue;
-                            }
-                            let explain = IdiomExplain::fetch(idiom).await?;
-                            if explain.idiom == "<undefined>" {
-                                continue;
+                            let idiom_in_db = if let Some(idiom_in_db) =
+                                Idiom::find_by_text(&self.db, idiom).await?
+                            {
+                                idiom_in_db
                             } else {
-                                tokio::time::sleep(Duration::from_secs(1)).await;
-                            }
-                            let main_explain = explain.shiyi.clone();
-                            let saved_idiom = idiom::ActiveModel {
-                                text: Set(idiom.to_string()),
-                                ty: Set(ty),
-                                explain: Set(main_explain.unwrap_or_default()),
-                                content: Set(explain.into()),
-                                ..Default::default()
-                            }
-                            .insert_on_conflict(&self.db)
-                            .await
-                            .context("insert idiom failed")?;
-                            idiom_count += 1;
+                                let explain = IdiomExplain::fetch(idiom).await?;
+                                if explain.idiom == "<undefined>" {
+                                    continue;
+                                } else {
+                                    tokio::time::sleep(Duration::from_secs(1)).await;
+                                }
+                                let main_explain = explain.shiyi.clone();
+                                let saved_idiom = idiom::ActiveModel {
+                                    text: Set(idiom.to_string()),
+                                    ty: Set(ty),
+                                    explain: Set(main_explain.unwrap_or_default()),
+                                    content: Set(explain.into()),
+                                    ..Default::default()
+                                }
+                                .insert_on_conflict(&self.db)
+                                .await
+                                .context("insert idiom failed")?;
+                                idiom_count += 1;
+                                saved_idiom
+                            };
 
                             idiom_ref::ActiveModel {
-                                ty: Set(saved_idiom.ty),
-                                idiom_id: Set(saved_idiom.id),
+                                ty: Set(idiom_in_db.ty),
+                                idiom_id: Set(idiom_in_db.id),
                                 question_id: Set(q.id),
                                 paper_id: Set(paper.id),
                                 label_id: Set(paper.label_id),
@@ -190,14 +192,18 @@ impl IdiomStatsService {
                             .insert_on_conflict(&self.db)
                             .await
                             .context("insert idiom failed")?;
+                            idiom_ref_count += 1;
                         }
                     }
                     _ => {}
                 }
             }
         }
-
-        tracing::info!("paper_id: {}, idiom_count: {}", paper.id, idiom_count);
+        let sleep_secondes = rand::random::<u64>() % 10;
+        tracing::info!(
+            "paper_id: {paper_id}, idiom_count: {idiom_count}, idiom_ref_count: {idiom_ref_count}, will sleep {sleep_secondes}s"
+        );
+        tokio::time::sleep(Duration::from_secs(sleep_secondes)).await;
 
         Ok(())
     }
