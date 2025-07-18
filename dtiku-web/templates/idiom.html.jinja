@@ -44,9 +44,9 @@
             href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">{{idiom.detail.text}}</a>
     </h1>
     <div class="m-4 text-muted">{{idiom.detail.explain}}</div>
-    {%if !idiom.detail.liju.is_empty()%}
+    {%if !idiom.detail.content.liju.is_empty()%}
     <h3>例句</h3>
-    <div class="m-4 text-muted">{{idiom.detail.liju}}</div>
+    <div class="m-4 text-muted">{{idiom.detail.content.liju}}</div>
     {%endif%}
     {%if !idiom.detail.content.jyc.is_empty() && !idiom.detail.content.fyc.is_empty() %}
     <div class="card mb-3">
