@@ -1,6 +1,9 @@
 pub use super::_entities::question::*;
 use super::{paper, Paper, PaperQuestion, _entities::solution, material};
-use crate::{domain::question::QuestionSearch, model};
+use crate::{
+    domain::question::QuestionSearch,
+    model::{self, Solution},
+};
 use anyhow::Context;
 use itertools::Itertools;
 use sea_orm::{
@@ -11,6 +14,39 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum::Display;
 
+macro_rules! question_methods {
+    () => {
+        pub fn option_len(&self) -> usize {
+            self.extra.option_len()
+        }
+
+        pub fn get_answer(&self) -> Option<String> {
+            match &self.solutions {
+                None => None,
+                Some(ss) => ss.first().and_then(|s| s.extra.get_answer()),
+            }
+        }
+
+        pub fn is_answer(&self, index0: &usize) -> bool {
+            match &self.solutions {
+                None => false,
+                Some(ss) => ss
+                    .first()
+                    .map(|s| s.extra.is_answer(*index0))
+                    .unwrap_or_default(),
+            }
+        }
+
+        pub fn abbr(&self, size: usize) -> &str {
+            self.content
+                .char_indices()
+                .nth(size)
+                .map(|(idx, _)| &self.content[..idx])
+                .unwrap_or(&self.content)
+        }
+    };
+}
+
 #[derive(Clone, Debug)]
 pub struct Question {
     pub id: i32,
@@ -18,6 +54,18 @@ pub struct Question {
     pub extra: QuestionExtra,
     pub paper_id: i32,
     pub num: i16,
+}
+
+#[derive(Clone, Debug)]
+pub struct QuestionWithSolutions {
+    pub id: i32,
+    pub content: String,
+    pub extra: QuestionExtra,
+    pub solutions: Option<Vec<solution::Model>>,
+}
+
+impl QuestionWithSolutions {
+    question_methods!();
 }
 
 #[derive(Clone, Debug)]
@@ -47,35 +95,7 @@ impl QuestionSinglePaper {
             materials: None,
         }
     }
-
-    pub fn option_len(&self) -> usize {
-        self.extra.option_len()
-    }
-
-    pub fn get_answer(&self) -> Option<String> {
-        match &self.solutions {
-            None => None,
-            Some(ss) => ss.first().and_then(|s| s.extra.get_answer()),
-        }
-    }
-
-    pub fn is_answer(&self, index0: &usize) -> bool {
-        match &self.solutions {
-            None => false,
-            Some(ss) => ss
-                .first()
-                .map(|s| s.extra.is_answer(*index0))
-                .unwrap_or_default(),
-        }
-    }
-
-    pub fn abbr(&self, size: usize) -> &str {
-        self.content
-            .char_indices()
-            .nth(size)
-            .map(|(idx, _)| &self.content[..idx])
-            .unwrap_or(&self.content)
-    }
+    question_methods!();
 }
 
 #[derive(Clone, Debug)]
@@ -104,35 +124,7 @@ impl QuestionWithPaper {
             materials,
         }
     }
-
-    pub fn option_len(&self) -> usize {
-        self.extra.option_len()
-    }
-
-    pub fn get_answer(&self) -> Option<String> {
-        match &self.solutions {
-            None => None,
-            Some(ss) => ss.first().and_then(|s| s.extra.get_answer()),
-        }
-    }
-
-    pub fn is_answer(&self, index0: &usize) -> bool {
-        match &self.solutions {
-            None => false,
-            Some(ss) => ss
-                .first()
-                .map(|s| s.extra.is_answer(*index0))
-                .unwrap_or_default(),
-        }
-    }
-
-    pub fn abbr(&self, size: usize) -> &str {
-        self.content
-            .char_indices()
-            .nth(size)
-            .map(|(idx, _)| &self.content[..idx])
-            .unwrap_or(&self.content)
-    }
+    question_methods!();
 }
 
 #[derive(Clone, Debug)]
@@ -177,6 +169,18 @@ impl QuestionSelect {
                 .cloned()
                 .map(|m| m.1)
                 .unwrap_or_default(),
+        }
+    }
+
+    fn with_solutions(
+        self,
+        solution_map: &HashMap<i32, Vec<solution::Model>>,
+    ) -> QuestionWithSolutions {
+        QuestionWithSolutions {
+            id: self.id,
+            content: self.content,
+            extra: self.extra,
+            solutions: solution_map.get(&self.id).cloned(),
         }
     }
 
@@ -296,6 +300,32 @@ impl Entity {
             .all(db)
             .await
             .context("question::find_by_ids() failed")
+    }
+
+    pub async fn find_by_ids_with_solutions<C>(
+        db: &C,
+        ids: Vec<i32>,
+    ) -> anyhow::Result<Vec<QuestionWithSolutions>>
+    where
+        C: ConnectionTrait,
+    {
+        if ids.len() <= 0 {
+            return Ok(vec![]);
+        }
+        let qs = Entity::find()
+            .filter(Column::Id.is_in(ids.clone()))
+            .into_partial_model::<QuestionSelect>()
+            .all(db)
+            .await
+            .context("question::find_by_ids() failed")?;
+
+        let ss = Solution::find_by_question_ids(db, ids).await?;
+        let solution_map = ss.into_iter().into_group_map_by(|s| s.question_id);
+
+        Ok(qs
+            .into_iter()
+            .map(|q| q.with_solutions(&solution_map))
+            .collect())
     }
 
     pub async fn search_question<C>(

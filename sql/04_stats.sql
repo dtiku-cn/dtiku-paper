@@ -16,6 +16,7 @@ create table if not exists idiom_ref(
     idiom_id int not null,
     question_id int not null,
     paper_id int not null,
+    sort int2 not null,
     label_id int not null,
     exam_id int2 not null,
     paper_type int2 not null,

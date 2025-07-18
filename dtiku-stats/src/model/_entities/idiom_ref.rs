@@ -12,6 +12,7 @@ pub struct Model {
     pub idiom_id: i32,
     pub question_id: i32,
     pub paper_id: i32,
+    pub sort: i16,
     pub label_id: i32,
     pub exam_id: i16,
     pub paper_type: i16,

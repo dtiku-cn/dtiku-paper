@@ -146,19 +146,19 @@
             {%for r in idiom.refs%}
             <tr id="q-{r.question.id}">
                 <td class="p-1">
-                    <img class="vendor-icon" rel="external nofollow noreferrer"
-                        th:if="${bools.isTrue(system_showVendor)}" th:src="${r.refPaper.fromType.iconUrl()}"
-                        th:alt="${r.refPaper.fromType.name()}" />
-                    <a href="'/paper/'+${r.refPaper.id}+'#q-'+${r.question.number}">{r.refPaper.title}</a>
+                    {%if global.config.show_vendor%}
+                    <img class="vendor-icon" rel="external nofollow noreferrer" src="{r.refPaper.fromType.iconUrl()}"
+                        alt="{r.refPaper.fromType.name()}" />
+                    {%endif%}
+                    <a href="/paper/{{r.paper.id}}#q-{{r.sort}}">{{r.paper.title}}</a>
                 </td>
                 <td class="text-center px-0 py-1">
                     <a class="btn btn-link dropdown-toggle" role="button" data-toggle="collapse"
-                        href="#idiom-ref-{r.ref.id}">第{r.question.number}题</a>
+                        href="#idiom-ref-{{r.id}}">第{{r.sort}}题</a>
                 </td>
             </tr>
-            <tr class="well collapse bg-light" id="idiom-ref-{r.ref.id}">
-                <td colspan="2" class="question-wrapper"
-                    th:include="fragments/question::xingce_question(${r.question})"></td>
+            <tr class="well collapse bg-light" id="idiom-ref-{{r.id}}">
+                <td colspan="2" class="question-wrapper">{%call question::xingce_question(r.question)%}</td>
             </tr>
             {%endfor%}
         </table>

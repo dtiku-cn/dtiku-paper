@@ -133,18 +133,18 @@ impl IdiomStatsService {
 
         let paper_id = paper.id;
 
-        let qids = PaperQuestion::find_question_ids_by_paper_id_and_sort_between(
-            &self.db, paper_id, start, end,
-        )
-        .await?;
+        let qid_sort =
+            PaperQuestion::find_by_paper_id_and_sort_between(&self.db, paper_id, start, end)
+                .await?;
 
-        if qids.is_empty() {
+        if qid_sort.is_empty() {
             tracing::warn!("paper_id: {paper_id}, no questions found in range {start}-{end}");
             return Ok(());
         }
         let mut idiom_count = 0;
         let mut idiom_ref_count = 0;
 
+        let qids = qid_sort.keys().cloned().collect();
         let questions = Question::find_by_ids(&self.db, qids).await?;
 
         for q in questions {
@@ -197,6 +197,7 @@ impl IdiomStatsService {
                                 idiom_id: Set(idiom_in_db.id),
                                 question_id: Set(q.id),
                                 paper_id: Set(paper.id),
+                                sort: Set(*qid_sort.get(&q.id).expect("qid sort not found")),
                                 label_id: Set(paper.label_id),
                                 exam_id: Set(paper.exam_id),
                                 paper_type: Set(paper.paper_type),

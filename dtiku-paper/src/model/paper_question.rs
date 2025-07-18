@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 pub use super::_entities::paper_question::*;
 use crate::query::question::PaperQuestionQuery;
 use anyhow::Context;
@@ -64,23 +66,26 @@ impl Entity {
             .with_context(|| format!("paper_question::find_by_paper_id({paper_id}) failed"))
     }
 
-    pub async fn find_question_ids_by_paper_id_and_sort_between<C>(
+    pub async fn find_by_paper_id_and_sort_between<C>(
         db: &C,
         paper_id: i32,
         start: i16,
         end: i16,
-    ) -> anyhow::Result<Vec<i32>>
+    ) -> anyhow::Result<HashMap<i32, i16>>
     where
         C: ConnectionTrait,
     {
-        Entity::find()
+        Ok(Entity::find()
             .select_only()
             .column(Column::QuestionId)
+            .column(Column::Sort)
             .filter(Column::PaperId.eq(paper_id).and(Column::Sort.between(start, end)))
-            .into_tuple()
+            .into_tuple::<(i32, i16)>()
             .all(db)
             .await
-            .with_context(|| format!("paper_question::find_question_ids_by_paper_id_and_sort_between({paper_id}, {start}, {end}) failed"))
+            .with_context(|| format!("paper_question::find_by_paper_id_and_sort_between({paper_id}, {start}, {end}) failed"))?
+            .into_iter()
+            .collect())
     }
 
     pub async fn find_question_id_by_query<C>(

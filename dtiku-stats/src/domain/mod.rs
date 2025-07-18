@@ -1,4 +1,8 @@
-use crate::model::idiom::{self, BriefIdiom};
+use crate::model::{
+    idiom::{self, BriefIdiom},
+    idiom_ref,
+};
+use dtiku_paper::model::{paper, question};
 use itertools::Itertools;
 use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
@@ -50,7 +54,7 @@ impl IdiomStats {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct IdiomDetail {
     pub detail: idiom::Model,
     pub refs: Vec<PaperQuestionRef>,
@@ -61,13 +65,13 @@ pub struct IdiomDetail {
 impl IdiomDetail {
     pub(crate) fn new(
         detail: idiom::Model,
-        refs: Vec<crate::model::idiom_ref::Model>,
+        refs: Vec<PaperQuestionRef>,
         jyc: Vec<BriefIdiom>,
         fyc: Vec<BriefIdiom>,
     ) -> Self {
         Self {
             detail,
-            refs: vec![],
+            refs,
             jyc,
             fyc,
         }
@@ -94,5 +98,25 @@ impl IdiomDetail {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PaperQuestionRef {}
+#[derive(Debug, Clone)]
+pub struct PaperQuestionRef {
+    pub paper: paper::Model,
+    pub question: question::QuestionWithSolutions,
+    pub sort: i16,
+    pub id: i32,
+}
+
+impl PaperQuestionRef {
+    pub(crate) fn new(
+        r: idiom_ref::Model,
+        p: Option<&paper::Model>,
+        q: Option<&question::QuestionWithSolutions>,
+    ) -> Self {
+        Self {
+            paper: p.cloned().unwrap(),
+            question: q.cloned().unwrap(),
+            sort: r.sort,
+            id: r.id,
+        }
+    }
+}

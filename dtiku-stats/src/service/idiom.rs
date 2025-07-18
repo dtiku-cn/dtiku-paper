@@ -1,5 +1,5 @@
 use crate::{
-    domain::{IdiomDetail, IdiomRefStatsWithoutLabel, IdiomStats},
+    domain::{IdiomDetail, IdiomRefStatsWithoutLabel, IdiomStats, PaperQuestionRef},
     model::{
         idiom::{self, BriefIdiom},
         idiom_ref, idiom_ref_stats,
@@ -9,6 +9,7 @@ use crate::{
     query::{IdiomQuery, IdiomSearch},
 };
 use anyhow::Context;
+use dtiku_paper::model::{Paper, Question};
 use itertools::Itertools;
 use sea_orm::{
     prelude::Expr, ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
@@ -114,6 +115,24 @@ impl IdiomService {
                 .all(&self.db)
                 .await
                 .context("IdiomRef::find() failed")?;
+
+            let paper_ids = refs.iter().map(|r| r.paper_id).collect_vec();
+            let question_ids = refs.iter().map(|r| r.question_id).collect_vec();
+
+            let papers = Paper::find_by_ids(&self.db, paper_ids).await?;
+            let questions = Question::find_by_ids_with_solutions(&self.db, question_ids).await?;
+
+            let id_paper: HashMap<i32, _> = papers.into_iter().map(|p| (p.id, p)).collect();
+            let id_question: HashMap<i32, _> = questions.into_iter().map(|q| (q.id, q)).collect();
+
+            let refs = refs
+                .into_iter()
+                .map(|r| {
+                    let p = id_paper.get(&r.paper_id);
+                    let q = id_question.get(&r.question_id);
+                    PaperQuestionRef::new(r, p, q)
+                })
+                .collect();
 
             Ok(Some(IdiomDetail::new(idiom, refs, jyc, fyc)))
         } else {
