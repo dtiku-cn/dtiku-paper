@@ -1,12 +1,18 @@
 pub use super::_entities::idiom::*;
+use crate::{
+    domain::{IdiomRefStatsWithoutLabel, IdiomStats},
+    model::{idiom_ref_stats, IdiomRefStats},
+};
 use anyhow::Context as _;
+use itertools::Itertools;
 use sea_orm::{
-    sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
-    ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait as _, FromJsonQueryResult,
-    FromQueryResult, QueryFilter, QuerySelect as _,
+    prelude::Expr, sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior,
+    ActiveValue::Set, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait as _,
+    FromJsonQueryResult, FromQueryResult, QueryFilter, QueryOrder, QuerySelect as _,
 };
 use serde::{Deserialize, Serialize};
 use spring::async_trait;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct IdiomExplain {
@@ -67,15 +73,36 @@ impl Entity {
     pub async fn find_by_texts<C: ConnectionTrait>(
         db: &C,
         texts: Vec<String>,
-    ) -> anyhow::Result<Vec<BriefIdiom>> {
-        Entity::find()
+    ) -> anyhow::Result<Vec<IdiomStats>> {
+        let brief = Entity::find()
             .select_only()
             .columns([Column::Id, Column::Text, Column::Explain])
             .filter(Column::Text.is_in(texts))
             .into_partial_model::<BriefIdiom>()
             .all(db)
             .await
-            .context("Idiom::find_by_texts() failed")
+            .context("Idiom::find_by_texts() failed")?;
+
+        let id_idiom_map: HashMap<i32, _> = brief.into_iter().map(|i| (i.id, i)).collect();
+        let idiom_ids = id_idiom_map.keys().cloned().collect_vec();
+
+        let stats = IdiomRefStats::find()
+            .select_only()
+            .column(idiom_ref_stats::Column::IdiomId)
+            .column_as(Expr::cust("SUM(question_count)::BIGINT"), "question_count")
+            .column_as(Expr::cust("SUM(paper_count)::BIGINT"), "paper_count")
+            .filter(idiom_ref_stats::Column::IdiomId.is_in(idiom_ids))
+            .group_by(idiom_ref_stats::Column::IdiomId)
+            .order_by_desc(Expr::col("question_count"))
+            .into_model::<IdiomRefStatsWithoutLabel>()
+            .all(db)
+            .await
+            .context("IdiomRefStats::idiom_stats() failed")?;
+
+        Ok(stats
+            .into_iter()
+            .map(|s| IdiomStats::from_brief(id_idiom_map.get(&s.idiom_id), s))
+            .collect_vec())
     }
 
     pub async fn find_brief_in_ids<C: ConnectionTrait>(

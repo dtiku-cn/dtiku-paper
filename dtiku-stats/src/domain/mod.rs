@@ -52,22 +52,35 @@ impl IdiomStats {
             paper_count: stats.map(|s| s.paper_count).unwrap_or_default(),
         }
     }
+
+    pub(crate) fn from_brief(
+        brief_idiom: Option<&BriefIdiom>,
+        s: IdiomRefStatsWithoutLabel,
+    ) -> Self {
+        Self {
+            text: brief_idiom.map(|i| i.text.clone()).unwrap_or_default(),
+            explain: brief_idiom.map(|i| i.explain.clone()).unwrap_or_default(),
+            idiom_id: s.idiom_id,
+            question_count: s.question_count,
+            paper_count: s.paper_count,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct IdiomDetail {
     pub detail: idiom::Model,
     pub refs: Vec<PaperQuestionRef>,
-    pub jyc: Vec<BriefIdiom>,
-    pub fyc: Vec<BriefIdiom>,
+    pub jyc: Vec<IdiomStats>,
+    pub fyc: Vec<IdiomStats>,
 }
 
 impl IdiomDetail {
     pub(crate) fn new(
         detail: idiom::Model,
         refs: Vec<PaperQuestionRef>,
-        jyc: Vec<BriefIdiom>,
-        fyc: Vec<BriefIdiom>,
+        jyc: Vec<IdiomStats>,
+        fyc: Vec<IdiomStats>,
     ) -> Self {
         Self {
             detail,
