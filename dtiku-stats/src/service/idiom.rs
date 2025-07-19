@@ -150,6 +150,7 @@ impl IdiomService {
                     let q = id_question.get(&r.question_id);
                     PaperQuestionRef::new(r, p, q)
                 })
+                .sorted_by_key(|r| (r.paper.year, r.paper.id))
                 .collect();
 
             Ok(Some(IdiomDetail::new(idiom, refs, jyc, fyc)))
