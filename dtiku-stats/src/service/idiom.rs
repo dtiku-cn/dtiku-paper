@@ -16,7 +16,7 @@ use sea_orm::{
 };
 use spring::plugin::service::Service;
 use spring_sea_orm::pagination::{Page, Pagination, PaginationExt};
-use std::collections::HashMap;
+use std::{cmp::Reverse, collections::HashMap};
 
 #[derive(Clone, Service)]
 pub struct IdiomService {
@@ -150,7 +150,7 @@ impl IdiomService {
                     let q = id_question.get(&r.question_id);
                     PaperQuestionRef::new(r, p, q)
                 })
-                .sorted_by_key(|r| (r.paper.year, r.paper.id))
+                .sorted_by_key(|r| (Reverse(r.paper.year), r.paper.id))
                 .collect();
 
             Ok(Some(IdiomDetail::new(idiom, refs, jyc, fyc)))
