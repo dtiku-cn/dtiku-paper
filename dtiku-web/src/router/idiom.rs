@@ -12,7 +12,7 @@ use dtiku_stats::{
     query::{IdiomQuery, IdiomSearch},
     service::idiom::IdiomService,
 };
-use spring_sea_orm::pagination::Pagination;
+use spring_sea_orm::pagination::{Page, Pagination};
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
@@ -61,30 +61,40 @@ async fn render_list(
     ty: IdiomType,
     global: GlobalVariables,
     req: IdiomReq,
-    page: Pagination,
+    pagination: Pagination,
 ) -> anyhow::Result<ListIdiomTemplate> {
-    let label_tree = match global.get_paper_type_by_prefix("xingce") {
-        Some(paper_type) => ls.find_all_label_by_paper_type(paper_type.id).await?,
-        None => LabelTree::none(),
-    };
-    let origin_req = req.clone();
-    let page = if let Some(text) = req.text {
-        let search = IdiomSearch { ty, text };
-        is.search_idiom_stats(&search, req.labels, &page).await?
-    } else {
-        let query = IdiomQuery {
-            label_id: req.labels,
-            page,
-        };
-        is.get_idiom_stats(ty, &query).await?
-    };
-    Ok(ListIdiomTemplate {
-        global,
-        model: ty,
-        label_tree,
-        req: origin_req,
-        page,
-    })
+    match global.get_paper_type_by_prefix("xingce") {
+        Some(paper_type) => {
+            let paper_type = paper_type.id;
+            let label_tree = ls.find_all_label_by_paper_type(paper_type).await?;
+            let IdiomReq { text, labels } = req.clone();
+            let page = if let Some(text) = text {
+                let search = IdiomSearch { ty, text };
+                is.search_idiom_stats(&search, paper_type, labels, &pagination)
+                    .await?
+            } else {
+                let query = IdiomQuery {
+                    label_id: labels,
+                    page: pagination,
+                };
+                is.get_idiom_stats(ty, paper_type, &query).await?
+            };
+            Ok(ListIdiomTemplate {
+                global,
+                model: ty,
+                label_tree,
+                req,
+                page,
+            })
+        }
+        None => Ok(ListIdiomTemplate {
+            global,
+            model: ty,
+            label_tree: LabelTree::none(),
+            req,
+            page: Page::new(vec![], &pagination, 0),
+        }),
+    }
 }
 
 #[routes]

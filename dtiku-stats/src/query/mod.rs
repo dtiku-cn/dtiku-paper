@@ -12,17 +12,6 @@ pub struct IdiomQuery {
     pub page: Pagination,
 }
 
-impl IdiomQuery {
-    pub fn into_condition(&self, ty: IdiomType) -> sea_orm::sea_query::Condition {
-        let mut condition = idiom_ref_stats::Column::Ty.eq(ty);
-        if !self.label_id.is_empty() {
-            condition =
-                condition.and(idiom_ref_stats::Column::LabelId.is_in(self.label_id.clone()));
-        }
-        condition.into_condition()
-    }
-}
-
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct IdiomSearch {
     #[serde(rename = "type")]

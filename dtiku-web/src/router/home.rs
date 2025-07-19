@@ -1,9 +1,10 @@
 use crate::views::{home::HomeTemplate, GlobalVariables};
 use dtiku_paper::{model::paper, service::paper::PaperService};
 use dtiku_stats::{
-    model::sea_orm_active_enums::IdiomType, query::IdiomQuery, service::idiom::IdiomService,
+    domain::IdiomStats, model::sea_orm_active_enums::IdiomType, query::IdiomQuery,
+    service::idiom::IdiomService,
 };
-use spring_sea_orm::pagination::Pagination;
+use spring_sea_orm::pagination::{Page, Pagination};
 use spring_web::{
     axum::{response::IntoResponse, Extension},
     error::Result,
@@ -23,8 +24,8 @@ async fn home(
     };
     let xingce = get_papers(&ps, &global, "xingce").await?;
     let shenlun = get_papers(&ps, &global, "shenlun").await?;
-    let idioms = is.get_idiom_stats(IdiomType::Idiom, query).await?;
-    let words = is.get_idiom_stats(IdiomType::Word, query).await?;
+    let idioms = get_idioms(&is, &global, "xingce", IdiomType::Idiom, query).await?;
+    let words = get_idioms(&is, &global, "xingce", IdiomType::Word, query).await?;
     Ok(HomeTemplate {
         global,
         xingce,
@@ -45,4 +46,19 @@ async fn get_papers(
         vec![]
     };
     Ok(papers)
+}
+
+async fn get_idioms(
+    is: &IdiomService,
+    global: &GlobalVariables,
+    prefix: &str,
+    ty: IdiomType,
+    query: &IdiomQuery,
+) -> anyhow::Result<Page<IdiomStats>> {
+    let idioms = if let Some(paper_type) = global.get_paper_type_by_prefix(prefix) {
+        is.get_idiom_stats(ty, paper_type.id, query).await?
+    } else {
+        Page::new(vec![], &query.page, 0)
+    };
+    Ok(idioms)
 }

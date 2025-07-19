@@ -9,7 +9,7 @@ use crate::{
     query::{IdiomQuery, IdiomSearch},
 };
 use anyhow::Context;
-use dtiku_paper::model::{Paper, Question};
+use dtiku_paper::model::{Label, Paper, Question};
 use itertools::Itertools;
 use sea_orm::{
     prelude::Expr, ColumnTrait, DbConn, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
@@ -28,14 +28,25 @@ impl IdiomService {
     pub async fn get_idiom_stats(
         &self,
         ty: IdiomType,
+        paper_type: i16,
         query: &IdiomQuery,
     ) -> anyhow::Result<Page<IdiomStats>> {
+        let mut filter = idiom_ref_stats::Column::Ty.eq(ty);
+        if !query.label_id.is_empty() {
+            filter = filter.and(idiom_ref_stats::Column::LabelId.is_in(query.label_id.clone()));
+        } else {
+            let hidden_labels =
+                Label::find_hidden_label_id_by_paper_type(&self.db, paper_type).await?;
+            if !hidden_labels.is_empty() {
+                filter = filter.and(idiom_ref_stats::Column::LabelId.is_not_in(hidden_labels));
+            }
+        }
         let page = IdiomRefStats::find()
             .select_only()
             .column(idiom_ref_stats::Column::IdiomId)
             .column_as(Expr::cust("SUM(question_count)::BIGINT"), "question_count")
             .column_as(Expr::cust("SUM(paper_count)::BIGINT"), "paper_count")
-            .filter(query.into_condition(ty))
+            .filter(filter)
             .group_by(idiom_ref_stats::Column::IdiomId)
             .order_by_desc(Expr::col("question_count"))
             .into_model::<IdiomRefStatsWithoutLabel>()
@@ -59,6 +70,7 @@ impl IdiomService {
     pub async fn search_idiom_stats(
         &self,
         search: &IdiomSearch,
+        paper_type: i16,
         labels: Vec<i32>,
         pagination: &Pagination,
     ) -> anyhow::Result<Page<IdiomStats>> {
@@ -81,6 +93,12 @@ impl IdiomService {
             .and(idiom_ref_stats::Column::IdiomId.is_in(idiom_ids));
         if !labels.is_empty() {
             filter = filter.and(idiom_ref_stats::Column::LabelId.is_in(labels));
+        } else {
+            let hidden_labels =
+                Label::find_hidden_label_id_by_paper_type(&self.db, paper_type).await?;
+            if !hidden_labels.is_empty() {
+                filter = filter.and(idiom_ref_stats::Column::LabelId.is_not_in(hidden_labels));
+            }
         }
         let stats = IdiomRefStats::find()
             .select_only()
