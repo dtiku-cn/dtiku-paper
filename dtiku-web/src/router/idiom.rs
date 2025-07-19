@@ -1,10 +1,13 @@
+use std::str::FromStr;
+
 use crate::{
     query::idiom::IdiomReq,
     views::{
-        idiom::{IdiomDetailTemplate, ListIdiomTemplate},
+        idiom::{IdiomDetailTemplate, IdiomPrintTemplate, ListIdiomTemplate},
         GlobalVariables,
     },
 };
+use anyhow::Context;
 use axum_extra::extract::Query;
 use dtiku_paper::{domain::label::LabelTree, service::label::LabelService};
 use dtiku_stats::{
@@ -65,7 +68,7 @@ async fn render_list(
 ) -> anyhow::Result<ListIdiomTemplate> {
     match global.get_paper_type_by_prefix("xingce") {
         Some(paper_type) => {
-            let paper_type = paper_type.id;
+            let paper_type: i16 = paper_type.id;
             let label_tree = ls.find_all_label_by_paper_type(paper_type).await?;
             let IdiomReq { text, labels } = req.clone();
             let page = if let Some(text) = text {
@@ -112,4 +115,37 @@ async fn idiom_detail(
         .ok_or_else(|| KnownWebError::not_found("成语未找到"))?;
 
     Ok(IdiomDetailTemplate { global, idiom })
+}
+
+#[get("/idiom-print/{model}")]
+async fn idiom_print(
+    Component(is): Component<IdiomService>,
+    Path(model): Path<String>,
+    Query(req): Query<IdiomReq>,
+    mut pagination: Pagination,
+    Extension(global): Extension<GlobalVariables>,
+) -> Result<impl IntoResponse> {
+    let model = IdiomType::from_str(&model).context("model parse failed")?;
+    match global.get_paper_type_by_prefix("xingce") {
+        Some(paper_type) => {
+            pagination.size = 100;
+            let query = IdiomQuery {
+                label_id: req.labels,
+                page: pagination,
+            };
+            let page = is.get_idiom_stats(model, paper_type.id, &query).await?;
+            Ok(IdiomPrintTemplate {
+                global,
+                model,
+                page,
+                url: format!("/idiom-print/{model}"),
+            })
+        }
+        None => Ok(IdiomPrintTemplate {
+            global,
+            model,
+            page: Page::new(vec![], &pagination, 0),
+            url: format!("/idiom-print/{model}"),
+        }),
+    }
 }

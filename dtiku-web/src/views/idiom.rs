@@ -28,3 +28,12 @@ pub struct IdiomDetailTemplate {
     pub global: GlobalVariables,
     pub idiom: IdiomDetail,
 }
+
+#[derive(Template, WebTemplate)]
+#[template(path = "idiom-print.html.min.jinja")]
+pub struct IdiomPrintTemplate {
+    pub global: GlobalVariables,
+    pub model: IdiomType,
+    pub page: Page<IdiomStats>,
+    pub url: String,
+}

@@ -1,0 +1,50 @@
+{%- import "macros/general.html.min.jinja" as general -%}
+{%- import "macros/artalk.html.min.jinja" as artalk -%}
+{%- import "macros/elements.html.min.jinja" as elements -%}
+<!doctype html>
+<html lang="zh">
+
+<head>
+    {% call general::meta() %}
+    <title>高频{{model.text()}}积累打印 | {{global.config.site_title}}</title>
+    {% call general::headerfiles() %}
+    <style>
+        td {
+            vertical-align: middle;
+        }
+
+        td p {
+            margin: 0;
+        }
+
+        tr>td:first-child {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body class="container">
+    {% call general::header() %}
+    <a class="btn btn-link btn-block d-print-none mb-4"
+        href="{%if global.user.is_none()%}#loginModal{%else%}javascript:window.print(){%endif%}"
+        data-toggle="{%if global.user.is_none()%}modal{%endif%}">点击打印</a>
+    <table class="table user-select-none {%if global.user.is_none()%}d-print-none{%endif%}">
+        <tr>
+            <th class="text-center px-0 py-2" width="{%if model==IdiomType::Idiom%}100{%else%}70{%endif%}">
+                {{model.text()}}</th>
+            <th class="py-2">释义</th>
+        </tr>
+        {%for s in page.content%}
+        <tr>
+            <td>{{s.text}}</td>
+            <td>{{s.explain}}</td>
+        </tr>
+        {%endfor%}
+    </table>
+    {%call elements::pagination(page, url, false)%}
+    {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
+    {% call general::footer() %}
+    {% call general::watermark() %}
+</body>
+
+</html>

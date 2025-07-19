@@ -1,8 +1,6 @@
-use sea_orm::{sea_query::IntoCondition, ColumnTrait};
+use crate::model::sea_orm_active_enums::IdiomType;
 use serde::Deserialize;
 use spring_sea_orm::pagination::Pagination;
-
-use crate::model::{idiom_ref_stats, sea_orm_active_enums::IdiomType};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct IdiomQuery {
