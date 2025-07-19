@@ -53,7 +53,7 @@ async fn refresh_config(
     let result: ExecResult = db
         .execute(Statement::from_string(
             DatabaseBackend::Postgres,
-            format!("refresh materialzed view {name}"),
+            format!("refresh materialized view {name}"),
         ))
         .await
         .context("refresh materialzed view failed")?;
