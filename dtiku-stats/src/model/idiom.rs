@@ -73,6 +73,7 @@ impl Entity {
     pub async fn find_by_texts<C: ConnectionTrait>(
         db: &C,
         texts: Vec<String>,
+        labels: &Vec<i32>,
     ) -> anyhow::Result<Vec<IdiomStats>> {
         let brief = Entity::find()
             .select_only()
@@ -86,12 +87,17 @@ impl Entity {
         let id_idiom_map: HashMap<i32, _> = brief.into_iter().map(|i| (i.id, i)).collect();
         let idiom_ids = id_idiom_map.keys().cloned().collect_vec();
 
+        let mut ref_stats_filter = idiom_ref_stats::Column::IdiomId.is_in(idiom_ids);
+        if !labels.is_empty() {
+            ref_stats_filter =
+                ref_stats_filter.and(idiom_ref_stats::Column::LabelId.is_in(labels.clone()));
+        }
         let stats = IdiomRefStats::find()
             .select_only()
             .column(idiom_ref_stats::Column::IdiomId)
             .column_as(Expr::cust("SUM(question_count)::BIGINT"), "question_count")
             .column_as(Expr::cust("SUM(paper_count)::BIGINT"), "paper_count")
-            .filter(idiom_ref_stats::Column::IdiomId.is_in(idiom_ids))
+            .filter(ref_stats_filter)
             .group_by(idiom_ref_stats::Column::IdiomId)
             .order_by_desc(Expr::col("question_count"))
             .into_model::<IdiomRefStatsWithoutLabel>()

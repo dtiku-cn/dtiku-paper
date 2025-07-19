@@ -119,17 +119,25 @@ impl IdiomService {
         Ok(page.map(|m| IdiomStats::from(id_stats_map.get(&m.id), m)))
     }
 
-    pub async fn get_idiom_detail(&self, text: &str) -> anyhow::Result<Option<IdiomDetail>> {
+    pub async fn get_idiom_detail(
+        &self,
+        text: &str,
+        labels: Vec<i32>,
+    ) -> anyhow::Result<Option<IdiomDetail>> {
         let idiom = Idiom::find_by_text(&self.db, text)
             .await
             .context("Idiom::get_idiom_detail() failed")?;
 
         if let Some(idiom) = idiom {
-            let jyc = Idiom::find_by_texts(&self.db, idiom.content.jyc.clone()).await?;
-            let fyc = Idiom::find_by_texts(&self.db, idiom.content.fyc.clone()).await?;
+            let jyc = Idiom::find_by_texts(&self.db, idiom.content.jyc.clone(), &labels).await?;
+            let fyc = Idiom::find_by_texts(&self.db, idiom.content.fyc.clone(), &labels).await?;
 
+            let mut ref_filter = idiom_ref::Column::IdiomId.eq(idiom.id);
+            if !labels.is_empty() {
+                ref_filter = ref_filter.and(idiom_ref::Column::LabelId.is_in(labels));
+            }
             let refs = IdiomRef::find()
-                .filter(idiom_ref::Column::IdiomId.eq(idiom.id))
+                .filter(ref_filter)
                 .all(&self.db)
                 .await
                 .context("IdiomRef::find() failed")?;

@@ -103,10 +103,11 @@ async fn render_list(
 async fn idiom_detail(
     Component(is): Component<IdiomService>,
     Path(text): Path<String>,
+    Query(req): Query<IdiomReq>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     let idiom = is
-        .get_idiom_detail(&text)
+        .get_idiom_detail(&text, req.labels)
         .await?
         .ok_or_else(|| KnownWebError::not_found("成语未找到"))?;
 
