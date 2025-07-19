@@ -71,8 +71,7 @@
             </svg>
             <strong>高频{{model.text()}}解析</strong>
             <div class="flex-grow-1"></div>
-            <a class="btn card-link d-flex align-items-center"
-                th:href="@{/idiom-print/{t}(t=${modelType},provinces=${provinces},fromType=${fromType})}">
+            <a class="btn card-link d-flex align-items-center" href="/idiom-print/{{model}}?{{req.to_qs()}}">
                 <svg class="icon-svg icon-svg-sm mr-2">
                     <use xlink:href="#ic-printer"></use>
                 </svg>
