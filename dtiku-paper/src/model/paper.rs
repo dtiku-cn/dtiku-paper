@@ -123,7 +123,7 @@ impl Entity {
     where
         C: ConnectionTrait,
     {
-        if ids.len() <= 0 {
+        if ids.is_empty() {
             return Ok(vec![]);
         }
         Entity::find()
