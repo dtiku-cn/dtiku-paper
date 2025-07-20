@@ -16,7 +16,7 @@
 {% endmacro divide %}
 
 {% macro pagination(page,url,selectable) %}
-<nav>
+<nav class="d-print-none">
     <ul class="pagination justify-content-center">
         <li class="{%if page.is_first()%}disabled page-item{%else%}page-item{%endif%}">
             <a class="page-link" href='{{global.append_params(url,&page.prev_qs())}}'><span>←</span>上一页</a>
