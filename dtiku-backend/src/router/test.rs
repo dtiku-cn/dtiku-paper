@@ -46,9 +46,9 @@ async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoRes
     let tversky = textdistance::str::tversky(&source, &target);
     let yujian_bo = textdistance::str::yujian_bo(&source, &target);
     let min_hash = MinHasher64V1::new(200);
-    let source_min_hash = min_hash.create_signature(source.split(" "));
-    let target_min_hash = min_hash.create_signature(target.split(" "));
-    let min_hash_similarity = min_hash.compute_similarity(source.split(" "), target.split(" "));
+    let source_min_hash = min_hash.create_signature(source.chars());
+    let target_min_hash = min_hash.create_signature(target.chars());
+    let min_hash_similarity = min_hash.compute_similarity(source.chars(), target.chars());
     // let sim_hash = SimSipHasher128::new(200, 200);
     // sim_hash.hash();
     Ok(Json(json!({
