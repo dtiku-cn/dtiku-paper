@@ -1,6 +1,5 @@
 use dtiku_paper::domain::paper::PaperMode;
 use serde::Deserialize;
-use spring_sea_orm::pagination::Pagination;
 
 #[derive(Debug, Deserialize)]
 pub struct ListPaperQuery {
@@ -8,8 +7,6 @@ pub struct ListPaperQuery {
     pub paper_type_prefix: String,
     #[serde(default, rename = "lid")]
     pub label_id: i32,
-    #[serde(flatten)]
-    pub page: Pagination,
 }
 
 #[derive(Debug, Deserialize)]

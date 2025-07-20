@@ -13,6 +13,7 @@ use dtiku_paper::{
     query::paper::ListPaperQuery as PaperListQuery,
     service::{label::LabelService, paper::PaperService},
 };
+use spring_sea_orm::pagination::Pagination;
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
@@ -25,10 +26,11 @@ use spring_web::{
 
 #[get("/paper")]
 async fn list_paper(
-    Query(query): Query<ListPaperQuery>,
     Component(ps): Component<PaperService>,
     Component(ls): Component<LabelService>,
     Extension(global): Extension<GlobalVariables>,
+    Query(query): Query<ListPaperQuery>,
+    page: Pagination,
 ) -> Result<impl IntoResponse> {
     let paper_type_prefix = query.paper_type_prefix;
 
@@ -42,19 +44,19 @@ async fn list_paper(
         PaperListQuery {
             paper_type: paper_type.id,
             label_id: label_tree.default_label_id(),
-            page: query.page,
+            page,
         }
     } else {
         PaperListQuery {
             paper_type: paper_type.id,
             label_id: query.label_id,
-            page: query.page,
+            page,
         }
     };
     let label = label_tree.get_label(query.label_id);
-    let list = ps.find_paper_by_query(&query).await?;
+    let page = ps.find_paper_by_query(&query).await?;
     Ok(ListPaperTemplate::new(
-        global, query, label_tree, paper_type, label, list,
+        global, query, label_tree, paper_type, label, page,
     ))
 }
 

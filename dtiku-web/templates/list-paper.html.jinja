@@ -1,6 +1,7 @@
 {%- import "macros/general.html.min.jinja" as general -%}
 {%- import "macros/paper.html.min.jinja" as paper -%}
 {%- import "macros/artalk.html.min.jinja" as artalk -%}
+{%- import "macros/elements.html.min.jinja" as elements -%}
 <!doctype html>
 <html lang="zh">
 
@@ -74,14 +75,8 @@
             </svg>
             <strong>{%if let Some(l) = label%}{{l.name}}{%endif%}{{paper_type.name}}试卷列表</strong>
         </header>
-        <div id="fromType" class="text-center">
-            <a class="btn btn-link" th:href="@{/paper(category=${cls.category},cls=${cls.text},province=${province})}"
-                th:classappend="${fromType==null?'active':''}">全部</a>
-            <a class="btn btn-link" th:each="t : ${allFromType}"
-                th:href="@{/paper(category=${cls.category},cls=${cls.text},province=${province},fromType=${t})}"
-                th:text="${t.text}" th:classappend="${fromType==t?'active':''}"></a>
-        </div>
-        {% call paper::paper_table(papers) %}
+        {% call paper::paper_table(papers.content) %}
+        {% call elements::pagination(papers, paper_type.build_paper_url(query), false)%}
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}

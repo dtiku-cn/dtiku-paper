@@ -1,3 +1,4 @@
+use super::PageExt;
 use super::{GlobalVariables, IntoTemplate};
 use askama::Template;
 use askama_web::WebTemplate;
@@ -25,6 +26,12 @@ pub struct PaperType {
     pub from_ty: FromType,
 }
 
+impl PaperType {
+    pub fn build_paper_url(&self, query: &ListPaperQuery) -> String {
+        format!("/paper?ty={}&lid={}", self.prefix, query.label_id)
+    }
+}
+
 #[derive(Template, WebTemplate)]
 #[template(path = "list-paper.html.min.jinja")]
 pub struct ListPaperTemplate {
@@ -33,13 +40,7 @@ pub struct ListPaperTemplate {
     pub label_tree: LabelTree,
     pub paper_type: PaperType,
     pub label: Option<LabelNode>,
-    pub papers: Vec<paper::Model>,
-    pub size: u64,
-    pub page: u64,
-    /// the total amount of elements.
-    pub total_elements: u64,
-    /// the number of total pages.
-    pub total_pages: u64,
+    pub papers: Page<paper::Model>,
 }
 
 impl ListPaperTemplate {
@@ -57,11 +58,7 @@ impl ListPaperTemplate {
             label_tree,
             paper_type,
             label,
-            papers: list.content,
-            size: list.size,
-            page: list.page,
-            total_elements: list.total_elements,
-            total_pages: list.total_pages,
+            papers: list,
         }
     }
 }
