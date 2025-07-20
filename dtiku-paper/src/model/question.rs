@@ -410,8 +410,14 @@ impl ActiveModel {
     where
         C: ConnectionTrait,
     {
-        // let embedding = self.embedding.take().unwrap().to_vec();
-        // let qs = Entity::find_by_embedding(db, embedding).await?;
+        let embedding = self.embedding.take().unwrap().to_vec();
+        let content = self.content.take().unwrap();
+        let qs = Entity::find_by_embedding(db, embedding).await?;
+        for q in qs {
+            if q.content == content {
+                return Ok(q);
+            }
+        }
         Entity::insert(self)
             .on_conflict(
                 OnConflict::columns([Column::Id])
