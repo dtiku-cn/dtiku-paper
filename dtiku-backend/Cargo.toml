@@ -54,6 +54,7 @@ ouroboros = { workspace = true }
 # extractous = { workspace = true }
 openai-api-rs = { workspace = true }
 rand = { workspace = true }
+gaoya = { workspace = true }
 
 [build-dependencies]
 tonic-build = "0.13"

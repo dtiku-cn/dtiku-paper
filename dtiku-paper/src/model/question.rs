@@ -7,8 +7,8 @@ use crate::{
 use anyhow::Context;
 use itertools::Itertools;
 use sea_orm::{
-    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait,
-    FromJsonQueryResult, FromQueryResult, QueryFilter, QuerySelect,
+    prelude::PgVector, sea_query::OnConflict, ColumnTrait, ConnectionTrait, DerivePartialModel,
+    EntityTrait, FromJsonQueryResult, FromQueryResult, QueryFilter, QuerySelect, Statement,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -384,13 +384,34 @@ impl Entity {
             .sorted_by_key(|m| m.num)
             .collect())
     }
-}
 
-impl ActiveModel {
-    pub async fn insert_on_conflict<C>(self, db: &C) -> Result<Model, DbErr>
+    pub async fn find_by_embedding<C>(db: &C, embedding: Vec<f32>) -> anyhow::Result<Vec<Model>>
     where
         C: ConnectionTrait,
     {
+        Model::find_by_statement(Statement::from_sql_and_values(
+            sea_orm::DatabaseBackend::Postgres,
+            r#"
+                SELECT *
+                FROM question
+                ORDER BY embedding <-> $1
+                LIMIT 10
+            "#,
+            vec![PgVector::from(embedding).into()],
+        ))
+        .all(db)
+        .await
+        .context("Question::find_by_embedding() failed")
+    }
+}
+
+impl ActiveModel {
+    pub async fn insert_on_conflict<C>(mut self, db: &C) -> anyhow::Result<Model>
+    where
+        C: ConnectionTrait,
+    {
+        // let embedding = self.embedding.take().unwrap().to_vec();
+        // let qs = Entity::find_by_embedding(db, embedding).await?;
         Entity::insert(self)
             .on_conflict(
                 OnConflict::columns([Column::Id])
@@ -399,5 +420,6 @@ impl ActiveModel {
             )
             .exec_with_returning(db)
             .await
+            .context("insert question failed")
     }
 }

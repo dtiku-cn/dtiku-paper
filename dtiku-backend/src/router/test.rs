@@ -5,6 +5,8 @@ use crate::{
     views::test::{TextCompare, WebLabelReq},
 };
 use anyhow::Context as _;
+use gaoya::minhash::{MinHasher, MinHasher64V1};
+use gaoya::simhash::SimSipHasher128;
 use reqwest_scraper::ScraperResponse;
 use serde_json::json;
 use spring_web::{
@@ -43,7 +45,16 @@ async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoRes
     let suffix = textdistance::str::suffix(&source, &target);
     let tversky = textdistance::str::tversky(&source, &target);
     let yujian_bo = textdistance::str::yujian_bo(&source, &target);
+    let min_hash = MinHasher64V1::new(200);
+    let source_min_hash = min_hash.create_shignature(source);
+    let target_min_hash = min_hash.create_signature(target);
+    let min_hash_similarity = min_hash.compute_similarity(source, target);
+    // let sim_hash = SimSipHasher128::new(200, 200);
+    // sim_hash.hash();
     Ok(Json(json!({
+        "source_min_hash": source_min_hash,
+        "target_min_hash": target_min_hash,
+        "min_hash_similarity":min_hash_similarity,
         "bag":bag,
         "cosine":cosine,
         "damerau_levenshtein":damerau_levenshtein,
