@@ -37,7 +37,10 @@ fancy-regex = { workspace = true }
 lazy_static = { workspace = true }
 scraper = { workspace = true }
 reqwest = { workspace = true }
-reqwest-scraper = { workspace = true }
+reqwest-scraper = { workspace = true, default-features = false, features = [
+    "css_selector",
+    "json",
+]}
 hnsw = { workspace = true }
 hnsw_rs = { workspace = true }
 dashmap = { workspace = true }
