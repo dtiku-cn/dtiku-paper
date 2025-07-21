@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use super::{JobScheduler, PaperSyncer};
 use crate::jobs::{MaterialIdNumber, QuestionIdNumber};
 use crate::plugins::embedding::Embedding;
@@ -7,7 +5,8 @@ use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
 use dtiku_paper::model::{
-    exam_category, label, material, paper, paper_material, question, question_keypoint, question_material, solution, ExamCategory, FromType, KeyPoint, Label
+    exam_category, label, material, paper, paper_material, question, question_keypoint,
+    question_material, solution, ExamCategory, FromType, KeyPoint, Label,
 };
 use futures::StreamExt;
 use itertools::Itertools;
@@ -21,6 +20,7 @@ use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
 use sqlx::types::Json;
 use sqlx::Row;
+use std::collections::HashMap;
 
 #[derive(Clone, Service)]
 #[service(prototype)]

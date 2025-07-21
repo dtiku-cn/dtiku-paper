@@ -5,10 +5,14 @@ use crate::{
     views::test::{TextCompare, WebLabelReq},
 };
 use anyhow::Context as _;
+use dtiku_paper::model::Question;
 use gaoya::minhash::{MinHasher, MinHasher64V1};
 use gaoya::simhash::SimSipHasher128;
 use reqwest_scraper::ScraperResponse;
+use sea_orm::EntityTrait;
+use search_api::SearchEngine;
 use serde_json::json;
+use spring_sea_orm::DbConn;
 use spring_web::{
     axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
@@ -166,4 +170,29 @@ async fn test_web_text_label(
         "text":text,
         "labeled_text":label_sentences
     })))
+}
+
+#[get("/api/web_search/{question_id}/{search_engine}")]
+async fn test_web_web_search(
+    Component(db): Component<DbConn>,
+    Path((question_id, search_engine)): Path<(i32, String)>,
+) -> Result<impl IntoResponse> {
+    let q = Question::find_by_id(question_id)
+        .one(&db)
+        .await
+        .with_context(|| format!("Question::find_by_id({question_id})"))?
+        .ok_or_else(|| KnownWebError::not_found("问题不存在"))?;
+
+    let search_engine: dyn SearchEngine = match search_engine {
+        "baidu" => search_api::Baidu,
+        "sogou" => search_api::Sogou,
+        "bing" => search_api::Bing,
+    };
+
+    let html = scraper::Html::parse_fragment(q.content);
+    let result = search_engine
+        .search(&html.root_element().text())
+        .await
+        .context("search failed")?;
+    Ok(Json(result))
 }
