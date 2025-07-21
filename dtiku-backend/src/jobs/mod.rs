@@ -96,6 +96,18 @@ trait PaperSyncer {
     }
 }
 
+#[derive(Debug, sqlx::FromRow)]
+pub(crate) struct QuestionIdNumber {
+    question_id: i64,
+    number: i32,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+pub(crate) struct MaterialIdNumber {
+    material_id: i64,
+    number: i32,
+}
+
 pub(crate) fn consumer() -> Consumers {
     Consumers::new().typed_consumer(task_schedule)
 }

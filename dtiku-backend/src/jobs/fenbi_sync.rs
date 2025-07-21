@@ -1,5 +1,5 @@
 use super::PaperSyncer;
-use crate::jobs::JobScheduler;
+use crate::jobs::{JobScheduler, MaterialIdNumber, QuestionIdNumber};
 use crate::plugins::embedding::Embedding;
 use crate::utils::regex as regex_util;
 use anyhow::Context;
@@ -948,12 +948,6 @@ impl Into<PaperBlock> for OriginChapter {
     }
 }
 
-#[derive(Debug, sqlx::FromRow)]
-struct QuestionIdNumber {
-    question_id: i64,
-    number: i32,
-}
-
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct OriginQuestion {
     id: i64,
@@ -1362,12 +1356,6 @@ pub struct MaterialAccessory {
 pub struct OriginKeyPoint {
     pub id: i64,
     pub name: String,
-}
-
-#[derive(Debug, sqlx::FromRow)]
-struct MaterialIdNumber {
-    material_id: i64,
-    number: i32,
 }
 
 #[derive(Debug, sqlx::FromRow)]

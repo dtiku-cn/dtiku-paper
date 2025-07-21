@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use super::{JobScheduler, PaperSyncer};
+use crate::jobs::{MaterialIdNumber, QuestionIdNumber};
 use crate::plugins::embedding::Embedding;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
@@ -253,7 +256,107 @@ impl HuatuSyncService {
         source_paper_id: i64,
         paper: &paper::Model,
     ) -> anyhow::Result<()> {
-        // todo
+        let question_ids: Vec<QuestionIdNumber> = sqlx::query_as(
+            r##"
+            select
+                question_id,
+                number
+            from paper_question
+            where from_ty = 'huatu'
+            and paper_id = $1
+            order by number
+            "##,
+        )
+        .bind(source_paper_id)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find question_ids({source_paper_id}) failed"))?;
+
+        let qid_num_map: HashMap<_, _> = question_ids
+            .into_iter()
+            .map(|q| (q.question_id, q.number))
+            .collect();
+        let qids = qid_num_map.keys().cloned().collect_vec();
+
+        let material_ids: Vec<MaterialIdNumber> = sqlx::query_as(
+            r##"
+            select
+                material_id,
+                number
+            from paper_material
+            where from_ty = 'fenbi'
+            and paper_id = $1
+            order by number
+            "##,
+        )
+        .bind(source_paper_id)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find material_ids({source_paper_id}) failed"))?;
+
+        let mid_num_map: HashMap<_, _> = material_ids
+            .into_iter()
+            .map(|m| (m.material_id, m.number + 1))
+            .collect();
+        let mids = mid_num_map.keys().cloned().collect_vec();
+
+        let questions = sqlx::query_as::<_, OriginQuestion>(
+            r##"
+            select
+                id,
+                target_id,
+                (jsonb_extract_path(extra,'area'))::int2 as area,
+                (jsonb_extract_path(extra,'year'))::int2 as year,
+                jsonb_extract_path_text(extra,'teachType') as ty,
+                jsonb_extract_path_text(extra,'stem') as content,
+                jsonb_extract_path(extra,'choices') as choices,
+                (jsonb_extract_path(extra,'difficult'))::real as difficult,
+                nullif(jsonb_extract_path(extra,'answerList'), 'null') as answer_list,
+                jsonb_extract_path_text(extra,'analysis') as analysis,
+                jsonb_extract_path_text(extra,'extend') as extend,
+                jsonb_extract_path_text(extra,'answerRequire') as answer_require,
+                jsonb_extract_path_text(extra,'referAnalysis') as refer_analysis,
+                nullif(jsonb_extract_path_text(extra,'material'), 'null') as material,
+                nullif(jsonb_extract_path(extra,'pointsName'), 'null') as points_name
+            from question
+            where from_ty = 'huatu'
+            and id = any($1)
+        "##,
+        )
+        .bind(qids)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find questions({source_paper_id}) failed"))?;
+
+        let materials = sqlx::query_as::<_, OriginMaterial>(
+            r##"
+            select
+                id,
+                target_id,
+                jsonb_extract_path_text(extra,'content') as content
+            from material
+            where from_ty = 'huatu'
+            and id = any($1)
+        "##,
+        )
+        .bind(mids)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find material({source_paper_id}) failed"))?;
+
+        self.save_questions_and_materials(questions, materials, paper, &qid_num_map, &mid_num_map)
+            .await?;
+        Ok(())
+    }
+
+    async fn save_questions_and_materials(
+        &self,
+        questions: Vec<OriginQuestion>,
+        materials: Vec<OriginMaterial>,
+        paper: &paper::Model,
+        qid_num_map: &HashMap<i64, i32>,
+        mid_num_map: &HashMap<i64, i32>,
+    ) -> anyhow::Result<()> {
         Ok(())
     }
 }
@@ -429,4 +532,26 @@ impl Into<PaperChapter> for &PaperBlock {
             count: self.qcount as i16,
         }
     }
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+struct OriginQuestion {
+    id: i64,
+    target_id: Option<i32>,
+    area: i16,
+    year: i16,
+    ty: Option<String>,
+    content: String,
+    choices: Json<Vec<String>>,
+    difficult: f32,
+    answer_list: Json<Vec<String>>,
+    analysis: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+struct OriginMaterial {
+    pub id: i64,
+    pub target_id: Option<i32>,
+    pub content: String,
 }
