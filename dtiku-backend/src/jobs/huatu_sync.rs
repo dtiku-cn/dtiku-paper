@@ -11,6 +11,7 @@ use dtiku_paper::model::{
 use futures::StreamExt;
 use itertools::Itertools;
 use pinyin::ToPinyin;
+use sea_orm::ActiveModelTrait;
 use sea_orm::{ActiveValue::Set, ConnectionTrait, EntityTrait, PaginatorTrait, QueryFilter};
 use sea_orm::{ColumnTrait, Statement};
 use serde::{Deserialize, Serialize};
@@ -387,8 +388,8 @@ impl HuatuSyncService {
                 .await
                 .context("insert solution failed")?;
 
+            let origin_m_id = 1;
             if let Some(m) = q.material {
-                let origin_m_id = m.id;
                 let target_id: Option<i32> = sqlx::query_scalar::<_, Option<i32>>(
                     "select target_id from material where from_ty = 'fenbi' and id = $1",
                 )
@@ -428,12 +429,11 @@ impl HuatuSyncService {
                 }
             }
 
-            let keypoint_path = match q.keypoints {
+            let keypoint_path = match q.points_name {
                 Some(keypoints) => {
                     let mut keypoint_ids = vec![];
-                    for kp in keypoints.0 {
+                    for keypoint_name in keypoints.0 {
                         let paper_type = paper.paper_type;
-                        let keypoint_name = kp.name;
                         let kp = KeyPoint::find_by_paper_type_and_name(
                             &self.target_db,
                             paper_type,
@@ -753,6 +753,11 @@ struct OriginQuestion {
     difficult: f32,
     answer_list: Json<Vec<String>>,
     analysis: Option<String>,
+    extend: Option<String>,
+    answer_require: Option<String>,
+    refer_analysis: Option<String>,
+    material: Option<String>,
+    points_name: Option<Json<Vec<String>>>,
 }
 
 impl OriginQuestion {
