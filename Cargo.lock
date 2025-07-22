@@ -3744,9 +3744,9 @@ dependencies = [
 
 [[package]]
 name = "libxml"
-version = "0.3.6"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e37b98370114a0cf64e2e858221ba5e0e2db6f31b0730db51a5f07a098fcef0e"
+checksum = "fb2d16f40caa84d060a98883fe96eddca8efbce5ca14cfc41c7c24f3f0d40ddc"
 dependencies = [
  "bindgen 0.71.1",
  "libc",
@@ -5862,9 +5862,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest-scraper"
-version = "0.6.5"
+version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6db0360ee11c2ee4d84dd6961fe781865dc4e40e891681f72e67d9e23c3ccde"
+checksum = "cac760d53fb6d8d3a162732bd10108b56bc6e819ea67bb44ac07f5a0941906aa"
 dependencies = [
  "async-trait",
  "encoding_rs",

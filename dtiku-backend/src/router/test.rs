@@ -183,13 +183,20 @@ async fn test_web_web_search(
         .with_context(|| format!("Question::find_by_id({question_id})"))?
         .ok_or_else(|| KnownWebError::not_found("问题不存在"))?;
 
-    let search_engine: dyn SearchEngine = match search_engine {
-        "baidu" => search_api::Baidu,
-        "sogou" => search_api::Sogou,
-        "bing" => search_api::Bing,
+    enum SearchEngineImpl {
+        Baidu(search_api::Baidu),
+        Sogou(search_api::Sogou),
+        Bing(search_api::Bing),
+    }
+
+    let search_engine: SearchEngineImpl = match search_engine.as_str() {
+        "baidu" => SearchEngineImpl::Baidu(search_api::Baidu),
+        "sogou" => SearchEngineImpl::Sogou(search_api::Sogou),
+        "bing" => SearchEngineImpl::Bing(search_api::Bing),
+        _ => return Err(KnownWebError::bad_request("未知的搜索引擎").into()),
     };
 
-    let html = scraper::Html::parse_fragment(q.content);
+    let html = scraper::Html::parse_fragment(&q.content);
     let result = search_engine
         .search(&html.root_element().text())
         .await
