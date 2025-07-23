@@ -11,11 +11,11 @@ use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
 use reqwest_scraper::ScraperResponse;
 use sea_orm::EntityTrait;
-use search_api::SearchEngine;
+use search_api::SearchItem;
 use serde_json::json;
 use spring_sea_orm::DbConn;
 use spring_web::{
-    axum::{response::IntoResponse, Json},
+    axum::{Json, response::IntoResponse},
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
     get, post,
@@ -193,12 +193,14 @@ async fn test_web_search_api(
 
     let html = scraper::Html::parse_fragment(content);
     let text = html.root_element().text().join("");
-    let result = match search_engine.as_str() {
-        "baidu" => search_api::Baidu::search(&text).await,
-        "sogou" => search_api::Sogou::search(&text).await,
-        "bing" => search_api::Bing::search(&text).await,
-        _ => search_api::Baidu::search(&text).await,
+
+    let result: Vec<SearchItem> = match search_engine.as_str() {
+        "baidu" => search_api::baidu::search(&text).await,
+        "sogou" => search_api::sogou::search(&text).await,
+        "bing" => search_api::bing::search(&text).await,
+        _ => search_api::baidu::search(&text).await,
     }
     .context("search failed")?;
+
     Ok(Json(result))
 }

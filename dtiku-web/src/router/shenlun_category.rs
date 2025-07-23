@@ -1,11 +1,11 @@
-use crate::views::{shenlun_category::ShenlunCategoryTemplate, GlobalVariables};
+use crate::views::{GlobalVariables, shenlun_category::ShenlunCategoryTemplate};
 use dtiku_paper::{
     domain::keypoint::KeyPointTree,
     service::{keypoint::KeyPointService, question::QuestionService},
 };
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
-    axum::{response::IntoResponse, Extension},
+    axum::{Extension, response::IntoResponse},
     error::Result,
     extractor::{Component, Path},
     get,
@@ -23,7 +23,7 @@ async fn shenlun_category(
         None => KeyPointTree::none(),
     };
     let (kp_pid, kp_id) = kp_tree.default_kp();
-    inner_shenlun_category(&kps, &qs, global, kp_tree, kp_pid, kp_id, None, &page).await
+    inner_shenlun_category(kps, qs, global, kp_tree, kp_pid, kp_id, None, page).await
 }
 
 #[get("/shenlun-categories/{kp_pid}/{kp_id}")]
@@ -38,7 +38,7 @@ async fn shenlun_category_for_category(
         Some(paper_type) => kps.build_tree_for_paper_type(paper_type.id).await?,
         None => KeyPointTree::none(),
     };
-    inner_shenlun_category(&kps, &qs, global, kp_tree, kp_pid, kp_id, None, &page).await
+    inner_shenlun_category(kps, qs, global, kp_tree, kp_pid, kp_id, None, page).await
 }
 
 #[get("/shenlun-categories/{kp_pid}/{kp_id}/{year}")]
@@ -53,21 +53,21 @@ async fn shenlun_category_for_category_and_year(
         Some(paper_type) => kps.build_tree_for_paper_type(paper_type.id).await?,
         None => KeyPointTree::none(),
     };
-    inner_shenlun_category(&kps, &qs, global, kp_tree, kp_pid, kp_id, Some(year), &page).await
+    inner_shenlun_category(kps, qs, global, kp_tree, kp_pid, kp_id, Some(year), page).await
 }
 
 async fn inner_shenlun_category(
-    kps: &KeyPointService,
-    qs: &QuestionService,
+    kps: KeyPointService,
+    qs: QuestionService,
     global: GlobalVariables,
     kp_tree: KeyPointTree,
     kp_pid: i32,
     kp_id: i32,
     year: Option<i16>,
-    page: &Pagination,
+    page: Pagination,
 ) -> Result<impl IntoResponse> {
     let years = kps.find_year_stats_for_category(kp_id).await?;
-    let qids = kps.find_qid_by_kp(kp_id, year, page).await?;
+    let qids = kps.find_qid_by_kp(kp_id, year, &page).await?;
     let questions = qs.full_question_by_ids(qids).await?;
     Ok(ShenlunCategoryTemplate {
         global,

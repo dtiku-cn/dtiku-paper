@@ -6422,11 +6422,10 @@ checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
 
 [[package]]
 name = "search-api"
-version = "0.1.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea1baec0bf713e3cede9785e61055dcced02ca8820116ef68abdcf1562cbd568"
+checksum = "0a4c6e87506c4ce9df77542cebbce2a76ddfcc03f8326082b3d10ed6a22bb737"
 dependencies = [
- "async-trait",
  "reqwest 0.12.22",
  "reqwest-scraper",
  "serde",
