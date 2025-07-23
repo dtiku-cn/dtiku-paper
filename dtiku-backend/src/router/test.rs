@@ -189,7 +189,9 @@ async fn test_web_search_api(
         .with_context(|| format!("Question::find_by_id({question_id})"))?
         .ok_or_else(|| KnownWebError::not_found("问题不存在"))?;
 
-    let html = scraper::Html::parse_fragment(&q.content);
+    let content = q.content.trim();
+
+    let html = scraper::Html::parse_fragment(content);
     let text = html.root_element().text().join("");
     let result = match search_engine.as_str() {
         "baidu" => search_api::Baidu::search(&text).await,
