@@ -7,7 +7,8 @@ use crate::{
 use anyhow::Context as _;
 use dtiku_paper::model::Question;
 use gaoya::minhash::{MinHasher, MinHasher64V1};
-use gaoya::simhash::SimSipHasher128;
+use gaoya::simhash::{SimHash, SimSipHasher128};
+use itertools::Itertools;
 use reqwest_scraper::ScraperResponse;
 use sea_orm::EntityTrait;
 use search_api::SearchEngine;
@@ -53,12 +54,17 @@ async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoRes
     let source_min_hash = min_hash.create_signature(source.chars());
     let target_min_hash = min_hash.create_signature(target.chars());
     let min_hash_similarity = min_hash.compute_similarity(source.chars(), target.chars());
-    // let sim_hash = SimSipHasher128::new(200, 200);
-    // sim_hash.hash();
+    let sim_hash = SimHash::<SimSipHasher128, u128, 128>::new(SimSipHasher128::new(1, 2));
+    let source_sim_hash = sim_hash.create_signature(source.chars());
+    let target_sim_hash = sim_hash.create_signature(target.chars());
+    let sim_hash_similarity = min_hash.compute_similarity(source.chars(), target.chars());
     Ok(Json(json!({
         "source_min_hash": source_min_hash,
         "target_min_hash": target_min_hash,
         "min_hash_similarity":min_hash_similarity,
+        "source_sim_hash": source_sim_hash,
+        "target_sim_hash": target_sim_hash,
+        "sim_hash_similarity":sim_hash_similarity,
         "bag":bag,
         "cosine":cosine,
         "damerau_levenshtein":damerau_levenshtein,
@@ -173,7 +179,7 @@ async fn test_web_text_label(
 }
 
 #[get("/api/web_search/{question_id}/{search_engine}")]
-async fn test_web_web_search(
+async fn test_web_search_api(
     Component(db): Component<DbConn>,
     Path((question_id, search_engine)): Path<(i32, String)>,
 ) -> Result<impl IntoResponse> {
@@ -183,23 +189,14 @@ async fn test_web_web_search(
         .with_context(|| format!("Question::find_by_id({question_id})"))?
         .ok_or_else(|| KnownWebError::not_found("问题不存在"))?;
 
-    enum SearchEngineImpl {
-        Baidu(search_api::Baidu),
-        Sogou(search_api::Sogou),
-        Bing(search_api::Bing),
-    }
-
-    let search_engine: SearchEngineImpl = match search_engine.as_str() {
-        "baidu" => SearchEngineImpl::Baidu(search_api::Baidu),
-        "sogou" => SearchEngineImpl::Sogou(search_api::Sogou),
-        "bing" => SearchEngineImpl::Bing(search_api::Bing),
-        _ => return Err(KnownWebError::bad_request("未知的搜索引擎").into()),
-    };
-
     let html = scraper::Html::parse_fragment(&q.content);
-    let result = search_engine
-        .search(&html.root_element().text())
-        .await
-        .context("search failed")?;
+    let text = html.root_element().text().join("");
+    let result = match search_engine.as_str() {
+        "baidu" => search_api::Baidu::search(&text).await,
+        "sogou" => search_api::Sogou::search(&text).await,
+        "bing" => search_api::Bing::search(&text).await,
+        _ => search_api::Baidu::search(&text).await,
+    }
+    .context("search failed")?;
     Ok(Json(result))
 }

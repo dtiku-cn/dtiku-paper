@@ -399,34 +399,6 @@ impl HuatuSyncService {
                 .with_context(|| format!("select material target_id by id#{origin_m_id}"))?
                 .flatten();
 
-                if let Some(target_m_id) = target_id {
-                    question_material::ActiveModel {
-                        question_id: Set(q_in_db.id),
-                        material_id: Set(target_m_id),
-                    }
-                    .insert_on_conflict(&self.target_db)
-                    .await
-                    .context("insert question_material failed")?;
-                } else {
-                    tracing::warn!(
-                        "origin_question#{} ==> question#{}: material#{} target_id not exists",
-                        q.id,
-                        q_in_db.id,
-                        origin_m_id
-                    );
-                    let num = match mid_num_map.get(&m.id) {
-                        Some(num) => {
-                            material_num = material_num.max(*num);
-                            *num
-                        }
-                        None => {
-                            let num = material_num;
-                            material_num += 1;
-                            num
-                        }
-                    };
-                    self.save_material(m.0, paper.id, num).await?;
-                }
             }
 
             let keypoint_path = match q.points_name {
@@ -485,6 +457,7 @@ impl HuatuSyncService {
                 }
             };
 
+            let correct_ratio = 1.0;
             // ltree
             let stmt = match &keypoint_path {
                 Some(path) => Statement::from_sql_and_values(
