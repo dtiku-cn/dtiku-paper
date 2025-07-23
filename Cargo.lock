@@ -706,7 +706,7 @@ dependencies = [
  "bitflags 2.9.1",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools 0.10.5",
  "proc-macro2",
  "quote",
  "regex",
@@ -1752,7 +1752,6 @@ dependencies = [
  "reqwest-scraper",
  "scraper",
  "sea-orm",
- "search-api",
  "serde",
  "serde_json",
  "serde_with",
@@ -1768,6 +1767,7 @@ dependencies = [
  "sqlx",
  "strum",
  "textdistance",
+ "thiserror 2.0.12",
  "tokio",
  "tonic",
  "tonic-build",
@@ -3515,15 +3515,6 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
@@ -4519,9 +4510,9 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openai-api-rs"
-version = "6.0.7"
+version = "6.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26fbd6ca2a5bfeaa31716cb35ea3b07d014667e72fb76ea096eeec0e632b764c"
+checksum = "8840fe901fe3fcb452df2ba4d30d47baac0cc3c481815469db8cc0ac6963cb52"
 dependencies = [
  "bytes",
  "futures-util",
@@ -6419,18 +6410,6 @@ name = "seahash"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
-
-[[package]]
-name = "search-api"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a4c6e87506c4ce9df77542cebbce2a76ddfcc03f8326082b3d10ed6a22bb737"
-dependencies = [
- "reqwest 0.12.22",
- "reqwest-scraper",
- "serde",
- "thiserror 2.0.12",
-]
 
 [[package]]
 name = "security-framework"

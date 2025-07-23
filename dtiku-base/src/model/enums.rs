@@ -109,4 +109,6 @@ pub enum ScheduleTaskType {
     FenbiSync,
     #[strum(message = "成语统计")]
     IdiomStats,
+    #[strum(message = "Web答案采集")]
+    WebSolutionCollect,
 }

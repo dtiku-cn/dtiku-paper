@@ -1,22 +1,27 @@
+pub mod search;
+
 mod fenbi_sync;
 mod huatu_sync;
 mod idiom_fetch;
 mod offcn_sync;
+mod web_solution_collect;
 
 use crate::jobs::idiom_fetch::IdiomStatsService;
+use crate::jobs::web_solution_collect::WebSolutionCollectService;
 use crate::plugins::jobs::RunningJobs;
 use anyhow::Context;
 use dtiku_base::model::ScheduleTask;
 use dtiku_base::model::{enums::ScheduleTaskType, schedule_task};
 use fenbi_sync::FenbiSyncService;
 use sea_orm::{EntityTrait as _, Set};
-use spring::{async_trait, plugin::ComponentRegistry, tracing, App};
+use spring::{App, async_trait, plugin::ComponentRegistry, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
 use spring_stream::handler::TypedConsumer;
 use spring_stream::{
+    Consumers,
     extractor::{Component, Json},
-    stream_listener, Consumers,
+    stream_listener,
 };
 use sqlx::Row;
 
@@ -41,6 +46,12 @@ async fn task_schedule(
         ScheduleTaskType::IdiomStats => {
             IdiomStatsService::build(task)
                 .expect("build idiom stats service failed")
+                .start()
+                .await
+        }
+        ScheduleTaskType::WebSolutionCollect => {
+            WebSolutionCollectService::build(task)
+                .expect("build web solution service failed")
                 .start()
                 .await
         }

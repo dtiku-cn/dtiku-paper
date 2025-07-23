@@ -37,17 +37,13 @@ fancy-regex = { workspace = true }
 lazy_static = { workspace = true }
 scraper = { workspace = true }
 reqwest = { workspace = true }
-reqwest-scraper = { workspace = true, default-features = false, features = [
-    "css_selector",
-    "json",
-]}
+reqwest-scraper = { workspace = true }
 hnsw = { workspace = true }
 hnsw_rs = { workspace = true }
 dashmap = { workspace = true }
 textdistance = { workspace = true }
 prost = { workspace = true }
 tonic = { workspace = true }
-search-api = { workspace = true }
 pinyin = { workspace = true }
 sha2 = { workspace = true }
 url = { workspace = true }
@@ -58,6 +54,7 @@ ouroboros = { workspace = true }
 openai-api-rs = { workspace = true }
 rand = { workspace = true }
 gaoya = { workspace = true }
+thiserror = { workspace = true }
 
 [build-dependencies]
 tonic-build = "0.13"

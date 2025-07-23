@@ -1,13 +1,13 @@
 use anyhow::Context as _;
-use dtiku_base::model::{schedule_task, ScheduleTask};
+use dtiku_base::model::{ScheduleTask, schedule_task};
 use dtiku_paper::model::{
-    paper, question::QuestionExtra, ExamCategory, Paper, PaperQuestion, Question,
+    ExamCategory, Paper, PaperQuestion, Question, paper, question::QuestionExtra,
 };
 use dtiku_stats::model::{
+    Idiom,
     idiom::{self, IdiomExplain as IdiomExplainModel},
     idiom_ref,
     sea_orm_active_enums::IdiomType,
-    Idiom,
 };
 use itertools::Itertools;
 use reqwest;
@@ -117,7 +117,7 @@ impl IdiomStatsService {
             for paper in papers {
                 let paper_id = paper.id;
                 if let Err(e) = self.stats_for_paper_detail(paper).await {
-                    tracing::error!("stats_for_paper_detail({}) error: {:?}", paper_id, e);
+                    tracing::error!("stats_for_paper_detail({paper_id}) error: {e:?}");
                 }
                 last_id = paper_id;
                 self.task = self.task.update_context(last_id, &self.db).await?;

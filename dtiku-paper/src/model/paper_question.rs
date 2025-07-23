@@ -1,12 +1,11 @@
-use std::collections::HashMap;
-
 pub use super::_entities::paper_question::*;
 use crate::query::question::PaperQuestionQuery;
 use anyhow::Context;
 use sea_orm::{
-    sea_query::{IntoCondition, OnConflict},
     ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter, QuerySelect,
+    sea_query::{IntoCondition, OnConflict},
 };
+use std::collections::HashMap;
 
 impl Entity {
     pub async fn find_by_question_id<C>(db: &C, question_id: i32) -> anyhow::Result<Vec<Model>>
@@ -107,6 +106,27 @@ impl Entity {
             .all(db)
             .await
             .with_context(|| format!("paper_question::find_by_query failed"))
+    }
+
+    pub async fn find_by_paper_type_and_qid_gt<C: ConnectionTrait>(
+        db: &C,
+        paper_type: i16,
+        qid: i32,
+    ) -> anyhow::Result<Vec<i32>> {
+        Entity::find()
+            .select_only()
+            .columns([Column::QuestionId])
+            .filter(
+                Column::PaperType
+                    .eq(paper_type)
+                    .and(Column::QuestionId.gt(qid)),
+            )
+            .into_tuple()
+            .all(db)
+            .await
+            .with_context(|| {
+                format!("paper_question::find_by_paper_type_and_qid_gt({paper_type},{qid}) failed")
+            })
     }
 }
 
