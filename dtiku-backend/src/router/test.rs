@@ -194,14 +194,12 @@ async fn test_web_search_api(
     let html = scraper::Html::parse_fragment(content);
     let text = html.root_element().text().join("");
 
-    // sogou::search(&text).await;
     // let result = match search_engine.as_str() {
-    //     "baidu" => baidu::search(&text).await,
-    //     "sogou" => sogou::search(&text).await,
-    //     "bing" => bing::search(&text).await,
-    //     _ => baidu::search(&text).await,
-    // }
-    // .context("search failed")?;
+    //     "baidu" => baidu::search(&text).await?,
+    //     "sogou" => sogou::search(&text).await?,
+    //     "bing" => bing::search(&text).await?,
+    //     _ => baidu::search(&text).await?,
+    // };
 
     Ok(Json(text))
 }

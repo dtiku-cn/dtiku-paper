@@ -1,14 +1,14 @@
-use super::Result;
 use reqwest_scraper::FromXPath;
 use reqwest_scraper::ScraperResponse;
 
-pub async fn search(keyword: &str) -> Result<Vec<super::SearchItem>> {
-    let html = reqwest::get(format!("https://www.bing.com/search?q={keyword}"))
-        .await?
-        .xpath()
-        .await?;
+pub async fn search(keyword: &str) -> anyhow::Result<Vec<super::SearchItem>> {
+    // let html = reqwest::get(format!("https://www.bing.com/search?q={keyword}"))
+    //     .await?
+    //     .xpath()
+    //     .await?;
 
-    Ok(SearchResult::from_xhtml(html).map(|rs| rs.into_iter().map(|r| r.into()).collect())?)
+    // Ok(SearchResult::from_xhtml(html).map(|rs| rs.into_iter().map(|r| r.into()).collect())?)
+    Ok(vec![])
 }
 
 #[derive(Debug, FromXPath)]

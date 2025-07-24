@@ -1,11 +1,11 @@
-use super::Result;
 use reqwest::header;
+use reqwest::header::HeaderValue;
 use reqwest_scraper::FromXPath;
 use reqwest_scraper::ScraperResponse;
 
-pub async fn search(keyword: &str) -> Result<Vec<super::SearchItem>> {
+pub async fn search(keyword: &str) -> anyhow::Result<Vec<super::SearchItem>> {
     let mut headers = header::HeaderMap::new();
-    headers.insert("User-Agent", header::HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"));
+    headers.insert("User-Agent", HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"));
     let html = reqwest::Client::builder()
         .default_headers(headers)
         .build()?

@@ -1,7 +1,7 @@
 use super::search::{SearchItem, baidu, bing, sogou};
 use anyhow::Context as _;
 use dtiku_base::model::{ScheduleTask, schedule_task};
-use dtiku_paper::model::{ExamCategory, PaperQuestion, Question, paper_question, question};
+use dtiku_paper::model::{ExamCategory, PaperQuestion, Question, question};
 use itertools::Itertools as _;
 use reqwest_scraper::ScraperResponse;
 use sea_orm::{ActiveValue::Set, EntityTrait as _};
@@ -74,17 +74,11 @@ impl WebSolutionCollectService {
         let html = scraper::Html::parse_fragment(content);
         let text = html.root_element().text().join("");
 
-        // let result = baidu::search(&text)
-        //     .await
-        //     .with_context(|| format!("baidu_search({text}) failed"))?;
+        // let result = baidu::search(&text).await?;
         // self.scraper_web_page(result).await;
-        // let result = sogou::search(&text)
-        //     .await
-        //     .with_context(|| format!("sogou_search({text}) failed"))?;
+        // let result = sogou::search(&text).await?;
         // self.scraper_web_page(result).await;
-        // let result = bing::search(&text)
-        //     .await
-        //     .with_context(|| format!("bing_search({text}) failed"))?;
+        // let result = bing::search(&text).await?;
         // self.scraper_web_page(result).await;
 
         Ok(())
