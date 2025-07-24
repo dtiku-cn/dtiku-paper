@@ -194,7 +194,7 @@ async fn test_web_search_api(
     let html = scraper::Html::parse_fragment(content);
     let text = html.root_element().text().join("");
 
-    let result: Vec<SearchItem> = match search_engine.as_str() {
+    let result = match search_engine.as_str() {
         "baidu" => baidu::search(&text).await,
         "sogou" => sogou::search(&text).await,
         "bing" => bing::search(&text).await,
@@ -202,5 +202,5 @@ async fn test_web_search_api(
     }
     .context("search failed")?;
 
-    Ok(Json(text))
+    Ok(Json(result))
 }

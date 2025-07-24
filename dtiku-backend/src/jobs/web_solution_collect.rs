@@ -92,7 +92,7 @@ impl WebSolutionCollectService {
 
     async fn scraper_web_page(&self, result: Vec<SearchItem>) -> anyhow::Result<()> {
         for SearchItem { url, desc, title } in result {
-            let resp = reqwest::get(url).await?;
+            let resp = reqwest::get(&url).await?;
             let html = resp.html().await?;
             let url = url::Url::parse(&url).with_context(|| format!("parse url failed:{url}"))?;
 
@@ -100,8 +100,6 @@ impl WebSolutionCollectService {
             let readability_page = readability::extractor::extract(&mut html_reader, &url)
                 .context("readability::extractor::extract failed")?;
             let text = &readability_page.text;
-
-            
         }
         Ok(())
     }

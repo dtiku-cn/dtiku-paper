@@ -1,10 +1,11 @@
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub mod baidu;
 pub mod bing;
 pub mod sogou;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SearchItem {
     pub url: String,
     pub title: String,
