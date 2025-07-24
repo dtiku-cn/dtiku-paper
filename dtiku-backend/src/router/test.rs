@@ -15,7 +15,7 @@ use sea_orm::EntityTrait;
 use serde_json::json;
 use spring_sea_orm::DbConn;
 use spring_web::{
-    axum::{Json, response::IntoResponse},
+    axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
     get, post,
@@ -194,12 +194,12 @@ async fn test_web_search_api(
     let html = scraper::Html::parse_fragment(content);
     let text = html.root_element().text().join("");
 
-    // let result = match search_engine.as_str() {
-    //     "baidu" => baidu::search(&text).await?,
-    //     "sogou" => sogou::search(&text).await?,
-    //     "bing" => bing::search(&text).await?,
-    //     _ => baidu::search(&text).await?,
-    // };
+    let result = match search_engine.as_str() {
+        "baidu" => baidu::search(&text).await?,
+        "sogou" => sogou::search(&text).await?,
+        "bing" => bing::search(&text).await?,
+        _ => baidu::search(&text).await?,
+    };
 
-    Ok(Json(text))
+    Ok(Json(result))
 }
