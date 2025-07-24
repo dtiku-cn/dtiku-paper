@@ -1,8 +1,11 @@
+use crate::config::openai::OpenAIConfig;
+
 use super::search::{baidu, bing, sogou, SearchItem};
 use anyhow::Context as _;
 use dtiku_base::model::{schedule_task, ScheduleTask};
 use dtiku_paper::model::{question, ExamCategory, PaperQuestion, Question};
 use itertools::Itertools as _;
+use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
 use reqwest_scraper::ScraperResponse;
 use sea_orm::{ActiveValue::Set, EntityTrait as _};
 use serde_json::Value;
@@ -14,6 +17,8 @@ use spring_sea_orm::DbConn;
 pub struct WebSolutionCollectService {
     #[inject(component)]
     db: DbConn,
+    #[inject(config)]
+    openai: OpenAIConfig,
     task: schedule_task::Model,
 }
 
@@ -74,8 +79,9 @@ impl WebSolutionCollectService {
         let html = scraper::Html::parse_fragment(content);
         let text = html.root_element().text().join("");
 
+        let result = vec![];
         // let result = baidu::search(&text).await?;
-        // self.scraper_web_page(result).await;
+        self.scraper_web_page(result).await?;
         // let result = sogou::search(&text).await?;
         // self.scraper_web_page(result).await;
         // let result = bing::search(&text).await?;
@@ -94,6 +100,22 @@ impl WebSolutionCollectService {
             let readability_page = readability::extractor::extract(&mut html_reader, &url)
                 .context("readability::extractor::extract failed")?;
             let text = &readability_page.text;
+
+            let mut openai = self.openai.clone().build()?;
+            let req = ChatCompletionRequest::new(
+                "deepseek/deepseek-r1-0528-qwen3-8b:free".to_string(),
+                vec![chat_completion::ChatCompletionMessage {
+                    role: chat_completion::MessageRole::user,
+                    content: chat_completion::Content::Text(String::from("What is bitcoin?")),
+                    name: None,
+                    tool_calls: None,
+                    tool_call_id: None,
+                }],
+            );
+            openai
+                .chat_completion(req)
+                .await
+                .context("chat_completion 调用失败")?;
         }
         Ok(())
     }
