@@ -13,12 +13,12 @@ members = [
 
 [workspace.dependencies]
 tokio = "1"
-spring = "0.4"
-spring-web = "0.4"
+spring = "0.4.1"
+spring-web = "0.4.4"
 spring-grpc = "0.4"
 spring-sea-orm = "0.4"
 spring-redis = "0.4"
-spring-stream = "0.4"
+spring-stream = "0.4.0"
 spring-job = "0.4"
 spring-sqlx = "0.4"
 spring-opentelemetry = "0.4"
