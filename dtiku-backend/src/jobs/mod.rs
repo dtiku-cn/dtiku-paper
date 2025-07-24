@@ -14,14 +14,13 @@ use dtiku_base::model::ScheduleTask;
 use dtiku_base::model::{enums::ScheduleTaskType, schedule_task};
 use fenbi_sync::FenbiSyncService;
 use sea_orm::{EntityTrait as _, Set};
-use spring::{App, async_trait, plugin::ComponentRegistry, tracing};
+use spring::{async_trait, plugin::ComponentRegistry, tracing, App};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
 use spring_stream::handler::TypedConsumer;
 use spring_stream::{
-    Consumers,
     extractor::{Component, Json},
-    stream_listener,
+    stream_listener, Consumers,
 };
 use sqlx::Row;
 

@@ -1,22 +1,29 @@
+use super::SearchItem;
+use anyhow::Context;
 use reqwest::header;
 use reqwest_scraper::FromXPath;
 use reqwest_scraper::ScraperResponse;
 
-pub async fn search(keyword: &str) -> anyhow::Result<Vec<super::SearchItem>> {
-    // let mut headers = header::HeaderMap::new();
-    // headers.insert("User-Agent", header::HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"));
+pub async fn search(keyword: &str) -> anyhow::Result<Vec<SearchItem>> {
+    let mut headers = header::HeaderMap::new();
+    headers.insert("User-Agent", header::HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0"));
 
-    // let html = reqwest::Client::builder()
-    //     .default_headers(headers)
-    //     .build()?
-    //     .get(format!("https://sogou.com/web?query={keyword}"))
-    //     .send()
-    //     .await?
-    //     .xpath()
-    //     .await?;
+    let html = reqwest::Client::builder()
+        .default_headers(headers)
+        .build()
+        .context("Failed to build reqwest client")?
+        .get(format!("https://sogou.com/web?query={keyword}"))
+        .send()
+        .await
+        .context("reqwest::get failed")?
+        .xpath()
+        .await
+        .context("Failed to parse response as XPath")?;
 
-    // Ok(SearchResult::from_xhtml(html).map(|rs| rs.into_iter().map(|r| r.into()).collect())?)
-    Ok(vec![])
+    let result = SearchResult::from_xhtml(html)
+        .map(|rs| rs.into_iter().map(|r| r.into()).collect())
+        .context("parse from xhtml failed")?;
+    Ok(result)
 }
 
 #[derive(Debug, FromXPath)]
@@ -33,7 +40,7 @@ struct SearchResult {
     desc: String,
 }
 
-impl From<SearchResult> for super::SearchItem {
+impl From<SearchResult> for SearchItem {
     fn from(value: SearchResult) -> Self {
         Self {
             url: value.url,

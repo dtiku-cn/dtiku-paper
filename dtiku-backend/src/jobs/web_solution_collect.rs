@@ -74,12 +74,12 @@ impl WebSolutionCollectService {
         let html = scraper::Html::parse_fragment(content);
         let text = html.root_element().text().join("");
 
-        let result = baidu::search(&text).await?;
-        self.scraper_web_page(result).await;
-        let result = sogou::search(&text).await?;
-        self.scraper_web_page(result).await;
-        let result = bing::search(&text).await?;
-        self.scraper_web_page(result).await;
+        // let result = baidu::search(&text).await?;
+        // self.scraper_web_page(result).await;
+        // let result = sogou::search(&text).await?;
+        // self.scraper_web_page(result).await;
+        // let result = bing::search(&text).await?;
+        // self.scraper_web_page(result).await;
 
         Ok(())
     }
