@@ -706,7 +706,7 @@ dependencies = [
  "bitflags 2.9.1",
  "cexpr",
  "clang-sys",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "proc-macro2",
  "quote",
  "regex",
@@ -1377,8 +1377,18 @@ version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc7f46116c46ff9ab3eb1597a45688b6715c6e628b5c133e288e709a29bcb4ee"
 dependencies = [
- "darling_core",
- "darling_macro",
+ "darling_core 0.20.11",
+ "darling_macro 0.20.11",
+]
+
+[[package]]
+name = "darling"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a79c4acb1fd5fa3d9304be4c76e031c54d2e92d172a393e24b19a14fe8532fe9"
+dependencies = [
+ "darling_core 0.21.0",
+ "darling_macro 0.21.0",
 ]
 
 [[package]]
@@ -1396,12 +1406,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "darling_core"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74875de90daf30eb59609910b84d4d368103aaec4c924824c6799b28f77d6a1d"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2",
+ "quote",
+ "strsim",
+ "syn 2.0.104",
+]
+
+[[package]]
 name = "darling_macro"
 version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc34b93ccb385b40dc71c6fceac4b2ad23662c7eeb248cf10d529b7e055b6ead"
 dependencies = [
- "darling_core",
+ "darling_core 0.20.11",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "darling_macro"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e79f8e61677d5df9167cd85265f8e5f64b215cdea3fb55eebc3e622e44c7a146"
+dependencies = [
+ "darling_core 0.21.0",
  "quote",
  "syn 2.0.104",
 ]
@@ -1529,7 +1564,7 @@ version = "0.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d5bcf7b024d6835cfb3d473887cd966994907effbe9227e8c8219824d06c4e8"
 dependencies = [
- "darling",
+ "darling 0.20.11",
  "proc-macro2",
  "quote",
  "syn 2.0.104",
@@ -5853,11 +5888,10 @@ dependencies = [
 
 [[package]]
 name = "reqwest-scraper"
-version = "0.6.6"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cac760d53fb6d8d3a162732bd10108b56bc6e819ea67bb44ac07f5a0941906aa"
+checksum = "8a7641ce2cc63e230a89e20390ed2ca282f8cf568cc709da89087a2fe68f1790"
 dependencies = [
- "async-trait",
  "encoding_rs",
  "itertools 0.14.0",
  "jsonpath_lib",
@@ -5874,11 +5908,11 @@ dependencies = [
 
 [[package]]
 name = "reqwest-scraper-macros"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6df2327b886edff6db900a9782f10eeac56c823dd58226d35e3a2c57dfdb345e"
+checksum = "769b4418b724a36be5f275a74695f417a8cf988a2e153866fd138965e51bb750"
 dependencies = [
- "darling",
+ "darling 0.21.0",
  "lazy_static",
  "proc-macro2",
  "quote",
@@ -6616,7 +6650,7 @@ version = "3.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de90945e6565ce0d9a25098082ed4ee4002e047cb59892c318d66821e14bb30f"
 dependencies = [
- "darling",
+ "darling 0.20.11",
  "proc-macro2",
  "quote",
  "syn 2.0.104",
@@ -8315,7 +8349,7 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7df16e474ef958526d1205f6dda359fdfab79d9aa6d54bafcb92dcd07673dca"
 dependencies = [
- "darling",
+ "darling 0.20.11",
  "once_cell",
  "proc-macro-error2",
  "proc-macro2",
