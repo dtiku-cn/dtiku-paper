@@ -1,6 +1,4 @@
 use crate::config::openai::OpenAIConfig;
-
-use super::search::{baidu, bing, sogou, SearchItem};
 use anyhow::Context as _;
 use dtiku_base::model::{schedule_task, ScheduleTask};
 use dtiku_paper::model::{question, ExamCategory, PaperQuestion, Question};
@@ -8,6 +6,7 @@ use itertools::Itertools as _;
 use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
 use reqwest_scraper::ScraperResponse;
 use sea_orm::{ActiveValue::Set, EntityTrait as _};
+use search_api::{baidu, bing, sogou, SearchItem};
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;

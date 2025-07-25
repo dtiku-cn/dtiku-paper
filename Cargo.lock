@@ -1797,9 +1797,10 @@ dependencies = [
  "readability",
  "regex",
  "reqwest 0.12.22",
- "reqwest-scraper",
+ "reqwest-scraper 0.7.0",
  "scraper",
  "sea-orm",
+ "search-api",
  "serde",
  "serde_json",
  "serde_with",
@@ -5900,6 +5901,27 @@ dependencies = [
 
 [[package]]
 name = "reqwest-scraper"
+version = "0.6.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cac760d53fb6d8d3a162732bd10108b56bc6e819ea67bb44ac07f5a0941906aa"
+dependencies = [
+ "async-trait",
+ "encoding_rs",
+ "itertools 0.14.0",
+ "jsonpath_lib",
+ "libxml",
+ "mime",
+ "reqwest 0.12.22",
+ "reqwest-scraper-macros 0.6.2",
+ "scraper",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "thiserror 2.0.12",
+]
+
+[[package]]
+name = "reqwest-scraper"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a7641ce2cc63e230a89e20390ed2ca282f8cf568cc709da89087a2fe68f1790"
@@ -5910,12 +5932,27 @@ dependencies = [
  "libxml",
  "mime",
  "reqwest 0.12.22",
- "reqwest-scraper-macros",
+ "reqwest-scraper-macros 0.7.0",
  "scraper",
  "serde",
  "serde_json",
  "serde_path_to_error",
  "thiserror 2.0.12",
+]
+
+[[package]]
+name = "reqwest-scraper-macros"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6df2327b886edff6db900a9782f10eeac56c823dd58226d35e3a2c57dfdb345e"
+dependencies = [
+ "darling 0.20.11",
+ "lazy_static",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "scraper",
+ "syn 2.0.104",
 ]
 
 [[package]]
@@ -6456,6 +6493,18 @@ name = "seahash"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
+
+[[package]]
+name = "search-api"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a4c6e87506c4ce9df77542cebbce2a76ddfcc03f8326082b3d10ed6a22bb737"
+dependencies = [
+ "reqwest 0.12.22",
+ "reqwest-scraper 0.6.6",
+ "serde",
+ "thiserror 2.0.12",
+]
 
 [[package]]
 name = "security-framework"

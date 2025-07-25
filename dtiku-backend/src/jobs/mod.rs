@@ -1,5 +1,3 @@
-pub mod search;
-
 mod fenbi_sync;
 mod huatu_sync;
 mod idiom_fetch;

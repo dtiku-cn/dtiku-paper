@@ -1,4 +1,3 @@
-use crate::jobs::search::{baidu, bing, sogou};
 use crate::plugins::embedding::Embedding;
 use crate::utils::regex as regex_util;
 use crate::{
@@ -12,6 +11,7 @@ use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
 use reqwest_scraper::ScraperResponse;
 use sea_orm::EntityTrait;
+use search_api::{baidu, bing, sogou};
 use serde_json::json;
 use spring_sea_orm::DbConn;
 use spring_web::{
@@ -196,11 +196,12 @@ async fn test_web_search_api(
     };
 
     let result = match search_engine.as_str() {
-        "baidu" => baidu::search(&text).await?,
-        "sogou" => sogou::search(&text).await?,
-        "bing" => bing::search(&text).await?,
-        _ => baidu::search(&text).await?,
-    };
+        "baidu" => baidu::search(&text).await,
+        "sogou" => sogou::search(&text).await,
+        "bing" => bing::search(&text).await,
+        _ => baidu::search(&text).await,
+    }
+    .context("search failed")?;
 
     Ok(Json(result))
 }

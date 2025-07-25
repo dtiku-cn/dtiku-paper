@@ -55,6 +55,7 @@ openai-api-rs = { workspace = true }
 rand = { workspace = true }
 gaoya = { workspace = true }
 axum = { workspace = true, features = ["macros"] }
+search-api = { workspace = true }
 
 [build-dependencies]
 tonic-build = "0.13"
