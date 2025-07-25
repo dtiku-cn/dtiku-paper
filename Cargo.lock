@@ -718,7 +718,7 @@ dependencies = [
  "bitflags 2.9.1",
  "cexpr",
  "clang-sys",
- "itertools 0.12.1",
+ "itertools 0.13.0",
  "proc-macro2",
  "quote",
  "regex",
@@ -3563,6 +3563,15 @@ dependencies = [
 
 [[package]]
 name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
@@ -5234,9 +5243,9 @@ checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
 
 [[package]]
 name = "prettyplease"
-version = "0.2.35"
+version = "0.2.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "061c1221631e079b26479d25bbf2275bfe5917ae8419cd7e34f13bfc2aa7539a"
+checksum = "ff24dfcda44452b9816fff4cd4227e1bb73ff5a2f1bc1105aa92fb8565ce44d2"
 dependencies = [
  "proc-macro2",
  "syn 2.0.104",
@@ -7034,9 +7043,9 @@ dependencies = [
 
 [[package]]
 name = "spring-macros"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7652236dcbfce28df0b7895b05625bb7334982d106ae3ae4e8e05e40fa394446"
+checksum = "e9fdae5a3f68b32fcd9e461b0da0ecbafd3a2aca2bc22e301b593b369720049a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7137,9 +7146,9 @@ dependencies = [
 
 [[package]]
 name = "spring-web"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a19de9b02fac55d0ef0f2d7ab8f65c5689f3f2228586b728013953cc89999dd"
+checksum = "cd6e8d542afc917f96d43d3de87a4a058229df56259638cc354fa119ce33f574"
 dependencies = [
  "anyhow",
  "axum",
