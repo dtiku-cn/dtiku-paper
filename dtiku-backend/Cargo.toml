@@ -54,7 +54,7 @@ ouroboros = { workspace = true }
 openai-api-rs = { workspace = true }
 rand = { workspace = true }
 gaoya = { workspace = true }
-thiserror = { workspace = true }
+axum = { workspace = true, features = ["macros"] }
 
 [build-dependencies]
 tonic-build = "0.13"

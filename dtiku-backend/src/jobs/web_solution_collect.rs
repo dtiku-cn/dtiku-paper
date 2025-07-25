@@ -76,16 +76,17 @@ impl WebSolutionCollectService {
     async fn collect_for_question(&self, q: question::Model) -> anyhow::Result<()> {
         let content = q.content.trim();
 
-        let html = scraper::Html::parse_fragment(content);
-        let text = html.root_element().text().join("");
+        let text = {
+            let html = scraper::Html::parse_fragment(content);
+            html.root_element().text().join("")
+        };
 
-        // let result = vec![];
-        // let result = baidu::search(&text).await?;
-        // self.scraper_web_page(result).await?;
-        // let result = sogou::search(&text).await?;
-        // self.scraper_web_page(result).await;
-        // let result = bing::search(&text).await?;
-        // self.scraper_web_page(result).await;
+        let result = baidu::search(&text).await?;
+        self.scraper_web_page(result).await?;
+        let result = sogou::search(&text).await?;
+        self.scraper_web_page(result).await?;
+        let result = bing::search(&text).await?;
+        self.scraper_web_page(result).await?;
 
         Ok(())
     }

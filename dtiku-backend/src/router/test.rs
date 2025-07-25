@@ -190,16 +190,17 @@ async fn test_web_search_api(
         .ok_or_else(|| KnownWebError::not_found("问题不存在"))?;
 
     let content = q.content.trim();
+    let text = {
+        let html = scraper::Html::parse_fragment(content);
+        html.root_element().text().join("")
+    };
 
-    let html = scraper::Html::parse_fragment(content);
-    let text = html.root_element().text().join("");
+    let result = match search_engine.as_str() {
+        "baidu" => baidu::search(&text).await?,
+        "sogou" => sogou::search(&text).await?,
+        "bing" => bing::search(&text).await?,
+        _ => baidu::search(&text).await?,
+    };
 
-    // let result = match search_engine.as_str() {
-    //     "baidu" => baidu::search(&text).await?,
-    //     "sogou" => sogou::search(&text).await?,
-    //     "bing" => bing::search(&text).await?,
-    //     _ => baidu::search(&text).await?,
-    // };
-
-    Ok(Json(text))
+    Ok(Json(result))
 }
