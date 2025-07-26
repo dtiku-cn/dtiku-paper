@@ -7,8 +7,9 @@ use crate::{
 use anyhow::Context;
 use itertools::Itertools;
 use sea_orm::{
-    prelude::PgVector, sea_query::OnConflict, ColumnTrait, ConnectionTrait, DerivePartialModel,
-    EntityTrait, FromJsonQueryResult, FromQueryResult, QueryFilter, QuerySelect, Statement,
+    prelude::PgVector, sea_query::OnConflict, ActiveValue::Set, ColumnTrait, ConnectionTrait,
+    DerivePartialModel, EntityTrait, FromJsonQueryResult, FromQueryResult, QueryFilter,
+    QuerySelect, Statement,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -421,20 +422,24 @@ impl ActiveModel {
     where
         C: ConnectionTrait,
     {
-        let embedding = self.embedding.take().unwrap().to_vec();
-        let content = self.content.take().unwrap();
-        let qs = Entity::find_by_embedding(db, embedding).await?;
-        for q in qs {
-            if q.content == content {
-                return Ok(q);
-            }
-            if q.content.len() > 100 && content.len() > 100 {
-                let edit_distance = textdistance::str::levenshtein(&q.content, &content);
-                // 95%相似度
-                if edit_distance * 20 < content.len().max(q.content.len()) {
+        if let Some(embedding) = self.embedding.take() {
+            let embedding_vec = embedding.to_vec();
+            let content = self.content.take().unwrap();
+            let qs = Entity::find_by_embedding(db, embedding_vec).await?;
+            for q in qs {
+                if q.content == content {
                     return Ok(q);
                 }
+                if q.content.len() > 100 && content.len() > 100 {
+                    let edit_distance = textdistance::str::levenshtein(&q.content, &content);
+                    // 95%相似度
+                    if edit_distance * 20 < content.len().max(q.content.len()) {
+                        return Ok(q);
+                    }
+                }
             }
+            self.embedding = Set(embedding);
+            self.content = Set(content);
         }
         Entity::insert(self)
             .on_conflict(
