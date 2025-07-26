@@ -41,10 +41,25 @@ impl QuestionService {
         let mut question_id_map: HashMap<i32, model::paper_question::Model> =
             pqs.into_iter().map(|pq| (pq.question_id, pq)).collect();
         let qids = question_id_map.keys().cloned().collect_vec();
-        let questions = Question::find_by_ids(&self.db, qids).await?;
+        let questions = Question::find_by_ids(&self.db, qids.clone()).await?;
+        let mut qm_map = QuestionMaterial::find_by_qids(&self.db, qids).await?;
+        let mids = qm_map.values().flatten().cloned().collect_vec();
+        let materials = Material::find_by_ids(&self.db, mids)
+            .await
+            .context("find materials by ids failed")?;
+        let mut id_material_map: HashMap<i32, _> =
+            materials.into_iter().map(|m| (m.id, m)).collect();
         let qsp = questions
             .into_iter()
-            .map(|q| QuestionSinglePaper::new(q, &paper_id_map, &mut question_id_map))
+            .map(|q| {
+                QuestionSinglePaper::new(
+                    q,
+                    &paper_id_map,
+                    &mut question_id_map,
+                    &mut id_material_map,
+                    &mut qm_map,
+                )
+            })
             .collect_vec();
         Ok((qsp, papers))
     }

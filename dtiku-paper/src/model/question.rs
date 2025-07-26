@@ -2,7 +2,7 @@ pub use super::_entities::question::*;
 use super::{paper, Paper, PaperQuestion, _entities::solution, material};
 use crate::{
     domain::question::QuestionSearch,
-    model::{self, Solution},
+    model::{paper_question, Solution},
 };
 use anyhow::Context;
 use itertools::Itertools;
@@ -75,24 +75,35 @@ pub struct QuestionSinglePaper {
     pub extra: QuestionExtra,
     pub paper: PaperWithNum,
     pub solutions: Option<Vec<solution::Model>>,
-    pub materials: Option<Vec<material::Material>>,
+    pub materials: Option<Vec<material::Model>>,
 }
 
 impl QuestionSinglePaper {
     pub(crate) fn new(
         q: Model,
         pid_map: &HashMap<i32, &paper::Model>,
-        qid_map: &mut HashMap<i32, model::paper_question::Model>,
+        qid_map: &mut HashMap<i32, paper_question::Model>,
+        id_material_map: &mut HashMap<i32, material::Model>,
+        qm_map: &mut HashMap<i32, Vec<i32>>,
     ) -> Self {
         let pq = qid_map.remove(&q.id).unwrap();
         let p = pid_map.get(&pq.paper_id).unwrap();
+        let mids = qm_map.remove(&q.id);
+        let materials: Option<Vec<material::Model>> = match mids {
+            None => None,
+            Some(mids) => Some(
+                mids.into_iter()
+                    .filter_map(|mid| id_material_map.get(&mid).cloned())
+                    .collect(),
+            ),
+        };
         Self {
             id: q.id,
             content: q.content,
             extra: q.extra,
             paper: PaperWithNum::new(p, pq.sort),
             solutions: None,
-            materials: None,
+            materials,
         }
     }
     question_methods!();
