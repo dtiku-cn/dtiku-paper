@@ -27,6 +27,10 @@ uri = "${REDIS_URL:redis://localhost}"
 [embedding]
 url = "${EMBEDDING_URL:http://localhost:9090}"
 
+[openai]
+endpoint = "${OPENAI_ENDPOINT:https://api.openai.com/v1}"
+api_key = "${OPENAI_API_KEY:xxxx}"
+
 [site]
 navbar_brand = "公考加油站"
 site_title = "公考加油站"
