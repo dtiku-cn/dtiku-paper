@@ -128,7 +128,7 @@ async fn idiom_print(
     let model = IdiomType::from_str(&model).context("model parse failed")?;
     match global.get_paper_type_by_prefix("xingce") {
         Some(paper_type) => {
-            pagination.size = 100;
+            pagination.size = 500;
             let query = IdiomQuery {
                 label_id: req.labels,
                 page: pagination,
