@@ -7,6 +7,7 @@ use crate::{
 use anyhow::Context as _;
 use dtiku_paper::model::Question;
 use gaoya::minhash::{MinHasher, MinHasher64V1};
+use gaoya::simhash::SimHashBits;
 use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
 use reqwest_scraper::ScraperResponse;
@@ -57,7 +58,7 @@ async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoRes
     let sim_hash = SimHash::<SimSipHasher128, u128, 128>::new(SimSipHasher128::new(1, 2));
     let source_sim_hash = sim_hash.create_signature(source.chars());
     let target_sim_hash = sim_hash.create_signature(target.chars());
-    let sim_hash_similarity = min_hash.compute_similarity(source.chars(), target.chars());
+    let sim_hash_similarity = source_sim_hash.hamming_distance(&target_sim_hash);
     Ok(Json(json!({
         "source_min_hash": source_min_hash,
         "target_min_hash": target_min_hash,

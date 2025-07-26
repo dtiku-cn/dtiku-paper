@@ -428,6 +428,13 @@ impl ActiveModel {
             if q.content == content {
                 return Ok(q);
             }
+            if q.content.len() > 100 && content.len() > 100 {
+                let edit_distance = textdistance::str::levenshtein(&q.content, &content);
+                // 95%相似度
+                if edit_distance * 20 < content.len().max(q.content.len()) {
+                    return Ok(q);
+                }
+            }
         }
         Entity::insert(self)
             .on_conflict(

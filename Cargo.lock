@@ -1872,6 +1872,7 @@ dependencies = [
  "spring-redis",
  "spring-sea-orm",
  "strum",
+ "textdistance",
  "validator",
 ]
 
