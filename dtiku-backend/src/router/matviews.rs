@@ -1,24 +1,14 @@
-use crate::views::{config::SystemConfig as SystemConfigView, GetListResult};
 use anyhow::Context;
-use dtiku_base::model::{
-    enums::SystemConfigKey,
-    system_config::{self, Entity as SystemConfig},
-};
-use itertools::Itertools;
-use sea_orm::{
-    ActiveModelTrait, ConnectionTrait, DbBackend, ExecResult, FromQueryResult, Statement,
-};
-use sea_orm::{DatabaseBackend, Set};
+use sea_orm::DatabaseBackend;
+use sea_orm::{ConnectionTrait, DbBackend, ExecResult, FromQueryResult, Statement};
 use serde::Serialize;
 use spring_sea_orm::DbConn;
 use spring_web::{
     axum::{response::IntoResponse, Json},
     error::Result,
     extractor::{Component, Path},
-    get, post, put,
+    get, post,
 };
-use std::collections::HashMap;
-use strum::IntoEnumIterator;
 
 #[derive(Debug, Serialize, FromQueryResult)]
 pub struct MaterializedView {

@@ -23,10 +23,10 @@ pub struct WebSolutionCollectService {
 
 impl WebSolutionCollectService {
     pub async fn start(&mut self) {
-        let paper_type = ExamCategory::find_category_id_by_path(&self.db, "gwy/xingce")
+        let paper_type = ExamCategory::find_category_id_by_path(&self.db, "gwy/shenlun")
             .await
-            .expect("gwy/xingce category found failed")
-            .expect("gwy/xingce category id not found");
+            .expect("gwy/shenlun category found failed")
+            .expect("gwy/shenlun category id not found");
 
         self.collect_for_papers(paper_type).await.expect(&format!(
             "collect solution for papers for paper_type#{paper_type} failed"
@@ -91,7 +91,7 @@ impl WebSolutionCollectService {
     }
 
     async fn scraper_web_page(&self, result: Vec<SearchItem>) -> anyhow::Result<()> {
-        for SearchItem { url, desc, title } in result {
+        for SearchItem { url, .. } in result {
             let resp = reqwest::get(&url).await?;
             let html = resp.html().await?;
             let url = url::Url::parse(&url).with_context(|| format!("parse url failed:{url}"))?;
@@ -106,13 +106,17 @@ impl WebSolutionCollectService {
                 "deepseek/deepseek-r1-0528-qwen3-8b:free".to_string(),
                 vec![chat_completion::ChatCompletionMessage {
                     role: chat_completion::MessageRole::user,
-                    content: chat_completion::Content::Text(String::from("What is bitcoin?")),
+                    content: chat_completion::Content::Text(format!(
+                        r#"{text}\n\n
+                    从这个文本里抽取出问题和答案，用json返回，json结构如下：
+                    [{{"question":"这是示例问题","solution":"这是示例答案"}}]"#
+                    )),
                     name: None,
                     tool_calls: None,
                     tool_call_id: None,
                 }],
             );
-            openai
+            let resp = openai
                 .chat_completion(req)
                 .await
                 .context("chat_completion 调用失败")?;

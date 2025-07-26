@@ -1,3 +1,4 @@
+use crate::config::openai::OpenAIConfig;
 use crate::plugins::embedding::Embedding;
 use crate::utils::regex as regex_util;
 use crate::{
@@ -10,11 +11,13 @@ use gaoya::minhash::{MinHasher, MinHasher64V1};
 use gaoya::simhash::SimHashBits;
 use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
+use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
 use reqwest_scraper::ScraperResponse;
 use sea_orm::EntityTrait;
 use search_api::{baidu, bing, sogou};
 use serde_json::json;
 use spring_sea_orm::DbConn;
+use spring_web::extractor::Config;
 use spring_web::{
     axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
@@ -205,4 +208,32 @@ async fn test_web_search_api(
     .context("search failed")?;
 
     Ok(Json(result))
+}
+
+#[post("/api/test_call_open_ai")]
+async fn test_call_open_ai(
+    Config(openai_config): Config<OpenAIConfig>,
+    body: String,
+) -> Result<impl IntoResponse> {
+    let mut openai = openai_config.build()?;
+    let req = ChatCompletionRequest::new(
+        "deepseek/deepseek-r1-0528-qwen3-8b:free".to_string(),
+        vec![chat_completion::ChatCompletionMessage {
+            role: chat_completion::MessageRole::user,
+            content: chat_completion::Content::Text(format!(
+                r#"{body}\n\n
+                    从这个文本里抽取出问题和答案，用json返回，json结构如下：
+                    [{{"question":"这是示例问题","solution":"这是示例答案"}}]"#
+            )),
+            name: None,
+            tool_calls: None,
+            tool_call_id: None,
+        }],
+    );
+    let resp = openai
+        .chat_completion(req)
+        .await
+        .context("chat_completion 调用失败")?;
+
+    Ok(Json(resp))
 }
