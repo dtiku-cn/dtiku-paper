@@ -112,7 +112,7 @@
                 {% if let Some(materials) = q.materials%}
                 {%for m in materials%}
                 <div class="material">
-                    <div>{{m.content}}</div>
+                    <div>{{m.content | safe}}</div>
                 </div>
                 {%endfor%}
                 {%endif%}

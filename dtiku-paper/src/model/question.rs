@@ -93,7 +93,7 @@ impl QuestionSinglePaper {
             None => None,
             Some(mids) => Some(
                 mids.into_iter()
-                    .filter_map(|mid| id_material_map.get(&mid).cloned())
+                    .filter_map(|mid| id_material_map.remove(&mid))
                     .collect(),
             ),
         };
