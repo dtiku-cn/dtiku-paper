@@ -10,6 +10,7 @@ use search_api::{baidu, bing, sogou, SearchItem};
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
+use url::Url;
 
 #[derive(Debug, Service)]
 #[service(prototype)]
@@ -94,7 +95,7 @@ impl WebSolutionCollectService {
         for SearchItem { url, .. } in result {
             let resp = reqwest::get(&url).await?;
             let html = resp.html().await?;
-            let url = url::Url::parse(&url).with_context(|| format!("parse url failed:{url}"))?;
+            let url = Url::parse(&url).with_context(|| format!("parse url failed:{url}"))?;
 
             let mut html_reader = std::io::Cursor::new(html.clone());
             let readability_page = readability::extractor::extract(&mut html_reader, &url)

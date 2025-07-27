@@ -131,6 +131,70 @@ async fn test_web_text_extract(Query(req): Query<WebLabelReq>) -> Result<impl In
     })))
 }
 
+#[get("/api/web_text_similarity/{question_id}")]
+async fn test_web_text_similarity(
+    Component(db): Component<DbConn>,
+    Path(question_id): Path<i32>,
+    Query(req): Query<WebLabelReq>,
+) -> Result<impl IntoResponse> {
+    let q = Question::find_by_id(question_id)
+        .one(&db)
+        .await
+        .with_context(|| format!("Question::find_by_id({question_id}) failed"))?
+        .ok_or_else(|| KnownWebError::not_found("问题未找到"))?;
+    let url = url::Url::parse(&req.url).with_context(|| format!("parse url failed:{}", req.url))?;
+    let html = reqwest::Client::builder().user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0")
+        .build()
+        .unwrap()
+        .get(url.clone())
+        .send()
+        .await
+        .context("reqwest::get failed")?
+        .html()
+        .await
+        .context("get response text failed")?;
+    let mut html_reader = std::io::Cursor::new(html.clone());
+
+    let readability_page = readability::extractor::extract(&mut html_reader, &url)
+        .context("readability::extractor::extract failed")?;
+    let text = &readability_page.text;
+
+    let q_content = {
+        let content = q.content.trim();
+        let html = scraper::Html::parse_fragment(content);
+        html.root_element().text().join("")
+    };
+    let question_sentences = regex_util::split_sentences(&q_content);
+
+    let mut label_sentences = vec![];
+    fn levenshtein_similarity(a: &str, b: &str) -> f64 {
+        let dist = textdistance::str::levenshtein(a, b);
+        let max_len = a.len().max(b.len()).max(1);
+        1.0 - (dist as f64 / max_len as f64)
+    }
+    for sentence in regex_util::split_sentences(&text) {
+        let max_sim = question_sentences
+            .iter()
+            .map(|q| levenshtein_similarity(sentence, q))
+            .fold(0.0, f64::max);
+        let ls = if max_sim > 0.5 {
+            json!({
+                "sentence":sentence,
+                "label": max_sim
+            })
+        } else {
+            json!({
+                "sentence":sentence,
+            })
+        };
+        label_sentences.push(ls);
+    }
+    Ok(Json(json!({
+        "text":text,
+        "labeled_text":label_sentences
+    })))
+}
+
 #[get("/api/web_text_label/{question_id}")]
 async fn test_web_text_label(
     Component(nlp): Component<NLPService>,
