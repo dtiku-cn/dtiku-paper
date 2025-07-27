@@ -6,12 +6,15 @@ use crate::{
     views::test::{TextCompare, WebLabelReq},
 };
 use anyhow::Context as _;
+use axum::body::Body;
+use axum::http::{HeaderValue, Response};
 use dtiku_paper::model::Question;
 use gaoya::minhash::{MinHasher, MinHasher64V1};
 use gaoya::simhash::SimHashBits;
 use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
 use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
+use reqwest::header::CONTENT_TYPE;
 use reqwest_scraper::ScraperResponse;
 use sea_orm::EntityTrait;
 use search_api::{baidu, bing, sogou};
@@ -274,20 +277,37 @@ async fn test_web_search_api(
     Ok(Json(result))
 }
 
-#[post("/api/test_call_open_ai")]
+#[get("/api/open_router_models")]
+async fn open_router_models_proxy() -> Result<impl IntoResponse> {
+    let resp = reqwest::get("https://openrouter.ai/api/frontend/models")
+        .await
+        .context("reqwest get failed")?;
+    let content_type = resp
+        .headers()
+        .get(CONTENT_TYPE)
+        .cloned()
+        .unwrap_or_else(|| HeaderValue::from_static("application/json"));
+    let body = Body::from_stream(resp.bytes_stream());
+    Ok(Response::builder()
+        .header(CONTENT_TYPE, content_type)
+        .body(body)
+        .context("build response failed")?)
+}
+
+#[post("/api/test_call_open_ai/{model}")]
 async fn test_call_open_ai(
     Config(openai_config): Config<OpenAIConfig>,
+    Path(model): Path<String>,
     body: String,
 ) -> Result<impl IntoResponse> {
     let mut openai = openai_config.build()?;
     let req = ChatCompletionRequest::new(
-        "deepseek/deepseek-r1-0528-qwen3-8b:free".to_string(),
+        model,
         vec![chat_completion::ChatCompletionMessage {
             role: chat_completion::MessageRole::user,
             content: chat_completion::Content::Text(format!(
-                r#"{body}\n\n
-                    从这个文本里抽取出问题和答案，用json返回，json结构如下：
-                    [{{"question":"这是示例问题","solution":"这是示例答案"}}]"#
+                r#"{body}\n
+                从这个文本里抽取出问题和答案，用json返回，json结构如下：[{{"question":"这是示例问题","solution":"这是示例答案"}}]"#
             )),
             name: None,
             tool_calls: None,
