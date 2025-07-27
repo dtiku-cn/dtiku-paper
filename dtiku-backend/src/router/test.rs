@@ -177,7 +177,7 @@ async fn test_web_text_similarity(
             .iter()
             .map(|q| levenshtein_similarity(sentence, q))
             .fold(0.0, f64::max);
-        let ls = if max_sim > 0.5 {
+        let ls = if max_sim > 0.7 {
             json!({
                 "sentence":sentence,
                 "label": max_sim
