@@ -6,6 +6,7 @@ target/
 *.pdb
 **/*.env
 /*.dot
+**/.env
 
 ### VisualStudioCode ###
 .vscode/*

@@ -294,7 +294,7 @@ async fn open_router_models_proxy() -> Result<impl IntoResponse> {
         .context("build response failed")?)
 }
 
-#[post("/api/test_call_open_ai/{model}")]
+#[post("/api/test_call_open_ai/{*model}")]
 async fn test_call_open_ai(
     Config(openai_config): Config<OpenAIConfig>,
     Path(model): Path<String>,
