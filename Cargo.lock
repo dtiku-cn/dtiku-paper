@@ -121,7 +121,7 @@ dependencies = [
  "gostd",
  "jsonmap",
  "log",
- "md5",
+ "md5 0.7.0",
  "rsa 0.6.1",
  "serde",
  "serde_json",
@@ -1791,6 +1791,7 @@ dependencies = [
  "hnsw_rs",
  "itertools 0.14.0",
  "lazy_static",
+ "md5 0.8.0",
  "openai-api-rs",
  "ouroboros",
  "pinyin",
@@ -1809,6 +1810,7 @@ dependencies = [
  "sha2",
  "spring",
  "spring-job",
+ "spring-opendal",
  "spring-opentelemetry",
  "spring-redis",
  "spring-sea-orm",
@@ -4091,6 +4093,12 @@ name = "md5"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
+
+[[package]]
+name = "md5"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae960838283323069879657ca3de837e9f7bbb4c7bf6ea7f1b290d5e9476d2e0"
 
 [[package]]
 name = "memchr"
@@ -8783,7 +8791,7 @@ dependencies = [
  "aes-gcm",
  "base64 0.22.1",
  "chrono",
- "md5",
+ "md5 0.7.0",
  "pem",
  "reqwest 0.12.22",
  "rsa 0.9.8",

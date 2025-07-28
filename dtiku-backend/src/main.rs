@@ -8,6 +8,7 @@ mod views;
 
 use plugins::{embedding::EmbeddingPlugin, jobs::RunningJobsPlugin};
 use spring::{auto_config, App};
+use spring_opendal::OpenDALPlugin;
 use spring_opentelemetry::{
     KeyValue, OpenTelemetryPlugin, ResourceConfigurator, SERVICE_NAME, SERVICE_VERSION,
 };
@@ -34,6 +35,7 @@ async fn main() {
         .add_plugin(RedisPlugin)
         .add_plugin(RunningJobsPlugin)
         .add_plugin(OpenTelemetryPlugin)
+        .add_plugin(OpenDALPlugin)
         .add_plugin(EmbeddingPlugin)
         .run()
         .await

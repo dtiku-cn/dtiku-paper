@@ -5,8 +5,8 @@ use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
 use dtiku_paper::model::{
-    exam_category, label, material, paper, paper_material, question, question_keypoint,
-    question_material, solution, ExamCategory, FromType, KeyPoint, Label,
+    exam_category, label, material, paper, paper_material, question, question_keypoint, solution,
+    ExamCategory, FromType, KeyPoint, Label,
 };
 use futures::StreamExt;
 use itertools::Itertools;
@@ -398,7 +398,6 @@ impl HuatuSyncService {
                 .await
                 .with_context(|| format!("select material target_id by id#{origin_m_id}"))?
                 .flatten();
-
             }
 
             let keypoint_path = match q.points_name {

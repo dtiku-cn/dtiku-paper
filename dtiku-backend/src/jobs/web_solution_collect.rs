@@ -7,8 +7,10 @@ use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
 use reqwest_scraper::ScraperResponse;
 use sea_orm::{ActiveValue::Set, EntityTrait as _};
 use search_api::{baidu, bing, sogou, SearchItem};
+use serde::Deserialize;
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
+use spring_opendal::Op;
 use spring_sea_orm::DbConn;
 use url::Url;
 
@@ -19,6 +21,8 @@ pub struct WebSolutionCollectService {
     db: DbConn,
     #[inject(config)]
     openai: OpenAIConfig,
+    #[inject(component)]
+    op: Op,
     task: schedule_task::Model,
 }
 
@@ -82,35 +86,63 @@ impl WebSolutionCollectService {
         };
 
         let result = baidu::search(&text).await?;
-        self.scraper_web_page(result).await?;
+        self.scraper_web_page_and_save(result).await?;
         let result = sogou::search(&text).await?;
-        self.scraper_web_page(result).await?;
+        self.scraper_web_page_and_save(result).await?;
         let result = bing::search(&text).await?;
-        self.scraper_web_page(result).await?;
+        self.scraper_web_page_and_save(result).await?;
 
         Ok(())
     }
 
-    async fn scraper_web_page(&self, result: Vec<SearchItem>) -> anyhow::Result<()> {
+    async fn scraper_web_page_and_save(&self, result: Vec<SearchItem>) -> anyhow::Result<()> {
         for SearchItem { url, .. } in result {
-            let resp = reqwest::get(&url).await?;
-            let html = resp.html().await?;
-            let url = Url::parse(&url).with_context(|| format!("parse url failed:{url}"))?;
+            let json = self.scraper_web_page(&url).await?;
+            let json = json.trim_matches('`');
+            let qsv: Vec<QuestionSolution> =
+                serde_json::from_str(&json).context("json parse failed")?;
+        }
+        Ok(())
+    }
 
-            let mut html_reader = std::io::Cursor::new(html.clone());
-            let readability_page = readability::extractor::extract(&mut html_reader, &url)
+    async fn scraper_web_page(&self, url: &str) -> anyhow::Result<String> {
+        let uri = Url::parse(url).with_context(|| format!("parse url failed:{url}"))?;
+        let md5 = md5::compute(url);
+        let domain = uri.domain().unwrap_or("null");
+        let dir = format!("{domain}/{md5:x}");
+        let html_file = format!("{dir}/{url}");
+        let model = "deepseek/deepseek-r1:free";
+        let model_resp_file = format!("{dir}/{model}");
+        let json = if self
+            .op
+            .exists(&model_resp_file)
+            .await
+            .with_context(|| format!("op.exists({model_resp_file}) failed"))?
+        {
+            let r = self
+                .op
+                .read(&model_resp_file)
+                .await
+                .with_context(|| format!("op.read({model_resp_file}) failed"))?;
+
+            String::from_utf8(r.to_vec()).context("parse to string failed")?
+        } else {
+            let resp = reqwest::get(url).await?;
+            let html = resp.html().await?;
+            self.op.write(&html_file, html.clone()).await?;
+
+            let mut html_reader = std::io::Cursor::new(html.as_str());
+            let readability_page = readability::extractor::extract(&mut html_reader, &uri)
                 .context("readability::extractor::extract failed")?;
             let text = &readability_page.text;
 
             let mut openai = self.openai.clone().build()?;
             let req = ChatCompletionRequest::new(
-                "deepseek/deepseek-r1:free".to_string(),
+                model.to_string(),
                 vec![chat_completion::ChatCompletionMessage {
                     role: chat_completion::MessageRole::user,
                     content: chat_completion::Content::Text(format!(
-                        r#"{text}\n\n
-                    从这个文本里抽取出问题和答案，用json返回，json结构如下：
-                    [{{"question":"这是示例问题","solution":"这是示例答案"}}]"#
+                        r#"{text}\n从这个文本里抽取出问题和答案，用json返回，json结构如下：[{{"question":"这是示例问题","solution":"这是示例答案"}}]"#
                     )),
                     name: None,
                     tool_calls: None,
@@ -121,7 +153,17 @@ impl WebSolutionCollectService {
                 .chat_completion(req)
                 .await
                 .context("chat_completion 调用失败")?;
-        }
-        Ok(())
+            let json = resp.choices[0].message.content.clone().unwrap_or_default();
+            self.op.write(&model_resp_file, json.clone()).await?;
+
+            json
+        };
+        Ok(json)
     }
+}
+
+#[derive(Debug, Deserialize)]
+struct QuestionSolution {
+    question: String,
+    solution: String,
 }

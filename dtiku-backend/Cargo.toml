@@ -17,6 +17,10 @@ spring-sea-orm = { workspace = true, features = ["postgres", "with-web"] }
 spring-sqlx = { workspace = true, features = ["postgres"] }
 spring-redis = { workspace = true }
 spring-opentelemetry = { workspace = true }
+spring-opendal = { workspace = true, features = [
+    "services-webdav",
+    "layers-tracing",
+] }
 tokio = { workspace = true, features = ["full"] }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
 dtiku-base = { path = "../dtiku-base", version = "0.0.1" }
@@ -56,6 +60,7 @@ rand = { workspace = true }
 gaoya = { workspace = true }
 axum = { workspace = true, features = ["macros"] }
 search-api = { workspace = true }
+md5 = { workspace = true }
 
 [build-dependencies]
 tonic-build = "0.13"
