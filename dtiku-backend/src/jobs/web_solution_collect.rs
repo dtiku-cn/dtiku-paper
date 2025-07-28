@@ -104,7 +104,7 @@ impl WebSolutionCollectService {
 
             let mut openai = self.openai.clone().build()?;
             let req = ChatCompletionRequest::new(
-                "deepseek/deepseek-r1-0528-qwen3-8b:free".to_string(),
+                "deepseek/deepseek-r1:free".to_string(),
                 vec![chat_completion::ChatCompletionMessage {
                     role: chat_completion::MessageRole::user,
                     content: chat_completion::Content::Text(format!(

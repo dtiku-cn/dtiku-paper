@@ -6,9 +6,9 @@ mod service;
 mod views;
 
 use dtiku_pay::PayPlugin;
-use plugins::dav_client::WebDAVClientPlugin;
 use plugins::grpc_client::GrpcClientPlugin;
 use spring::App;
+use spring_opendal::OpenDALPlugin;
 use spring_opentelemetry::{
     KeyValue, OpenTelemetryPlugin, ResourceConfigurator, SERVICE_NAME, SERVICE_VERSION,
 };
@@ -18,7 +18,9 @@ use spring_web::{WebConfigurator, WebPlugin};
 
 #[tokio::main]
 async fn main() {
-    rustls::crypto::aws_lc_rs::default_provider().install_default().ok();
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .ok();
     App::new()
         .opentelemetry_attrs([
             KeyValue::new(SERVICE_NAME, env!("CARGO_PKG_NAME")),
@@ -30,7 +32,7 @@ async fn main() {
         .add_plugin(SeaOrmPlugin)
         .add_plugin(OpenTelemetryPlugin)
         .add_plugin(GrpcClientPlugin)
-        .add_plugin(WebDAVClientPlugin)
+        .add_plugin(OpenDALPlugin)
         .add_plugin(PayPlugin)
         .run()
         .await

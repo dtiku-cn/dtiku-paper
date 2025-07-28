@@ -1,11 +1,9 @@
-use crate::{
-    plugins::{dav_client::WebDAVClient, WebDAVClientConfig},
-    rpc,
-};
+use crate::{plugins::OpenListConfig, rpc};
 use anyhow::Context;
 use axum_extra::extract::Multipart;
 use chrono::{Datelike, Local};
 use spring::tracing;
+use spring_opendal::Op;
 use spring_web::{
     axum::response::IntoResponse,
     error::{KnownWebError, Result},
@@ -16,8 +14,8 @@ use uuid::Uuid;
 
 #[post("/upload")]
 async fn upload(
-    Component(dav): Component<WebDAVClient>,
-    Config(config): Config<WebDAVClientConfig>,
+    Component(dav): Component<Op>,
+    Config(config): Config<OpenListConfig>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse> {
     while let Some(field) = multipart
@@ -36,18 +34,14 @@ async fn upload(
             let dir_path = format!("pan.wo/artalk/{}/{:02}/{:02}", year, month, day);
             let uid = Uuid::new_v4();
             let file_path = format!("{dir_path}/{uid}");
-            let resp = dav
-                .mkcol_raw(&dir_path)
+            dav.create_dir(&dir_path)
                 .await
                 .with_context(|| format!("mkdir for {dir_path} failed"))?;
-            let body = resp.text().await.context("resp body failed")?;
-            tracing::info!("mkdir ==> {}", body);
             let resp = dav
-                .put_raw(&file_path, data)
+                .write(&file_path, data)
                 .await
                 .with_context(|| format!("upload to {file_path} failed"))?;
-            let body = resp.text().await.context("resp body failed")?;
-            tracing::info!("upload ==> {}", body);
+            tracing::info!("upload ==> {resp:?}");
             let url = rpc::alist::get_file_path(&file_path, &config)
                 .await
                 .with_context(|| format!("get_file_info({file_path}) failed"))?;

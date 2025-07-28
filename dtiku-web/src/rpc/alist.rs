@@ -1,4 +1,4 @@
-use crate::plugins::WebDAVClientConfig;
+use crate::plugins::OpenListConfig;
 use anyhow::Context;
 use spring_redis::cache;
 use feignhttp::post;
@@ -13,7 +13,7 @@ lazy_static! {
         env::var("STATIC_URL").unwrap_or_else(|_| "https://s.dtiku.cn".to_string());
 }
 
-pub async fn get_file_path(raw_path: &str, config: &WebDAVClientConfig) -> anyhow::Result<String> {
+pub async fn get_file_path(raw_path: &str, config: &OpenListConfig) -> anyhow::Result<String> {
     let path = if raw_path.starts_with("/") {
         raw_path.to_string()
     } else {
