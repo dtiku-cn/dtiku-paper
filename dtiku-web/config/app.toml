@@ -48,7 +48,7 @@ artalk_url = "${ARTALK_GRPC_URL:http://localhost:18090}"
 [opendal]
 scheme = "webdav"
 options = { endpoint = "${WEB_DAV_HOST:https://alist.dtiku.cn/dav}", username = "${WEB_DAV_USERNAME:xxx}", password = "${WEB_DAV_PASSWORD:xxx}" }
-layers = ["tracing"]
+layers = ["Tracing"]
 
 [pay]
 ## https://openhome.alipay.com/develop/sandbox/app
