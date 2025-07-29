@@ -34,7 +34,7 @@ async fn upload(
             let dir_path = format!("pan.wo/artalk/{}/{:02}/{:02}", year, month, day);
             let uid = Uuid::new_v4();
             let file_path = format!("{dir_path}/{uid}");
-            dav.create_dir(&dir_path)
+            dav.create_dir(&format!("{dir_path}/"))
                 .await
                 .with_context(|| format!("mkdir for {dir_path} failed"))?;
             let resp = dav
