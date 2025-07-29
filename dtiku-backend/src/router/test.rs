@@ -235,10 +235,11 @@ async fn test_web_text_label(
                 "sentence":sentence
             })
         } else {
-            let label = s[0].label.clone();
+            let label = s[0].0.label.clone();
+            let distance = s[0].1;
             json!({
                 "sentence": sentence,
-                "label": label
+                "label": format!("{label}:{distance}")
             })
         };
         label_sentences.push(ls);

@@ -23,9 +23,10 @@ use spring_stream::{
 use sqlx::Row;
 
 #[stream_listener("task")]
+// #[axum::debug_handler]
 async fn task_schedule(
-    Json(task): Json<schedule_task::Model>,
     Component(running_jobs): Component<RunningJobs>,
+    Json(task): Json<schedule_task::Model>,
 ) {
     let ty = task.ty;
     if running_jobs.is_running(ty) {

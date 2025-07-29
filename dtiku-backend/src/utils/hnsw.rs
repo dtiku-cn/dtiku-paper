@@ -40,14 +40,14 @@ impl HNSWIndex {
     }
 
     /// 查询最近的 top-k 个结果
-    pub fn search(&self, query: &[f32], k: usize) -> Vec<&LabeledSentence> {
+    pub fn search(&self, query: &[f32], k: usize) -> Vec<(&LabeledSentence, f32)> {
         self.with(|fields| {
             let hnsw = &fields.hnsw;
             let sentences_map = &fields.sentences_map;
 
             hnsw.search(query, k, k * 4)
                 .iter()
-                .filter_map(|point| sentences_map.get(&point.d_id))
+                .filter_map(|point| sentences_map.get(&point.d_id).map(|m| (m, point.distance)))
                 .collect()
         })
     }

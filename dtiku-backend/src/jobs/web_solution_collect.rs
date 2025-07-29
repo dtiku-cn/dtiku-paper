@@ -1,9 +1,13 @@
-use crate::config::openai::OpenAIConfig;
+use crate::utils::regex as regex_util;
+use crate::{
+    config::openai::OpenAIConfig,
+    plugins::embedding::Embedding,
+    utils::hnsw::{HNSWIndex, LabeledSentence},
+};
 use anyhow::Context as _;
 use dtiku_base::model::{schedule_task, ScheduleTask};
-use dtiku_paper::model::{question, ExamCategory, PaperQuestion, Question};
+use dtiku_paper::model::{question, ExamCategory, PaperQuestion, Question, Solution};
 use itertools::Itertools as _;
-use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
 use reqwest_scraper::ScraperResponse;
 use sea_orm::{ActiveValue::Set, EntityTrait as _};
 use search_api::{baidu, bing, sogou, SearchItem};
@@ -19,6 +23,8 @@ use url::Url;
 pub struct WebSolutionCollectService {
     #[inject(component)]
     db: DbConn,
+    #[inject(component)]
+    embedding: Embedding,
     #[inject(config)]
     openai: OpenAIConfig,
     #[inject(component)]
@@ -85,24 +91,71 @@ impl WebSolutionCollectService {
             html.root_element().text().join("")
         };
 
+        let hnsw_index = self.build_hnsw_index_for_question(&q).await?;
+
         let result = baidu::search(&text).await?;
-        self.scraper_web_page_and_save(result).await?;
+        self.scraper_web_page_and_save(&hnsw_index, result).await?;
         let result = sogou::search(&text).await?;
-        self.scraper_web_page_and_save(result).await?;
+        self.scraper_web_page_and_save(&hnsw_index, result).await?;
         let result = bing::search(&text).await?;
-        self.scraper_web_page_and_save(result).await?;
+        self.scraper_web_page_and_save(&hnsw_index, result).await?;
 
         Ok(())
     }
 
-    async fn scraper_web_page_and_save(&self, result: Vec<SearchItem>) -> anyhow::Result<()> {
-        for SearchItem { url, .. } in result {
-            let json = self.scraper_web_page(&url).await?;
-            let json = json.trim_matches('`');
-            let qsv: Vec<QuestionSolution> =
-                serde_json::from_str(&json).context("json parse failed")?;
+    async fn scraper_web_page_and_save(
+        &self,
+        hnsw_index: &HNSWIndex,
+        search_results: Vec<SearchItem>,
+    ) -> anyhow::Result<()> {
+        for SearchItem { url, .. } in search_results {
+            let html = self.scraper_web_page(&url).await?;
+            let mut semantic_tree = {
+                let dom = scraper::Html::parse_fragment(&html);
+                self.build_semantic_subtree(dom.root_element())
+            };
+            self.compute_semantic_tree(hnsw_index, &mut semantic_tree)
+                .await?;
         }
         Ok(())
+    }
+
+    pub async fn build_hnsw_index_for_question(
+        &self,
+        question: &question::Model,
+    ) -> anyhow::Result<HNSWIndex> {
+        let question_id = question.id;
+        let solutions = Solution::find_by_qid(&self.db, question_id)
+            .await
+            .with_context(|| format!("Solution::find_by_qid({question_id})"))?;
+
+        let mut all_sentences = vec![];
+        let mut id = 0;
+        for sentence in regex_util::split_sentences(&question.content) {
+            all_sentences.push(LabeledSentence {
+                id,
+                label: "question".into(),
+                outer_id: question_id,
+                text: sentence.to_string(),
+                embedding: self.embedding.text_embedding(sentence).await?,
+            });
+            id += 1;
+        }
+        for solution in solutions {
+            let solution_html = solution.extra.get_html();
+            for sentence in regex_util::split_sentences(&solution_html) {
+                all_sentences.push(LabeledSentence {
+                    id,
+                    label: "solution".into(),
+                    outer_id: solution.id,
+                    text: sentence.to_string(),
+                    embedding: self.embedding.text_embedding(sentence).await?,
+                });
+                id += 1;
+            }
+        }
+
+        Ok(HNSWIndex::build(&all_sentences))
     }
 
     async fn scraper_web_page(&self, url: &str) -> anyhow::Result<String> {
@@ -111,54 +164,93 @@ impl WebSolutionCollectService {
         let domain = uri.domain().unwrap_or("null");
         let dir = format!("{domain}/{md5:x}");
         let html_file = format!("{dir}/{url}");
-        let model = "deepseek/deepseek-r1:free";
-        let model_resp_file = format!("{dir}/{model}");
-        let json = if self
+        let html = if self
             .op
-            .exists(&model_resp_file)
+            .exists(&html_file)
             .await
-            .with_context(|| format!("op.exists({model_resp_file}) failed"))?
+            .with_context(|| format!("op.exists({html_file}) failed"))?
         {
             let r = self
                 .op
-                .read(&model_resp_file)
+                .read(&html_file)
                 .await
-                .with_context(|| format!("op.read({model_resp_file}) failed"))?;
+                .with_context(|| format!("op.read({html_file}) failed"))?;
 
             String::from_utf8(r.to_vec()).context("parse to string failed")?
         } else {
             let resp = reqwest::get(url).await?;
             let html = resp.html().await?;
             self.op.write(&html_file, html.clone()).await?;
-
-            let mut html_reader = std::io::Cursor::new(html.as_str());
-            let readability_page = readability::extractor::extract(&mut html_reader, &uri)
-                .context("readability::extractor::extract failed")?;
-            let text = &readability_page.text;
-
-            let mut openai = self.openai.clone().build()?;
-            let req = ChatCompletionRequest::new(
-                model.to_string(),
-                vec![chat_completion::ChatCompletionMessage {
-                    role: chat_completion::MessageRole::user,
-                    content: chat_completion::Content::Text(format!(
-                        r#"{text}\n从这个文本里抽取出问题和答案，用json返回，json结构如下：[{{"question":"这是示例问题","solution":"这是示例答案"}}]"#
-                    )),
-                    name: None,
-                    tool_calls: None,
-                    tool_call_id: None,
-                }],
-            );
-            let resp = openai
-                .chat_completion(req)
-                .await
-                .context("chat_completion 调用失败")?;
-            let json = resp.choices[0].message.content.clone().unwrap_or_default();
-            self.op.write(&model_resp_file, json.clone()).await?;
-
-            json
+            html
         };
-        Ok(json)
+
+        let mut html_reader = std::io::Cursor::new(html.as_str());
+        let readability_page = readability::extractor::extract(&mut html_reader, &uri)
+            .context("readability::extractor::extract failed")?;
+        Ok(readability_page.content)
+    }
+
+    async fn compute_semantic_tree(
+        &self,
+        hnsw_index: &HNSWIndex,
+        semantic_tree: &mut SemanticNode,
+    ) -> anyhow::Result<()> {
+        if !semantic_tree.text.is_empty() {
+            let embedding = self.embedding.text_embedding(&semantic_tree.text).await?;
+            let result = hnsw_index.search(&embedding, 1);
+            semantic_tree.embedding = Some(embedding);
+            if !result.is_empty() {
+                semantic_tree.label = Some(result[0].0.label.clone());
+                semantic_tree.similarity = Some(result[0].1);
+            }
+        }
+        Ok(())
+    }
+
+    fn build_semantic_subtree(&self, node: scraper::ElementRef) -> SemanticNode {
+        // 递归处理子节点
+        let mut children = Vec::new();
+        for child in node.children() {
+            if let Some(element) = child.value().as_element() {
+                if [
+                    "p",
+                    "div",
+                    "h1",
+                    "h2",
+                    "h3",
+                    "h4",
+                    "h5",
+                    "h6",
+                    "ul",
+                    "ol",
+                    "li",
+                    "dl",
+                    "dt",
+                    "dd",
+                    "blockquote",
+                    "article",
+                    "section",
+                    "main",
+                    "details",
+                    "summary",
+                ]
+                .contains(&element.name())
+                {
+                    let child_node =
+                        self.build_semantic_subtree(scraper::ElementRef::wrap(child).unwrap());
+                    children.push(child_node);
+                }
+            }
+        }
+
+        SemanticNode {
+            children,
+            text: node.text().join(" "),
+            html: node.html(),
+            label: None,
+            embedding: None,
+            similarity: None,
+        }
     }
 }
 
@@ -166,4 +258,14 @@ impl WebSolutionCollectService {
 struct QuestionSolution {
     question: String,
     solution: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct SemanticNode {
+    pub children: Vec<SemanticNode>,
+    pub html: String,
+    pub text: String,
+    pub label: Option<String>,
+    pub embedding: Option<Vec<f32>>,
+    pub similarity: Option<f32>,
 }
