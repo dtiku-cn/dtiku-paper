@@ -110,6 +110,17 @@ create table if not exists solution (
     extra jsonb not null
 );
 create index if not exists idx_solution_question_id on solution (question_id);
+-- 抓取的解答
+drop table if exists scraper_solution;
+create table if not exists scraper_solution (
+    id serial primary key,
+    question_id integer not null,
+    content text not null,
+    src_url text not null,
+    src_hash bytea not null,
+    created timestamp not null default now(),
+    modified timestamp not null default now()
+);
 --  图片,可能包含音频
 drop table if exists assets;
 create table if not exists assets(
@@ -117,7 +128,7 @@ create table if not exists assets(
     src_type src_type not null,
     src_id integer not null,
     src_url text not null,
-    src_hash char(64) not null,
+    src_hash bytea not null,
     created timestamp not null,
     modified timestamp not null,
     unique(src_type, src_id, src_hash)
