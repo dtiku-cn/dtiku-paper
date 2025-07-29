@@ -237,10 +237,16 @@ async fn test_web_text_label(
         } else {
             let label = s[0].0.label.clone();
             let distance = s[0].1;
-            json!({
-                "sentence": sentence,
-                "label": format!("{label}:{distance}")
-            })
+            if distance < 0.1 {
+                json!({
+                    "sentence": sentence,
+                    "label": format!("{label}:{distance}")
+                })
+            } else {
+                json!({
+                    "sentence": sentence,
+                })
+            }
         };
         label_sentences.push(ls);
     }
