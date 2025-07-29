@@ -31,6 +31,11 @@ url = "${EMBEDDING_URL:http://localhost:9090}"
 endpoint = "${OPENAI_ENDPOINT:https://api.openai.com/v1}"
 api_key = "${OPENROUTER_API_KEY}"
 
+[opendal]
+scheme = "webdav"
+options = { endpoint = "${WEB_DAV_HOST:https://alist.dtiku.cn/dav}", username = "${WEB_DAV_USERNAME:xxx}", password = "${WEB_DAV_PASSWORD:xxx}" }
+layers = ["Tracing"]
+
 [site]
 navbar_brand = "公考加油站"
 site_title = "公考加油站"
