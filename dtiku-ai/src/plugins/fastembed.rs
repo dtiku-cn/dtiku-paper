@@ -1,9 +1,6 @@
 use crate::config::hf_config::HfConfig;
 use derive_more::derive::{Deref, DerefMut};
-use fastembed::{
-    EmbeddingModel, ImageEmbedding, ImageEmbeddingModel, ImageInitOptions, InitOptions,
-    TextEmbedding,
-};
+use fastembed::{ImageEmbedding, ImageInitOptions, InitOptions, TextEmbedding};
 use spring::plugin::MutableComponentRegistry;
 use spring::tracing;
 use spring::{app::AppBuilder, async_trait, config::ConfigRegistry, plugin::Plugin};
@@ -29,7 +26,7 @@ impl Plugin for EmbeddingPlugin {
 
         tracing::info!("load huggingface model");
         let text_embedding = TextEmbedding::try_new(
-            InitOptions::new(EmbeddingModel::MultilingualE5Base)
+            InitOptions::new(hf_config.text_model)
                 .with_show_download_progress(true)
                 // .with_execution_providers(execution_providers.clone())
                 .with_cache_dir(format!("{cache_dir}/sentence-transformers").into()),
@@ -37,7 +34,7 @@ impl Plugin for EmbeddingPlugin {
         .expect("text embedding init failed");
 
         // let image_embedding = ImageEmbedding::try_new(
-        //     ImageInitOptions::new(ImageEmbeddingModel::Resnet50)
+        //     ImageInitOptions::new(hf_config.img_model)
         //         .with_show_download_progress(true)
         //         .with_execution_providers(execution_providers.clone())
         //         .with_cache_dir(format!("{cache_dir}/resnet").into()),
