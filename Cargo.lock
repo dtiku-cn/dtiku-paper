@@ -1732,26 +1732,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
-name = "dtiku-ai"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "derive_more 2.0.1",
- "fastembed",
- "prost",
- "serde",
- "serde_json",
- "serde_with",
- "spring",
- "spring-grpc",
- "spring-opentelemetry",
- "spring-redis",
- "tokio",
- "tonic",
- "tonic-build",
-]
-
-[[package]]
 name = "dtiku-artalk"
 version = "0.0.1"
 dependencies = [
@@ -1822,7 +1802,6 @@ dependencies = [
  "textdistance",
  "tokio",
  "tonic",
- "tonic-build",
  "url",
 ]
 
@@ -4802,7 +4781,6 @@ version = "2.0.0-rc.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52afb44b6b0cffa9bf45e4d37e5a4935b0334a51570658e279e9e3e6cf324aa5"
 dependencies = [
- "libloading",
  "ndarray",
  "ort-sys",
  "tracing",

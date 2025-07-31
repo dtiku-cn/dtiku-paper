@@ -1,11 +1,8 @@
-pub mod proto {
-    tonic::include_proto!("embedding");
-}
-
-use crate::{config::embedding::EmbeddingConfig, plugins::embedding::proto::BatchTextReq};
+use crate::config::embedding::EmbeddingConfig;
 use anyhow::Context;
+use axum::http::HeaderMap;
 use derive_more::derive::{Deref, DerefMut};
-use proto::{embedding_service_client::EmbeddingServiceClient, TextReq};
+use itertools::Itertools;
 use spring::{
     app::AppBuilder,
     async_trait,
@@ -23,47 +20,56 @@ impl Plugin for EmbeddingPlugin {
             .get_config::<EmbeddingConfig>()
             .expect("load huggingface config failed");
 
-        let client = EmbeddingServiceClient::connect(embedding_config.url)
-            .await
-            .expect("embedding service connect failed");
+        let headers = HeaderMap::new();
+
+        let client = reqwest::Client::builder()
+            .default_headers(headers)
+            .build()
+            .expect("create embedding client failed");
 
         app.add_component(Embedding(client));
     }
 }
 
 #[derive(Debug, Clone, Deref, DerefMut)]
-pub struct Embedding(EmbeddingServiceClient<Channel>);
+pub struct Embedding(reqwest::Client);
 
 impl Embedding {
     pub async fn text_embedding<S: Into<String>>(&self, text: S) -> anyhow::Result<Vec<f32>> {
+        let text: String = text.into();
         let resp = self
             .0
-            .clone()
-            .text_embedding(TextReq { text: text.into() })
+            .post("https://holmofy-dtiku-ai.hf.space/text_embedding")
+            .json(&text)
+            .send()
             .await
             .context("embedding service call failed")?;
-        Ok(resp.into_inner().embedding)
+        let embedding = resp
+            .json()
+            .await
+            .context("parse embedding response failed")?;
+        Ok(embedding)
     }
 
     pub async fn batch_text_embedding<S: Into<String> + Clone>(
         &self,
         texts: &[S],
     ) -> anyhow::Result<Vec<Vec<f32>>> {
-        let batch_size = texts.len() as u32;
+        let texts = texts
+            .into_iter()
+            .map(|t| Into::<String>::into(t.clone()))
+            .collect_vec();
         let resp = self
             .0
-            .clone()
-            .batch_text_embedding(BatchTextReq {
-                texts: texts.iter().cloned().map(Into::into).collect(),
-                batch_size: batch_size.min(5), // 默认5条文本为一批
-            })
+            .post("https://holmofy-dtiku-ai.hf.space/batch_text_embedding")
+            .json(&texts)
+            .send()
             .await
             .context("embedding service call failed")?;
-        Ok(resp
-            .into_inner()
-            .embeddings
-            .into_iter()
-            .map(|e| e.embedding)
-            .collect())
+        let embeddings = resp
+            .json()
+            .await
+            .context("parse embedding response failed")?;
+        Ok(embeddings)
     }
 }
