@@ -226,16 +226,28 @@ async fn test_web_text_label(
         .context("readability::extractor::extract failed")?;
     let text = &readability_page.text;
 
-    let mut label_sentences = vec![];
-    for sentence in regex_util::split_sentences(&text) {
-        let embedding = embedding.text_embedding(sentence).await?;
+    let sentences: Vec<String> = regex_util::split_sentences(&text)
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect();
+
+    if sentences.is_empty() {
+        return Ok(Json(json!({
+            "text": text,
+            "labeled_text": []
+        })));
+    }
+
+    let embeddings = embedding.batch_text_embedding(&sentences).await?;
+
+    let mut label_sentences = Vec::new();
+
+    for (sentence, embedding) in sentences.into_iter().zip(embeddings) {
         let s = hnsw.search(&embedding, 1);
         let ls = if s.is_empty() {
-            json!({
-                "sentence":sentence
-            })
+            json!({ "sentence": sentence })
         } else {
-            let label = s[0].0.label.clone();
+            let label = &s[0].0.label;
             let distance = s[0].1;
             if distance < 0.1 {
                 json!({
@@ -243,16 +255,15 @@ async fn test_web_text_label(
                     "label": format!("{label}:{distance}")
                 })
             } else {
-                json!({
-                    "sentence": sentence,
-                })
+                json!({ "sentence": sentence })
             }
         };
         label_sentences.push(ls);
     }
+
     Ok(Json(json!({
-        "text":text,
-        "labeled_text":label_sentences
+        "text": text,
+        "labeled_text": label_sentences
     })))
 }
 
