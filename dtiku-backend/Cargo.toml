@@ -61,3 +61,4 @@ gaoya = { workspace = true }
 axum = { workspace = true, features = ["macros"] }
 search-api = { workspace = true }
 md5 = { workspace = true }
+jieba-rs = { workspace = true, features = ["textrank"] }
