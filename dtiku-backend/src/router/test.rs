@@ -13,11 +13,13 @@ use gaoya::minhash::{MinHasher, MinHasher64V1};
 use gaoya::simhash::SimHashBits;
 use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
+use jieba_rs::{Jieba, KeywordExtract, TextRank};
 use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
 use reqwest::header::CONTENT_TYPE;
 use reqwest_scraper::ScraperResponse;
 use sea_orm::EntityTrait;
 use search_api::{baidu, bing, sogou};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use spring_sea_orm::DbConn;
 use spring_web::extractor::Config;
@@ -338,4 +340,28 @@ async fn test_call_open_ai(
         .context("chat_completion 调用失败")?;
 
     Ok(Json(resp))
+}
+
+#[post("/api/text_rank_keywords/{word_tag}")]
+async fn text_rank_keywords(
+    Path(word_tag): Path<String>,
+    body: String,
+) -> Result<impl IntoResponse> {
+    let word_tags = word_tag.split(",").map(|s| s.to_string()).collect_vec();
+    let jieba = Jieba::new();
+    let keyword_extractor = TextRank::default();
+    let top_k = keyword_extractor.extract_keywords(&jieba, &body, 10, word_tags);
+    #[derive(Debug, Serialize, Deserialize)]
+    struct TopKeyword {
+        pub keyword: String,
+        pub weight: f64,
+    }
+    let top_keywords = top_k
+        .into_iter()
+        .map(|k| TopKeyword {
+            keyword: k.keyword,
+            weight: k.weight,
+        })
+        .collect_vec();
+    Ok(Json(top_keywords))
 }
