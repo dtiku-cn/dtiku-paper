@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::config::embedding::EmbeddingConfig;
 use anyhow::Context;
 use itertools::Itertools;
@@ -22,6 +24,7 @@ impl Plugin for EmbeddingPlugin {
 
         let client = reqwest::Client::builder()
             .default_headers(headers)
+            .read_timeout(Duration::from_secs(500)) // Set a longer timeout for embedding requests
             .build()
             .expect("create embedding client failed");
 

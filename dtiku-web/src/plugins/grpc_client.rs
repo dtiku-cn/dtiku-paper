@@ -31,6 +31,7 @@ impl Plugin for GrpcClientPlugin {
 
         let client = reqwest::Client::builder()
             .default_headers(headers)
+            .read_timeout(Duration::from_secs(500)) // Set a longer timeout for embedding requests
             .build()
             .expect("create embedding client failed");
 
