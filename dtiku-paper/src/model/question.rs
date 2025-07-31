@@ -39,7 +39,11 @@ macro_rules! question_methods {
         }
 
         pub fn abbr(&self, size: usize) -> &str {
-            self.content
+            let text = {
+                let html = scraper::Html::parse_fragment(&self.content);
+                html.root_element().text().join("")
+            };
+            text
                 .char_indices()
                 .nth(size)
                 .map(|(idx, _)| &self.content[..idx])
