@@ -1,15 +1,13 @@
-pub mod ai {
-    tonic::include_proto!("embedding");
-}
 pub mod artalk {
     tonic::include_proto!("artalk");
 }
 
 use super::GrpcClientConfig;
-use ai::{embedding_service_client::EmbeddingServiceClient, TextReq};
 use anyhow::Context;
 use artalk::{artalk_service_client::ArtalkServiceClient, UserResp, VoteStats};
 use derive_more::derive::{Deref, DerefMut};
+use itertools::Itertools;
+use reqwest::header::HeaderMap;
 use spring::{
     app::AppBuilder,
     async_trait,
@@ -29,16 +27,17 @@ impl Plugin for GrpcClientPlugin {
             .get_config::<GrpcClientConfig>()
             .expect("load grpc config failed");
 
-        let channel = Channel::from_shared(grpc_config.embedding_url)
-            .expect("url is invalid")
-            .keep_alive_while_idle(true)
-            .keep_alive_timeout(Duration::from_secs(10))
-            .http2_keep_alive_interval(Duration::from_secs(30))
-            .connect()
-            .await
-            .expect("connect embedding server failed");
+        let headers = HeaderMap::new();
 
-        let embedding_client = EmbeddingServiceClient::new(channel);
+        let client = reqwest::Client::builder()
+            .default_headers(headers)
+            .build()
+            .expect("create embedding client failed");
+
+        app.add_component(Embedding {
+            url: grpc_config.embedding_url,
+            client,
+        });
 
         let channel = Channel::from_shared(grpc_config.artalk_url)
             .expect("url is invalid")
@@ -51,23 +50,53 @@ impl Plugin for GrpcClientPlugin {
 
         let artalk_client = ArtalkServiceClient::new(channel);
 
-        app.add_component(Embedding(embedding_client))
-            .add_component(Artalk(artalk_client));
+        app.add_component(Artalk(artalk_client));
     }
 }
 
-#[derive(Debug, Clone, Deref, DerefMut)]
-pub struct Embedding(EmbeddingServiceClient<Channel>);
+#[derive(Debug, Clone)]
+pub struct Embedding {
+    url: String,
+    client: reqwest::Client,
+}
 
 impl Embedding {
-    pub async fn text_embedding<S: Into<String>>(&self, text: S) -> Result<Vec<f32>> {
-        let resp = self
-            .0
-            .clone()
-            .text_embedding(TextReq { text: text.into() })
+    pub async fn text_embedding<S: Into<String>>(&self, text: S) -> anyhow::Result<Vec<f32>> {
+        let Self { url, client } = self;
+        let text: String = text.into();
+        let resp = client
+            .post(format!("{url}/text_embedding"))
+            .json(&text)
+            .send()
             .await
             .context("embedding service call failed")?;
-        Ok(resp.into_inner().embedding)
+        let embedding = resp
+            .json()
+            .await
+            .context("parse embedding response failed")?;
+        Ok(embedding)
+    }
+
+    pub async fn batch_text_embedding<S: Into<String> + Clone>(
+        &self,
+        texts: &[S],
+    ) -> anyhow::Result<Vec<Vec<f32>>> {
+        let Self { url, client } = self;
+        let texts = texts
+            .into_iter()
+            .map(|t| Into::<String>::into(t.clone()))
+            .collect_vec();
+        let resp = client
+            .post(format!("{url}/batch_text_embedding"))
+            .json(&texts)
+            .send()
+            .await
+            .context("embedding service call failed")?;
+        let embeddings = resp
+            .json()
+            .await
+            .context("parse embedding response failed")?;
+        Ok(embeddings)
     }
 }
 
