@@ -171,12 +171,13 @@ async fn test_web_text_similarity(Query(req): Query<WebLabelReq>) -> Result<impl
         let max_len = a.len().max(b.len()).max(1);
         1.0 - (dist as f64 / max_len as f64)
     }
+    let threshold = req.threshold.unwrap_or(0.7) as f64;
     for sentence in regex_util::split_sentences(&text) {
         let max_sim = question_sentences
             .iter()
             .map(|q| levenshtein_similarity(sentence, q))
             .fold(0.0, f64::max);
-        let ls = if max_sim > 0.7 {
+        let ls = if max_sim > threshold {
             json!({
                 "sentence":sentence,
                 "label": max_sim
@@ -233,6 +234,7 @@ async fn test_web_text_label(
     let embeddings = embedding.batch_text_embedding(&sentences).await?;
 
     let mut label_sentences = Vec::new();
+    let threshold = req.threshold.unwrap_or(0.1);
 
     for (sentence, embedding) in sentences.into_iter().zip(embeddings) {
         let s = hnsw.search(&embedding, 1);
@@ -241,7 +243,7 @@ async fn test_web_text_label(
         } else {
             let label = &s[0].0.label;
             let distance = s[0].1;
-            if distance < 0.1 {
+            if distance < threshold {
                 json!({
                     "sentence": sentence,
                     "label": format!("{label}:{distance}")
