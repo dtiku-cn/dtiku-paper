@@ -180,7 +180,7 @@ async fn test_web_text_similarity(Query(req): Query<WebLabelReq>) -> Result<impl
         let ls = if max_sim > threshold {
             json!({
                 "sentence":sentence,
-                "label": max_sim
+                "label": format!("question:{max_sim}")
             })
         } else {
             json!({
