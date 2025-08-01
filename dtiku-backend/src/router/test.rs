@@ -136,17 +136,8 @@ async fn test_web_text_extract(Query(req): Query<WebLabelReq>) -> Result<impl In
     })))
 }
 
-#[get("/api/web_text_similarity/{question_id}")]
-async fn test_web_text_similarity(
-    Component(db): Component<DbConn>,
-    Path(question_id): Path<i32>,
-    Query(req): Query<WebLabelReq>,
-) -> Result<impl IntoResponse> {
-    let q = Question::find_by_id(question_id)
-        .one(&db)
-        .await
-        .with_context(|| format!("Question::find_by_id({question_id}) failed"))?
-        .ok_or_else(|| KnownWebError::not_found("问题未找到"))?;
+#[get("/api/web_text_similarity")]
+async fn test_web_text_similarity(Query(req): Query<WebLabelReq>) -> Result<impl IntoResponse> {
     let url = url::Url::parse(&req.url).with_context(|| format!("parse url failed:{}", req.url))?;
     let html = reqwest::Client::builder().user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0")
         .build()
@@ -165,7 +156,10 @@ async fn test_web_text_similarity(
     let text = &readability_page.text;
 
     let q_content = {
-        let content = q.content.trim();
+        let content = req
+            .label_text
+            .get("question")
+            .ok_or_else(|| KnownWebError::bad_request("question not found in label_text"))?;
         let html = scraper::Html::parse_fragment(content);
         html.root_element().text().join("")
     };
@@ -200,17 +194,13 @@ async fn test_web_text_similarity(
     })))
 }
 
-#[get("/api/web_text_label/{question_id}")]
+#[post("/api/web_text_label")]
 async fn test_web_text_label(
     Component(nlp): Component<NLPService>,
     Component(embedding): Component<Embedding>,
-    Path(question_id): Path<i32>,
-    Query(req): Query<WebLabelReq>,
+    Json(req): Json<WebLabelReq>,
 ) -> Result<impl IntoResponse> {
-    let hnsw = nlp
-        .build_hnsw_index_for_question(question_id)
-        .await?
-        .ok_or_else(|| KnownWebError::not_found("问题不存在"))?;
+    let hnsw = nlp.build_hnsw_index_for_label_text(req.label_text).await?;
     let url = url::Url::parse(&req.url).with_context(|| format!("parse url failed:{}", req.url))?;
     let html = reqwest::Client::builder().user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0")
         .build()

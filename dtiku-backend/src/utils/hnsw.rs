@@ -2,28 +2,24 @@ use hnsw_rs::prelude::*;
 use ouroboros::self_referencing;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
-pub struct LabeledSentence {
-    pub id: usize,
-    pub label: String, // "question" or "solution"
-    pub outer_id: i32,
-    pub text: String,
-    pub embedding: Vec<f32>,
+pub trait IdAndEmbedding: Clone {
+    fn id(&self) -> usize;
+    fn embedding(&self) -> &[f32];
 }
 
 #[self_referencing]
-pub struct HNSWIndex {
-    sentences_map: HashMap<usize, LabeledSentence>,
+pub struct HNSWIndex<T: IdAndEmbedding + 'static> {
+    sentences_map: HashMap<usize, T>,
     #[borrows(sentences_map)]
     #[not_covariant]
     hnsw: Hnsw<'this, f32, DistCosine>,
 }
 
-impl HNSWIndex {
-    pub fn build(sentences: &[LabeledSentence]) -> Self {
+impl<T: IdAndEmbedding> HNSWIndex<T> {
+    pub fn build(sentences: &[T]) -> Self {
         let mut sentences_map = HashMap::with_capacity(sentences.len());
         for sentence in sentences {
-            sentences_map.insert(sentence.id, sentence.clone());
+            sentences_map.insert(sentence.id(), sentence.clone());
         }
         HNSWIndexBuilder {
             sentences_map,
@@ -31,7 +27,7 @@ impl HNSWIndex {
                 let hnsw =
                     Hnsw::<f32, DistCosine>::new(48, sm.len() + 1, 16, 800, DistCosine::default());
                 for sentence in sm.values() {
-                    hnsw.insert((&sentence.embedding, sentence.id));
+                    hnsw.insert((sentence.embedding(), sentence.id()));
                 }
                 hnsw
             },
@@ -40,7 +36,7 @@ impl HNSWIndex {
     }
 
     /// 查询最近的 top-k 个结果
-    pub fn search(&self, query: &[f32], k: usize) -> Vec<(&LabeledSentence, f32)> {
+    pub fn search(&self, query: &[f32], k: usize) -> Vec<(&T, f32)> {
         self.with(|fields| {
             let hnsw = &fields.hnsw;
             let sentences_map = &fields.sentences_map;

@@ -1,9 +1,6 @@
+use crate::service::nlp::LabeledSentence;
 use crate::utils::regex as regex_util;
-use crate::{
-    config::openai::OpenAIConfig,
-    plugins::embedding::Embedding,
-    utils::hnsw::{HNSWIndex, LabeledSentence},
-};
+use crate::{config::openai::OpenAIConfig, plugins::embedding::Embedding, utils::hnsw::HNSWIndex};
 use anyhow::Context as _;
 use dtiku_base::model::{schedule_task, ScheduleTask};
 use dtiku_paper::model::{question, ExamCategory, PaperQuestion, Question, Solution};
@@ -105,7 +102,7 @@ impl WebSolutionCollectService {
 
     async fn scraper_web_page_and_save(
         &self,
-        hnsw_index: &HNSWIndex,
+        hnsw_index: &HNSWIndex<LabeledSentence>,
         search_results: Vec<SearchItem>,
     ) -> anyhow::Result<()> {
         for SearchItem { url, .. } in search_results {
@@ -123,7 +120,7 @@ impl WebSolutionCollectService {
     pub async fn build_hnsw_index_for_question(
         &self,
         question: &question::Model,
-    ) -> anyhow::Result<HNSWIndex> {
+    ) -> anyhow::Result<HNSWIndex<LabeledSentence>> {
         let question_id = question.id;
         let solutions = Solution::find_by_qid(&self.db, question_id)
             .await
@@ -192,7 +189,7 @@ impl WebSolutionCollectService {
 
     async fn compute_semantic_tree(
         &self,
-        hnsw_index: &HNSWIndex,
+        hnsw_index: &HNSWIndex<LabeledSentence>,
         semantic_tree: &mut SemanticNode,
     ) -> anyhow::Result<()> {
         if !semantic_tree.text.is_empty() {

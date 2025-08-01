@@ -85,8 +85,8 @@ impl SolutionExtra {
             | Self::IndefiniteChoice(MultiChoice { analysis, .. })
             | Self::TrueFalse(TrueFalseChoice { analysis, .. })
             | Self::FillBlank(FillBlank { analysis, .. })
-            | Self::BlankAnswer(BlankAnswer { analysis, .. })
-            | Self::ClosedEndedQA(AnswerAnalysis { analysis, .. }) => analysis.to_string(),
+            | Self::BlankAnswer(BlankAnswer { analysis, .. }) => analysis.to_string(),
+            Self::ClosedEndedQA(AnswerAnalysis { answer, .. }) => answer.to_string(),
             Self::OpenEndedQA(StepByStepAnswer { analysis, .. })
             | Self::OtherQA(OtherAnswer { analysis, .. }) => {
                 analysis.iter().map(|a| a.content.as_str()).join("。")

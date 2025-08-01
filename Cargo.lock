@@ -1805,7 +1805,7 @@ dependencies = [
  "readability",
  "regex",
  "reqwest 0.12.22",
- "reqwest-scraper 0.7.0",
+ "reqwest-scraper 0.7.1",
  "scraper",
  "sea-orm",
  "search-api",
@@ -6158,15 +6158,16 @@ dependencies = [
 
 [[package]]
 name = "reqwest-scraper"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a7641ce2cc63e230a89e20390ed2ca282f8cf568cc709da89087a2fe68f1790"
+checksum = "8105eb337b19334e300cb883bd6c46d6d85030a8134d734587837f2240ba01d0"
 dependencies = [
  "encoding_rs",
  "itertools 0.14.0",
  "jsonpath_lib",
  "libxml",
  "mime",
+ "regex",
  "reqwest 0.12.22",
  "reqwest-scraper-macros 0.7.0",
  "scraper",
