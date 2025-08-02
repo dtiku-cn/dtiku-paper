@@ -159,7 +159,8 @@ impl WebSolutionCollectService {
 ## solution
 {{solution}}
 
-从text中剔除掉material，然后提取出包含solution的关键词密集度最高的一个片段，并且要满足question中的要求，如果存在就返回JSON格式：{{"answer":"原文片段"}}，不存在的话就返回null
+## 任务
+从text中剔除掉material，然后提取出包含solution的关键词密集度最高的一个片段，并且要满足question中的要求，如果存在就返回JSON格式：{{"answer":"原文片段"}}，不存在的话就返回{{"answer":null}}，如果text存在对应的解题思路的片段，在json中添加一个字段：{{"answer":"原文片段","analysis":"解题思路原文片段"}}
 "#
                     )),
                     name: None,
