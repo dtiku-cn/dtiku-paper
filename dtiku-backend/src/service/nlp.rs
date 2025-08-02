@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
+use crate::config::openai::OpenAIConfig;
 use crate::plugins::embedding::Embedding;
 use crate::utils::hnsw::{HNSWIndex, IdAndEmbedding};
 use crate::utils::regex as regex_util;
 use anyhow::Context;
-use dtiku_paper::model::{Question, Solution};
+use dtiku_paper::model::{Material, Question, Solution};
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::EntityTrait;
@@ -15,6 +16,8 @@ use spring_sea_orm::DbConn;
 pub struct NLPService {
     #[inject(component)]
     pub embedding: Embedding,
+    #[inject(config)]
+    pub openai: OpenAIConfig,
     #[inject(component)]
     pub db: DbConn,
 }
@@ -60,6 +63,7 @@ impl NLPService {
         &self,
         question_id: i32,
     ) -> anyhow::Result<Option<HNSWIndex<LabeledSentence>>> {
+        let openai_client = self.openai.clone().build()?;
         let question = Question::find_by_id(question_id)
             .one(&self.db)
             .await
@@ -70,6 +74,10 @@ impl NLPService {
         } else {
             return Ok(None);
         };
+
+        let materials = Material::find_by_qid(&self.db, question_id)
+            .await
+            .with_context(|| format!("Material::find_by_qid({question_id})"))?;
 
         let solutions = Solution::find_by_qid(&self.db, question_id)
             .await
@@ -84,12 +92,22 @@ impl NLPService {
             sentence_meta.push(("question", question_id, sentence.to_string()));
         }
 
+        // 收集 material 的句子
+        for material in materials {
+            let material_text = {
+                let html = Html::parse_fragment(&material.content);
+                html.root_element().text().join(" ")
+            };
+            for sentence in regex_util::split_sentences(&material_text) {
+                sentence_meta.push(("material", material.id, sentence.to_string()));
+            }
+        }
+
         let mut all_solution_text = String::new();
         // 收集 solution 的句子
         for solution in solutions {
-            let solution_html = solution.extra.get_html();
             let solution_text = {
-                let html = Html::parse_fragment(&solution_html);
+                let html = Html::parse_fragment(&solution.extra.get_html());
                 html.root_element().text().join(" ")
             };
             all_solution_text.push_str(&solution_text);

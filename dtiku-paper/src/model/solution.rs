@@ -87,9 +87,32 @@ impl SolutionExtra {
             | Self::FillBlank(FillBlank { analysis, .. })
             | Self::BlankAnswer(BlankAnswer { analysis, .. }) => analysis.to_string(),
             Self::ClosedEndedQA(AnswerAnalysis { answer, .. }) => answer.to_string(),
-            Self::OpenEndedQA(StepByStepAnswer { analysis, .. })
-            | Self::OtherQA(OtherAnswer { analysis, .. }) => {
-                analysis.iter().map(|a| a.content.as_str()).join("。")
+            Self::OpenEndedQA(StepByStepAnswer { solution, analysis }) => match solution {
+                Some(sol) => sol.to_string(),
+                None => analysis
+                    .iter()
+                    .filter(|s| ["demonstrate", "reference", "sfdt"].contains(&s.label.as_str()))
+                    .map(|s| s.content.as_str())
+                    .join("。"),
+            },
+            Self::OtherQA(OtherAnswer {
+                answer,
+                solution,
+                analysis,
+            }) => {
+                if let Some(ans) = answer {
+                    ans.to_string()
+                } else if let Some(sol) = solution {
+                    sol.to_string()
+                } else {
+                    analysis
+                        .iter()
+                        .filter(|s| {
+                            ["demonstrate", "reference", "sfdt"].contains(&s.label.as_str())
+                        })
+                        .map(|s| s.content.as_str())
+                        .join("。")
+                }
             }
         }
     }

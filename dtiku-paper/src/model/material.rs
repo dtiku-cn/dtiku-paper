@@ -1,3 +1,5 @@
+use crate::model::QuestionMaterial;
+
 pub use super::_entities::material::*;
 use super::{PaperMaterial, _entities::paper_material};
 use anyhow::Context;
@@ -53,6 +55,14 @@ impl Entity {
             .all(db)
             .await
             .context("find material failed")
+    }
+
+    pub async fn find_by_qid<C>(db: &C, question_id: i32) -> anyhow::Result<Vec<Model>>
+    where
+        C: ConnectionTrait,
+    {
+        let material_ids = QuestionMaterial::find_by_qid(db, question_id).await?;
+        Entity::find_by_ids(db, material_ids).await
     }
 
     pub async fn find_by_paper_id<C>(db: &C, paper_id: i32) -> anyhow::Result<Vec<Material>>

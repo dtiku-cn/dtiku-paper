@@ -449,7 +449,7 @@ impl ActiveModel {
                 if q_text_content.len() > 100 && text_content.len() > 100 {
                     let edit_distance =
                         textdistance::str::levenshtein(&q_text_content, &text_content);
-                    // 95%相似度
+                    // 95%相似度: 100个字只有5个字不同
                     if edit_distance * 20 < text_content.len().max(q_text_content.len()) {
                         return Ok(q);
                     }
