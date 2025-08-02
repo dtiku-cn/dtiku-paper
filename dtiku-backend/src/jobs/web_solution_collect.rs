@@ -159,7 +159,7 @@ impl WebSolutionCollectService {
 ## solution
 {{solution}}
 
-从text中剔除掉material，然后提取出包含solution的关键词密集度最高的一个片段，并且要满足question中的要求，如果不存在的话就返回null
+从text中剔除掉material，然后提取出包含solution的关键词密集度最高的一个片段，并且要满足question中的要求，如果存在就返回JSON格式：{{"answer":"原文片段"}}，不存在的话就返回null
 "#
                     )),
                     name: None,
