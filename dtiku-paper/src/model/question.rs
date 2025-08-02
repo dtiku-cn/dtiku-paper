@@ -6,6 +6,7 @@ use crate::{
 };
 use anyhow::Context;
 use itertools::Itertools;
+use scraper::Html;
 use sea_orm::{
     prelude::PgVector, sea_query::OnConflict, ActiveValue::Set, ColumnTrait, ConnectionTrait,
     DerivePartialModel, EntityTrait, FromJsonQueryResult, FromQueryResult, QueryFilter,
@@ -43,8 +44,7 @@ macro_rules! question_methods {
                 let html = scraper::Html::parse_fragment(&self.content);
                 html.root_element().text().join("")
             };
-            text
-                .char_indices()
+            text.char_indices()
                 .nth(size)
                 .map(|(idx, _)| &self.content[..idx])
                 .unwrap_or(&self.content)
@@ -429,15 +429,28 @@ impl ActiveModel {
         if let Some(embedding) = self.embedding.take() {
             let embedding_vec = embedding.to_vec();
             let content = self.content.take().unwrap();
+            let text_content = {
+                Html::parse_fragment(&content)
+                    .root_element()
+                    .text()
+                    .join("")
+            };
             let qs = Entity::find_by_embedding(db, embedding_vec).await?;
             for q in qs {
-                if q.content == content {
+                let q_text_content = {
+                    Html::parse_fragment(&q.content)
+                        .root_element()
+                        .text()
+                        .join("")
+                };
+                if q_text_content == text_content {
                     return Ok(q);
                 }
-                if q.content.len() > 100 && content.len() > 100 {
-                    let edit_distance = textdistance::str::levenshtein(&q.content, &content);
+                if q_text_content.len() > 100 && text_content.len() > 100 {
+                    let edit_distance =
+                        textdistance::str::levenshtein(&q_text_content, &text_content);
                     // 95%相似度
-                    if edit_distance * 20 < content.len().max(q.content.len()) {
+                    if edit_distance * 20 < text_content.len().max(q_text_content.len()) {
                         return Ok(q);
                     }
                 }
