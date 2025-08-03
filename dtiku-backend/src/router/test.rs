@@ -66,13 +66,15 @@ async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoRes
     let sim_hash = SimHash::<SimSipHasher128, u128, 128>::new(SimSipHasher128::new(1, 2));
     let source_sim_hash = sim_hash.create_signature(source.chars());
     let target_sim_hash = sim_hash.create_signature(target.chars());
+    let source_sim_hash_hex = format!("{source_sim_hash:X}");
+    let target_sim_hash_hex = format!("{target_sim_hash:X}");
     let sim_hash_similarity = source_sim_hash.hamming_distance(&target_sim_hash);
     Ok(Json(json!({
         "source_min_hash": source_min_hash,
         "target_min_hash": target_min_hash,
         "min_hash_similarity":min_hash_similarity,
-        "source_sim_hash": source_sim_hash,
-        "target_sim_hash": target_sim_hash,
+        "source_sim_hash": source_sim_hash_hex,
+        "target_sim_hash": target_sim_hash_hex,
         "sim_hash_similarity":sim_hash_similarity,
         "bag":bag,
         "cosine":cosine,

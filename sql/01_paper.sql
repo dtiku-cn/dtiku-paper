@@ -119,7 +119,8 @@ create table if not exists scraper_solution (
     src_url text not null,
     src_hash bytea not null,
     created timestamp not null default now(),
-    modified timestamp not null default now()
+    modified timestamp not null default now(),
+    unique(question_id, src_hash)
 );
 --  图片,可能包含音频
 drop table if exists assets;
