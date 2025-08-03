@@ -560,7 +560,9 @@ impl FenbiSyncService {
             let num = qid_num_map
                 .get(&q.id)
                 .expect("qid is not exists in qid_num_map");
-            q.content = regex_util::replace_material_id_ref(&q.content, mid_num_map);
+            let (replaced_content, mut origin_mids) =
+                regex_util::replace_material_id_ref(&q.content, mid_num_map);
+            q.content = replaced_content;
             let mut question = q.to_question(&self.embedding).await?;
             question.exam_id = Set(paper.exam_id);
             question.paper_type = Set(paper.paper_type);
@@ -577,14 +579,8 @@ impl FenbiSyncService {
 
             if let Some(m) = q.material {
                 let origin_m_id = m.id;
-                let target_id: Option<i32> = sqlx::query_scalar::<_, Option<i32>>(
-                    "select target_id from material where from_ty = 'fenbi' and id = $1",
-                )
-                .bind(origin_m_id)
-                .fetch_optional(&self.source_db)
-                .await
-                .with_context(|| format!("select material target_id by id#{origin_m_id}"))?
-                .flatten();
+                origin_mids.pop_if(|mid| *mid == origin_m_id);
+                let target_id = self.get_target_material_id(origin_m_id).await?;
 
                 if let Some(target_m_id) = target_id {
                     question_material::ActiveModel {
@@ -613,6 +609,27 @@ impl FenbiSyncService {
                         }
                     };
                     self.save_material(m.0, paper.id, num).await?;
+                }
+            }
+
+            for origin_m_id in origin_mids {
+                let target_id = self.get_target_material_id(origin_m_id).await?;
+
+                if let Some(target_m_id) = target_id {
+                    question_material::ActiveModel {
+                        question_id: Set(q_in_db.id),
+                        material_id: Set(target_m_id),
+                    }
+                    .insert_on_conflict(&self.target_db)
+                    .await
+                    .context("insert question_material failed")?;
+                } else {
+                    tracing::error!(
+                        "origin_question#{} ==> question#{}: material#{} target_id not exists",
+                        q.id,
+                        q_in_db.id,
+                        origin_m_id
+                    );
                 }
             }
 
@@ -724,6 +741,21 @@ impl FenbiSyncService {
         }
 
         Ok(())
+    }
+
+    async fn get_target_material_id(
+        &self,
+        origin_material_id: i64,
+    ) -> Result<Option<i32>, anyhow::Error> {
+        let target_id: Option<i32> = sqlx::query_scalar::<_, Option<i32>>(
+            "select target_id from material where from_ty = 'fenbi' and id = $1",
+        )
+        .bind(origin_material_id)
+        .fetch_optional(&self.source_db)
+        .await
+        .with_context(|| format!("select material target_id by id#{origin_material_id}"))?
+        .flatten();
+        Ok(target_id)
     }
 
     async fn save_material(
@@ -883,7 +915,8 @@ impl OriginPaper {
             .with_context(|| format!("Label::find_by_id({label_id}) failed"))?
             .expect(&format!("label#{label_id} not exists"));
 
-        let year = regex_util::pick_year(&self.date.expect("date is none")).expect("year not found");
+        let year =
+            regex_util::pick_year(&self.date.expect("date is none")).expect("year not found");
         let mut active_model = paper::ActiveModel {
             title: Set(self.name.expect("name is none")),
             year: Set(year),

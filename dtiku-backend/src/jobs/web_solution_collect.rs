@@ -3,7 +3,7 @@ use crate::utils::regex as regex_util;
 use crate::{config::openai::OpenAIConfig, plugins::embedding::Embedding, utils::hnsw::HNSWIndex};
 use anyhow::Context as _;
 use dtiku_base::model::{schedule_task, ScheduleTask};
-use dtiku_paper::model::{question, ExamCategory, PaperQuestion, Question, Solution};
+use dtiku_paper::model::{question, ExamCategory, Material, PaperQuestion, Question, Solution};
 use itertools::Itertools as _;
 use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
 use reqwest_scraper::ScraperResponse;
@@ -82,19 +82,42 @@ impl WebSolutionCollectService {
     }
 
     async fn collect_for_question(&self, q: question::Model) -> anyhow::Result<()> {
-        let content = q.content.trim();
+        let question_id = q.id;
 
-        let text = {
-            let html = scraper::Html::parse_fragment(content);
+        let question_text = {
+            let html = scraper::Html::parse_fragment(q.content.trim());
             html.root_element().text().join("")
         };
 
-        let result = baidu::search(&text).await?;
-        self.scraper_web_page_and_save(result).await?;
-        let result = sogou::search(&text).await?;
-        self.scraper_web_page_and_save(result).await?;
-        let result = bing::search(&text).await?;
-        self.scraper_web_page_and_save(result).await?;
+        let materials = Material::find_by_qid(&self.db, question_id)
+            .await
+            .with_context(|| format!("Material::find_by_qid({question_id})"))?;
+
+        let material_text = {
+            let material_html = materials.into_iter().map(|m| m.content).join(" ");
+            let html = scraper::Html::parse_fragment(material_html.trim());
+            html.root_element().text().join("")
+        };
+
+        let solutions = Solution::find_by_qid(&self.db, question_id)
+            .await
+            .with_context(|| format!("Solution::find_by_qid({question_id})"))?;
+
+        let solution_text = {
+            let solution_html = solutions.into_iter().map(|s| s.extra.get_html()).join(" ");
+            let html = scraper::Html::parse_fragment(solution_html.trim());
+            html.root_element().text().join("")
+        };
+
+        let result = baidu::search(&question_text).await?;
+        self.scraper_web_page_and_save(result, &question_text, &material_text, &solution_text)
+            .await?;
+        let result = sogou::search(&question_text).await?;
+        self.scraper_web_page_and_save(result, &question_text, &material_text, &solution_text)
+            .await?;
+        let result = bing::search(&question_text).await?;
+        self.scraper_web_page_and_save(result, &question_text, &material_text, &solution_text)
+            .await?;
 
         Ok(())
     }
@@ -102,9 +125,15 @@ impl WebSolutionCollectService {
     async fn scraper_web_page_and_save(
         &self,
         search_results: Vec<SearchItem>,
+        question: &str,
+        material: &str,
+        solution: &str,
     ) -> anyhow::Result<()> {
         for SearchItem { url, .. } in search_results {
             let html = self.scraper_web_page(&url).await?;
+            let result = self
+                .extract_by_llm(&url, &html, question, material, solution)
+                .await?;
         }
         Ok(())
     }
@@ -115,68 +144,85 @@ impl WebSolutionCollectService {
         let domain = uri.domain().unwrap_or("null");
         let dir = format!("{domain}/{md5:x}");
         let html_file = format!("{dir}/{url}");
-        let model = "deepseek/deepseek-r1-0528:free";
-        let model_resp_file = format!("{dir}/{model}");
-        let json = if self
+        let html = if self
             .op
-            .exists(&model_resp_file)
+            .exists(&html_file)
             .await
-            .with_context(|| format!("op.exists({model_resp_file}) failed"))?
+            .with_context(|| format!("op.exists({html_file}) failed"))?
         {
             let r = self
                 .op
-                .read(&model_resp_file)
+                .read(&html_file)
                 .await
-                .with_context(|| format!("op.read({model_resp_file}) failed"))?;
+                .with_context(|| format!("op.read({html_file}) failed"))?;
 
             String::from_utf8(r.to_vec()).context("parse to string failed")?
         } else {
             let resp = reqwest::get(url).await?;
             let html = resp.html().await?;
             self.op.write(&html_file, html.clone()).await?;
+            html
+        };
+        Ok(html)
+    }
 
-            let mut html_reader = std::io::Cursor::new(html.as_str());
-            let readability_page = readability::extractor::extract(&mut html_reader, &uri)
-                .context("readability::extractor::extract failed")?;
-            let text = &readability_page.text;
+    async fn extract_by_llm(
+        &self,
+        url: &str,
+        html: &str,
+        question: &str,
+        material: &str,
+        solution: &str,
+    ) -> anyhow::Result<ExtractResult> {
+        let uri = Url::parse(url).with_context(|| format!("parse url failed:{url}"))?;
+        let model = "deepseek/deepseek-r1-0528:free"; // 目前最强的模型
 
-            let mut openai = self.openai.clone().build()?;
-            let req = ChatCompletionRequest::new(
-                model.to_string(),
-                vec![chat_completion::ChatCompletionMessage {
-                    role: chat_completion::MessageRole::user,
-                    content: chat_completion::Content::Text(format!(
-                        r#"
+        let mut html_reader = std::io::Cursor::new(html);
+        let readability_page = readability::extractor::extract(&mut html_reader, &uri)
+            .context("readability::extractor::extract failed")?;
+        let text = &readability_page.text;
+
+        let mut openai = self.openai.clone().build()?;
+        let req = ChatCompletionRequest::new(
+            model.to_string(),
+            vec![chat_completion::ChatCompletionMessage {
+                role: chat_completion::MessageRole::user,
+                content: chat_completion::Content::Text(format!(
+                    r#"
 ## text
 {text}
 
 ## material
-{{material}}
+{material}
 
 ## question
-{{question}}
+{question}
 
 ## solution
-{{solution}}
+{solution}
 
 ## 任务
 从text中剔除掉material，然后提取出包含solution的关键词密集度最高的一个片段，并且要满足question中的要求，如果存在就返回JSON格式：{{"answer":"原文片段"}}，不存在的话就返回{{"answer":null}}，如果text存在对应的解题思路的片段，在json中添加一个字段：{{"answer":"原文片段","analysis":"解题思路原文片段"}}
 "#
-                    )),
-                    name: None,
-                    tool_calls: None,
-                    tool_call_id: None,
-                }],
-            );
-            let resp = openai
-                .chat_completion(req)
-                .await
-                .context("chat_completion 调用失败")?;
-            let json = resp.choices[0].message.content.clone().unwrap_or_default();
-            self.op.write(&model_resp_file, json.clone()).await?;
+                )),
+                name: None,
+                tool_calls: None,
+                tool_call_id: None,
+            }],
+        );
+        let resp = openai
+            .chat_completion(req)
+            .await
+            .context("chat_completion 调用失败")?;
+        let json = resp.choices[0].message.content.clone().unwrap_or_default();
+        let json = json.trim_matches('`');
 
-            json
-        };
-        Ok(json)
+        serde_json::from_str(json).context("parse llm json failed")
     }
+}
+
+#[derive(Debug, Deserialize)]
+struct ExtractResult {
+    answer: Option<String>,
+    analysis: Option<String>,
 }

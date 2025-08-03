@@ -19,17 +19,24 @@ pub fn pick_year(string: &str) -> Option<i16> {
     }
 }
 
-pub fn replace_material_id_ref(string: &str, mid_num_map: &HashMap<i64, i32>) -> String {
-    FENBI_MATERIAL_REGEX
+pub fn replace_material_id_ref(
+    string: &str,
+    mid_num_map: &HashMap<i64, i32>,
+) -> (String, Vec<i64>) {
+    let mut origin_mids = vec![];
+    let content = FENBI_MATERIAL_REGEX
         .replace_all(string, |caps: &regex::Captures| {
             let num = &caps[1];
+            let origin_material_id = num.parse().unwrap();
+            origin_mids.push(origin_material_id);
             let replacement = mid_num_map
-                .get(&num.parse().unwrap())
+                .get(&origin_material_id)
                 .map(|v| format!("资料{}", v))
                 .unwrap_or_else(|| caps[0].to_string());
             replacement
         })
-        .into()
+        .into();
+    (content, origin_mids)
 }
 
 /// 将一段中文按句子切分
