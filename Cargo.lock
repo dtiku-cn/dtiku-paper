@@ -1698,7 +1698,10 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "derive_more 2.0.1",
+ "fancy-regex",
+ "gaoya",
  "itertools 0.14.0",
+ "md5 0.8.0",
  "once_cell",
  "regex",
  "scraper",
@@ -1711,6 +1714,7 @@ dependencies = [
  "spring-sea-orm",
  "strum",
  "textdistance",
+ "tokio",
  "validator",
 ]
 

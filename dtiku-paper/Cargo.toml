@@ -18,6 +18,12 @@ itertools = { workspace = true }
 anyhow = { workspace = true }
 validator = { workspace = true, features = ["derive"] }
 regex = { workspace = true }
+fancy-regex = { workspace = true }
 once_cell = { workspace = true }
 scraper = { workspace = true }
 textdistance = { workspace = true }
+md5 = { workspace = true }
+gaoya = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

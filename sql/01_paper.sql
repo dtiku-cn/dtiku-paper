@@ -88,8 +88,10 @@ drop table if exists material;
 create table if not exists material (
     id serial primary key,
     content text not null,
+    content_sim_hash bit(128) not null,
     extra jsonb not null
 );
+create index on material using hnsw (content_sim_hash bit_hamming_ops);
 drop table if exists paper_material;
 create table if not exists paper_material (
     paper_id integer not null,
@@ -118,7 +120,7 @@ create table if not exists scraper_solution (
     question_id integer not null,
     content text not null,
     src_url text not null,
-    content_sim_hash bit(64) not null,
+    content_sim_hash bit(128) not null,
     src_url_hash bytea not null,
     created timestamp not null default now(),
     modified timestamp not null default now(),

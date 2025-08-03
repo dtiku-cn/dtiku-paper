@@ -1,16 +1,17 @@
 pub use super::_entities::question::*;
-use super::{paper, Paper, PaperQuestion, _entities::solution, material};
+use super::{paper, Paper, PaperQuestion, _entities::solution, material, SrcType};
 use crate::{
     domain::question::QuestionSearch,
-    model::{paper_question, Solution},
+    model::{assets, paper_question, Solution},
+    util::html,
 };
 use anyhow::Context;
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::{
-    prelude::PgVector, sea_query::OnConflict, ActiveValue::Set, ColumnTrait, ConnectionTrait,
-    DerivePartialModel, EntityTrait, FromJsonQueryResult, FromQueryResult, QueryFilter,
-    QuerySelect, Statement,
+    prelude::PgVector, sea_query::OnConflict, ActiveModelTrait, ActiveValue::Set, ColumnTrait,
+    ConnectionTrait, DerivePartialModel, EntityTrait, FromJsonQueryResult, FromQueryResult,
+    QueryFilter, QuerySelect, Statement,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -427,6 +428,7 @@ impl ActiveModel {
         C: ConnectionTrait,
     {
         if let Some(embedding) = self.embedding.take() {
+            // embedding算法去重
             let embedding_vec = embedding.to_vec();
             let content = self.content.take().unwrap();
             let text_content = {
@@ -458,7 +460,7 @@ impl ActiveModel {
             self.embedding = Set(embedding);
             self.content = Set(content);
         }
-        Entity::insert(self)
+        let model = Entity::insert(self)
             .on_conflict(
                 OnConflict::columns([Column::Id])
                     .update_columns([Column::Content, Column::Extra, Column::Embedding])
@@ -466,6 +468,31 @@ impl ActiveModel {
             )
             .exec_with_returning(db)
             .await
-            .context("insert question failed")
+            .context("insert question failed")?;
+
+        let replaced_content = html::async_replace_img_src(&model.content, |img_url| {
+            let img_url = img_url.to_string();
+            Box::pin(async move {
+                let assets = assets::ActiveModel {
+                    src_type: Set(SrcType::Question),
+                    src_id: Set(model.id),
+                    src_url: Set(img_url),
+                    ..Default::default()
+                }
+                .insert_on_conflict(db)
+                .await?;
+                Ok(assets.compute_storage_url())
+            })
+        })
+        .await?;
+        let model = ActiveModel {
+            id: Set(model.id),
+            content: Set(replaced_content),
+            ..Default::default()
+        }
+        .update(db)
+        .await
+        .context("update content failed")?;
+        Ok(model)
     }
 }

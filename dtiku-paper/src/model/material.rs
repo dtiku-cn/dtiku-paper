@@ -1,12 +1,13 @@
-use crate::model::QuestionMaterial;
-
 pub use super::_entities::material::*;
 use super::{PaperMaterial, _entities::paper_material};
+use crate::model::QuestionMaterial;
 use anyhow::Context;
+use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
+use scraper::Html;
 use sea_orm::{
-    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromJsonQueryResult,
-    QueryFilter,
+    sea_query::OnConflict, ActiveValue::Set, ColumnTrait, ConnectionTrait, DbErr, EntityTrait,
+    FromJsonQueryResult, FromQueryResult, QueryFilter, Statement,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -89,20 +90,74 @@ impl Entity {
             .sorted_by_key(|m| m.num)
             .collect())
     }
-}
 
-impl ActiveModel {
-    pub async fn insert_on_conflict<C>(self, db: &C) -> Result<Model, DbErr>
+    pub async fn find_by_sim_hash<C>(db: &C, simhash: Vec<u8>) -> anyhow::Result<Vec<Model>>
     where
         C: ConnectionTrait,
     {
+        Model::find_by_statement(Statement::from_sql_and_values(
+            sea_orm::DatabaseBackend::Postgres,
+            r#"
+                SELECT *
+                FROM material
+                ORDER BY content_sim_hash <~> $1
+                LIMIT 10
+            "#,
+            vec![simhash.into()],
+        ))
+        .all(db)
+        .await
+        .context("Material::find_by_sim_hash() failed")
+    }
+}
+
+impl ActiveModel {
+    pub async fn insert_on_conflict<C>(mut self, db: &C) -> anyhow::Result<Model>
+    where
+        C: ConnectionTrait,
+    {
+        if let Some(content) = self.content.take() {
+            // simhash算法去重
+            let text_content = {
+                Html::parse_fragment(&content)
+                    .root_element()
+                    .text()
+                    .join("")
+            };
+            let sim_hash = SimHash::<SimSipHasher128, u128, 128>::new(SimSipHasher128::new(1, 2));
+            let sim_hash = sim_hash.create_signature(text_content.chars());
+            let sim_hash_bytes = sim_hash.to_be_bytes().to_vec();
+            let ms = Entity::find_by_sim_hash(db, sim_hash_bytes.clone()).await?;
+            for m in ms {
+                let m_text_content = {
+                    Html::parse_fragment(&m.content)
+                        .root_element()
+                        .text()
+                        .join("")
+                };
+                if m_text_content == text_content {
+                    return Ok(m);
+                }
+                if m_text_content.len() > 100 && text_content.len() > 100 {
+                    let edit_distance =
+                        textdistance::str::levenshtein(&m_text_content, &text_content);
+                    // 95%相似度: 100个字只有5个字不同
+                    if edit_distance * 20 < text_content.len().max(m_text_content.len()) {
+                        return Ok(m);
+                    }
+                }
+            }
+            self.content_sim_hash = Set(sim_hash_bytes);
+            self.content = Set(content);
+        }
         Entity::insert(self)
             .on_conflict(
                 OnConflict::columns([Column::Id])
-                    .update_columns([Column::Content, Column::Extra])
+                    .update_columns([Column::Content, Column::ContentSimHash, Column::Extra])
                     .to_owned(),
             )
             .exec_with_returning(db)
             .await
+            .context("insert material failed")
     }
 }

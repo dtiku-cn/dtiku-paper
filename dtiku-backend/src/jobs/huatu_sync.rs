@@ -518,10 +518,7 @@ impl HuatuSyncService {
     ) -> Result<(), anyhow::Error> {
         let source_material_id = m.id;
         let material = TryInto::<material::ActiveModel>::try_into(m)?;
-        let m_in_db = material
-            .insert_on_conflict(&self.target_db)
-            .await
-            .context("insert paper_material failed")?;
+        let m_in_db = material.insert_on_conflict(&self.target_db).await?;
         paper_material::ActiveModel {
             paper_id: Set(paper_id),
             material_id: Set(m_in_db.id),
