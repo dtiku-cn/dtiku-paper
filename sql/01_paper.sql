@@ -57,6 +57,7 @@ create table if not exists question(
     extra jsonb not null,
     embedding vector(768) not null
 );
+create index on question using hnsw (embedding vector_cosine_ops);
 drop table if exists question_key_point;
 create table if not exists question_key_point(
     question_id integer not null,
@@ -117,11 +118,13 @@ create table if not exists scraper_solution (
     question_id integer not null,
     content text not null,
     src_url text not null,
-    src_hash bytea not null,
+    content_sim_hash bit(64) not null,
+    src_url_hash bytea not null,
     created timestamp not null default now(),
     modified timestamp not null default now(),
-    unique(question_id, src_hash)
+    unique(question_id, src_url_hash)
 );
+create index on scraper_solution using hnsw (content_sim_hash bit_hamming_ops);
 --  图片,可能包含音频
 drop table if exists assets;
 create table if not exists assets(

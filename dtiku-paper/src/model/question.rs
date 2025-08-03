@@ -410,7 +410,7 @@ impl Entity {
             r#"
                 SELECT *
                 FROM question
-                ORDER BY embedding <-> $1
+                ORDER BY embedding <=> $1
                 LIMIT 10
             "#,
             vec![PgVector::from(embedding).into()],
