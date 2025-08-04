@@ -146,7 +146,7 @@ impl ActiveModel {
                     }
                 }
             }
-            self.content_sim_hash = Set(format!("{sim_hash:0128b}"));
+            self.content_sim_hash = Set(sim_hash.to_be_bytes().to_vec());
             self.content = Set(content);
         }
         Entity::insert(self)

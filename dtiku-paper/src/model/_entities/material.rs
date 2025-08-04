@@ -12,7 +12,7 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub content: String,
     #[sea_orm(column_type = "Bit(Some(128))")]
-    pub content_sim_hash: String,
+    pub content_sim_hash: Vec<u8>,
     #[sea_orm(column_type = "JsonBinary")]
     pub extra: Vec<MaterialExtra>,
 }
