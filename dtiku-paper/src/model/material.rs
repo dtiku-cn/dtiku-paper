@@ -126,7 +126,6 @@ impl ActiveModel {
             };
             let sim_hash = SimHash::<SimSipHasher128, u128, 128>::new(SimSipHasher128::new(1, 2));
             let sim_hash = sim_hash.create_signature(text_content.chars());
-            let sim_hash_bytes = sim_hash.to_be_bytes();
             let ms = Entity::find_by_sim_hash(db, sim_hash).await?;
             for m in ms {
                 let m_text_content = {
@@ -147,7 +146,7 @@ impl ActiveModel {
                     }
                 }
             }
-            self.content_sim_hash = Set(sim_hash_bytes.to_vec());
+            self.content_sim_hash = Set(format!("{sim_hash:0128b}"));
             self.content = Set(content);
         }
         Entity::insert(self)

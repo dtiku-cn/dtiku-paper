@@ -11,6 +11,8 @@ pub struct Model {
     pub question_id: i32,
     #[sea_orm(column_type = "Text")]
     pub content: String,
+    #[sea_orm(column_type = "Bit(Some(128))")]
+    pub content_sim_hash: String,
     #[sea_orm(column_type = "Text")]
     pub src_url: String,
     #[sea_orm(column_type = "VarBinary(StringLen::None)")]
