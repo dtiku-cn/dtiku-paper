@@ -91,7 +91,7 @@ impl Entity {
             .collect())
     }
 
-    pub async fn find_by_sim_hash<C>(db: &C, simhash: Vec<u8>) -> anyhow::Result<Vec<Model>>
+    pub async fn find_by_sim_hash<C>(db: &C, sim_hash: &[u8]) -> anyhow::Result<Vec<Model>>
     where
         C: ConnectionTrait,
     {
@@ -103,7 +103,7 @@ impl Entity {
                 ORDER BY content_sim_hash <~> $1
                 LIMIT 10
             "#,
-            vec![simhash.into()],
+            vec![sim_hash.into()],
         ))
         .all(db)
         .await
@@ -126,8 +126,8 @@ impl ActiveModel {
             };
             let sim_hash = SimHash::<SimSipHasher128, u128, 128>::new(SimSipHasher128::new(1, 2));
             let sim_hash = sim_hash.create_signature(text_content.chars());
-            let sim_hash_bytes = sim_hash.to_be_bytes().to_vec();
-            let ms = Entity::find_by_sim_hash(db, sim_hash_bytes.clone()).await?;
+            let sim_hash_bytes = sim_hash.to_be_bytes();
+            let ms = Entity::find_by_sim_hash(db, &sim_hash_bytes).await?;
             for m in ms {
                 let m_text_content = {
                     Html::parse_fragment(&m.content)
@@ -147,7 +147,7 @@ impl ActiveModel {
                     }
                 }
             }
-            self.content_sim_hash = Set(sim_hash_bytes);
+            self.content_sim_hash = Set(sim_hash_bytes.to_vec());
             self.content = Set(content);
         }
         Entity::insert(self)
