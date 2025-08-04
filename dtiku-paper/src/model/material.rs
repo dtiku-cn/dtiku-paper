@@ -6,7 +6,7 @@ use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::{
-    sea_query::OnConflict, ActiveValue::Set, ColumnTrait, ConnectionTrait, DbErr, EntityTrait,
+    sea_query::OnConflict, ActiveValue::Set, ColumnTrait, ConnectionTrait, EntityTrait,
     FromJsonQueryResult, FromQueryResult, QueryFilter, Statement,
 };
 use serde::{Deserialize, Serialize};

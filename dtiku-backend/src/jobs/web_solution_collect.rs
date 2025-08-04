@@ -1,6 +1,4 @@
-use crate::service::nlp::LabeledSentence;
-use crate::utils::regex as regex_util;
-use crate::{config::openai::OpenAIConfig, plugins::embedding::Embedding, utils::hnsw::HNSWIndex};
+use crate::{config::openai::OpenAIConfig, plugins::embedding::Embedding};
 use anyhow::Context as _;
 use dtiku_base::model::{schedule_task, ScheduleTask};
 use dtiku_paper::model::{question, ExamCategory, Material, PaperQuestion, Question, Solution};
