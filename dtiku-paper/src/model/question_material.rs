@@ -47,7 +47,7 @@ impl ActiveModel {
         Entity::insert(self)
             .on_conflict(
                 OnConflict::columns([Column::QuestionId, Column::MaterialId])
-                    .do_nothing()
+                    .update_columns([Column::QuestionId, Column::MaterialId])
                     .to_owned(),
             )
             .exec_with_returning(db)
