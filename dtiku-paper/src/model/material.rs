@@ -146,20 +146,8 @@ impl ActiveModel {
                     }
                 }
             }
-            self.content_sim_hash = Set(sim_hash.to_be_bytes().to_vec());
-            self.content = Set(content);
-        }
-        let sim_hash = self
-            .content_sim_hash
-            .take()
-            .expect("content_sim_hash should be set");
-        let sim_hash_str = sim_hash
-            .iter()
-            .map(|byte| format!("{:08b}", byte)) // 每个字节按8位二进制格式输出
-            .collect::<Vec<_>>()
-            .join("");
-        let return_model = if let Some(id) = self.id.take() {
-            let sql = r#"
+            let return_model = if let Some(id) = self.id.take() {
+                let sql = r#"
 INSERT INTO material (id, content, content_sim_hash, extra)
 VALUES ($1, $2, $3::bit(128), $4)
 ON CONFLICT (id) DO UPDATE
@@ -167,20 +155,20 @@ SET
     content = EXCLUDED.content,
     content_sim_hash = EXCLUDED.content_sim_hash,
     extra = EXCLUDED.extra
-RETURNING id, content, content_sim_hash, extra
+RETURNING id, content, extra
 "#;
-            Model::find_by_statement(Statement::from_sql_and_values(
-                DbBackend::Postgres,
-                sql,
-                vec![
-                    id.into(),
-                    self.content.take().unwrap_or_default().into(),
-                    sim_hash_str.into(),
-                    self.extra.take().unwrap_or_default().into(),
-                ],
-            ))
-        } else {
-            let sql = r#"
+                Model::find_by_statement(Statement::from_sql_and_values(
+                    DbBackend::Postgres,
+                    sql,
+                    vec![
+                        id.into(),
+                        content.into(),
+                        format!("{sim_hash:0128b}").into(),
+                        self.extra.take().unwrap_or_default().into(),
+                    ],
+                ))
+            } else {
+                let sql = r#"
 INSERT INTO material (content, content_sim_hash, extra)
 VALUES ($1, $2::bit(128), $3)
 ON CONFLICT (id) DO UPDATE
@@ -188,22 +176,25 @@ SET
     content = EXCLUDED.content,
     content_sim_hash = EXCLUDED.content_sim_hash,
     extra = EXCLUDED.extra
-    RETURNING id, content, content_sim_hash, extra
+    RETURNING id, content, extra
 "#;
-            Model::find_by_statement(Statement::from_sql_and_values(
-                DbBackend::Postgres,
-                sql,
-                vec![
-                    self.content.take().unwrap_or_default().into(),
-                    sim_hash_str.into(),
-                    self.extra.take().unwrap_or_default().into(),
-                ],
-            ))
-        }
-        .one(db)
-        .await
-        .context("insert material failed")?;
+                Model::find_by_statement(Statement::from_sql_and_values(
+                    DbBackend::Postgres,
+                    sql,
+                    vec![
+                        content.into(),
+                        format!("{sim_hash:0128b}").into(),
+                        self.extra.take().unwrap_or_default().into(),
+                    ],
+                ))
+            }
+            .one(db)
+            .await
+            .context("insert material failed")?;
 
-        Ok(return_model.ok_or_else(|| anyhow!("insert material failed"))?)
+            Ok(return_model.ok_or_else(|| anyhow!("insert material failed"))?)
+        } else {
+            Err(anyhow!("content is required for material insertion"))
+        }
     }
 }
