@@ -6,8 +6,8 @@ use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::{
-    ActiveValue::Set, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait, FromJsonQueryResult,
-    FromQueryResult, QueryFilter, Statement,
+    ColumnTrait, ConnectionTrait, DbBackend, EntityTrait, FromJsonQueryResult, FromQueryResult,
+    QueryFilter, Statement,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -146,6 +146,8 @@ impl ActiveModel {
                     }
                 }
             }
+            let extra = serde_json::to_string(&self.extra.take().unwrap_or_default())
+                .context("serialize extra failed")?;
             let return_model = if let Some(id) = self.id.take() {
                 let sql = r#"
 INSERT INTO material (id, content, content_sim_hash, extra)
@@ -164,7 +166,7 @@ RETURNING id, content, extra
                         id.into(),
                         content.into(),
                         format!("{sim_hash:0128b}").into(),
-                        self.extra.take().unwrap_or_default().into(),
+                        extra.into(),
                     ],
                 ))
             } else {
@@ -184,7 +186,7 @@ SET
                     vec![
                         content.into(),
                         format!("{sim_hash:0128b}").into(),
-                        self.extra.take().unwrap_or_default().into(),
+                        extra.into(),
                     ],
                 ))
             }
