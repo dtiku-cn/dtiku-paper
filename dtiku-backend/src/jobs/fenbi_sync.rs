@@ -570,8 +570,9 @@ impl FenbiSyncService {
                 .insert_on_conflict(&self.target_db)
                 .await
                 .context("insert question failed")?;
+            let qid_in_db = q_in_db.id;
             let mut solution = q.to_solution()?;
-            solution.question_id = Set(q_in_db.id);
+            solution.question_id = Set(qid_in_db);
             solution
                 .insert(&self.target_db)
                 .await
@@ -584,12 +585,14 @@ impl FenbiSyncService {
 
                 if let Some(target_m_id) = target_id {
                     question_material::ActiveModel {
-                        question_id: Set(q_in_db.id),
+                        question_id: Set(qid_in_db),
                         material_id: Set(target_m_id),
                     }
                     .insert_on_conflict(&self.target_db)
                     .await
-                    .context("insert question_material failed")?;
+                    .with_context(|| {
+                        format!("insert question_material({qid_in_db},{target_m_id}) failed")
+                    })?;
                 } else {
                     tracing::warn!(
                         "origin_question#{} ==> question#{}: material#{} target_id not exists",
@@ -617,12 +620,14 @@ impl FenbiSyncService {
 
                 if let Some(target_m_id) = target_id {
                     question_material::ActiveModel {
-                        question_id: Set(q_in_db.id),
+                        question_id: Set(qid_in_db),
                         material_id: Set(target_m_id),
                     }
                     .insert_on_conflict(&self.target_db)
                     .await
-                    .context("insert question_material failed")?;
+                    .with_context(|| {
+                        format!("insert question_material_for_origin_mids({qid_in_db},{target_m_id}) failed")
+                    })?;
                 } else {
                     tracing::error!(
                         "origin_question#{} ==> question#{}: material#{} target_id not exists",
