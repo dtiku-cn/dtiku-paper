@@ -24,6 +24,8 @@ scraper = { workspace = true }
 textdistance = { workspace = true }
 md5 = { workspace = true }
 gaoya = { workspace = true }
+pgvector = { workspace = true }
+sqlx = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }

@@ -1,13 +1,13 @@
 pub use super::_entities::material::*;
 use super::{PaperMaterial, _entities::paper_material};
 use crate::model::QuestionMaterial;
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::{
-    sea_query::OnConflict, ActiveValue::Set, ColumnTrait, ConnectionTrait, EntityTrait,
-    FromJsonQueryResult, FromQueryResult, QueryFilter, Statement,
+    ActiveValue::Set, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait, FromJsonQueryResult,
+    FromQueryResult, QueryFilter, Statement,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -149,14 +149,61 @@ impl ActiveModel {
             self.content_sim_hash = Set(sim_hash.to_be_bytes().to_vec());
             self.content = Set(content);
         }
-        Entity::insert(self)
-            .on_conflict(
-                OnConflict::columns([Column::Id])
-                    .update_columns([Column::Content, Column::ContentSimHash, Column::Extra])
-                    .to_owned(),
-            )
-            .exec_with_returning(db)
-            .await
-            .context("insert material failed")
+        let sim_hash = self
+            .content_sim_hash
+            .take()
+            .expect("content_sim_hash should be set");
+        let sim_hash_str = sim_hash
+            .iter()
+            .map(|byte| format!("{:08b}", byte)) // 每个字节按8位二进制格式输出
+            .collect::<Vec<_>>()
+            .join("");
+        let return_model = if let Some(id) = self.id.take() {
+            let sql = r#"
+INSERT INTO material (id, content, content_sim_hash, extra)
+VALUES ($1, $2, $3::bit(128), $4)
+ON CONFLICT (id) DO UPDATE
+SET
+    content = EXCLUDED.content,
+    content_sim_hash = EXCLUDED.content_sim_hash,
+    extra = EXCLUDED.extra
+RETURNING id, content, content_sim_hash, extra
+"#;
+            Model::find_by_statement(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                sql,
+                vec![
+                    id.into(),
+                    self.content.take().unwrap_or_default().into(),
+                    sim_hash_str.into(),
+                    self.extra.take().unwrap_or_default().into(),
+                ],
+            ))
+        } else {
+            let sql = r#"
+INSERT INTO material (content, content_sim_hash, extra)
+VALUES ($1, $2::bit(128), $3)
+ON CONFLICT (id) DO UPDATE
+SET
+    content = EXCLUDED.content,
+    content_sim_hash = EXCLUDED.content_sim_hash,
+    extra = EXCLUDED.extra
+    RETURNING id, content, content_sim_hash, extra
+"#;
+            Model::find_by_statement(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                sql,
+                vec![
+                    self.content.take().unwrap_or_default().into(),
+                    sim_hash_str.into(),
+                    self.extra.take().unwrap_or_default().into(),
+                ],
+            ))
+        }
+        .one(db)
+        .await
+        .context("insert material failed")?;
+
+        Ok(return_model.ok_or_else(|| anyhow!("insert material failed"))?)
     }
 }
