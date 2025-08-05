@@ -146,7 +146,7 @@ impl ActiveModel {
                     }
                 }
             }
-            let extra = serde_json::to_string(&self.extra.take().unwrap_or_default())
+            let extra = serde_json::to_value(&self.extra.take().unwrap_or_default())
                 .context("serialize extra failed")?;
             let return_model = if let Some(id) = self.id.take() {
                 let sql = r#"
