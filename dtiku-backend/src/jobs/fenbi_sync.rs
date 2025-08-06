@@ -1342,24 +1342,24 @@ impl TryInto<material::MaterialExtra> for MaterialAccessory {
     type Error = anyhow::Error;
     fn try_into(self) -> Result<material::MaterialExtra, Self::Error> {
         match self.ty {
-            151 => Ok(material::MaterialExtra::Translation(
-                self.translation.expect("translation is none"),
-            )),
+            151 => Ok(material::MaterialExtra::Translation {
+                value: self.translation.expect("translation is none"),
+            }),
             181 => match self.label.expect("label is none").as_str() {
-                "materialExplain" => Ok(material::MaterialExtra::MaterialExplain(
-                    self.content.expect("materialExplain content is none"),
-                )),
-                "clyw" | "transcript" => Ok(material::MaterialExtra::Transcript(
-                    self.content.expect("transcript content is none"),
-                )),
-                "zdch" => Ok(material::MaterialExtra::Dictionary(
-                    self.content.expect("zdch content is none"),
-                )),
+                "materialExplain" => Ok(material::MaterialExtra::MaterialExplain {
+                    value: self.content.expect("materialExplain content is none"),
+                }),
+                "clyw" | "transcript" => Ok(material::MaterialExtra::Transcript {
+                    value: self.content.expect("transcript content is none"),
+                }),
+                "zdch" => Ok(material::MaterialExtra::Dictionary {
+                    value: self.content.expect("zdch content is none"),
+                }),
                 _unknown => Err(anyhow::anyhow!("unknown material label:{_unknown}")),
             },
-            185 => Ok(material::MaterialExtra::Audio(
-                self.url.expect("Audio url is none"),
-            )),
+            185 => Ok(material::MaterialExtra::Audio {
+                value: self.url.expect("Audio url is none"),
+            }),
             _unknown => Err(anyhow::anyhow!(
                 "unknown material accessory type:{_unknown}"
             )),

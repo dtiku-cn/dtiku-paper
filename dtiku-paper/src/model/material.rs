@@ -24,15 +24,15 @@ pub struct Material {
 #[serde(tag = "type")]
 pub enum MaterialExtra {
     #[serde(rename = "explain")]
-    MaterialExplain(String),
+    MaterialExplain { value: String },
     #[serde(rename = "dict")]
-    Dictionary(String),
+    Dictionary { value: String },
     #[serde(rename = "translation")]
-    Translation(String),
+    Translation { value: String },
     #[serde(rename = "audio")]
-    Audio(String),
+    Audio { value: String },
     #[serde(rename = "transcript")]
-    Transcript(String),
+    Transcript { value: String },
 }
 
 impl Model {
