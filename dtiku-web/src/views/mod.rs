@@ -101,7 +101,7 @@ impl GlobalVariables {
 
         // 如果超过一个月（按30天近似）或一年
         if days >= 30 {
-            return date_time.format("%Y-%m-%d").to_string();
+            return date_time.format("%Y-%-m-%-d").to_string();
         }
 
         if days < 1 {

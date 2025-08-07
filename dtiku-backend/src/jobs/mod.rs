@@ -1,9 +1,11 @@
+mod assets_saver;
 mod fenbi_sync;
 mod huatu_sync;
 mod idiom_fetch;
 mod offcn_sync;
 mod web_solution_collect;
 
+use crate::jobs::assets_saver::AssetsSaveService;
 use crate::jobs::idiom_fetch::IdiomStatsService;
 use crate::jobs::web_solution_collect::WebSolutionCollectService;
 use crate::plugins::jobs::RunningJobs;
@@ -50,6 +52,12 @@ async fn task_schedule(
         ScheduleTaskType::WebSolutionCollect => {
             WebSolutionCollectService::build(task)
                 .expect("build web solution service failed")
+                .start()
+                .await
+        }
+        ScheduleTaskType::AssetsSave => {
+            AssetsSaveService::build(task)
+                .expect("build assets save service failed")
                 .start()
                 .await
         }

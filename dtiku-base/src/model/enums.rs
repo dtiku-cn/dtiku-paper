@@ -111,4 +111,6 @@ pub enum ScheduleTaskType {
     IdiomStats,
     #[strum(message = "Web答案采集")]
     WebSolutionCollect,
+    #[strum(message = "资源保存")]
+    AssetsSave,
 }

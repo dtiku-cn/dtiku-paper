@@ -1,4 +1,4 @@
-use crate::{config::openai::OpenAIConfig, plugins::embedding::Embedding};
+use crate::config::openai::OpenAIConfig;
 use anyhow::Context as _;
 use dtiku_base::model::{schedule_task, ScheduleTask};
 use dtiku_paper::model::{question, ExamCategory, Material, PaperQuestion, Question, Solution};
@@ -19,8 +19,6 @@ use url::Url;
 pub struct WebSolutionCollectService {
     #[inject(component)]
     db: DbConn,
-    #[inject(component)]
-    embedding: Embedding,
     #[inject(config)]
     openai: OpenAIConfig,
     #[inject(component)]
@@ -73,7 +71,7 @@ impl WebSolutionCollectService {
                 if let Err(e) = self.collect_for_question(q).await {
                     tracing::error!("collect_for_question({qid}) error: {e:?}");
                 }
-                last_id = qid;
+                last_id = qid.max(last_id);
                 self.task = self.task.update_context(last_id, &self.db).await?;
             }
         }

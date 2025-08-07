@@ -2,7 +2,7 @@ pub use super::_entities::assets::*;
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
-    ConnectionTrait, DbErr, EntityTrait as _,
+    ColumnTrait, ConnectionTrait, DbErr, EntityTrait as _, QueryFilter, QuerySelect,
 };
 use spring::async_trait;
 
@@ -27,11 +27,16 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 impl Model {
-    pub fn compute_storage_url(&self) -> String {
+    pub fn compute_storage_path(&self) -> String {
         let date = self.created.format("%Y/%m/%d").to_string();
         let src_type = &self.src_type;
         let id = self.id;
-        format!("//s.dtiku.cn/{src_type}/{date}/{id}")
+        format!("{src_type}/{date}/{id}")
+    }
+
+    pub fn compute_storage_url(&self) -> String {
+        let path = self.compute_storage_path();
+        format!("//s.dtiku.cn/{path}")
     }
 }
 
@@ -53,5 +58,19 @@ impl ActiveModel {
             .exec_with_returning(db)
             .await
             .context("insert assets failed")
+    }
+}
+
+impl Entity {
+    pub async fn find_by_id_gt<C: ConnectionTrait>(
+        db: &C,
+        last_id: i32,
+    ) -> anyhow::Result<Vec<Model>> {
+        Entity::find()
+            .filter(Column::Id.gt(last_id))
+            .limit(100)
+            .all(db)
+            .await
+            .with_context(|| format!("find_by_id_gt({last_id}) failed"))
     }
 }
