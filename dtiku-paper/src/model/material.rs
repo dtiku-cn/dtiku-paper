@@ -1,13 +1,16 @@
 pub use super::_entities::material::*;
 use super::{PaperMaterial, _entities::paper_material};
-use crate::model::QuestionMaterial;
+use crate::{
+    model::{assets, QuestionMaterial, SrcType},
+    util::html,
+};
 use anyhow::{anyhow, Context};
 use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::{
-    ColumnTrait, ConnectionTrait, DbBackend, EntityTrait, FromJsonQueryResult, FromQueryResult,
-    QueryFilter, Statement,
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait,
+    FromJsonQueryResult, FromQueryResult, QueryFilter, Statement,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -146,6 +149,7 @@ impl ActiveModel {
                     }
                 }
             }
+
             let extra = serde_json::to_value(&self.extra.take().unwrap_or_default())
                 .context("serialize extra failed")?;
             let return_model = if let Some(id) = self.id.take() {
@@ -164,7 +168,7 @@ RETURNING id, content, extra
                     sql,
                     vec![
                         id.into(),
-                        content.into(),
+                        content.clone().into(),
                         format!("{sim_hash:0128b}").into(),
                         extra.into(),
                     ],
@@ -184,7 +188,7 @@ SET
                     DbBackend::Postgres,
                     sql,
                     vec![
-                        content.into(),
+                        content.clone().into(),
                         format!("{sim_hash:0128b}").into(),
                         extra.into(),
                     ],
@@ -194,7 +198,33 @@ SET
             .await
             .context("insert material failed")?;
 
-            Ok(return_model.ok_or_else(|| anyhow!("insert material failed"))?)
+            let model = return_model.ok_or_else(|| anyhow!("insert material failed"))?;
+
+            let replaced_content = html::async_replace_img_src(&content, |img_url| {
+                let img_url = img_url.to_string();
+                Box::pin(async move {
+                    let assets = assets::ActiveModel {
+                        src_type: Set(SrcType::Material),
+                        src_id: Set(model.id),
+                        src_url: Set(img_url),
+                        ..Default::default()
+                    }
+                    .insert_on_conflict(db)
+                    .await?;
+                    Ok(assets.compute_storage_url())
+                })
+            })
+            .await?;
+
+            let model = ActiveModel {
+                id: Set(model.id),
+                content: Set(replaced_content),
+                ..Default::default()
+            }
+            .update(db)
+            .await
+            .context("update content failed")?;
+            Ok(model)
         } else {
             Err(anyhow!("content is required for material insertion"))
         }

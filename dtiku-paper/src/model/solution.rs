@@ -1,9 +1,18 @@
+use crate::{
+    model::{assets, SrcType},
+    util::html,
+};
+
 pub use super::_entities::solution::*;
 use anyhow::Context;
 use itertools::Itertools;
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, FromJsonQueryResult, QueryFilter};
+use sea_orm::{
+    ActiveModelBehavior, ActiveModelTrait as _, ActiveValue::Set, ColumnTrait, ConnectionTrait,
+    DbErr, EntityTrait, FromJsonQueryResult, QueryFilter,
+};
 use serde::{Deserialize, Serialize};
 use serde_with::{formats::CommaSeparator, serde_as, StringWithSeparator};
+use spring::async_trait;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(tag = "type")]
@@ -200,5 +209,177 @@ impl Entity {
             .all(db)
             .await
             .with_context(|| format!("find_by_question_ids failed"))
+    }
+}
+
+#[async_trait]
+impl ActiveModelBehavior for ActiveModel {
+    async fn after_save<C: ConnectionTrait>(
+        model: Model,
+        db: &C,
+        insert: bool,
+    ) -> Result<Model, DbErr> {
+        if !insert {
+            return Ok(model);
+        }
+        let replaced_extra = match model.extra.clone() {
+            SolutionExtra::SingleChoice(mut sc) => {
+                sc.analysis = model
+                    .replace_img_src(db, &sc.analysis)
+                    .await
+                    .expect("replace SingleChoice::analysis failed");
+                SolutionExtra::SingleChoice(sc)
+            }
+            SolutionExtra::MultiChoice(mut mc) => {
+                mc.analysis = model
+                    .replace_img_src(db, &mc.analysis)
+                    .await
+                    .expect("replace MultiChoice::analysis failed");
+                SolutionExtra::MultiChoice(mc)
+            }
+            SolutionExtra::IndefiniteChoice(mut mc) => {
+                mc.analysis = model
+                    .replace_img_src(db, &mc.analysis)
+                    .await
+                    .expect("replace IndefiniteChoice::analysis failed");
+                SolutionExtra::IndefiniteChoice(mc)
+            }
+            SolutionExtra::BlankChoice(mut sc) => {
+                sc.analysis = model
+                    .replace_img_src(db, &sc.analysis)
+                    .await
+                    .expect("replace BlankChoice::analysis failed");
+                SolutionExtra::BlankChoice(sc)
+            }
+            SolutionExtra::FillBlank(mut fb) => {
+                let mut new_blanks = vec![];
+                for b in fb.blanks {
+                    new_blanks.push(
+                        model
+                            .replace_img_src(db, &b)
+                            .await
+                            .expect("replace FillBlank::blanks failed"),
+                    )
+                }
+                fb.blanks = new_blanks;
+                fb.analysis = model
+                    .replace_img_src(db, &fb.analysis)
+                    .await
+                    .expect("replace FillBlank::analysis failed");
+                SolutionExtra::FillBlank(fb)
+            }
+            SolutionExtra::BlankAnswer(mut ba) => {
+                ba.answer = model
+                    .replace_img_src(db, &ba.answer)
+                    .await
+                    .expect("replace BlankAnswer::answer failed");
+                ba.analysis = model
+                    .replace_img_src(db, &ba.analysis)
+                    .await
+                    .expect("replace BlankAnswer::analysis failed");
+                SolutionExtra::BlankAnswer(ba)
+            }
+            SolutionExtra::TrueFalse(mut sc) => {
+                sc.analysis = model
+                    .replace_img_src(db, &sc.analysis)
+                    .await
+                    .expect("replace TrueFalse::analysis failed");
+                SolutionExtra::TrueFalse(sc)
+            }
+            SolutionExtra::ClosedEndedQA(mut aa) => {
+                aa.answer = model
+                    .replace_img_src(db, &aa.answer)
+                    .await
+                    .expect("replace ClosedEndedQA::answer failed");
+                aa.analysis = model
+                    .replace_img_src(db, &aa.analysis)
+                    .await
+                    .expect("replace ClosedEndedQA::analysis failed");
+                SolutionExtra::ClosedEndedQA(aa)
+            }
+            SolutionExtra::OpenEndedQA(mut ssa) => {
+                if let Some(s) = ssa.solution {
+                    ssa.solution = Some(
+                        model
+                            .replace_img_src(db, &s)
+                            .await
+                            .expect("replace OpenEndedQA::solution failed"),
+                    );
+                }
+                let mut new_analysis = vec![];
+                for StepAnalysis { label, content } in ssa.analysis {
+                    new_analysis.push(StepAnalysis {
+                        label,
+                        content: model
+                            .replace_img_src(db, &content)
+                            .await
+                            .expect("replace OpenEndedQA::analysis failed"),
+                    });
+                }
+                ssa.analysis = new_analysis;
+                SolutionExtra::OpenEndedQA(ssa)
+            }
+            SolutionExtra::OtherQA(mut oqa) => {
+                if let Some(answer) = oqa.answer {
+                    oqa.answer = Some(
+                        model
+                            .replace_img_src(db, &answer)
+                            .await
+                            .expect("replace OpenEndedQA::answer failed"),
+                    );
+                }
+                if let Some(s) = oqa.solution {
+                    oqa.solution = Some(
+                        model
+                            .replace_img_src(db, &s)
+                            .await
+                            .expect("replace OpenEndedQA::solution failed"),
+                    );
+                }
+                let mut new_analysis = vec![];
+                for StepAnalysis { label, content } in oqa.analysis {
+                    new_analysis.push(StepAnalysis {
+                        label,
+                        content: model
+                            .replace_img_src(db, &content)
+                            .await
+                            .expect("replace OpenEndedQA::analysis failed"),
+                    });
+                }
+                oqa.analysis = new_analysis;
+                SolutionExtra::OtherQA(oqa)
+            }
+        };
+        ActiveModel {
+            id: Set(model.id),
+            extra: Set(replaced_extra),
+            ..Default::default()
+        }
+        .update(db)
+        .await
+    }
+}
+
+impl Model {
+    async fn replace_img_src<C: ConnectionTrait>(
+        &self,
+        db: &C,
+        content: &str,
+    ) -> anyhow::Result<String> {
+        html::async_replace_img_src(content, |img_url| {
+            let img_url = img_url.to_string();
+            Box::pin(async move {
+                let assets = assets::ActiveModel {
+                    src_type: Set(SrcType::Solution),
+                    src_id: Set(self.id),
+                    src_url: Set(img_url),
+                    ..Default::default()
+                }
+                .insert_on_conflict(db)
+                .await?;
+                Ok(assets.compute_storage_url())
+            })
+        })
+        .await
     }
 }
