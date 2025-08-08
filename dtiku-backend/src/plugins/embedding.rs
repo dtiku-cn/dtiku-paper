@@ -50,7 +50,7 @@ impl Embedding {
             .json(&text)
             .send()
             .await
-            .context("embedding service call failed")?;
+            .context("embedding service text_embedding call failed")?;
         let embedding = resp
             .json()
             .await
@@ -72,11 +72,11 @@ impl Embedding {
             .json(&texts)
             .send()
             .await
-            .context("embedding service call failed")?;
+            .context("embedding service batch_text_embedding call failed")?;
         let embeddings = resp
             .json()
             .await
-            .context("parse embedding response failed")?;
+            .context("parse embeddings response failed")?;
         Ok(embeddings)
     }
 }
