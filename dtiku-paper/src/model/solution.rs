@@ -1,9 +1,8 @@
+pub use super::_entities::solution::*;
 use crate::{
     model::{assets, SrcType},
     util::html,
 };
-
-pub use super::_entities::solution::*;
 use anyhow::Context;
 use itertools::Itertools;
 use sea_orm::{
