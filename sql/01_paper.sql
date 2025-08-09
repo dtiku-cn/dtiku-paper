@@ -114,7 +114,6 @@ create table if not exists solution (
     extra jsonb not null,
     unique(question_id, from_ty)
 );
-create index if not exists idx_solution_question_id on solution (question_id);
 -- 抓取的解答
 drop table if exists scraper_solution;
 create table if not exists scraper_solution (
