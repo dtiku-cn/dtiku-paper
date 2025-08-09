@@ -6,12 +6,11 @@ use crate::{
 use anyhow::Context;
 use itertools::Itertools;
 use sea_orm::{
-    ActiveModelBehavior, ActiveModelTrait as _, ActiveValue::Set, ColumnTrait, ConnectionTrait,
-    DbErr, EntityTrait, FromJsonQueryResult, QueryFilter,
+    sea_query::OnConflict, ActiveModelTrait as _, ActiveValue::Set, ColumnTrait, ConnectionTrait,
+    EntityTrait, FromJsonQueryResult, QueryFilter,
 };
 use serde::{Deserialize, Serialize};
 use serde_with::{formats::CommaSeparator, serde_as, StringWithSeparator};
-use spring::async_trait;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(tag = "type")]
@@ -211,16 +210,18 @@ impl Entity {
     }
 }
 
-#[async_trait]
-impl ActiveModelBehavior for ActiveModel {
-    async fn after_save<C: ConnectionTrait>(
-        model: Model,
-        db: &C,
-        insert: bool,
-    ) -> Result<Model, DbErr> {
-        if !insert {
-            return Ok(model);
-        }
+impl ActiveModel {
+    pub async fn insert_on_conflict<C: ConnectionTrait>(self, db: &C) -> anyhow::Result<Model> {
+        let model = Entity::insert(self)
+            .on_conflict(
+                OnConflict::columns([Column::QuestionId, Column::FromTy])
+                    .update_columns([Column::Extra])
+                    .to_owned(),
+            )
+            .exec_with_returning(db)
+            .await
+            .context("insert question failed")?;
+
         let replaced_extra = match model.extra.clone() {
             SolutionExtra::SingleChoice(mut sc) => {
                 sc.analysis = model
@@ -356,6 +357,7 @@ impl ActiveModelBehavior for ActiveModel {
         }
         .update(db)
         .await
+        .context("update solution extra failed")
     }
 }
 

@@ -110,7 +110,9 @@ drop table if exists solution;
 create table if not exists solution (
     id serial primary key,
     question_id integer not null,
-    extra jsonb not null
+    from_ty from_type not null,
+    extra jsonb not null,
+    unique(question_id, from_ty)
 );
 create index if not exists idx_solution_question_id on solution (question_id);
 -- 抓取的解答

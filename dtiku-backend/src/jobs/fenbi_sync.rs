@@ -30,7 +30,7 @@ use futures::StreamExt;
 use itertools::Itertools;
 use scraper::Html;
 use sea_orm::prelude::PgVector;
-use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter, Statement, TransactionTrait};
+use sea_orm::{ColumnTrait, QueryFilter, Statement, TransactionTrait};
 use sea_orm::{ConnectionTrait, EntityTrait};
 use sea_orm::{PaginatorTrait, Set};
 use serde::Deserialize;
@@ -573,10 +573,7 @@ impl FenbiSyncService {
             let qid_in_db = q_in_db.id;
             let mut solution = q.to_solution()?;
             solution.question_id = Set(qid_in_db);
-            solution
-                .insert(&self.target_db)
-                .await
-                .context("insert solution failed")?;
+            solution.insert_on_conflict(&self.target_db).await?;
 
             if let Some(m) = q.material {
                 let origin_m_id = m.id;
@@ -1242,6 +1239,7 @@ impl OriginQuestion {
             }
         };
         Ok(solution::ActiveModel {
+            from_ty: Set(FromType::Fenbi),
             extra: Set(extra),
             ..Default::default()
         })
