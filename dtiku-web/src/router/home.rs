@@ -20,7 +20,7 @@ async fn home(
 ) -> Result<impl IntoResponse> {
     let query = &IdiomQuery {
         label_id: vec![],
-        page: Pagination { page: 1, size: 10 },
+        page: Pagination { page: 0, size: 10 },
     };
     let xingce = get_papers(&ps, &global, "xingce").await?;
     let shenlun = get_papers(&ps, &global, "shenlun").await?;
