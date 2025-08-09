@@ -370,7 +370,7 @@ impl HuatuSyncService {
         }
 
         for mut q in questions {
-            // let correct_ratio = q.correct_ratio;
+            let correct_ratio = q.difficult / 10.0;
             let num = qid_num_map
                 .get(&q.id)
                 .expect("qid is not exists in qid_num_map");

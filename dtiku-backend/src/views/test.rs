@@ -9,6 +9,11 @@ pub struct TextCompare {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct WebExtractReq {
+    pub url: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct WebLabelReq {
     pub threshold: Option<f32>,
     pub url: String,
