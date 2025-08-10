@@ -370,7 +370,7 @@ impl HuatuSyncService {
         }
 
         for mut q in questions {
-            let correct_ratio = q.difficult / 10.0;
+            let correct_ratio = 1.0 - q.difficult / 10.0;
             let num = qid_num_map
                 .get(&q.id)
                 .expect("qid is not exists in qid_num_map");
@@ -456,7 +456,6 @@ impl HuatuSyncService {
                 }
             };
 
-            let correct_ratio = 1.0;
             // ltree
             let stmt = match &keypoint_path {
                 Some(path) => Statement::from_sql_and_values(

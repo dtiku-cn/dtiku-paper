@@ -4,6 +4,9 @@ use crate::config::embedding::EmbeddingConfig;
 use anyhow::Context;
 use itertools::Itertools;
 use reqwest::header::HeaderMap;
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest_tracing::TracingMiddleware;
 use spring::{
     app::AppBuilder,
     async_trait,
@@ -28,6 +31,16 @@ impl Plugin for EmbeddingPlugin {
             .build()
             .expect("create embedding client failed");
 
+        let retry_policy = ExponentialBackoff::builder()
+            .retry_bounds(Duration::from_secs(5), Duration::from_secs(10 * 60))
+            .build_with_max_retries(3);
+        let client = ClientBuilder::new(client)
+            // Trace HTTP requests. See the tracing crate to make use of these traces.
+            .with(TracingMiddleware::default())
+            // Retry failed requests.
+            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+            .build();
+
         app.add_component(Embedding {
             url: embedding_config.url,
             client,
@@ -38,7 +51,7 @@ impl Plugin for EmbeddingPlugin {
 #[derive(Debug, Clone)]
 pub struct Embedding {
     url: String,
-    client: reqwest::Client,
+    client: ClientWithMiddleware,
 }
 
 impl Embedding {

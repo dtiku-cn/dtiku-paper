@@ -42,6 +42,9 @@ lazy_static = { workspace = true }
 scraper = { workspace = true }
 reqwest = { workspace = true }
 reqwest-scraper = { workspace = true }
+reqwest-middleware = { workspace = true, features = ["json"] }
+reqwest-retry = { workspace = true }
+reqwest-tracing = { workspace = true }
 hnsw = { workspace = true }
 hnsw_rs = { workspace = true }
 dashmap = { workspace = true }

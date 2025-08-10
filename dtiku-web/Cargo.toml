@@ -49,7 +49,6 @@ feignhttp = { workspace = true, features = ["json"] }
 reqwest = { workspace = true }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 cookie = { workspace = true }
-reqwest_dav = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 rustls = { workspace = true }
 serde_urlencoded = { workspace = true }
