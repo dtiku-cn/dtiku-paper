@@ -308,7 +308,7 @@ impl HuatuSyncService {
             select
                 id,
                 target_id,
-                (jsonb_extract_path(extra,'area'))::int2 as area,
+                (jsonb_extract_path(extra,'area'))::int as area,
                 (jsonb_extract_path(extra,'year'))::int2 as year,
                 jsonb_extract_path_text(extra,'teachType') as ty,
                 jsonb_extract_path_text(extra,'stem') as content,
@@ -369,7 +369,7 @@ impl HuatuSyncService {
             self.save_material(m, paper.id, *num).await?;
         }
 
-        for mut q in questions {
+        for q in questions {
             let correct_ratio = 1.0 - q.difficult / 10.0;
             let num = qid_num_map
                 .get(&q.id)
@@ -383,21 +383,25 @@ impl HuatuSyncService {
                 .context("insert question failed")?;
             let mut solution = q.to_solution()?;
             solution.question_id = Set(q_in_db.id);
-            solution
-                .insert(&self.target_db)
-                .await
-                .context("insert solution failed")?;
+            solution.insert_on_conflict(&self.target_db).await?;
 
-            let origin_m_id = 1;
             if let Some(m) = q.material {
-                let target_id: Option<i32> = sqlx::query_scalar::<_, Option<i32>>(
-                    "select target_id from material where from_ty = 'fenbi' and id = $1",
-                )
-                .bind(origin_m_id)
-                .fetch_optional(&self.source_db)
+                let m_in_db = material::ActiveModel {
+                    content: Set(m),
+                    ..Default::default()
+                }
+                .insert_on_conflict(&self.target_db)
+                .await?;
+                let num = material_num;
+                material_num += 1;
+                paper_material::ActiveModel {
+                    paper_id: Set(paper.id),
+                    material_id: Set(m_in_db.id),
+                    sort: Set(num as i16),
+                }
+                .insert_on_conflict(&self.target_db)
                 .await
-                .with_context(|| format!("select material target_id by id#{origin_m_id}"))?
-                .flatten();
+                .context("insert paper_material failed")?;
             }
 
             let keypoint_path = match q.points_name {
@@ -499,10 +503,7 @@ impl HuatuSyncService {
             };
 
             self.target_db.execute(stmt).await.with_context(|| {
-                format!(
-                    "insert paper_question failed, key_point_path:{:?}",
-                    keypoint_path
-                )
+                format!("insert paper_question failed, key_point_path:{keypoint_path:?}")
             })?;
         }
 
@@ -713,7 +714,7 @@ impl Into<PaperChapter> for &PaperBlock {
 struct OriginQuestion {
     id: i64,
     target_id: Option<i32>,
-    area: i16,
+    area: i32,
     year: i16,
     ty: Option<String>,
     content: String,
@@ -730,6 +731,141 @@ struct OriginQuestion {
 
 impl OriginQuestion {
     async fn to_question(&self, model: &Embedding) -> anyhow::Result<question::ActiveModel> {
+        let Self {
+            id, ty, content, ..
+        } = self;
+        match ty {
+            None => {}
+            Some(ty) => match ty.as_str() {
+                "M选N选择题"
+                | "不定项选择题"
+                | "专题研讨"
+                | "主观题"
+                | "书面表达"
+                | "任务型阅读"
+                | "作品分析题"
+                | "作文评改"
+                | "作文评改题"
+                | "作文题"
+                | "公文写作"
+                | "公文写作题"
+                | "共用答案单选题"
+                | "其他创新题"
+                | "写作"
+                | "写作题"
+                | "分析写作"
+                | "分析题"
+                | "判断简析题"
+                | "判断解析"
+                | "判断说理题"
+                | "判断题"
+                | "匹配题"
+                | "匹配题(旧)"
+                | "单句语法填空"
+                | "单选选择题"
+                | "单选题"
+                | "单项选择题"
+                | "占位题"
+                | "双选题"
+                | "古文翻译题"
+                | "古诗文默写"
+                | "句型转换"
+                | "句段理解题"
+                | "名著阅读"
+                | "名词解析"
+                | "名词解释题"
+                | "图示题"
+                | "填空题"
+                | "多选题"
+                | "多项选择题"
+                | "字句抄写题"
+                | "字形题"
+                | "字母和单词注音"
+                | "字音题"
+                | "完善流程题"
+                | "完型填空"
+                | "完形填空"
+                | "完成对话"
+                | "实践题"
+                | "实验综合题"
+                | "实验设计题"
+                | "对联题"
+                | "应用题"
+                | "排序题"
+                | "探究题"
+                | "操作题"
+                | "教学情境分析题"
+                | "教学情景分析"
+                | "教学活动设计"
+                | "教学目标题"
+                | "教学设计题"
+                | "教材教法题"
+                | "教研题"
+                | "教育指导"
+                | "教育方案设计题"
+                | "教育活动方案设计题"
+                | "教育论文"
+                | "数据库设计与应用"
+                | "文字填空题"
+                | "文言文阅读"
+                | "方案设计题"
+                | "旋律辨析"
+                | "材料分析题"
+                | "案例分析题"
+                | "案例应用题"
+                | "案例选择题"
+                | "汉语言基础知识综合类"
+                | "活动设计题"
+                | "现代文阅读"
+                | "生活中的算法"
+                | "短文填空"
+                | "短文改错"
+                | "科学探究题"
+                | "程序题"
+                | "简答题"
+                | "简述题"
+                | "结构简析题"
+                | "绘图与设计题"
+                | "绘画题"
+                | "综合分析题"
+                | "综合运用题"
+                | "综合题"
+                | "美术创作题"
+                | "美术图示"
+                | "美术绘图题"
+                | "翻译题"
+                | "英译汉"
+                | "解答题"
+                | "计算题"
+                | "论述题"
+                | "证明题"
+                | "诊断题"
+                | "译谱题"
+                | "试题研究能力"
+                | "诗歌鉴赏"
+                | "语病修改题"
+                | "语言文字应用题"
+                | "课例点评题"
+                | "课堂教学技艺"
+                | "课程标准"
+                | "资料"
+                | "资料分析题"
+                | "辨析题"
+                | "连线题"
+                | "选择题"
+                | "问答题"
+                | "问题解决题"
+                | "阅读理解"
+                | "阅读理解7选5"
+                | "阅读理解题"
+                | "阅读表达"
+                | "非选择题"
+                | "音乐作品分析题"
+                | "音乐创编题"
+                | "音乐编创题" => {}
+                _unknown => tracing::error!("unexpect question type: {_unknown}"),
+            },
+        }
         todo!()
     }
 

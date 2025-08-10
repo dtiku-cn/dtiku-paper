@@ -735,10 +735,7 @@ impl FenbiSyncService {
             };
 
             self.target_db.execute(stmt).await.with_context(|| {
-                format!(
-                    "insert paper_question failed, key_point_path:{:?}",
-                    keypoint_path
-                )
+                format!("insert paper_question failed, key_point_path:{keypoint_path:?}")
             })?;
         }
 
