@@ -1,9 +1,11 @@
 use super::{JobScheduler, PaperSyncer};
 use crate::jobs::{MaterialIdNumber, QuestionIdNumber};
 use crate::plugins::embedding::Embedding;
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
+use dtiku_paper::model::question::{QuestionExtra, QA};
+use dtiku_paper::model::solution::SolutionExtra;
 use dtiku_paper::model::{
     exam_category, label, material, paper, paper_material, question, question_keypoint, solution,
     ExamCategory, FromType, KeyPoint, Label,
@@ -11,7 +13,6 @@ use dtiku_paper::model::{
 use futures::StreamExt;
 use itertools::Itertools;
 use pinyin::ToPinyin;
-use sea_orm::ActiveModelTrait;
 use sea_orm::{ActiveValue::Set, ConnectionTrait, EntityTrait, PaginatorTrait, QueryFilter};
 use sea_orm::{ColumnTrait, Statement};
 use serde::{Deserialize, Serialize};
@@ -732,13 +733,45 @@ struct OriginQuestion {
 impl OriginQuestion {
     async fn to_question(&self, model: &Embedding) -> anyhow::Result<question::ActiveModel> {
         let Self {
-            id, ty, content, ..
+            id,
+            ty,
+            content,
+            choices,
+            answer_require,
+            ..
         } = self;
-        match ty {
-            None => {}
+        let extra = match ty {
+            None => {
+                let qa = match answer_require {
+                    Some(ar) => vec![QA {
+                        title: ar.clone(),
+                        word_count: None,
+                        material_ids: vec![],
+                    }],
+                    None => vec![],
+                };
+                QuestionExtra::OpenEndedQA { qa }
+            }
             Some(ty) => match ty.as_str() {
+                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
+                    QuestionExtra::SingleChoice {
+                        options: choices.0.clone(),
+                    }
+                }
+                "多选题" | "多项选择题" | "双选题" => QuestionExtra::MultiChoice {
+                    options: choices.0.clone(),
+                },
+                "不定项选择题" => QuestionExtra::IndefiniteChoice {
+                    options: choices.0.clone(),
+                },
+                "填空题" => QuestionExtra::FillBlank,
                 "M选N选择题"
-                | "不定项选择题"
+                | "完型填空"
+                | "完形填空"
+                | "阅读理解"
+                | "阅读理解7选5"
+                | "非选择题"
+                | "诊断题"
                 | "专题研讨"
                 | "主观题"
                 | "书面表达"
@@ -762,11 +795,7 @@ impl OriginQuestion {
                 | "匹配题"
                 | "匹配题(旧)"
                 | "单句语法填空"
-                | "单选选择题"
-                | "单选题"
-                | "单项选择题"
                 | "占位题"
-                | "双选题"
                 | "古文翻译题"
                 | "古诗文默写"
                 | "句型转换"
@@ -775,16 +804,11 @@ impl OriginQuestion {
                 | "名词解析"
                 | "名词解释题"
                 | "图示题"
-                | "填空题"
-                | "多选题"
-                | "多项选择题"
                 | "字句抄写题"
                 | "字形题"
                 | "字母和单词注音"
                 | "字音题"
                 | "完善流程题"
-                | "完型填空"
-                | "完形填空"
                 | "完成对话"
                 | "实践题"
                 | "实验综合题"
@@ -839,7 +863,6 @@ impl OriginQuestion {
                 | "计算题"
                 | "论述题"
                 | "证明题"
-                | "诊断题"
                 | "译谱题"
                 | "试题研究能力"
                 | "诗歌鉴赏"
@@ -852,25 +875,167 @@ impl OriginQuestion {
                 | "资料分析题"
                 | "辨析题"
                 | "连线题"
-                | "选择题"
                 | "问答题"
                 | "问题解决题"
-                | "阅读理解"
-                | "阅读理解7选5"
-                | "阅读理解题"
                 | "阅读表达"
-                | "非选择题"
                 | "音乐作品分析题"
                 | "音乐创编题"
-                | "音乐编创题" => {}
-                _unknown => tracing::error!("unexpect question type: {_unknown}"),
+                | "音乐编创题" => QuestionExtra::FillBlank,
+                _unknown => return Err(anyhow!("unexpect question type: {_unknown}")),
             },
+        };
+        let mut m = question::ActiveModel {
+            content: Set(content.to_owned()),
+            extra: Set(extra),
+            ..Default::default()
+        };
+        if let Some(target_id) = self.target_id {
+            m.id = Set(target_id);
         }
-        todo!()
+        Ok(m)
     }
 
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
-        todo!()
+        let Self {
+            id,
+            ty,
+            answer_list,
+            analysis,
+            refer_analysis,
+            ..
+        } = self;
+        let extra = match ty {
+            None => SolutionExtra::OpenEndedQA(steps),
+            Some(ty) => match ty.as_str() {
+                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
+                    SolutionExtra::SingleChoice ()
+                }
+                "多选题" | "多项选择题" | "双选题" => SolutionExtra::MultiChoice(),
+                "不定项选择题" => SolutionExtra::IndefiniteChoice(),
+                "填空题" => SolutionExtra::FillBlank(),
+                "M选N选择题"
+                | "完型填空"
+                | "完形填空"
+                | "阅读理解"
+                | "阅读理解7选5"
+                | "非选择题"
+                | "诊断题"
+                | "专题研讨"
+                | "主观题"
+                | "书面表达"
+                | "任务型阅读"
+                | "作品分析题"
+                | "作文评改"
+                | "作文评改题"
+                | "作文题"
+                | "公文写作"
+                | "公文写作题"
+                | "共用答案单选题"
+                | "其他创新题"
+                | "写作"
+                | "写作题"
+                | "分析写作"
+                | "分析题"
+                | "判断简析题"
+                | "判断解析"
+                | "判断说理题"
+                | "判断题"
+                | "匹配题"
+                | "匹配题(旧)"
+                | "单句语法填空"
+                | "占位题"
+                | "古文翻译题"
+                | "古诗文默写"
+                | "句型转换"
+                | "句段理解题"
+                | "名著阅读"
+                | "名词解析"
+                | "名词解释题"
+                | "图示题"
+                | "字句抄写题"
+                | "字形题"
+                | "字母和单词注音"
+                | "字音题"
+                | "完善流程题"
+                | "完成对话"
+                | "实践题"
+                | "实验综合题"
+                | "实验设计题"
+                | "对联题"
+                | "应用题"
+                | "排序题"
+                | "探究题"
+                | "操作题"
+                | "教学情境分析题"
+                | "教学情景分析"
+                | "教学活动设计"
+                | "教学目标题"
+                | "教学设计题"
+                | "教材教法题"
+                | "教研题"
+                | "教育指导"
+                | "教育方案设计题"
+                | "教育活动方案设计题"
+                | "教育论文"
+                | "数据库设计与应用"
+                | "文字填空题"
+                | "文言文阅读"
+                | "方案设计题"
+                | "旋律辨析"
+                | "材料分析题"
+                | "案例分析题"
+                | "案例应用题"
+                | "案例选择题"
+                | "汉语言基础知识综合类"
+                | "活动设计题"
+                | "现代文阅读"
+                | "生活中的算法"
+                | "短文填空"
+                | "短文改错"
+                | "科学探究题"
+                | "程序题"
+                | "简答题"
+                | "简述题"
+                | "结构简析题"
+                | "绘图与设计题"
+                | "绘画题"
+                | "综合分析题"
+                | "综合运用题"
+                | "综合题"
+                | "美术创作题"
+                | "美术图示"
+                | "美术绘图题"
+                | "翻译题"
+                | "英译汉"
+                | "解答题"
+                | "计算题"
+                | "论述题"
+                | "证明题"
+                | "译谱题"
+                | "试题研究能力"
+                | "诗歌鉴赏"
+                | "语病修改题"
+                | "语言文字应用题"
+                | "课例点评题"
+                | "课堂教学技艺"
+                | "课程标准"
+                | "资料"
+                | "资料分析题"
+                | "辨析题"
+                | "连线题"
+                | "问答题"
+                | "问题解决题"
+                | "阅读表达"
+                | "音乐作品分析题"
+                | "音乐创编题"
+                | "音乐编创题" => SolutionExtra::FillBlank(),
+                _unknown => return Err(anyhow!("unexpect question type: {_unknown}")),
+            },
+        };
+        Ok(solution::ActiveModel {
+            extra: Set(extra),
+            ..Default::default()
+        })
     }
 }
 
