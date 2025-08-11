@@ -40,15 +40,16 @@ macro_rules! question_methods {
             }
         }
 
-        pub fn abbr(&self, size: usize) -> &str {
+        pub fn abbr(&self, size: usize) -> String {
             let text = {
                 let html = scraper::Html::parse_fragment(&self.content);
                 html.root_element().text().join("")
             };
-            text.char_indices()
-                .nth(size)
-                .map(|(idx, _)| &self.content[..idx])
-                .unwrap_or(&self.content)
+            if text.chars().count() > size {
+                text.chars().take(size).collect()
+            } else {
+                text
+            }
         }
     };
 }
