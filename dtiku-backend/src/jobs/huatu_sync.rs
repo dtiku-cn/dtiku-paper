@@ -5,7 +5,7 @@ use anyhow::{anyhow, Context};
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
 use dtiku_paper::model::question::{QuestionExtra, QA};
-use dtiku_paper::model::solution::SolutionExtra;
+use dtiku_paper::model::solution::{SolutionExtra, StepByStepAnswer};
 use dtiku_paper::model::{
     exam_category, label, material, paper, paper_material, question, question_keypoint, solution,
     ExamCategory, FromType, KeyPoint, Label,
@@ -905,7 +905,9 @@ impl OriginQuestion {
             ..
         } = self;
         let extra = match ty {
-            None => SolutionExtra::OpenEndedQA(steps),
+            None => SolutionExtra::OpenEndedQA(StepByStepAnswer{
+                
+            }),
             Some(ty) => match ty.as_str() {
                 "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
                     SolutionExtra::SingleChoice ()
