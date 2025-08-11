@@ -5,7 +5,7 @@ use anyhow::{anyhow, Context};
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
 use dtiku_paper::model::question::{QuestionExtra, QA};
-use dtiku_paper::model::solution::{SolutionExtra, StepByStepAnswer};
+use dtiku_paper::model::solution::{SingleChoice, SolutionExtra, StepByStepAnswer};
 use dtiku_paper::model::{
     exam_category, label, material, paper, paper_material, question, question_keypoint, solution,
     ExamCategory, FromType, KeyPoint, Label,
@@ -721,7 +721,7 @@ struct OriginQuestion {
     content: String,
     choices: Json<Vec<String>>,
     difficult: f32,
-    answer_list: Json<Vec<String>>,
+    answer_list: Option<String>,
     analysis: Option<String>,
     extend: Option<String>,
     answer_require: Option<String>,
@@ -906,19 +906,33 @@ impl OriginQuestion {
         } = self;
         let extra = match ty {
             None => {
-                let solution = answer_list;
+                let solution = answer_list.unwrap_or_default();
+                let solutions = serde_json::from_str::<Vec<AnswerListItem>>(&solution)
+                    .with_context(|| format!("parse answer_list failed: {solution:?}"))?
+                    .iter()
+                    .map(|i| i.to_string())
+                    .join("<br/><hr/><br/>");
                 let analysis = analysis.as_ref().map(|a| a.to_owned());
-                SolutionExtra::OpenEndedQA(StepByStepAnswer{
-                    solution,
-                    analysis
+                SolutionExtra::OpenEndedQA(StepByStepAnswer {
+                    solution: Some(solutions),
+                    analysis: vec![],
                 })
-            },
+            }
             Some(ty) => match ty.as_str() {
                 "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
-                    SolutionExtra::SingleChoice ()
+                    SolutionExtra::SingleChoice (SingleChoice{
+                        answer: answer_list.0.clone(),
+                        analysis: analysis.clone(),
+                    })
                 }
-                "多选题" | "多项选择题" | "双选题" => SolutionExtra::MultiChoice(),
-                "不定项选择题" => SolutionExtra::IndefiniteChoice(),
+                "多选题" | "多项选择题" | "双选题" => SolutionExtra::MultiChoice(MultiChoice{
+                    answer: answer_list.0.clone(),
+                    analysis: analysis.clone(),
+                }),
+                "不定项选择题" => SolutionExtra::IndefiniteChoice(MultiChoice{
+                    answer: answer_list.0.clone(),
+                    analysis: analysis.clone(),
+                }),
                 "填空题" => SolutionExtra::FillBlank(),
                 "M选N选择题"
                 | "完型填空"
@@ -1067,5 +1081,40 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
             am.id = Set(id);
         }
         Ok(am)
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnswerListItem {
+    pub id: i64,
+    pub topic: String,
+    pub status: i64,
+    pub creator: String,
+    pub call_name: String,
+    pub modifier: String,
+    pub sub_topic: String,
+    pub biz_status: i64,
+    pub gmt_create: String,
+    pub gmt_modify: String,
+    pub answer_flag: i64,
+    pub question_id: i64,
+    pub answer_comment: String,
+    pub inscribed_date: String,
+    pub inscribed_name: String,
+}
+
+impl ToString for AnswerListItem {
+    fn to_string(&self) -> String {
+        let Self {
+            topic,
+            sub_topic,
+            call_name,
+            answer_comment,
+            inscribed_date,
+            inscribed_name,
+            ..
+        } = self;
+        format!("{topic}<br/>{sub_topic}<br/>{call_name}<br/>{answer_comment}<br/>{inscribed_date}<br/>{inscribed_name}")
     }
 }
