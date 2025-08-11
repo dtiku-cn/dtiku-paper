@@ -5,7 +5,9 @@ use anyhow::{anyhow, Context};
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
 use dtiku_paper::model::question::{QuestionExtra, QA};
-use dtiku_paper::model::solution::{SingleChoice, SolutionExtra, StepByStepAnswer};
+use dtiku_paper::model::solution::{
+    MultiChoice, SingleChoice, SolutionExtra, StepByStepAnswer, TrueFalseChoice,
+};
 use dtiku_paper::model::{
     exam_category, label, material, paper, paper_material, question, question_keypoint, solution,
     ExamCategory, FromType, KeyPoint, Label,
@@ -23,6 +25,7 @@ use spring_sqlx::ConnectPool;
 use sqlx::types::Json;
 use sqlx::Row;
 use std::collections::HashMap;
+use std::num::ParseIntError;
 
 #[derive(Clone, Service)]
 #[service(prototype)]
@@ -906,9 +909,9 @@ impl OriginQuestion {
         } = self;
         let extra = match ty {
             None => {
-                let solution = answer_list.unwrap_or_default();
+                let solution = answer_list.clone().unwrap_or_default();
                 let solutions = serde_json::from_str::<Vec<AnswerListItem>>(&solution)
-                    .with_context(|| format!("parse answer_list failed: {solution:?}"))?
+                    .with_context(|| format!("parse answer_list failed: {solution}"))?
                     .iter()
                     .map(|i| i.to_string())
                     .join("<br/><hr/><br/>");
@@ -920,21 +923,49 @@ impl OriginQuestion {
             }
             Some(ty) => match ty.as_str() {
                 "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
+                    let answer_str = answer_list.clone().unwrap_or_default();
+                    let answer = serde_json::from_str::<Vec<String>>(&answer_str)
+                        .with_context(||format!("parse answer_list failed: {answer_str}"))?
+                        .into_iter()
+                        .map(|i|i.parse())
+                        .collect::<Result<Vec<u8>, ParseIntError>>()
+                        .context("parse int error")?;
+                    let analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
                     SolutionExtra::SingleChoice (SingleChoice{
-                        answer: answer_list.0.clone(),
-                        analysis: analysis.clone(),
+                        answer:answer[0],
+                        analysis,
                     })
                 }
-                "多选题" | "多项选择题" | "双选题" => SolutionExtra::MultiChoice(MultiChoice{
-                    answer: answer_list.0.clone(),
-                    analysis: analysis.clone(),
-                }),
-                "不定项选择题" => SolutionExtra::IndefiniteChoice(MultiChoice{
-                    answer: answer_list.0.clone(),
-                    analysis: analysis.clone(),
-                }),
-                "填空题" => SolutionExtra::FillBlank(),
-                "M选N选择题"
+                "多选题" | "多项选择题" | "双选题" => {
+                    let answer_str = answer_list.clone().unwrap_or_default();
+                    let answer = serde_json::from_str::<Vec<String>>(&answer_str)
+                        .with_context(||format!("parse answer_list failed: {answer_str}"))?
+                        .into_iter()
+                        .map(|i|i.parse())
+                        .collect::<Result<Vec<u8>, ParseIntError>>()
+                        .context("parse int error")?;
+                    let analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    SolutionExtra::MultiChoice(MultiChoice{
+                        answer,
+                        analysis,
+                    })
+                },
+                "不定项选择题" => {
+                    let answer_str = answer_list.clone().unwrap_or_default();
+                    let answer = serde_json::from_str::<Vec<String>>(&answer_str)
+                        .with_context(||format!("parse answer_list failed: {answer_str}"))?
+                        .into_iter()
+                        .map(|i|i.parse())
+                        .collect::<Result<Vec<u8>, ParseIntError>>()
+                        .context("parse int error")?;
+                    let analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    SolutionExtra::IndefiniteChoice(MultiChoice{
+                        answer,
+                        analysis,
+                    })
+                },
+                "填空题"
+                |"M选N选择题"
                 | "完型填空"
                 | "完形填空"
                 | "阅读理解"
@@ -1049,7 +1080,7 @@ impl OriginQuestion {
                 | "阅读表达"
                 | "音乐作品分析题"
                 | "音乐创编题"
-                | "音乐编创题" => SolutionExtra::FillBlank(),
+                | "音乐编创题" => SolutionExtra::TrueFalse(TrueFalseChoice{answer:true,analysis:"".to_string()}),
                 _unknown => return Err(anyhow!("unexpect question type: {_unknown}")),
             },
         };

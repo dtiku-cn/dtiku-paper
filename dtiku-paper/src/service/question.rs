@@ -60,6 +60,7 @@ impl QuestionService {
                     &mut qm_map,
                 )
             })
+            .sorted_by_key(|q| (q.paper.paper.id, q.paper.num))
             .collect_vec();
         Ok((qsp, papers))
     }
