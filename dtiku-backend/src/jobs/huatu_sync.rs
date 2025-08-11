@@ -905,9 +905,14 @@ impl OriginQuestion {
             ..
         } = self;
         let extra = match ty {
-            None => SolutionExtra::OpenEndedQA(StepByStepAnswer{
-                
-            }),
+            None => {
+                let solution = answer_list;
+                let analysis = analysis.as_ref().map(|a| a.to_owned());
+                SolutionExtra::OpenEndedQA(StepByStepAnswer{
+                    solution,
+                    analysis
+                })
+            },
             Some(ty) => match ty.as_str() {
                 "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
                     SolutionExtra::SingleChoice ()
