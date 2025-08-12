@@ -1,4 +1,5 @@
 pub use super::_entities::assets::*;
+use crate::model::{SrcType, _entities::assets_ref};
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
@@ -29,9 +30,8 @@ impl ActiveModelBehavior for ActiveModel {
 impl Model {
     pub fn compute_storage_path(&self) -> String {
         let date = self.created.format("%Y/%m/%d").to_string();
-        let src_type = &self.src_type;
         let id = self.id;
-        format!("{src_type}/{date}/{id}")
+        format!("bak/{date}/{id}")
     }
 
     pub fn compute_storage_url(&self) -> String {
@@ -51,8 +51,8 @@ impl ActiveModel {
             .context("before insert assets failed")?;
         Entity::insert(self)
             .on_conflict(
-                OnConflict::columns([Column::SrcType, Column::SrcId, Column::SrcHash])
-                    .update_columns([Column::SrcUrl, Column::Modified])
+                OnConflict::columns([Column::SrcHash, Column::SrcUrl])
+                    .update_columns([Column::Modified])
                     .to_owned(),
             )
             .exec_with_returning(db)
@@ -72,5 +72,46 @@ impl Entity {
             .all(db)
             .await
             .with_context(|| format!("find_by_id_gt({last_id}) failed"))
+    }
+}
+
+pub struct SourceAssets {
+    pub src_id: i32,
+    pub src_type: SrcType,
+    pub src_url: String,
+}
+
+impl SourceAssets {
+    pub async fn insert_on_conflict<C>(&self, db: &C) -> anyhow::Result<Model>
+    where
+        C: ConnectionTrait,
+    {
+        let assets = ActiveModel {
+            src_url: Set(self.src_url.clone()),
+            ..Default::default()
+        }
+        .insert_on_conflict(db)
+        .await?;
+
+        assets_ref::Entity::insert(assets_ref::ActiveModel {
+            assets_id: Set(assets.id),
+            src_id: Set(self.src_id),
+            src_type: Set(self.src_type.clone()),
+            ..Default::default()
+        })
+        .on_conflict(
+            OnConflict::columns([
+                assets_ref::Column::SrcId,
+                assets_ref::Column::SrcType,
+                assets_ref::Column::AssetsId,
+            ])
+            .update_columns([assets_ref::Column::AssetsId])
+            .to_owned(),
+        )
+        .exec_with_returning(db)
+        .await
+        .context("insert assets_ref failed")?;
+
+        Ok(assets)
     }
 }

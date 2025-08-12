@@ -474,11 +474,10 @@ impl ActiveModel {
         let replaced_content = html::async_replace_img_src(&model.content, |img_url| {
             let img_url = img_url.to_string();
             Box::pin(async move {
-                let assets = assets::ActiveModel {
-                    src_type: Set(SrcType::Question),
-                    src_id: Set(model.id),
-                    src_url: Set(img_url),
-                    ..Default::default()
+                let assets = assets::SourceAssets {
+                    src_type: SrcType::Question,
+                    src_id: model.id,
+                    src_url: img_url,
                 }
                 .insert_on_conflict(db)
                 .await?;

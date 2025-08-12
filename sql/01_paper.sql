@@ -132,11 +132,16 @@ create index on scraper_solution using hnsw (content_sim_hash bit_hamming_ops);
 drop table if exists assets;
 create table if not exists assets(
     id serial primary key,
-    src_type src_type not null,
-    src_id integer not null,
     src_url text not null,
     src_hash bytea not null,
     created timestamp not null,
     modified timestamp not null,
-    unique(src_type, src_id, src_hash)
+    unique(src_hash, src_url)
+);
+drop table if exists assets_ref;
+create table if not exists assets_ref(
+    src_id integer not null,
+    src_type src_type not null,
+    assets_id integer not null,
+    primary key(src_id, src_type, assets_id)
 );

@@ -3,6 +3,7 @@
 pub mod prelude;
 
 pub mod assets;
+pub mod assets_ref;
 pub mod exam_category;
 pub mod key_point;
 pub mod label;
