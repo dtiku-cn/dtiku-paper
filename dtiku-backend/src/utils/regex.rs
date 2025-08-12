@@ -6,7 +6,7 @@ use regex::Regex;
 lazy_static! {
     static ref YEAR_REG: Regex = Regex::new(r"\b(19[0-9]{2}|20[0-9]{2})\b").unwrap();
     static ref FENBI_MATERIAL_REGEX: Regex =
-        Regex::new(r"资料\[materialid\](\d+)\[\/materialid\]").unwrap();
+        Regex::new(r"\[materialid\](\d+)\[\/materialid\]").unwrap();
     static ref SENTENCE_SPLITTER: Regex = Regex::new(r"(.*?[。！？；：!?;])").unwrap();
 }
 
