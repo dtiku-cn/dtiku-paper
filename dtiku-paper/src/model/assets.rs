@@ -31,7 +31,7 @@ impl Model {
     pub fn compute_storage_path(&self) -> String {
         let date = self.created.format("%Y/%m/%d").to_string();
         let id = self.id;
-        format!("bak/{date}/{id}")
+        format!("assets/{date}/{id}")
     }
 
     pub fn compute_storage_url(&self) -> String {
