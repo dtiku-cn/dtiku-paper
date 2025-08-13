@@ -14,7 +14,7 @@ use spring_stream::{
 
 const CLOUD_STORAGE: [&str; 6] = ["139", "ilanzou", "pan.wo", "photo.baidu", "115", "uc"];
 
-#[stream_listener("assets")]
+// #[stream_listener("assets")]
 async fn save_assets_in_realtime(
     Component(ass): Component<AssetsSaveService>,
     Json(assets): Json<assets::Model>,
