@@ -440,15 +440,15 @@ impl ActiveModel {
             };
             let qs = Entity::find_by_embedding(db, embedding_vec).await?;
             for q in qs {
+                if content == q.content { // 完全相同，包括图片等html内容
+                    return Ok(q);
+                }
                 let q_text_content = {
                     Html::parse_fragment(&q.content)
                         .root_element()
                         .text()
                         .join("")
                 };
-                if q_text_content == text_content {
-                    return Ok(q);
-                }
                 if q_text_content.len() > 100 && text_content.len() > 100 {
                     let edit_distance =
                         textdistance::str::levenshtein(&q_text_content, &text_content);

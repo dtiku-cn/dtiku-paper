@@ -131,15 +131,15 @@ impl ActiveModel {
             let sim_hash = sim_hash.create_signature(text_content.chars());
             let ms = Entity::find_by_sim_hash(db, sim_hash).await?;
             for m in ms {
+                if m.content == content { // 完全相同
+                    return Ok(m);
+                }
                 let m_text_content = {
                     Html::parse_fragment(&m.content)
                         .root_element()
                         .text()
                         .join("")
                 };
-                if m_text_content == text_content {
-                    return Ok(m);
-                }
                 if m_text_content.len() > 100 && text_content.len() > 100 {
                     let edit_distance =
                         textdistance::str::levenshtein(&m_text_content, &text_content);
