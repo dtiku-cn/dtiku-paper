@@ -1,7 +1,7 @@
 create extension if not exists vector;
 create extension if not exists ltree;
 create extension if not exists pg_trgm;
-CREATE TYPE from_type AS ENUM ('fenbi', 'huatu', 'offcn', 'chinagwy');
+create type from_type as enum ('fenbi', 'huatu', 'offcn', 'chinagwy');
 create type src_type as enum('question', 'material', 'solution');
 -- 考试类型：root_id为exam_id; leaf_id为paper_type
 drop table if exists exam_category;
@@ -58,6 +58,7 @@ create table if not exists question(
     embedding vector(768) not null
 );
 create index on question using hnsw (embedding vector_cosine_ops);
+drop materialized view  if exists question_key_point_stats;
 drop table if exists question_key_point;
 create table if not exists question_key_point(
     question_id integer not null,
