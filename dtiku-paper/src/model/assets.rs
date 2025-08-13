@@ -5,7 +5,8 @@ use sea_orm::{
     sea_query::OnConflict, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
     ColumnTrait, ConnectionTrait, DbErr, EntityTrait as _, QueryFilter, QuerySelect,
 };
-use spring::async_trait;
+use spring::{async_trait, plugin::ComponentRegistry, tracing, App};
+use spring_stream::Producer;
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -24,6 +25,19 @@ impl ActiveModelBehavior for ActiveModel {
         }
         self.modified = Set(Local::now().naive_local());
         Ok(self)
+    }
+
+    async fn after_save<C>(model: Model, _db: &C, insert: bool) -> Result<Model, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        if insert {
+            let producer = App::global().get_expect_component::<Producer>();
+            if let Err(e) = producer.send_json("assets", &model).await {
+                tracing::warn!("send assets msg failed: {e:?}");
+            }
+        }
+        Ok(model)
     }
 }
 
