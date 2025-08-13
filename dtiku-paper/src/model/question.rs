@@ -14,6 +14,7 @@ use sea_orm::{
     QueryFilter, QuerySelect, Statement,
 };
 use serde::{Deserialize, Serialize};
+use spring::tracing;
 use std::collections::HashMap;
 use strum::Display;
 
@@ -440,7 +441,9 @@ impl ActiveModel {
             };
             let qs = Entity::find_by_embedding(db, embedding_vec).await?;
             for q in qs {
-                if content == q.content { // 完全相同，包括图片等html内容
+                tracing::warn!("question对比==>{content}--->{}", q.content);
+                if content == q.content {
+                    // 完全相同，包括图片等html内容
                     return Ok(q);
                 }
                 let q_text_content = {
