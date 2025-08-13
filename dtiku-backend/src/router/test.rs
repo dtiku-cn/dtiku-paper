@@ -105,6 +105,12 @@ async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoRes
     })))
 }
 
+#[post("/api/html_text")]
+async fn get_html_text(body: String) -> Result<impl IntoResponse> {
+    let text_content = { scraper::Html::parse_fragment(&body).root_element().text().join("") };
+    Ok(text_content)
+}
+
 #[get("/api/web_text_extract")]
 async fn test_web_text_extract(Query(req): Query<WebExtractReq>) -> Result<impl IntoResponse> {
     let url = url::Url::parse(&req.url).with_context(|| format!("parse url failed:{}", req.url))?;
