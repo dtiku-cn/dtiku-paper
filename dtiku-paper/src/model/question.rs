@@ -441,8 +441,8 @@ impl ActiveModel {
             };
             let qs = Entity::find_by_embedding(db, embedding_vec).await?;
             for q in qs {
-                tracing::warn!("question对比==>{content}--->{}", q.content);
                 if content == q.content {
+                    tracing::warn!("question对比==>{content}--->{}", q.content);
                     // 完全相同，包括图片等html内容
                     return Ok(q);
                 }
@@ -457,6 +457,7 @@ impl ActiveModel {
                         textdistance::str::levenshtein(&q_text_content, &text_content);
                     // 95%相似度: 100个字只有5个字不同
                     if edit_distance * 20 < text_content.len().max(q_text_content.len()) {
+                        tracing::warn!("question text对比==>{q_text_content}--->{text_content}");
                         return Ok(q);
                     }
                 }
