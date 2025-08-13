@@ -131,7 +131,8 @@ impl ActiveModel {
             let sim_hash = sim_hash.create_signature(text_content.chars());
             let ms = Entity::find_by_sim_hash(db, sim_hash).await?;
             for m in ms {
-                if m.content == content { // 完全相同
+                if m.content == content {
+                    // 完全相同
                     return Ok(m);
                 }
                 let m_text_content = {
@@ -140,11 +141,13 @@ impl ActiveModel {
                         .text()
                         .join("")
                 };
-                if m_text_content.len() > 100 && text_content.len() > 100 {
+                let m_text_content_length = m_text_content.chars().count();
+                let text_content_length = text_content.chars().count();
+                if m_text_content_length > 100 && text_content_length > 100 {
                     let edit_distance =
                         textdistance::str::levenshtein(&m_text_content, &text_content);
                     // 95%相似度: 100个字只有5个字不同
-                    if edit_distance * 20 < text_content.len().max(m_text_content.len()) {
+                    if edit_distance * 20 < text_content_length.max(m_text_content_length) {
                         return Ok(m);
                     }
                 }

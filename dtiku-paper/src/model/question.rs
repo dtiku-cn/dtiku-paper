@@ -452,11 +452,13 @@ impl ActiveModel {
                         .text()
                         .join("")
                 };
-                if q_text_content.len() > 100 && text_content.len() > 100 {
+                let q_text_content_length = q_text_content.chars().count();
+                let text_content_length = text_content.chars().count();
+                if q_text_content_length > 100 && text_content_length > 100 {
                     let edit_distance =
                         textdistance::str::levenshtein(&q_text_content, &text_content);
                     // 95%相似度: 100个字只有5个字不同
-                    if edit_distance * 20 < text_content.len().max(q_text_content.len()) {
+                    if edit_distance * 20 < text_content_length.max(text_content_length) {
                         tracing::warn!("question text对比==>{q_text_content}--->{text_content}");
                         return Ok(q);
                     }
