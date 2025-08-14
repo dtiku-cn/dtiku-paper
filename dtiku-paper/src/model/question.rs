@@ -433,6 +433,7 @@ impl ActiveModel {
             // embedding算法去重
             let embedding_vec = embedding.to_vec();
             let content = self.content.take().unwrap();
+            let extra = self.extra.take().unwrap();
             let text_content = {
                 Html::parse_fragment(&content)
                     .root_element()
@@ -441,11 +442,19 @@ impl ActiveModel {
             };
             let qs = Entity::find_by_embedding(db, embedding_vec).await?;
             for q in qs {
+                let text_content_length = text_content.chars().count();
                 if content == q.content {
-                    tracing::warn!("question对比==>{content}--->{}", q.content);
                     // 完全相同，包括图片等html内容
-                    return Ok(q);
+                    tracing::warn!("question对比==>{content}--->{}", q.content);
+                    if text_content_length > 20 {
+                        return Ok(q);
+                    } else if extra == q.extra {
+                        // 如果内容和extra都相同，直接返回
+                        tracing::warn!("question extra对比==>{extra}--->{}", q.extra);
+                        return Ok(q);
+                    }
                 }
+
                 let q_text_content = {
                     Html::parse_fragment(&q.content)
                         .root_element()
@@ -453,7 +462,6 @@ impl ActiveModel {
                         .join("")
                 };
                 let q_text_content_length = q_text_content.chars().count();
-                let text_content_length = text_content.chars().count();
                 if q_text_content_length > 100 && text_content_length > 100 {
                     let edit_distance =
                         textdistance::str::levenshtein(&q_text_content, &text_content);
@@ -466,6 +474,7 @@ impl ActiveModel {
             }
             self.embedding = Set(embedding);
             self.content = Set(content);
+            self.extra = Set(extra);
         }
         let model = Entity::insert(self)
             .on_conflict(
