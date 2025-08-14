@@ -42,7 +42,12 @@ use spring_web::{
     Router,
 };
 use std::env;
+use std::sync::Arc;
+use std::time::Duration;
 use tokio::task_local;
+use tower_governor::governor::GovernorConfigBuilder;
+use tower_governor::key_extractor::SmartIpKeyExtractor;
+use tower_governor::GovernorLayer;
 
 pub fn routers() -> Router {
     let env = Env::init();
@@ -62,10 +67,33 @@ pub fn routers() -> Router {
     };
 
     let http_tracing_layer = trace::HttpLayer::server(Level::INFO);
+
+    let governor_conf = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(1) // 允许的平均请求速率
+            .burst_size(10) // 允许突发的最大请求数
+            // 优先从请求头里取 X-Forwarded-For、Forwarded 等常见代理头，取不到再回退到对端 IP
+            .key_extractor(SmartIpKeyExtractor)
+            .finish()
+            .unwrap(),
+    );
+
+    let governor_limiter = governor_conf.limiter().clone();
+    let interval = Duration::from_secs(60);
+    // 单独的后台线程定时清理hashmap中的key，防止内存泄漏
+    std::thread::spawn(move || loop {
+        std::thread::sleep(interval);
+        tracing::info!("rate limiting storage size: {}", governor_limiter.len());
+        governor_limiter.retain_recent();
+    });
+
     spring_web::handler::auto_router()
         .route_layer(middleware::from_fn(global_error_page))
         .layer(trace_layer)
         .layer(http_tracing_layer)
+        .layer(GovernorLayer {
+            config: governor_conf,
+        })
         .fallback(not_found_handler)
 }
 

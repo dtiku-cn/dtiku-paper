@@ -40,6 +40,8 @@ axum-extra = { workspace = true, features = [
     "multipart",
     "query",
 ] }
+
+tower_governor = { workspace = true }
 lazy_static = { workspace = true }
 jsonwebtoken = { workspace = true }
 derive_more = { workspace = true, features = ["deref", "deref_mut"] }
