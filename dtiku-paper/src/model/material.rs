@@ -13,6 +13,7 @@ use sea_orm::{
     FromJsonQueryResult, FromQueryResult, QueryFilter, Statement,
 };
 use serde::{Deserialize, Serialize};
+use spring::tracing;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -132,6 +133,8 @@ impl ActiveModel {
             let ms = Entity::find_by_sim_hash(db, sim_hash).await?;
             for m in ms {
                 if m.content == content {
+                    // 完全相同，包括图片等html内容
+                    tracing::info!("material对比==>{content}--->{}", m.content);
                     // 完全相同
                     return Ok(m);
                 }
@@ -148,6 +151,7 @@ impl ActiveModel {
                         textdistance::str::levenshtein(&m_text_content, &text_content);
                     // 95%相似度: 100个字只有5个字不同
                     if edit_distance * 20 < text_content_length.max(m_text_content_length) {
+                        tracing::info!("material text对比==>{text_content}--->{m_text_content}");
                         return Ok(m);
                     }
                 }
