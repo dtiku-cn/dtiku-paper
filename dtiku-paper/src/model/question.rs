@@ -444,13 +444,14 @@ impl ActiveModel {
             for q in qs {
                 let text_content_length = text_content.chars().count();
                 if content == q.content {
+                    tracing::info!("question对比匹配成功==>{content}--->{}", q.content);
                     // 完全相同，包括图片等html内容
-                    tracing::info!("question对比==>{content}--->{}", q.content);
                     if text_content_length > 20 {
+                        tracing::info!("question对比ok返回");
                         return Ok(q);
                     } else if extra == q.extra {
                         // 如果内容和extra都相同，直接返回
-                        tracing::info!("question extra对比==>{extra:?}--->{:?}", q.extra);
+                        tracing::info!("question extra对比匹配成功==>{extra:?}--->{:?}", q.extra);
                         return Ok(q);
                     }
                 }
@@ -467,7 +468,7 @@ impl ActiveModel {
                         textdistance::str::levenshtein(&q_text_content, &text_content);
                     // 95%相似度: 100个字只有5个字不同
                     if edit_distance * 20 < text_content_length.max(text_content_length) {
-                        tracing::info!("question text对比==>{q_text_content}--->{text_content}");
+                        tracing::info!("question text对比匹配成功==>{q_text_content}--->{text_content}");
                         return Ok(q);
                     }
                 }
