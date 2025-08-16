@@ -184,9 +184,8 @@ async fn anti_bot(cookies: &CookieJar, client_ip: IpAddr) -> Option<Response> {
         server_secret_key: dynamic_secret.as_str(),
     };
 
-    // 假设你有一个 render 函数可以把模板渲染成 HTML
     let html = template.render().ok()?;
-    return Some(Html(html).into_response());
+    return Some((StatusCode::ACCEPTED, Html(html)).into_response());
 }
 
 async fn not_found_handler(Host(original_host): Host) -> Response {
