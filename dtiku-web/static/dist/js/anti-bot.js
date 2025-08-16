@@ -19,8 +19,8 @@
     const token = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
     // 写入 Cookie
-    document.cookie = `x-anti-token=${token}; path=/; max-age=300; Secure; SameSite=Strict`;
-    document.cookie = `x-fp=${visitorId}; path=/; max-age=300; Secure; SameSite=Strict`;
+    document.cookie = `x-anti-token=${token}; path=/; max-age=604800; Secure; SameSite=Strict`;
+    document.cookie = `x-fp=${visitorId}; path=/; max-age=604800; Secure; SameSite=Strict`;
 
     window.location.reload();
 })();
