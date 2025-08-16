@@ -28,25 +28,29 @@ impl Plugin for PayPlugin {
     async fn build(&self, app: &mut AppBuilder) {
         let conf = app.get_config::<PayConfig>().expect("支付配置获取失败");
 
-        let alipay = PayClient::builder()
-            .api_url(&conf.alipay_api_url)
-            .app_id(&conf.alipay_app_id)
-            .alipay_root_cert_sn(&conf.alipay_root_cert_sn)
-            .alipay_public_key(&conf.alipay_public_key)
-            .app_cert_sn(&conf.alipay_app_cert_sn)
-            .charset_utf8()
-            .format_json()
-            .private_key(&conf.alipay_app_private_key)
-            .public_key(&conf.alipay_app_public_key)
-            .sign_type_rsa2()
-            .version_1_0()
-            .build()
-            .expect("build alipay client failed");
+        if conf.alipay_enable {
+            let alipay = PayClient::builder()
+                .api_url(&conf.alipay_api_url)
+                .app_id(&conf.alipay_app_id)
+                .alipay_root_cert_sn(&conf.alipay_root_cert_sn)
+                .alipay_public_key(&conf.alipay_public_key)
+                .app_cert_sn(&conf.alipay_app_cert_sn)
+                .charset_utf8()
+                .format_json()
+                .private_key(&conf.alipay_app_private_key)
+                .public_key(&conf.alipay_app_public_key)
+                .sign_type_rsa2()
+                .version_1_0()
+                .build()
+                .expect("build alipay client failed");
 
-        let wechat_pay = WechatPay::from_env();
+            app.add_component(Alipay(Arc::new(alipay)));
+        }
 
-        app.add_component(Alipay(Arc::new(alipay)))
-            .add_component(WechatPayClient(Arc::new(wechat_pay)));
+        if conf.wechat_pay_enable {
+            let wechat_pay = WechatPay::from_env();
+            app.add_component(WechatPayClient(Arc::new(wechat_pay)));
+        }
     }
 }
 

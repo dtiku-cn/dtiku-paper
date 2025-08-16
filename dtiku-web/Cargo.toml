@@ -40,7 +40,7 @@ axum-extra = { workspace = true, features = [
     "multipart",
     "query",
 ] }
-
+axum-client-ip = { workspace = true }
 tower_governor = { workspace = true, features = ["tracing"] }
 lazy_static = { workspace = true }
 jsonwebtoken = { workspace = true }
@@ -56,6 +56,8 @@ rustls = { workspace = true }
 serde_urlencoded = { workspace = true }
 serde_html_form = { workspace = true }
 validator = { workspace = true, features = ["derive"] }
+sha2 = { workspace = true }
+hex = { workspace = true }
 
 [build-dependencies]
 minify-html = "0.16"

@@ -52,24 +52,3 @@ pub fn split_sentences(text: &str) -> Vec<&str> {
 
     result
 }
-
-/// 使用正则将文本分句，并对每句异步调用替换函数
-pub async fn replace_sentences<F, Fut>(text: &str, replacer: F) -> String
-where
-    F: Fn(&str) -> Fut,
-    Fut: std::future::Future<Output = String>,
-{
-    let mut result = String::new();
-
-    for cap in SENTENCE_SPLITTER.captures_iter(text) {
-        if let Some(sentence) = cap.get(0) {
-            let original = sentence.as_str().trim();
-            if !original.is_empty() {
-                let replaced = replacer(original).await;
-                result.push_str(&replaced);
-            }
-        }
-    }
-
-    result
-}

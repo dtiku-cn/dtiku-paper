@@ -210,9 +210,15 @@ impl GlobalVariables {
 }
 
 #[derive(Template)]
-#[template(path = "error/err.html.jinja")]
+#[template(path = "error/err.html.min.jinja")]
 pub struct ErrorTemplate<'a> {
     pub status: StatusCode,
     pub msg: &'a str,
     pub original_host: &'a str,
+}
+
+#[derive(Template)]
+#[template(path = "anti-bot.html.min.jinja")]
+pub struct AntiBotTemplate<'a> {
+    pub server_secret_key: &'a str,
 }

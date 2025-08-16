@@ -10,17 +10,20 @@ mod shenlun_category;
 mod user;
 
 use crate::service::user::UserService;
-use crate::views::{ErrorTemplate, GlobalVariables};
+use crate::views::{AntiBotTemplate, ErrorTemplate, GlobalVariables};
 use askama::Template;
+use axum_client_ip::{ClientIp, ClientIpSource};
 use axum_extra::extract::{CookieJar, Host};
 use axum_extra::headers::Cookie;
 use axum_extra::TypedHeader;
+use chrono::Utc;
 use derive_more::derive::Deref;
 use dtiku_base::service::system_config::SystemConfigService;
 use dtiku_paper::service::exam_category::ExamCategoryService;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use spring::config::env::Env;
 use spring::tracing::{self, Level};
 use spring_opentelemetry::trace;
@@ -42,6 +45,7 @@ use spring_web::{
     Router,
 };
 use std::env;
+use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::task_local;
@@ -91,9 +95,9 @@ pub fn routers() -> Router {
         .route_layer(middleware::from_fn(global_error_page))
         .layer(trace_layer)
         .layer(http_tracing_layer)
-        .layer(GovernorLayer {
-            config: governor_conf,
-        })
+        .layer(GovernorLayer::new(governor_conf))
+        // .layer(ClientIpSource::RightmostXForwardedFor.into_extension())
+        .layer(ClientIpSource::ConnectInfo.into_extension())
         .fallback(not_found_handler)
 }
 
@@ -101,12 +105,16 @@ async fn global_error_page(
     ec_service: Component<ExamCategoryService>,
     sc_service: Component<SystemConfigService>,
     us_service: Component<UserService>,
+    ClientIp(client_ip): ClientIp,
     claims: OptionalClaims,
     host: Host,
     cookies: CookieJar,
     req: Request,
     next: Next,
 ) -> Response {
+    if let Some(resp) = anti_bot(&cookies, client_ip).await {
+        return resp;
+    }
     let original_host = host.0.clone();
     let resp = match with_context(
         &ec_service,
@@ -143,6 +151,42 @@ async fn global_error_page(
     } else {
         resp
     }
+}
+
+/**
+ * js反爬虫：
+ * 1. 浏览器第一次访问，基于当前周(now_week)生成当前server端的dynamic_secret
+ * 2. 浏览器通过js脚本生成visitorId，后端基于visitorId做一次校验
+ */
+async fn anti_bot(cookies: &CookieJar, client_ip: IpAddr) -> Option<Response> {
+    let server_secret = "server-secret";
+    let client_ip = client_ip.to_string();
+    let now_week = Utc::now().timestamp() / 60 / 60 / 24 / 7; // 当前周时间戳
+
+    let mut hasher = Sha256::new();
+    hasher.update(format!("{now_week}{client_ip}{server_secret}").as_bytes());
+    let dynamic_secret = hex::encode(hasher.finalize());
+
+    if let (Some(token), Some(fp)) = (cookies.get("x-anti-token"), cookies.get("x-fp")) {
+        // 用 visitorId + dynamic_secret 生成期望 token
+        let visitor_id = fp.value();
+        let mut token_hasher = Sha256::new();
+        token_hasher.update(format!("{now_week}{visitor_id}{dynamic_secret}").as_bytes());
+        let expected_token = hex::encode(token_hasher.finalize());
+
+        if expected_token == token.value() {
+            // token 有效，允许访问
+            return None;
+        }
+    }
+
+    let template = AntiBotTemplate {
+        server_secret_key: dynamic_secret.as_str(),
+    };
+
+    // 假设你有一个 render 函数可以把模板渲染成 HTML
+    let html = template.render().ok()?;
+    return Some(Html(html).into_response());
 }
 
 async fn not_found_handler(Host(original_host): Host) -> Response {

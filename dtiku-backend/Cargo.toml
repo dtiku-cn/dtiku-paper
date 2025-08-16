@@ -52,7 +52,6 @@ textdistance = { workspace = true }
 prost = { workspace = true }
 tonic = { workspace = true }
 pinyin = { workspace = true }
-sha2 = { workspace = true }
 url = { workspace = true }
 readability = { workspace = true }
 dom_smoothie = { workspace = true, features = ["serde"] }

@@ -494,6 +494,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-client-ip"
+version = "1.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f08a543641554404b42acd0d2494df12ca2be034d7b8ee4dbbf7446f940a2ef"
+dependencies = [
+ "axum",
+ "client-ip",
+ "serde",
+]
+
+[[package]]
 name = "axum-core"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -924,6 +935,15 @@ dependencies = [
  "glob",
  "libc",
  "libloading",
+]
+
+[[package]]
+name = "client-ip"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31211fc26899744f5b22521fdc971e5f3875991d8880537537470685a0e9552d"
+dependencies = [
+ "http 1.3.1",
 ]
 
 [[package]]
@@ -1589,7 +1609,7 @@ dependencies = [
  "spring-sqlx",
  "sqlx",
  "tokio",
- "tonic",
+ "tonic 0.13.1",
  "tonic-build",
 ]
 
@@ -1633,7 +1653,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
- "sha2",
  "spring",
  "spring-job",
  "spring-opendal",
@@ -1647,7 +1666,7 @@ dependencies = [
  "strum",
  "textdistance",
  "tokio",
- "tonic",
+ "tonic 0.13.1",
  "url",
 ]
 
@@ -1754,6 +1773,7 @@ dependencies = [
  "anyhow",
  "askama",
  "askama_web",
+ "axum-client-ip",
  "axum-extra",
  "chinese-number",
  "chrono",
@@ -1765,6 +1785,7 @@ dependencies = [
  "dtiku-pay",
  "dtiku-stats",
  "feignhttp",
+ "hex",
  "itertools 0.14.0",
  "jsonwebtoken",
  "just-auth",
@@ -1778,6 +1799,7 @@ dependencies = [
  "serde_html_form",
  "serde_json",
  "serde_urlencoded",
+ "sha2",
  "spring",
  "spring-opendal",
  "spring-opentelemetry",
@@ -1786,7 +1808,7 @@ dependencies = [
  "spring-web",
  "strum",
  "tokio",
- "tonic",
+ "tonic 0.13.1",
  "tonic-build",
  "tower_governor",
  "uuid",
@@ -2490,9 +2512,9 @@ dependencies = [
 
 [[package]]
 name = "governor"
-version = "0.8.1"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be93b4ec2e4710b04d9264c0c7350cdd62a8c20e5e4ac732552ebb8f0debe8eb"
+checksum = "444405bbb1a762387aa22dd569429533b54a1d8759d35d3b64cb39b0293eaa19"
 dependencies = [
  "cfg-if",
  "dashmap 6.1.0",
@@ -2500,7 +2522,7 @@ dependencies = [
  "futures-timer",
  "futures-util",
  "getrandom 0.3.3",
- "no-std-compat",
+ "hashbrown 0.15.4",
  "nonzero_ext",
  "parking_lot 0.12.4",
  "portable-atomic",
@@ -4014,12 +4036,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "no-std-compat"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
-
-[[package]]
 name = "nom"
 version = "7.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4373,7 +4389,7 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.12",
  "tokio",
- "tonic",
+ "tonic 0.13.1",
  "tracing",
 ]
 
@@ -4386,7 +4402,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry_sdk",
  "prost",
- "tonic",
+ "tonic 0.13.1",
 ]
 
 [[package]]
@@ -6694,7 +6710,7 @@ dependencies = [
  "spring",
  "thiserror 2.0.12",
  "tokio",
- "tonic",
+ "tonic 0.13.1",
  "tower",
  "tower-http",
  "tracing",
@@ -6764,7 +6780,7 @@ dependencies = [
  "schemars 1.0.4",
  "serde",
  "spring",
- "tonic",
+ "tonic 0.13.1",
  "tower",
  "tower-layer",
  "tower-service",
@@ -7581,6 +7597,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "tonic"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67ac5a8627ada0968acec063a4746bf79588aa03ccb66db2f75d7dce26722a40"
+dependencies = [
+ "async-trait",
+ "axum",
+ "base64 0.22.1",
+ "bytes",
+ "h2 0.4.11",
+ "http 1.3.1",
+ "http-body 1.0.1",
+ "http-body-util",
+ "hyper 1.6.0",
+ "hyper-timeout",
+ "hyper-util",
+ "percent-encoding",
+ "pin-project",
+ "socket2 0.6.0",
+ "sync_wrapper 1.0.2",
+ "tokio",
+ "tokio-stream",
+ "tower",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
 name = "tonic-build"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7659,9 +7704,9 @@ checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 
 [[package]]
 name = "tower_governor"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84e6672c7510df74859726427edea641674dad1aeeb30057b87335b1ba23b843"
+checksum = "44de9b94d849d3c46e06a883d72d408c2de6403367b39df2b1c9d9e7b6736fe6"
 dependencies = [
  "axum",
  "forwarded-header-value",
@@ -7669,6 +7714,7 @@ dependencies = [
  "http 1.3.1",
  "pin-project",
  "thiserror 2.0.12",
+ "tonic 0.14.1",
  "tower",
  "tracing",
 ]

@@ -4,6 +4,10 @@ use spring::config::Configurable;
 #[derive(Debug, Configurable, Deserialize)]
 #[config_prefix = "pay"]
 pub struct PayConfig {
+    #[serde(default)]
+    pub wechat_pay_enable: bool,
+    #[serde(default)]
+    pub alipay_enable: bool,
     pub alipay_api_url: String,
     pub alipay_app_id: String,
     /// 支付宝根证书
