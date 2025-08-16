@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # 拉取 Nginx 源码 (仅用于构建)
-RUN curl -fSL http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz \
+RUN curl -fSL http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz -o nginx-${NGINX_VERSION}.tar.gz \
     && tar -xzf nginx-${NGINX_VERSION}.tar.gz
 
 # 拉取 nginx-acme
