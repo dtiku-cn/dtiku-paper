@@ -27,4 +27,4 @@ FROM nginx:1.29.1-otel
 COPY --from=acme-build /build/nginx-1.29.1/objs/ngx_http_acme_module.so /etc/nginx/modules/
 
 # 默认加载模块
-RUN echo "load_module modules/ngx_http_acme_module.so;" >> /etc/nginx/nginx.conf
+RUN sed -i '1iload_module modules/ngx_http_acme_module.so;' /etc/nginx/nginx.conf
