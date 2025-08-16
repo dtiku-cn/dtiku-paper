@@ -16,9 +16,9 @@ RUN curl -fSL http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz -o nginx.t
 RUN git clone https://github.com/nginx/nginx-acme.git
 
 # 构建 nginx-acme
+WORKDIR /build/nginx-${NGINX_VERSION}
 ENV NGINX_BUILD_DIR=/build/nginx-${NGINX_VERSION}/objs
-RUN cd /build/nginx-${NGINX_VERSION} \
-    && auto/configure --with-compat --with-http_ssl_module --add-dynamic-module=/build/nginx-acme \
+RUN auto/configure --with-compat --with-http_ssl_module --add-dynamic-module=/build/nginx-acme \
     && make modules
 
 #---------------------------------------------------------------------
