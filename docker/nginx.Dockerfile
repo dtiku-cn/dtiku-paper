@@ -17,15 +17,14 @@ RUN git clone https://github.com/nginx/nginx-acme.git
 
 # 构建 nginx-acme
 ENV NGINX_BUILD_DIR=/build/nginx-${NGINX_VERSION}/objs
-RUN cd /nginx-${NGINX_VERSION} \
-    && auto/configure --with-compat --with-http_ssl_module --add-dynamic-module=/build/nginx-acme \
+RUN auto/configure --with-compat --with-http_ssl_module --add-dynamic-module=/build/nginx-acme \
     && make modules
 
 #---------------------------------------------------------------------
 FROM nginx:1.29.1-otel
 
 # 拷贝编译好的模块到最终镜像
-COPY --from=acme-build /nginx-1.29.1/objs/ngx_http_acme_module.so /etc/nginx/modules/
+COPY --from=acme-build /build/nginx-1.29.1/objs/ngx_http_acme_module.so /etc/nginx/modules/
 
 # 默认加载模块
 RUN echo "load_module modules/ngx_http_acme_module.so;" >> /etc/nginx/nginx.conf
