@@ -1,4 +1,24 @@
 (async function () {
+    // 拒绝无头浏览器的请求
+    if (navigator.webdriver)
+        return;
+    let agent = navigator.userAgent;
+    if (/headless/i.test(agent))
+        return;
+    let appVersion = navigator.appVersion;
+    if (/headless/i.test(appVersion))
+        return;
+    let correctPrototypes = PluginArray.prototype === navigator.plugins.__proto__
+        & MimeTypeArray.prototype === navigator.mimeTypes.__proto__;
+    if (navigator.plugins.length > 0)
+        correctPrototypes &= Plugin.prototype === navigator.plugins[0].__proto__;
+    if (navigator.mimeTypes.length > 0)
+        correctPrototypes &= MimeType.prototype === navigator.mimeTypes[0].__proto__;
+    if (!correctPrototypes)
+        return;
+    if (!navigator.language || navigator.languages.length === 0)
+        return;
+
     // 从 meta 标签读取 secret
     const meta = document.querySelector('meta[name="anti-bot-token-secret"]');
     const secret = meta ? meta.content : 'anti-bot-default-secret';
