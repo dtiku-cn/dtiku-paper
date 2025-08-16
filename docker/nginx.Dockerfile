@@ -17,7 +17,7 @@ RUN git clone https://github.com/nginx/nginx-acme.git
 
 # 构建 nginx-acme
 WORKDIR /build/nginx-${NGINX_VERSION}
-RUN auto/configure --with-compat --with-http_ssl_module --add-dynamic-module=/build/nginx-acme \
+RUN ./configure --with-compat --with-http_ssl_module --add-dynamic-module=/build/nginx-acme \
     && make modules
 
 #---------------------------------------------------------------------
