@@ -17,9 +17,7 @@ RUN git clone https://github.com/nginx/nginx-acme.git
 
 # 构建 nginx-acme
 ENV NGINX_BUILD_DIR=/build/nginx-${NGINX_VERSION}/objs
-RUN cd /build/nginx-acme \
-    && cargo build --release \
-    && cd /nginx-${NGINX_VERSION} \
+RUN cd /nginx-${NGINX_VERSION} \
     && auto/configure --with-compat --with-http_ssl_module --add-dynamic-module=/build/nginx-acme \
     && make modules
 
