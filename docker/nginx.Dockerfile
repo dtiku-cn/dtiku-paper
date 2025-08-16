@@ -9,15 +9,15 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # 拉取 Nginx 源码 (仅用于构建)
-RUN curl -fSL http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz -o nginx.tar.gz \
-    && tar -xzf nginx.tar.gz
+RUN curl -fSL http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz \
+    && tar -xzf nginx-${NGINX_VERSION}.tar.gz
 
 # 拉取 nginx-acme
 RUN git clone https://github.com/nginx/nginx-acme.git
 
 # 构建 nginx-acme
 WORKDIR /build/nginx-${NGINX_VERSION}
-RUN ./auto/configure --with-compat --with-http_ssl_module --add-dynamic-module=/build/nginx-acme \
+RUN auto/configure --with-compat --with-http_ssl_module --add-dynamic-module=/build/nginx-acme \
     && make modules
 
 #---------------------------------------------------------------------
