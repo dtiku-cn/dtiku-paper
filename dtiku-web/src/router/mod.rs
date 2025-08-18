@@ -115,8 +115,10 @@ async fn global_error_page(
     req: Request,
     next: Next,
 ) -> Response {
-    if let Some(resp) = anti_bot(&cookies, client_ip).await {
-        return resp;
+    if !req.uri().path().starts_with("/api") {
+        if let Some(resp) = anti_bot(&cookies, client_ip).await {
+            return resp;
+        }
     }
     let fp = cookies
         .get("x-fp")
