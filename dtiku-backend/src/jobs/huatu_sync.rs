@@ -4,9 +4,9 @@ use crate::plugins::embedding::Embedding;
 use anyhow::{anyhow, Context};
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
-use dtiku_paper::model::question::{QuestionExtra, QA};
+use dtiku_paper::model::question::QuestionExtra;
 use dtiku_paper::model::solution::{
-    MultiChoice, SingleChoice, SolutionExtra, StepByStepAnswer, TrueFalseChoice,
+    FillBlank, MultiChoice, SingleChoice, SolutionExtra, StepByStepAnswer, TrueFalseChoice,
 };
 use dtiku_paper::model::{
     exam_category, label, material, paper, paper_material, question, question_keypoint, solution,
@@ -736,26 +736,14 @@ struct OriginQuestion {
 impl OriginQuestion {
     async fn to_question(&self, model: &Embedding) -> anyhow::Result<question::ActiveModel> {
         let Self {
-            id,
             ty,
             content,
             choices,
             answer_require,
             ..
         } = self;
-        let extra = match ty {
-            None => {
-                let qa = match answer_require {
-                    Some(ar) => vec![QA {
-                        title: ar.clone(),
-                        word_count: None,
-                        material_ids: vec![],
-                    }],
-                    None => vec![],
-                };
-                QuestionExtra::OpenEndedQA { qa }
-            }
-            Some(ty) => match ty.as_str() {
+        let mut active_model = if let Some(ty) = ty {
+            let extra = match ty.as_str() {
                 "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
                     QuestionExtra::SingleChoice {
                         options: choices.0.clone(),
@@ -885,26 +873,33 @@ impl OriginQuestion {
                 | "音乐创编题"
                 | "音乐编创题" => QuestionExtra::FillBlank,
                 _unknown => return Err(anyhow!("unexpect question type: {_unknown}")),
-            },
-        };
-        let mut m = question::ActiveModel {
-            content: Set(content.to_owned()),
-            extra: Set(extra),
-            ..Default::default()
+            };
+            question::ActiveModel {
+                content: Set(content.to_owned()),
+                extra: Set(extra),
+                ..Default::default()
+            }
+        } else {
+            question::ActiveModel {
+                content: Set(answer_require.to_owned().unwrap_or_default()),
+                extra: Set(QuestionExtra::OpenEndedQA { qa: vec![] }),
+                ..Default::default()
+            }
         };
         if let Some(target_id) = self.target_id {
-            m.id = Set(target_id);
+            active_model.id = Set(target_id);
         }
-        Ok(m)
+        Ok(active_model)
     }
 
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
         let Self {
-            id,
             ty,
             answer_list,
             analysis,
+            answer_require,
             refer_analysis,
+            extend,
             ..
         } = self;
         let extra = match ty {
@@ -915,7 +910,6 @@ impl OriginQuestion {
                     .iter()
                     .map(|i| i.to_string())
                     .join("<br/><hr/><br/>");
-                let analysis = analysis.as_ref().map(|a| a.to_owned());
                 SolutionExtra::OpenEndedQA(StepByStepAnswer {
                     solution: Some(solutions),
                     analysis: vec![],
@@ -930,7 +924,10 @@ impl OriginQuestion {
                         .map(|i|i.parse())
                         .collect::<Result<Vec<u8>, ParseIntError>>()
                         .context("parse int error")?;
-                    let analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    if let Some(extend) = extend{
+                        analysis = format!("{analysis}<br/>{extend}");
+                    }
                     SolutionExtra::SingleChoice (SingleChoice{
                         answer:answer[0],
                         analysis,
@@ -944,7 +941,10 @@ impl OriginQuestion {
                         .map(|i|i.parse())
                         .collect::<Result<Vec<u8>, ParseIntError>>()
                         .context("parse int error")?;
-                    let analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    if let Some(extend) = extend{
+                        analysis = format!("{analysis}<br/>{extend}");
+                    }
                     SolutionExtra::MultiChoice(MultiChoice{
                         answer,
                         analysis,
@@ -958,13 +958,37 @@ impl OriginQuestion {
                         .map(|i|i.parse())
                         .collect::<Result<Vec<u8>, ParseIntError>>()
                         .context("parse int error")?;
-                    let analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    if let Some(extend) = extend{
+                        analysis = format!("{analysis}<br/>{extend}");
+                    }
                     SolutionExtra::IndefiniteChoice(MultiChoice{
                         answer,
                         analysis,
                     })
                 },
-                "填空题"
+                "填空题"=>{
+                    let analysis = if analysis == answer_require{
+                        let analysis = analysis.to_owned().unwrap_or_default();
+                        if let Some(extend) = extend{
+                            format!("{analysis}<br/>{extend}")
+                        }else{
+                            format!("{analysis}")
+                        }
+                    }else{
+                        let answer_require = answer_require.to_owned().unwrap_or_default();
+                        let analysis = analysis.to_owned().unwrap_or_default();
+                        if let Some(extend) = extend{
+                            format!("{answer_require}<br/>{analysis}<br/>{extend}")
+                        }else{
+                            format!("{answer_require}<br/>{analysis}")
+                        }
+                    };
+                    SolutionExtra::FillBlank(FillBlank{
+                        blanks:vec![refer_analysis.to_owned().unwrap_or_default()],
+                        analysis,
+                    })
+                }
                 |"M选N选择题"
                 | "完型填空"
                 | "完形填空"
@@ -1119,19 +1143,20 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
 #[serde(rename_all = "camelCase")]
 pub struct AnswerListItem {
     pub id: i64,
+    #[serde(default)]
     pub topic: String,
     pub status: i64,
-    pub creator: String,
+    #[serde(default)]
     pub call_name: String,
-    pub modifier: String,
+    #[serde(default)]
     pub sub_topic: String,
     pub biz_status: i64,
-    pub gmt_create: String,
-    pub gmt_modify: String,
     pub answer_flag: i64,
     pub question_id: i64,
     pub answer_comment: String,
+    #[serde(default)]
     pub inscribed_date: String,
+    #[serde(default)]
     pub inscribed_name: String,
 }
 
@@ -1146,6 +1171,37 @@ impl ToString for AnswerListItem {
             inscribed_name,
             ..
         } = self;
-        format!("{topic}<br/>{sub_topic}<br/>{call_name}<br/>{answer_comment}<br/>{inscribed_date}<br/>{inscribed_name}")
+        let mut s = String::new();
+        if !topic.is_empty() {
+            s.push_str("<h3 style='text-align:center'>");
+            s.push_str(topic);
+            s.push_str("</h3>");
+        }
+        if !sub_topic.is_empty() {
+            s.push_str("<h4 style='text-align:center'>");
+            s.push_str(sub_topic);
+            s.push_str("</h4>");
+        }
+        if !call_name.is_empty() {
+            s.push_str("<p>");
+            s.push_str(call_name);
+            s.push_str("</p>");
+        }
+        s.push_str(answer_comment);
+        if !inscribed_date.is_empty() || !inscribed_name.is_empty() {
+            s.push_str("<div style='display:flex; justify-content:flex-end'><div>");
+            if !inscribed_date.is_empty() {
+                s.push_str("<p style='text-align:center'>");
+                s.push_str(inscribed_date);
+                s.push_str("</p>");
+            }
+            if !inscribed_name.is_empty() {
+                s.push_str("<p style='text-align:center'>");
+                s.push_str(inscribed_name);
+                s.push_str("</p>");
+            }
+            s.push_str("</div></div>");
+        }
+        s
     }
 }
