@@ -20,6 +20,7 @@ use chrono::Utc;
 use derive_more::derive::Deref;
 use dtiku_base::service::system_config::SystemConfigService;
 use dtiku_paper::service::exam_category::ExamCategoryService;
+use http::HeaderValue;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -95,9 +96,11 @@ pub fn routers() -> Router {
         .route_layer(middleware::from_fn(global_error_page))
         .layer(trace_layer)
         .layer(http_tracing_layer)
+        .layer(match env {
+            Env::Dev => ClientIpSource::ConnectInfo.into_extension(),
+            _ => ClientIpSource::RightmostXForwardedFor.into_extension(),
+        })
         .layer(GovernorLayer::new(governor_conf))
-        // .layer(ClientIpSource::RightmostXForwardedFor.into_extension())
-        .layer(ClientIpSource::ConnectInfo.into_extension())
         .fallback(not_found_handler)
 }
 
@@ -115,6 +118,11 @@ async fn global_error_page(
     if let Some(resp) = anti_bot(&cookies, client_ip).await {
         return resp;
     }
+    let fp = cookies
+        .get("x-fp")
+        .map(|x_fp_id| x_fp_id.value())
+        .map(|x_fp_id| format!("fp:{x_fp_id}"))
+        .unwrap_or("".to_string());
     let original_host = host.0.clone();
     let resp = match with_context(
         &ec_service,
@@ -128,7 +136,16 @@ async fn global_error_page(
     )
     .await
     {
-        Ok(r) => r,
+        Ok(mut r) => {
+            let remote_user = match &*claims {
+                Some(c) => format!("u:{}", c.user_id),
+                None => fp,
+            };
+            if let Ok(remote_user) = HeaderValue::from_str(&remote_user) {
+                r.headers_mut().insert("X-Remote-User", remote_user);
+            }
+            r
+        }
         Err(e) => {
             tracing::error!("request error: {e:?}");
             e.into_response()

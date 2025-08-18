@@ -34,6 +34,7 @@ itertools = { workspace = true }
 chinese-number = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 just-auth = { workspace = true }
+http = { workspace = true }
 axum-extra = { workspace = true, features = [
     "cookie",
     "typed-header",
