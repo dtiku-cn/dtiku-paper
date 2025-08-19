@@ -277,7 +277,7 @@
 <div class="card mb-3">
     <div class="card-header d-flex">
         {% if q.papers.len() == 1 %}
-        <a class="mr-auto" href="/paper/{{q.papers[0].paper.id}}#q-{{q.papers[0].num}}">
+        <a class="mr-auto" target="_blank" href="/paper/{{q.papers[0].paper.id}}#q-{{q.papers[0].num}}">
             {{q.papers[0].paper.title}} 第{{q.papers[0].num}}题
         </a>
         {%else%}
