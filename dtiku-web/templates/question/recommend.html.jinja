@@ -1,4 +1,5 @@
 {%- import "macros/question.html.min.jinja" as question -%}
+<style>.recommend .recommend{display: none;}</style>
 <div class="mx-3">
 {% for q in questions %}
 {% call question::question_card(q) %}

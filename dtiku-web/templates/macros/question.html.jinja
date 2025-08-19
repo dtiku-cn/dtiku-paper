@@ -51,7 +51,7 @@
     {%endfor%}
     {%endif%}
     {%if !global.uri_starts_with("/question/detail")%}
-    <li role="presentation" class="nav-item {%if !global.config.show_solution%}active{%endif%}">
+    <li role="presentation" class="nav-item recommend {%if !global.config.show_solution%}active{%endif%}">
         <a class="nav-link recommend-for" role="tab" data-toggle="tab" href="#recommend-for-{{q.id}}">相似题型</a>
     </li>
     {%endif%}
@@ -78,7 +78,7 @@
     {%endfor%}
     {%endif%}
     {%if !global.uri_starts_with("/question/detail")%}
-    <div role="tabpanel" class="tab-pane card-body bg-light px-0" id="recommend-for-{{q.id}}"
+    <div role="tabpanel" class="tab-pane card-body bg-light px-0 recommend" id="recommend-for-{{q.id}}"
         data-href="/question/recommend/{{q.id}}">
     </div>
     {%endif%}
