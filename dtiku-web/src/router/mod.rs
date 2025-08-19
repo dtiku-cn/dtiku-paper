@@ -116,7 +116,7 @@ async fn global_error_page(
     next: Next,
 ) -> Response {
     if !req.uri().path().starts_with("/api") {
-        if let Some(resp) = anti_bot(&cookies, client_ip).await {
+        if let Some(resp) = anti_bot(&sc_service, &cookies, client_ip).await {
             return resp;
         }
     }
@@ -177,7 +177,11 @@ async fn global_error_page(
  * 1. 浏览器第一次访问，基于当前周(now_week)生成当前server端的dynamic_secret
  * 2. 浏览器通过js脚本生成visitorId，后端基于visitorId做一次校验
  */
-async fn anti_bot(cookies: &CookieJar, client_ip: IpAddr) -> Option<Response> {
+async fn anti_bot(
+    Component(_sc_service): &Component<SystemConfigService>,
+    cookies: &CookieJar,
+    client_ip: IpAddr,
+) -> Option<Response> {
     let server_secret = "server-secret";
     let client_ip = client_ip.to_string();
     let now_week = Utc::now().timestamp() / 60 / 60 / 24 / 7; // 当前周时间戳
