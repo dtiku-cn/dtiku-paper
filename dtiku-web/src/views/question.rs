@@ -5,7 +5,7 @@ use dtiku_paper::{
     domain::{keypoint::KeyPointPath, label::LabelTree, question::QuestionSearch},
     model::{
         self,
-        question::{QuestionExtra, QuestionSinglePaper, QuestionWithPaper},
+        question::{QuestionExtra, QuestionSinglePaper, QuestionWithPaper, QuestionWithSolutions},
     },
     query::question::{PaperQuestionQuery, SectionType},
 };
@@ -49,4 +49,11 @@ pub struct QuestionDetailTemplate {
 #[template(path = "question/only-comment.html.min.jinja")]
 pub struct OnlyCommentTemplate {
     pub global: GlobalVariables,
+}
+
+#[derive(Template, WebTemplate)]
+#[template(path = "question/only-comment.html.min.jinja")]
+pub struct QuestionRecommendTemplate {
+    pub global: GlobalVariables,
+    pub questions: Vec<QuestionWithSolutions>,
 }

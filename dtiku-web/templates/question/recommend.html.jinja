@@ -1,0 +1,4 @@
+{%- import "macros/question.html.min.jinja" as question -%}
+{% for q in questions %}
+{% call question::question_card(q) %}
+{% endfor %}

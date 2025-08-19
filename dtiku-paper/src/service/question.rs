@@ -2,7 +2,9 @@ use crate::{
     domain::question::QuestionSearch,
     model::{
         self, paper_question,
-        question::{self, PaperWithNum, QuestionSinglePaper, QuestionWithPaper},
+        question::{
+            self, PaperWithNum, QuestionSinglePaper, QuestionWithPaper, QuestionWithSolutions,
+        },
         Material, Paper, PaperQuestion, Question, QuestionMaterial, Solution,
     },
     query::question::PaperQuestionQuery,
@@ -151,5 +153,14 @@ impl QuestionService {
         }
 
         Ok(result)
+    }
+
+    pub async fn recommend_question(&self, id: i32) -> anyhow::Result<Vec<QuestionWithSolutions>> {
+        let q = Question::find_by_id(id).one(&self.db).await?;
+        if let Some(q) = q {
+            Question::recommend_question(&self.db, &q).await
+        } else {
+            Ok(vec![])
+        }
     }
 }

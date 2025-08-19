@@ -422,6 +422,42 @@ impl Entity {
         .await
         .context("Question::find_by_embedding() failed")
     }
+
+    pub async fn recommend_question<C>(
+        db: &C,
+        question: &Model,
+    ) -> anyhow::Result<Vec<QuestionWithSolutions>>
+    where
+        C: ConnectionTrait,
+    {
+        let stmt = Statement::from_sql_and_values(
+            sea_orm::DatabaseBackend::Postgres,
+            r#"
+                SELECT id
+                FROM question
+                WHERE paper_type = $1
+                and exam_id = $2
+                ORDER BY embedding <=> $3
+                LIMIT 10
+            "#,
+            vec![
+                question.paper_type.into(),
+                question.exam_id.into(),
+                question.embedding.clone().into(),
+            ],
+        );
+
+        let qids: Vec<i32> = db
+            .query_all(stmt)
+            .await?
+            .into_iter()
+            .map(|row| row.try_get::<i32>("", "id").unwrap())
+            .collect();
+
+        Entity::find_by_ids_with_solutions(db, qids)
+            .await
+            .context("recommend_question failed")
+    }
 }
 
 impl ActiveModel {

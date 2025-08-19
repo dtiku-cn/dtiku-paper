@@ -3,8 +3,8 @@ use crate::{
     router::EXAM_ID,
     views::{
         question::{
-            OnlyCommentTemplate, QuestionDetailTemplate, QuestionSearchImgTemplate,
-            QuestionSearchTemplate, QuestionSectionTemplate,
+            OnlyCommentTemplate, QuestionDetailTemplate, QuestionRecommendTemplate,
+            QuestionSearchImgTemplate, QuestionSearchTemplate, QuestionSectionTemplate,
         },
         GlobalVariables,
     },
@@ -108,8 +108,13 @@ async fn question_section(
 }
 
 #[get("/question/recommend/{id}")]
-async fn question_recommend(Path(id): Path<i32>) -> Result<impl IntoResponse> {
-    Ok(format!("recommend/{id}: 等待上线中..."))
+async fn question_recommend(
+    Path(id): Path<i32>,
+    Component(qs): Component<QuestionService>,
+    Extension(global): Extension<GlobalVariables>,
+) -> Result<impl IntoResponse> {
+    let questions = qs.recommend_question(id).await?;
+    Ok(Html(QuestionRecommendTemplate { global, questions }))
 }
 
 #[get("/question/detail/{id}")]
