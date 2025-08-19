@@ -99,10 +99,13 @@
 {% macro answer_collapse_action() %}
 <script>
     $(function () {
-        $('.question-wrapper .collapse').on('hidden.bs.collapse', function () {
-            $(this).closest(".question-wrapper").removeClass('show-answer');
-        }).on('shown.bs.collapse', function () {
-            $(this).closest(".question-wrapper").addClass('show-answer');
+        $(document).on('hidden.bs.collapse shown.bs.collapse', '.question-wrapper .collapse', function (e) {
+            const wrapper = $(this).closest(".question-wrapper");
+            if (e.type === "shown") {
+                wrapper.addClass("show-answer");
+            } else {
+                wrapper.removeClass("show-answer");
+            }
         });
     });
 </script>

@@ -389,9 +389,6 @@ impl Entity {
             .await
             .context("question::find_by_ids() failed")?;
 
-        let ss = Solution::find_by_question_ids(db, ids).await?;
-        let solution_map = ss.into_iter().into_group_map_by(|s| s.question_id);
-
         let qids = qs.iter().map(|q| q.id).collect_vec();
         let pqs = PaperQuestion::find_by_question_id_in(db, qids).await?;
         let pids = pqs.iter().map(|pq| pq.paper_id).collect_vec();
@@ -404,7 +401,7 @@ impl Entity {
 
         Ok(qs
             .into_iter()
-            .map(|q| q.with_paper_solutions(&solution_map, &qid_map, &id_paper))
+            .map(|q| q.with_paper(&qid_map, &id_paper))
             .collect())
     }
 
