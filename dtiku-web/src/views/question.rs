@@ -52,8 +52,8 @@ pub struct OnlyCommentTemplate {
 }
 
 #[derive(Template, WebTemplate)]
-#[template(path = "question/only-comment.html.min.jinja")]
+#[template(path = "question/recommend.html.min.jinja")]
 pub struct QuestionRecommendTemplate {
     pub global: GlobalVariables,
-    pub questions: Vec<QuestionWithSolutions>,
+    pub questions: Vec<QuestionWithPaper>,
 }

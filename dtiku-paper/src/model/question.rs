@@ -226,6 +226,31 @@ impl QuestionSelect {
             materials: None,
         }
     }
+
+    fn with_paper_solutions(
+        self,
+        solution_map: &HashMap<i32, Vec<solution::Model>>,
+        qid_map: &HashMap<i32, Vec<super::paper_question::Model>>,
+        id_paper: &HashMap<i32, paper::Model>,
+    ) -> QuestionWithPaper {
+        let papers = qid_map.get(&self.id).map(|pqs| {
+            pqs.into_iter()
+                .filter_map(|pq| {
+                    id_paper
+                        .get(&pq.paper_id)
+                        .map(|p| PaperWithNum::new(p, pq.sort))
+                })
+                .collect::<Vec<_>>()
+        });
+        QuestionWithPaper {
+            id: self.id,
+            content: self.content,
+            extra: self.extra,
+            solutions: solution_map.get(&self.id).cloned(),
+            papers: papers.unwrap_or_default(),
+            materials: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult, Display)]
@@ -347,6 +372,42 @@ impl Entity {
             .collect())
     }
 
+    pub async fn find_by_ids_with_papers<C>(
+        db: &C,
+        ids: Vec<i32>,
+    ) -> anyhow::Result<Vec<QuestionWithPaper>>
+    where
+        C: ConnectionTrait,
+    {
+        if ids.is_empty() {
+            return Ok(vec![]);
+        }
+        let qs = Entity::find()
+            .filter(Column::Id.is_in(ids.clone()))
+            .into_partial_model::<QuestionSelect>()
+            .all(db)
+            .await
+            .context("question::find_by_ids() failed")?;
+
+        let ss = Solution::find_by_question_ids(db, ids).await?;
+        let solution_map = ss.into_iter().into_group_map_by(|s| s.question_id);
+
+        let qids = qs.iter().map(|q| q.id).collect_vec();
+        let pqs = PaperQuestion::find_by_question_id_in(db, qids).await?;
+        let pids = pqs.iter().map(|pq| pq.paper_id).collect_vec();
+        let qid_map = pqs
+            .into_iter()
+            .map(|pq| (pq.question_id, pq))
+            .into_group_map();
+        let papers = Paper::find_by_ids(db, pids).await?;
+        let id_paper: HashMap<i32, paper::Model> = papers.into_iter().map(|p| (p.id, p)).collect();
+
+        Ok(qs
+            .into_iter()
+            .map(|q| q.with_paper_solutions(&solution_map, &qid_map, &id_paper))
+            .collect())
+    }
+
     pub async fn search_question<C>(
         db: &C,
         search: &QuestionSearch,
@@ -426,7 +487,7 @@ impl Entity {
     pub async fn recommend_question<C>(
         db: &C,
         question: &Model,
-    ) -> anyhow::Result<Vec<QuestionWithSolutions>>
+    ) -> anyhow::Result<Vec<QuestionWithPaper>>
     where
         C: ConnectionTrait,
     {
@@ -454,7 +515,7 @@ impl Entity {
             .map(|row| row.try_get::<i32>("", "id").unwrap())
             .collect();
 
-        Entity::find_by_ids_with_solutions(db, qids)
+        Entity::find_by_ids_with_papers(db, qids)
             .await
             .context("recommend_question failed")
     }
