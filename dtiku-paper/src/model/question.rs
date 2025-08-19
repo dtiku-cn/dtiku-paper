@@ -499,7 +499,7 @@ impl Entity {
                 WHERE paper_type = $1
                 and exam_id = $2
                 ORDER BY embedding <=> $3
-                LIMIT 10
+                LIMIT 5
             "#,
             vec![
                 question.paper_type.into(),
