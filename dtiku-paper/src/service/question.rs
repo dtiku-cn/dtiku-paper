@@ -7,7 +7,7 @@ use crate::{
         },
         Material, Paper, PaperQuestion, Question, QuestionMaterial, Solution,
     },
-    query::question::PaperQuestionQuery,
+    query::question::{PaperQuestionQuery, SectionType},
 };
 use anyhow::Context;
 use itertools::Itertools;
@@ -43,14 +43,23 @@ impl QuestionService {
         let mut question_id_map: HashMap<i32, model::paper_question::Model> =
             pqs.into_iter().map(|pq| (pq.question_id, pq)).collect();
         let qids = question_id_map.keys().cloned().collect_vec();
+
         let questions = Question::find_by_ids(&self.db, qids.clone()).await?;
-        let mut qm_map = QuestionMaterial::find_by_qids(&self.db, qids).await?;
+        let mut qm_map = QuestionMaterial::find_by_qids(&self.db, qids.clone()).await?;
         let mids = qm_map.values().flatten().cloned().collect_vec();
         let materials = Material::find_by_ids(&self.db, mids)
             .await
             .context("find materials by ids failed")?;
         let mut id_material_map: HashMap<i32, _> =
             materials.into_iter().map(|m| (m.id, m)).collect();
+
+        let mut solution_map = if query.section_type == SectionType::Together {
+            let ss = Solution::find_by_question_ids(&self.db, qids).await?;
+            ss.into_iter().into_group_map_by(|s| s.question_id)
+        } else {
+            HashMap::new()
+        };
+
         let qsp = questions
             .into_iter()
             .map(|q| {
@@ -60,6 +69,7 @@ impl QuestionService {
                     &mut question_id_map,
                     &mut id_material_map,
                     &mut qm_map,
+                    &mut solution_map,
                 )
             })
             .sorted_by_key(|q| (q.paper.paper.id, q.paper.num))

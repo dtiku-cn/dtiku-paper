@@ -93,6 +93,7 @@ impl QuestionSinglePaper {
         qid_map: &mut HashMap<i32, paper_question::Model>,
         id_material_map: &mut HashMap<i32, material::Model>,
         qm_map: &mut HashMap<i32, Vec<i32>>,
+        solution_map: &mut HashMap<i32, Vec<solution::Model>>,
     ) -> Self {
         let pq = qid_map.remove(&q.id).unwrap();
         let p = pid_map.get(&pq.paper_id).unwrap();
@@ -110,7 +111,7 @@ impl QuestionSinglePaper {
             content: q.content,
             extra: q.extra,
             paper: PaperWithNum::new(p, pq.sort),
-            solutions: None,
+            solutions: solution_map.remove(&q.id),
             materials,
         }
     }
