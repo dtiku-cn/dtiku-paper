@@ -1,4 +1,6 @@
 {%- import "macros/question.html.min.jinja" as question -%}
+<div class="mx-2">
 {% for q in questions %}
 {% call question::question_card(q) %}
 {% endfor %}
+</div>
