@@ -98,7 +98,7 @@ async fn paper_exercise(
     Ok(Html(t.render().context("render failed")?))
 }
 
-#[get("/paper/{prefix}/title/like")]
+#[get("/api/paper/{prefix}/title/like")]
 async fn paper_title_like(
     Path(prefix): Path<String>,
     Component(ps): Component<PaperService>,

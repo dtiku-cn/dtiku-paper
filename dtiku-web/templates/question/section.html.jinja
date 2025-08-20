@@ -153,7 +153,7 @@
         }
         function loadLevel(pid, level) {
             $.ajax({
-                url: `/kp/xingce/${pid}`,
+                url: `/api/kp/xingce/${pid}`,
                 method: 'GET',
                 success: function (data) {
                     // 清理当前层级之后的所有下级 Select
@@ -177,27 +177,30 @@
 
                     $("#keypoints").append($select);
 
-                    // 当下拉变化时，递归加载下一级
-                    $select.on('change', function () {
-                        $("#kp_path").val($("#keypoints select")
-                            .map(function () {
-                                return $(this).val();
-                            })
-                            .get()
-                            .filter(Boolean)
-                            .join(".")
-                        );
-                        const nextPid = $(this).val();
-                        if (nextPid) {
-                            loadLevel(nextPid, level + 1);
-                        } else {
-                            // 如果选择为空，清除其下所有级别
-                            $(this).nextAll('select').remove();
-                        }
-                    });
+                    selectOnChange($select); // 绑定下拉变化事件
                 },
                 error: function () {
                     alert("加载失败");
+                }
+            });
+        }
+        function selectOnChange($select) {
+            // 当下拉变化时，递归加载下一级
+            $select.on('change', function () {
+                $("#kp_path").val($("#keypoints select")
+                    .map(function () {
+                        return $(this).val();
+                    })
+                    .get()
+                    .filter(Boolean)
+                    .join(".")
+                );
+                const nextPid = $(this).val();
+                if (nextPid) {
+                    loadLevel(nextPid, level + 1);
+                } else {
+                    // 如果选择为空，清除其下所有级别
+                    $(this).nextAll('select').remove();
                 }
             });
         }
@@ -205,6 +208,8 @@
             var kp_path = $("#kp_path").val();
             if (!kp_path) {
                 loadLevel(0, 0);
+            } else {
+                selectOnChange($("#keypoints select.custom-select"))
             }
             $('#slider').slider({
                 formatter: function (value) {
@@ -222,7 +227,7 @@
                 closeOnSelect: false,
                 tokenSeparators: [','],
                 ajax: {
-                    url: '/paper/xingce/title/like',
+                    url: '/api/paper/xingce/title/like',
                     dataType: 'json',
                     delay: 250,
                     cache: true,

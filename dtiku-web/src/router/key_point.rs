@@ -7,7 +7,7 @@ use spring_web::{
     get,
 };
 
-#[get("/kp/{paper_type}/{pid}")]
+#[get("/api/kp/{paper_type}/{pid}")]
 async fn list_key_point(
     Path((paper_type, pid)): Path<(String, i32)>,
     Component(kps): Component<KeyPointService>,
