@@ -5,7 +5,7 @@ use dtiku_paper::{
     domain::{keypoint::KeyPointPath, label::LabelTree, question::QuestionSearch},
     model::{
         self,
-        question::{QuestionExtra, QuestionSinglePaper, QuestionWithPaper, QuestionWithSolutions},
+        question::{QuestionExtra, QuestionSinglePaper, QuestionWithPaper},
     },
     query::question::{PaperQuestionQuery, SectionType},
 };
