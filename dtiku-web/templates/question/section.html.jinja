@@ -177,14 +177,14 @@
 
                     $("#keypoints").append($select);
 
-                    selectOnChange($select); // 绑定下拉变化事件
+                    selectOnChange($select, level); // 绑定下拉变化事件
                 },
                 error: function () {
                     alert("加载失败");
                 }
             });
         }
-        function selectOnChange($select) {
+        function selectOnChange($select, level) {
             // 当下拉变化时，递归加载下一级
             $select.on('change', function () {
                 $("#kp_path").val($("#keypoints select")
@@ -209,7 +209,7 @@
             if (!kp_path) {
                 loadLevel(0, 0);
             } else {
-                selectOnChange($("#keypoints select.custom-select"))
+                selectOnChange($("#keypoints select.custom-select"), 0)
             }
             $('#slider').slider({
                 formatter: function (value) {
