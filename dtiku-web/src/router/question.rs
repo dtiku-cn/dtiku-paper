@@ -132,7 +132,12 @@ async fn question_detail(
             .full_question_by_id(id)
             .await?
             .ok_or_else(|| KnownWebError::not_found("题目不存在"))?;
-        let t = QuestionDetailTemplate { global, question };
+        let recommends = qs.recommend_question(id).await?;
+        let t = QuestionDetailTemplate {
+            global,
+            question,
+            recommends,
+        };
         Ok(Html(t.render().context("render failed")?))
     }
 }

@@ -43,6 +43,7 @@ pub struct QuestionSectionTemplate {
 pub struct QuestionDetailTemplate {
     pub global: GlobalVariables,
     pub question: QuestionWithPaper,
+    pub recommends: Vec<QuestionWithPaper>,
 }
 
 #[derive(Template, WebTemplate)]
