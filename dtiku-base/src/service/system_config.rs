@@ -70,6 +70,7 @@ gen_config_getters! {
     (global_style, GlobalStyle, String),
     (global_head_files, GlobalHeadFiles, String),
     (iconfont_js_url, IconfontJsUrl, String),
+    (block_ip_pv_threshold, BlockIpPvThreshold, u32),
     (block_user_agents, BlockUserAgents, String),
     (seo_user_agents, SeoUserAgents, String),
     (ip_blacklist, IpBlacklist, String),

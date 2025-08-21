@@ -1778,6 +1778,7 @@ dependencies = [
  "chinese-number",
  "chrono",
  "cookie",
+ "dashmap 6.1.0",
  "derive_more 2.0.1",
  "dtiku-base",
  "dtiku-bbs",

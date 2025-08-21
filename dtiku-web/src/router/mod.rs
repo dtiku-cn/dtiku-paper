@@ -8,6 +8,7 @@ mod pay;
 mod question;
 mod shenlun_category;
 mod user;
+mod traffic;
 
 use crate::service::user::UserService;
 use crate::views::{AntiBotTemplate, ErrorTemplate, GlobalVariables};

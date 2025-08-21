@@ -59,6 +59,7 @@ serde_html_form = { workspace = true }
 validator = { workspace = true, features = ["derive"] }
 sha2 = { workspace = true }
 hex = { workspace = true }
+dashmap = { workspace = true }
 
 [build-dependencies]
 minify-html = "0.16"

@@ -74,6 +74,9 @@ pub enum SystemConfigKey {
     #[strum(message = "iconfont.js CDN配置")]
     IconfontJsUrl,
 
+    #[strum(message = "决定屏蔽ip的pv阈值")]
+    BlockIpPvThreshold,
+
     #[strum(message = "一些耗资源的内容，需要反蜘蛛爬虫，agent用逗号隔开")]
     BlockUserAgents,
 
