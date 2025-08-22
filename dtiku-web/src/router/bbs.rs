@@ -8,7 +8,7 @@ use crate::{
     },
 };
 use anyhow::Context;
-use dtiku_bbs::model::{issue, IssueQuery};
+use dtiku_bbs::model::{issue, Issue, IssueQuery};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, ActiveValue::Unchanged};
 use spring_sea_orm::{pagination::Pagination, DbConn};
@@ -26,14 +26,17 @@ use spring_web::{
 async fn list_issue(
     Component(is): Component<IssueService>,
     Query(query): Query<IssueQuery>,
+    Component(db): Component<DbConn>,
     pagination: Pagination,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     let page = is.search(&query, &pagination).await?;
+    let pin_issues = Issue::find_pins_by_topic(&db, query.topic).await?;
     Ok(ListIssueTemplate {
         global,
         page,
         query,
+        pin_issues,
     })
 }
 

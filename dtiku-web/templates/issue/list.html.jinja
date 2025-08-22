@@ -42,6 +42,30 @@
         </div>
     </div>
 
+    {%if !pin_issues.is_empty()%}
+    <div class="row">
+        {%for ps in pin_issues%}
+        <div class="col">
+            <a class="text-decoration-none" href="/bbs/issue/{{ps.id}}">
+                <div class="card mb-3" style="width: 18rem;">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <svg class="icon-svg icon-svg-md mr-2">
+                                <use xlink:href="#{{ps.topic.icon()}}"></use>
+                            </svg>
+                            <strong>【{{i.topic.text()}}】{{i.title}}</strong>
+                        </h5>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">发布于{{global.format_with_now(ps.created)}}</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {%endfor%}
+    </div>
+    {%endif%}
+
     <div class="card mb-3">
         <header class="d-flex card-header p-1 pl-4 align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">

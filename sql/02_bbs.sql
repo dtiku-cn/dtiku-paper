@@ -14,6 +14,7 @@ create table if not exists issue(
     title varchar(255) not null,
     markdown text not null,
     html text not null,
+    pin bool not null default false,
     user_id int not null,
     created timestamp not null,
     modified timestamp not null

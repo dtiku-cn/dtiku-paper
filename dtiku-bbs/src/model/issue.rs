@@ -1,12 +1,33 @@
 use super::IssueQuery;
 pub use super::_entities::issue::*;
+use crate::model::TopicType;
 use anyhow::Context;
 use sea_orm::{
-    sea_query::IntoCondition, sqlx::types::chrono::Local, ActiveModelBehavior, ConnectionTrait,
-    DbErr, EntityTrait, QueryFilter, QueryOrder, Set,
+    prelude::DateTime, sea_query::IntoCondition, sqlx::types::chrono::Local, ActiveModelBehavior,
+    ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait, FromQueryResult,
+    QueryFilter, QueryOrder, QuerySelect, Set,
 };
 use spring::async_trait;
 use spring_sea_orm::pagination::{Page, Pagination, PaginationExt};
+
+#[derive(Clone, Debug, DerivePartialModel, FromQueryResult)]
+#[sea_orm(entity = "Entity")]
+pub struct ListIssue {
+    #[sea_orm(from_col = "id")]
+    pub id: i32,
+    #[sea_orm(from_col = "topic")]
+    pub topic: TopicType,
+    #[sea_orm(from_col = "title")]
+    pub title: String,
+    #[sea_orm(from_col = "pin")]
+    pub pin: bool,
+    #[sea_orm(from_col = "user_id")]
+    pub user_id: i32,
+    #[sea_orm(from_col = "created")]
+    pub created: DateTime,
+    #[sea_orm(from_col = "modified")]
+    pub modified: DateTime,
+}
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -33,14 +54,29 @@ impl Entity {
             .with_context(|| format!("Issue::find_by_id({id}) failed"))
     }
 
+    pub async fn find_pins_by_topic<C: ConnectionTrait>(
+        db: &C,
+        topic: Option<TopicType>,
+    ) -> anyhow::Result<Vec<ListIssue>> {
+        Entity::find()
+            .filter(Column::Pin.eq(true).eq(Column::Topic.eq(topic)))
+            .order_by_desc(Column::Created)
+            .limit(3)
+            .into_partial_model::<ListIssue>()
+            .all(db)
+            .await
+            .context("find issue failed")
+    }
+
     pub async fn search<C: ConnectionTrait>(
         db: &C,
         query: &IssueQuery,
         pagination: &Pagination,
-    ) -> anyhow::Result<Page<Model>> {
+    ) -> anyhow::Result<Page<ListIssue>> {
         Entity::find()
             .filter(query.clone().into_condition())
             .order_by_desc(Column::Created)
+            .into_partial_model::<ListIssue>()
             .page(db, &pagination)
             .await
             .context("find issue failed")

@@ -66,6 +66,6 @@ impl IssueService {
         let votes = self.artalk.batch_vote_stats(page_keys).await?;
         let votes: HashMap<String, VoteStats> =
             votes.into_iter().map(|v| (v.page_key.clone(), v)).collect();
-        Ok(issues.map(|i| FullIssue::new(i, &pv, &cmt, &votes, &mut id_u_map)))
+        Ok(issues.map(|i| FullIssue::new_for_list(i, &pv, &cmt, &votes, &mut id_u_map)))
     }
 }

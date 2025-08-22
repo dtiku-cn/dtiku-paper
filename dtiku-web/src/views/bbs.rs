@@ -5,6 +5,7 @@ use askama::Template;
 use askama_web::WebTemplate;
 use chrono::NaiveDateTime;
 use dtiku_base::model::user_info;
+use dtiku_bbs::model::issue::ListIssue;
 use dtiku_bbs::model::{issue, IssueQuery, TopicType};
 use spring_sea_orm::pagination::Page;
 use strum::IntoEnumIterator;
@@ -15,6 +16,7 @@ pub struct ListIssueTemplate {
     pub global: GlobalVariables,
     pub page: Page<FullIssue>,
     pub query: IssueQuery,
+    pub pin_issues: Vec<ListIssue>,
 }
 
 pub struct FullIssue {
@@ -49,6 +51,31 @@ impl FullIssue {
             topic: issue.topic,
             markdown: issue.markdown,
             html: issue.html,
+            user_id: issue.user_id,
+            created: issue.created,
+            modified: issue.modified,
+            view: page_pv.get(&key).unwrap_or(&0).to_owned(),
+            comment: page_comment.get(&key).unwrap_or(&0).to_owned(),
+            vote_up: votes.get(&key).map(|v| v.vote_up).unwrap_or_default(),
+            vote_down: votes.get(&key).map(|v| v.vote_down).unwrap_or_default(),
+        }
+    }
+
+    pub fn new_for_list(
+        issue: issue::ListIssue,
+        page_pv: &std::collections::HashMap<String, i32>,
+        page_comment: &std::collections::HashMap<String, i32>,
+        votes: &std::collections::HashMap<String, VoteStats>,
+        id_user_map: &mut std::collections::HashMap<i32, user_info::Model>,
+    ) -> Self {
+        let key = format!("/bbs/issue/{}", issue.id);
+        FullIssue {
+            user: id_user_map.get(&issue.user_id).cloned(),
+            id: issue.id,
+            title: issue.title,
+            topic: issue.topic,
+            markdown: "".to_string(),
+            html: "".to_string(),
             user_id: issue.user_id,
             created: issue.created,
             modified: issue.modified,
