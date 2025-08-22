@@ -83,12 +83,13 @@ impl ArtalkService for ArtalkServiceImpl {
             "#,
         )
         .bind(&request.get_ref().page_key)
-        .fetch_one(&self.db)
+        .fetch_optional(&self.db)
         .await
-        .map_err(|e| Status::internal(format!("vote_stats sqlx query failed:{e:?}")))?;
+        .map_err(|e| Status::internal(format!("vote_stats sqlx query failed:{e:?}")))?
+        .unwrap_or_default();
 
         Ok(tonic::Response::new(VoteStats {
-            page_key: page.key,
+            page_key: request.get_ref().page_key.clone(),
             vote_up: page.vote_up,
             vote_down: page.vote_down,
         }))
@@ -130,7 +131,7 @@ struct AuthIdentity {
     user_id: i64,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Default, Debug, FromRow)]
 struct PageResult {
     key: String,
     vote_up: i64,
