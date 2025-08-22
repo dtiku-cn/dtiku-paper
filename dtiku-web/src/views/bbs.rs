@@ -43,7 +43,7 @@ impl FullIssue {
     ) -> Self {
         let key = format!("/bbs/issue/{}", issue.id);
         FullIssue {
-            user: id_user_map.remove(&issue.user_id),
+            user: id_user_map.get(&issue.user_id).cloned(),
             id: issue.id,
             title: issue.title,
             topic: issue.topic,
