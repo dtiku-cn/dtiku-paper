@@ -109,7 +109,8 @@
                     url: "/upload",
                     fieldName: 'file',
                     multiple: false,
-                    format: (f, respTxt) => `{"msg":"","code":0,"data":{"errFiles":[],"succMap":{"${f[0].name}":"${respTxt}"}}}`
+                    format: (f, respTxt) => `{"msg":"","code":0,"data":{"errFiles":[],"succMap":{"${f[0].name}":"${respTxt}"}}}`,
+                    linkToImgUrl: "/upload-by-link"
                 }
             });
             window.themeSwitcher.listener.push(function (dark) {
