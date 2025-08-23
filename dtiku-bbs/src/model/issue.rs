@@ -60,7 +60,7 @@ impl Entity {
     ) -> anyhow::Result<Vec<ListIssue>> {
         let mut filter = Column::Pin.eq(true);
         if let Some(topic) = topic {
-            filter = filter.eq(Column::Topic.eq(topic));
+            filter = filter.and(Column::Topic.eq(topic));
         }
         Entity::find()
             .filter(filter)
