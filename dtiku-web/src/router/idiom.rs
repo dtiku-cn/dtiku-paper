@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::{
     query::idiom::IdiomReq,
     views::{
@@ -25,6 +23,7 @@ use spring_web::{
     extractor::{Component, Path},
     get, routes,
 };
+use std::str::FromStr;
 
 #[get("/idiom")]
 async fn list_idiom(

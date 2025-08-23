@@ -58,8 +58,12 @@ impl Entity {
         db: &C,
         topic: Option<TopicType>,
     ) -> anyhow::Result<Vec<ListIssue>> {
+        let mut filter = Column::Pin.eq(true);
+        if let Some(topic) = topic {
+            filter = filter.eq(Column::Topic.eq(topic));
+        }
         Entity::find()
-            .filter(Column::Pin.eq(true).eq(Column::Topic.eq(topic)))
+            .filter(filter)
             .order_by_desc(Column::Created)
             .limit(3)
             .into_partial_model::<ListIssue>()
