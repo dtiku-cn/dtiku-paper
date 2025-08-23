@@ -8,7 +8,8 @@
     {% call general::meta() %}
     <title>{{issue.title}} - 论坛交流 | {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
-    <link rel="stylesheet" href="/static/vendor/vditor/3.10.4/dist/index.min.css">
+    <link rel="stylesheet" href="/static/vendor/vditor/3.10.4/dist/index.min.css" />
+    <link rel="stylesheet" href="/static/vendor/tocbot/4.32.2/tocbot.min.css" />
     <style media="print">
         header.card-header {
             justify-content: center;
@@ -52,6 +53,25 @@
             word-break: break-word;
             white-space: pre-wrap;
         }
+
+        #toc-table {
+            position: fixed;
+            z-index: 5;
+            right: 3.5em;
+            bottom: 5em;
+            border: 1px solid var(--gray);
+            background: var(--light);
+            opacity: .75;
+        }
+
+        #toc-table:hover {
+            opacity: 1;
+        }
+
+        #toc-table>.toc-list {
+            overflow: hidden;
+            position: relative;
+        }
     </style>
 </head>
 
@@ -82,7 +102,7 @@
                 <b>打印</b>
             </a>
         </header>
-        <div class="card-body vditor-reset">{{issue.html|safe}}</div>
+        <div id="toc" class="card-body vditor-reset">{{issue.html|safe}}</div>
         <footer class="card-footer d-flex align-items-center d-print-none">
             <div class="d-flex align-items-center mr-auto">
                 {% if let Some(u)=issue.user %}
@@ -117,10 +137,40 @@
                 </a>
             </div>
         </footer>
+        <div id='toc-table' class='d-print-none'></div>
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
+    <script src="/static/vendor/tocbot/4.32.2/tocbot.min.js"></script>
     <script type="module" defer src="/static/vendor/venny/venny.esm.js"></script>
+    <script>
+        $(function () {
+            tocbot.init({
+                // Where to render the table of contents.
+                tocSelector: '#toc-table',
+                // Where to grab the headings to build the table of contents.
+                contentSelector: '#toc',
+                // Which headings to grab inside of the contentSelector element.
+                headingSelector: 'h1, h2, h3',
+                // For headings inside relative or absolute positioned containers within content.
+                hasInnerContainers: true,
+            });
+            if ($("#toc-table .toc-list").size()){
+                window.floatButtonAddon = [{
+                    style: 'always',
+                    render: function () {
+                        return "<div id='toc-btn' class='d-flex align-items-center'>" +
+                            "<svg class='icon-svg'><use xlink:href='#ic-toc'></use></svg>" +
+                            "</div>";
+                    },
+                    click: function () {
+                        $("#toc-table").fadeToggle();
+                    }
+                }]
+            }
+        });
+    </script>
+    {# painter要放在window.floatButtonAddon下面加载 #}
     {% call painter::painter() %}
 </body>
 
