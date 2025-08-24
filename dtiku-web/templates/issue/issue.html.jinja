@@ -94,11 +94,11 @@
         }
 
         #shenlun article {
-            background-image: repeating-linear-gradient(90deg, #ff7a7aaa, #ff7a7aaa 1px, transparent 1px, transparent 24px), repeating-linear-gradient(0deg, #ff7a7aaa, #ff7a7aaa 1px, #fff 1px, #fff 24px);
+            background-image: repeating-linear-gradient(90deg,#ff7a7aaa,#ff7a7aaa 1px,#0000 1px 24px),repeating-linear-gradient(0deg,#ff7a7aaa,#ff7a7aaa 1px,#0000 1px 24px);
             background-position: 0 0, 0 1px;
             font-size: 16px;
             background-size: 24px 28px;
-            padding-bottom: 5px;
+            padding-bottom: 2px;
             display: flex;
             flex-direction: column
         }
@@ -200,7 +200,28 @@
     <script src="/static/vendor/tocbot/4.32.2/tocbot.min.js"></script>
     <script type="module" defer src="/static/vendor/venny/venny.esm.js"></script>
     <script>
+        function adjustDocWidth() {
+            const el = document.querySelector('.doc');
+            if (!el) return; // 防御性判断
+            const width = el.parentElement.offsetWidth;
+            el.style.width = Math.round(width / 24) * 24 + 1 + 'px';
+        }
+        // 加点防抖: 防止频繁触发
+        function debounce(fn, delay = 100) {
+            let timer;
+            return function (...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
         $(function () {
+            const adjustDocWidthDebounced = debounce(adjustDocWidth, 100);
+            // 页面加载完成时执行一次
+            adjustDocWidth();
+
+            // 窗口大小变化时执行
+            window.addEventListener('resize', adjustDocWidthDebounced);
+
             tocbot.init({
                 // Where to render the table of contents.
                 tocSelector: '#toc-table',
