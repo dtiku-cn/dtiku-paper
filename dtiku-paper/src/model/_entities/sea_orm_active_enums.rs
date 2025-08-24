@@ -39,6 +39,7 @@ pub enum SrcType {
     Serialize,
     Deserialize,
     strum :: EnumString,
+    strum :: Display,
 )]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "from_type")]
 #[serde(rename_all = "snake_case")]
