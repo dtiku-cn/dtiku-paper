@@ -85,14 +85,7 @@ impl TrafficAnalysis {
     }
 
     pub async fn seo_user_agents(&self) -> Vec<String> {
-        self.system_config_service
-            .seo_user_agents()
-            .await
-            .ok()
-            .unwrap_or_else(|| "Googlebot,Bingbot,Baiduspider,Sogou".to_string())
-            .split(',')
-            .map(|str| str.to_string())
-            .collect_vec()
+        self.system_config_service.split_seo_user_agents().await
     }
 
     pub fn record(&self, t: Traffic) {

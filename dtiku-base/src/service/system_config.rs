@@ -1,4 +1,5 @@
 use crate::model::{enums::SystemConfigKey, SystemConfig};
+use itertools::Itertools as _;
 use sea_orm::DbConn;
 use serde::Deserialize;
 use spring::config::Configurable;
@@ -74,4 +75,16 @@ gen_config_getters! {
     (block_user_agents, BlockUserAgents, String),
     (seo_user_agents, SeoUserAgents, String),
     (ip_blacklist, IpBlacklist, String),
+}
+
+impl SystemConfigService {
+    pub async fn split_seo_user_agents(&self) -> Vec<String> {
+        self.seo_user_agents()
+            .await
+            .ok()
+            .unwrap_or_else(|| "Googlebot,Bingbot,Baiduspider,Sogou".to_string())
+            .split(',')
+            .map(|str| str.to_string())
+            .collect_vec()
+    }
 }

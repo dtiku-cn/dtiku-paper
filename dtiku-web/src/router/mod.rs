@@ -7,15 +7,15 @@ mod paper;
 mod pay;
 mod question;
 mod shenlun_category;
-mod user;
 mod traffic;
+mod user;
 
 use crate::service::user::UserService;
 use crate::views::{AntiBotTemplate, ErrorTemplate, GlobalVariables};
 use askama::Template;
 use axum_client_ip::{ClientIp, ClientIpSource};
 use axum_extra::extract::{CookieJar, Host};
-use axum_extra::headers::Cookie;
+use axum_extra::headers::{Cookie, UserAgent};
 use axum_extra::TypedHeader;
 use chrono::Utc;
 use derive_more::derive::Deref;
@@ -110,6 +110,7 @@ async fn global_error_page(
     sc_service: Component<SystemConfigService>,
     us_service: Component<UserService>,
     ClientIp(client_ip): ClientIp,
+    TypedHeader(user_agent): TypedHeader<UserAgent>,
     claims: OptionalClaims,
     host: Host,
     cookies: CookieJar,
@@ -117,7 +118,7 @@ async fn global_error_page(
     next: Next,
 ) -> Response {
     if !req.uri().path().starts_with("/api") {
-        if let Some(resp) = anti_bot(&sc_service, &cookies, client_ip).await {
+        if let Some(resp) = anti_bot(&sc_service, &cookies, user_agent, client_ip).await {
             return resp;
         }
     }
@@ -179,10 +180,18 @@ async fn global_error_page(
  * 2. 浏览器通过js脚本生成visitorId，后端基于visitorId做一次校验
  */
 async fn anti_bot(
-    Component(_sc_service): &Component<SystemConfigService>,
+    Component(sc_service): &Component<SystemConfigService>,
     cookies: &CookieJar,
+    user_agent: UserAgent,
     client_ip: IpAddr,
 ) -> Option<Response> {
+    let seo_user_agents = sc_service.split_seo_user_agents().await;
+    if seo_user_agents
+        .iter()
+        .any(|seo_ua| user_agent.as_str().contains(seo_ua))
+    {
+        return None;
+    }
     let server_secret = "server-secret";
     let client_ip = client_ip.to_string();
     let now_week = Utc::now().timestamp() / 60 / 60 / 24 / 7; // 当前周时间戳
