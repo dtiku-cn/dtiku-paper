@@ -20,6 +20,15 @@
         header.card-header strong {
             margin: 0 auto;
         }
+
+        details {
+            /* 打印时默认强制展开 */
+            display: block;
+        }
+
+        details:not([open])>* {
+            display: block !important;
+        }
     </style>
     <style>
         .card-body img,
@@ -94,7 +103,7 @@
         }
 
         #shenlun article {
-            background-image: repeating-linear-gradient(90deg,#ff7a7aaa,#ff7a7aaa 1px,#0000 1px 24px),repeating-linear-gradient(0deg,#ff7a7aaa,#ff7a7aaa 1px,#0000 1px 24px);
+            background-image: repeating-linear-gradient(90deg, #ff7a7aaa, #ff7a7aaa 1px, #0000 1px 24px), repeating-linear-gradient(0deg, #ff7a7aaa, #ff7a7aaa 1px, #0000 1px 24px);
             background-position: 0 0, 0 1px;
             font-size: 16px;
             background-size: 24px 28px;
