@@ -210,10 +210,11 @@
     <script type="module" defer src="/static/vendor/venny/venny.esm.js"></script>
     <script>
         function adjustDocWidth() {
-            const el = document.querySelector('.doc');
-            if (!el) return; // 防御性判断
-            const width = el.parentElement.offsetWidth;
-            el.style.width = Math.round(width / 24) * 24 + 1 + 'px';
+            $('.doc').each(function () {
+                const $el = $(this);
+                const width = $el.parent().outerWidth(); // 获取父容器宽度
+                $el.width(Math.round(width / 24) * 24 + 1);
+            });
         }
         // 加点防抖: 防止频繁触发
         function debounce(fn, delay = 100) {
