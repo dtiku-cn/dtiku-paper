@@ -151,7 +151,7 @@
                 </tr>
                 {%endfor%}
             </table>
-            {% call elements::pagination(page,"/bbs?{{query.to_qs()}}", false) %}
+            {% call elements::pagination(page, query.build_url(), false) %}
         </div>
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}

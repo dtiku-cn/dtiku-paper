@@ -42,4 +42,8 @@ impl IssueQuery {
     pub fn to_qs(&self) -> String {
         serde_urlencoded::to_string(self).ok().unwrap_or_default()
     }
+
+    pub fn build_url(&self) -> String {
+        format!("/bbs?{}", self.to_qs())
+    }
 }
