@@ -72,8 +72,8 @@
     {%else if let Some(solutions) = q.solutions %}
     {%for s in solutions%}
     <div role="tabpanel" id="solution-{{q.id}}-{{s.id}}"
-        class="${entry.key}-solution solution tab-pane card-body bg-light {%if loop.index==1%}active{%else%}fade{%endif%}">
-        ${s.extra}
+        class="{{s.from_ty.to_string()}}-solution solution tab-pane card-body bg-light {%if loop.index==1%}active{%else%}fade{%endif%}">
+        {{s.extra.get_html()}}
     </div>
     {%endfor%}
     {%endif%}
