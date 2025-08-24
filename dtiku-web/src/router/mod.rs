@@ -192,6 +192,7 @@ async fn anti_bot(
     {
         return None;
     }
+
     let server_secret = "server-secret";
     let client_ip = client_ip.to_string();
     let now_week = Utc::now().timestamp() / 60 / 60 / 24 / 7; // 当前周时间戳
