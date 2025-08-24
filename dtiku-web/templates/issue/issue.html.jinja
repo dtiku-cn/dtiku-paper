@@ -62,6 +62,7 @@
             border: 1px solid var(--gray);
             background: var(--light);
             opacity: .75;
+            min-width: 120px;
         }
 
         #toc-table:hover {
@@ -155,7 +156,7 @@
                 // For headings inside relative or absolute positioned containers within content.
                 hasInnerContainers: true,
             });
-            if ($("#toc-table .toc-list").size()){
+            if ($("#toc-table .toc-list").size()) {
                 window.floatButtonAddon = [{
                     style: 'always',
                     render: function () {
