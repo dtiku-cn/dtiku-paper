@@ -213,7 +213,7 @@
             $('.doc').each(function () {
                 const $el = $(this);
                 const width = $el.parent().outerWidth(); // 获取父容器宽度
-                $el.width(Math.round(width / 24) * 24 + 1);
+                $el.width(Math.round(width / 24) * 24 - 23);
             });
         }
         // 加点防抖: 防止频繁触发
