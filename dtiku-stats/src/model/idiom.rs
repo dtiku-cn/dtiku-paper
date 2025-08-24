@@ -15,11 +15,136 @@ use spring::async_trait;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
-pub struct IdiomExplain {
-    pub shiyidetail: String,
-    pub liju: String,
-    pub jyc: Vec<String>,
-    pub fyc: Vec<String>,
+#[serde(tag = "type", content = "data")]
+pub enum IdiomExplainEntry {
+    #[serde(rename = "idiom")]
+    Idiom(IdiomEntry),
+
+    #[serde(rename = "term")]
+    Term(TermEntry),
+}
+
+//
+// ---------------- idiom ----------------
+//
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct IdiomEntry {
+    pub idiom_version: i32,
+    pub name: String,
+    pub imgs: Vec<String>,
+    pub definition_info: Option<DefinitionInfo>,
+    pub liju: Vec<Liju>,
+    pub story: Vec<String>,
+    pub antonym: Vec<WordRef>,
+    pub synonyms: Vec<WordRef>,
+    pub tongyiyixing: Vec<WordRef>,
+    pub chu_chu: Vec<Citation>,
+    pub yin_zheng: Vec<Citation>,
+    pub baobian: String,
+    pub structure: String,
+    pub pinyin: String,
+    pub voice: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct DefinitionInfo {
+    pub definition: String,
+    pub similar_definition: String,
+    pub ancient_definition: String,
+    pub modern_definition: String,
+    pub detail_means: Vec<WordDefinition>,
+    pub usage_tips: Vec<String>,
+    pub yicuodian: Vec<String>,
+    pub baobian: String,
+    pub word_formation: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+pub struct WordDefinition {
+    pub word: String,
+    pub definition: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+pub struct Liju {
+    pub name: String,
+    pub show_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct WordRef {
+    pub name: String,
+    #[serde(default)]
+    pub is_click: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct Citation {
+    pub source_chapter: String,
+    pub source: String,
+    pub dynasty: String,
+    pub cite_original_text: String,
+    pub author: String,
+}
+
+//
+// ---------------- term ----------------
+//
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct TermEntry {
+    pub term_version: i32,
+    pub imgs: Vec<String>,
+    pub comprehensive_definition: Vec<ComprehensiveDefinition>,
+    pub modifier: Vec<WordRef>,
+    pub baike_info: Option<BaikeInfo>,
+    pub baobian: String,
+    pub structure: String,
+    pub term_style: i32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct ComprehensiveDefinition {
+    pub pinyin: String,
+    pub voice: String,
+    pub basic_definition: Vec<BasicDefinition>,
+    pub detail_definition: Vec<DetailDefinition>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct BasicDefinition {
+    pub definition: String,
+    pub synonyms: Vec<WordRef>,
+    pub antonym: Vec<WordRef>,
+    pub baobian: String,
+    pub zuci: Vec<WordRef>,
+    pub liju: Vec<Liju>,
+    pub shiyongchangjing: String,
+    pub grammar_struct: Vec<String>,
+    pub cixing: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct DetailDefinition {
+    pub definition: String,
+    pub baobian: String,
+    pub liju: Vec<Liju>,
+    pub cite_list: Vec<Citation>,
+    pub cixing: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
+pub struct BaikeInfo {
+    pub baike_mean: String,
+    pub baike_url: String,
 }
 
 #[derive(Clone, Debug, DerivePartialModel, FromQueryResult, Serialize, Deserialize)]

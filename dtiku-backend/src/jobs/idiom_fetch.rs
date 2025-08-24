@@ -1,67 +1,41 @@
 use anyhow::Context as _;
-use dtiku_base::model::{ScheduleTask, schedule_task};
+use dtiku_base::model::{schedule_task, ScheduleTask};
 use dtiku_paper::model::{
-    ExamCategory, Paper, PaperQuestion, Question, paper, question::QuestionExtra,
+    paper, question::QuestionExtra, ExamCategory, Paper, PaperQuestion, Question,
 };
 use dtiku_stats::model::{
-    Idiom,
-    idiom::{self, IdiomExplain as IdiomExplainModel},
+    idiom::{self, IdiomExplainEntry},
     idiom_ref,
     sea_orm_active_enums::IdiomType,
+    Idiom,
 };
 use itertools::Itertools;
 use reqwest;
 use reqwest_scraper::{FromCssSelector, ScraperResponse};
 use sea_orm::{ActiveValue::Set, EntityTrait, Iterable};
+use serde::Deserialize;
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use std::time::Duration;
 
-#[derive(Debug, FromCssSelector)]
-pub struct IdiomExplain {
-    #[selector(
-        path = "#main div.words-details h4>span",
-        default = "<undefined>",
-        text
-    )]
-    idiom: String,
-
-    #[selector(path = "#shiyiDiv", text)]
-    shiyi: Option<String>,
-
-    #[selector(path = "#shiyidetailDiv", inner_html)]
-    shiyidetail: Option<String>,
-
-    #[selector(path = "#liju ul.item-list", html)]
-    liju: Option<String>,
-
-    #[selector(path = "#jyc ul.words-list>li a.text-default", text)]
-    jyc: Vec<String>,
-
-    #[selector(path = "#fyc ul.words-list>li a.text-default", text)]
-    fyc: Vec<String>,
+////////////////////////////////baidu
+///
+#[derive(Debug, Deserialize)]
+pub struct BaiduApiResponse {
+    pub errno: i32,
+    pub errmsg: String,
+    pub data: IdiomExplainEntry,
 }
 
-impl IdiomExplain {
+impl BaiduApiResponse {
     pub async fn fetch(idiom: &str) -> anyhow::Result<Self> {
-        let html = reqwest::get(format!("https://hanyu.sogou.com/result?query={idiom}"))
+        let term_detail = reqwest::get(format!("https://hanyuapp.baidu.com/dictapp/swan/termdetail?wd={idiom}&client=pc&source_tag=2&smp_names=termBrand2,poem1&lesson_from=xiaodu"))
             .await?
-            .css_selector()
+            .json()
             .await?;
 
-        Ok(Self::from_html(html)?)
-    }
-}
-
-impl Into<IdiomExplainModel> for IdiomExplain {
-    fn into(self) -> IdiomExplainModel {
-        IdiomExplainModel {
-            shiyidetail: self.shiyidetail.unwrap_or_default().replace(" ", ""),
-            liju: self.liju.unwrap_or_default().replace(" ", ""),
-            jyc: self.jyc,
-            fyc: self.fyc,
-        }
+        Ok(term_detail)
     }
 }
 
@@ -172,17 +146,18 @@ impl IdiomStatsService {
                             {
                                 idiom_in_db
                             } else {
-                                let explain = IdiomExplain::fetch(idiom).await?;
-                                if explain.idiom == "<undefined>" {
+                                let resp = BaiduApiResponse::fetch(idiom).await;
+                                if let Err(e) = resp {
+                                    tracing::error!("拉取百度字典失败:{e:?}");
                                     continue;
                                 } else {
                                     tokio::time::sleep(Duration::from_secs(1)).await;
                                 }
-                                let main_explain = explain.shiyi.clone();
+                                let explain = resp.unwrap().data;
                                 let saved_idiom = idiom::ActiveModel {
                                     text: Set(idiom.to_string()),
                                     ty: Set(ty),
-                                    explain: Set(main_explain.unwrap_or_default()),
+                                    explain: Set(explain),
                                     content: Set(explain.into()),
                                     ..Default::default()
                                 }
