@@ -174,6 +174,17 @@ async fn global_error_page(
     }
 }
 
+const GOOGLE_DOMAINS: [&str; 2] = ["googlebot.com", "google.com"];
+const BING_DOMAINS: [&str; 1] = ["search.msn.com"];
+const BAIDU_DOMAINS: [&str; 1] = ["baidu.com"];
+const SOGOU_DOMAINS: [&str; 1] = ["sogou.com"];
+
+fn domain_matches(domain: &str, allowed_suffixes: &[&str]) -> bool {
+    allowed_suffixes
+        .iter()
+        .any(|suffix| domain.ends_with(suffix))
+}
+
 /**
  * js反爬虫：
  * 1. 浏览器第一次访问，基于当前周(now_week)生成当前server端的dynamic_secret
@@ -190,7 +201,10 @@ async fn anti_bot(
         .iter()
         .any(|seo_ua| user_agent.as_str().contains(seo_ua))
     {
-        return None;
+        if let Some(bot_name) = validate_seo_ip(client_ip).await.ok().flatten() {
+            tracing::trace!("confirmed to be from a legitimate crawler: {bot_name}");
+            return None;
+        }
     }
 
     let server_secret = "server-secret";
@@ -220,6 +234,46 @@ async fn anti_bot(
 
     let html = template.render().ok()?;
     return Some((StatusCode::ACCEPTED, Html(html)).into_response());
+}
+
+async fn validate_seo_ip(client_ip: IpAddr) -> anyhow::Result<Option<&'static str>> {
+    let resolver = hickory_resolver::Resolver::builder_with_config(
+        hickory_resolver::config::ResolverConfig::default(),
+        hickory_resolver::name_server::TokioConnectionProvider::default(),
+    )
+    .build();
+
+    // Step 1: 反向解析 IP -> 域名
+    let ptr_response = resolver.reverse_lookup(client_ip).await?;
+    let hostname = match ptr_response.iter().next() {
+        Some(name) => name.to_utf8(),
+        None => return Ok(None),
+    };
+
+    // Step 2: 检查域名后缀
+    let crawler_type = if domain_matches(&hostname, &GOOGLE_DOMAINS) {
+        Some("Googlebot")
+    } else if domain_matches(&hostname, &BING_DOMAINS) {
+        Some("Bingbot")
+    } else if domain_matches(&hostname, &BAIDU_DOMAINS) {
+        Some("Baiduspider")
+    } else if domain_matches(&hostname, &SOGOU_DOMAINS) {
+        Some("SogouSpider")
+    } else {
+        None
+    };
+
+    if let Some(bot) = crawler_type {
+        // Step 3: 正查 域名 -> IP
+        let forward_response = resolver.lookup_ip(&hostname).await?;
+        if forward_response
+            .iter()
+            .any(|resolved_ip| resolved_ip == client_ip)
+        {
+            return Ok(Some(bot));
+        }
+    }
+    Ok(None)
 }
 
 async fn not_found_handler(Host(original_host): Host) -> Response {
