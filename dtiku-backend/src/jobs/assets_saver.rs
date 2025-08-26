@@ -56,7 +56,7 @@ impl AssetsSaveService {
         });
     }
 
-    async fn sync_save_assets(&self) -> anyhow::Result<()> {
+    async fn sync_save_assets(&mut self) -> anyhow::Result<()> {
         let mut last_id = match &self.task.context {
             Value::Number(last_id) => last_id.as_i64().unwrap_or_default() as i32,
             _ => 0,
@@ -72,6 +72,7 @@ impl AssetsSaveService {
                 self.write_to_storage(&a).await?;
                 last_id = a.id.max(last_id);
             }
+            self.task = self.task.update_context(last_id, &self.db).await?;
         }
     }
 
