@@ -78,7 +78,8 @@ impl AssetsSaveService {
 
     async fn write_to_storage(&self, a: &assets::Model) -> Result<(), anyhow::Error> {
         let storage_path = a.compute_storage_path();
-        let img_url = &a.src_url;
+        let img_url = Self::add_default_http(&a.src_url);
+        let img_url = &img_url;
         let resp = reqwest::get(img_url)
             .await
             .with_context(|| format!("reqwest::get_img({img_url}) failed"))?;
@@ -95,5 +96,13 @@ impl AssetsSaveService {
                 tracing::error!("save asset failed: {e:?}");
             }
         })
+    }
+
+    fn add_default_http(url: &str) -> String {
+        if url.starts_with("http://") || url.starts_with("https://") {
+            url.to_string()
+        } else {
+            format!("http://{}", url)
+        }
     }
 }
