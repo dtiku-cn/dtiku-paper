@@ -86,10 +86,13 @@ impl AssetsSaveService {
             .await
             .with_context(|| format!("reqwest::get_img_body({img_url}) failed"))?;
         Ok(for s in CLOUD_STORAGE {
-            self.op
+            if let Err(e) = self
+                .op
                 .write(&format!("{s}/{storage_path}"), body.clone())
                 .await
-                .with_context(|| format!("op.write({storage_path}) failed"))?;
+            {
+                tracing::error!("save asset failed: {e:?}");
+            }
         })
     }
 }

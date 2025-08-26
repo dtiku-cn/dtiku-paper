@@ -9,12 +9,15 @@ use crate::model::question::QuestionExtra;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    #[sea_orm(column_type = "Text")]
-    pub content: String,
     pub exam_id: i16,
     pub paper_type: i16,
+
+    #[sea_orm(column_type = "Text")]
+    pub content: String,
+
     #[sea_orm(column_type = "JsonBinary")]
     pub extra: QuestionExtra,
+
     pub embedding: PgVector,
 }
 

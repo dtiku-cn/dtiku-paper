@@ -7,18 +7,23 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "issue")]
 pub struct Model {
+    // --- 小字段放前面 ---
     #[sea_orm(primary_key)]
     pub id: i32,
+    pub user_id: i32,
     pub topic: TopicType,
+    pub pin: bool,
+    pub collect: bool,
+
+    // --- 大字段放后面，连续排布 ---
+    pub created: DateTime,
+    pub modified: DateTime,
+
     pub title: String,
     #[sea_orm(column_type = "Text")]
     pub markdown: String,
     #[sea_orm(column_type = "Text")]
     pub html: String,
-    pub pin: bool,
-    pub user_id: i32,
-    pub created: DateTime,
-    pub modified: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -19,10 +19,12 @@ pub struct ListIssue {
     pub topic: TopicType,
     #[sea_orm(from_col = "title")]
     pub title: String,
-    #[sea_orm(from_col = "pin")]
-    pub pin: bool,
     #[sea_orm(from_col = "user_id")]
     pub user_id: i32,
+    #[sea_orm(from_col = "pin")]
+    pub pin: bool,
+    #[sea_orm(from_col = "collect")]
+    pub collect: bool,
     #[sea_orm(from_col = "created")]
     pub created: DateTime,
     #[sea_orm(from_col = "modified")]
