@@ -9,6 +9,7 @@ use spring_sea_orm::pagination::Page;
 use spring_web::axum::http::{StatusCode, Uri};
 
 pub mod bbs;
+pub mod filters;
 pub mod home;
 pub mod idiom;
 pub mod paper;

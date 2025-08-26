@@ -1,6 +1,6 @@
 use super::Claims;
 use crate::{
-    query::bbs::IssueReq,
+    query::bbs::{IssueDetailReq, IssueReq},
     service::issue::IssueService,
     views::{
         bbs::{IssueEditorTemplate, IssueTemplate, ListIssueTemplate},
@@ -8,13 +8,14 @@ use crate::{
     },
 };
 use anyhow::Context;
+use askama::Template;
 use dtiku_bbs::model::{issue, Issue, IssueQuery};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, ActiveValue::Unchanged};
 use spring_sea_orm::{pagination::Pagination, DbConn};
 use spring_web::{
     axum::{
-        response::{IntoResponse, Redirect},
+        response::{Html, IntoResponse, Redirect},
         Extension, Form,
     },
     error::{KnownWebError, Result},
@@ -89,13 +90,21 @@ async fn issue_detail(
     Component(is): Component<IssueService>,
     Path(id): Path<i32>,
     Extension(global): Extension<GlobalVariables>,
+    Query(req): Query<IssueDetailReq>,
 ) -> Result<impl IntoResponse> {
-    let issue = is
-        .find_issue_by_id(id)
-        .await?
-        .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?;
-
-    Ok(IssueTemplate { global, issue })
+    let html = if req.html {
+        is.find_issue_html_by_id(id)
+            .await?
+            .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?
+    } else {
+        let issue = is
+            .find_issue_by_id(id)
+            .await?
+            .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?;
+        let temp = IssueTemplate { global, issue };
+        temp.render().context("render failed")?
+    };
+    Ok(Html(html))
 }
 
 #[post("/bbs/issue/{id}")]

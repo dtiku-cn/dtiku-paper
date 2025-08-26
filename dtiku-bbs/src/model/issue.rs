@@ -7,6 +7,7 @@ use sea_orm::{
     ColumnTrait, ConnectionTrait, DbErr, DerivePartialModel, EntityTrait, FromQueryResult,
     QueryFilter, QueryOrder, QuerySelect, Set,
 };
+use serde::{Deserialize, Serialize};
 use spring::async_trait;
 use spring_sea_orm::pagination::{Page, Pagination, PaginationExt};
 
@@ -29,6 +30,12 @@ pub struct ListIssue {
     pub created: DateTime,
     #[sea_orm(from_col = "modified")]
     pub modified: DateTime,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CollectIssueMarkdown {
+    pub toc: String,
+    pub content: String,
 }
 
 #[async_trait]

@@ -14,8 +14,11 @@
             margin: 0 auto;
         }
 
-        .vditor-reset {
-            color: inherit;
+        .vditor-reset,
+        .vditor-reset table tr,
+        .vditor-reset table tbody tr:nth-child(2n) {
+            color: inherit !important;
+            background-color: inherit !important;
         }
 
         .vditor-reset table td,
@@ -65,87 +68,87 @@
         $(function () {
             var eEditor = document.querySelector('#editor');
             eEditor.style.background = 'url("' + window.loadingGif + '") center center no-repeat';
-            var initValue = {%if let Some(i)=issue%}{{i.markdown|json|safe}}{%else%}''{%endif%};
-            window.vEditor = new Vditor(eEditor, {
-                width: '100%',
-                height: '100vh',
-                placeholder: '在这里输入文章内容',
-                mode: 'wysiwyg',
-                value: initValue || '',
-                cdn: 'https://{{global.original_host}}/static/vendor/vditor/3.10.4',
-                counter: {
-                    enable: true,
-                    type: 'markdown'
-                },
-                toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike',
-                    '|', 'line', 'quote', 'list', 'ordered-list', 'check', 'outdent', 'indent', 'code', 'inline-code', 'table',
-                    '|', 'undo', 'redo', 'upload', 'edit-mode', 'fullscreen', 'preview'
-                ],
-                toolbarConfig: {
-                    pin: true
-                },
+            var initValue = {%if let Some(i) = issue %}{{ i.markdown | json | safe }}{%else%}''{% endif %};
+        window.vEditor = new Vditor(eEditor, {
+            width: '100%',
+            height: '100vh',
+            placeholder: '在这里输入文章内容',
+            mode: 'wysiwyg',
+            value: initValue || '',
+            cdn: 'https://{{global.original_host}}/static/vendor/vditor/3.10.4',
+            counter: {
+                enable: true,
+                type: 'markdown'
+            },
+            toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike',
+                '|', 'line', 'quote', 'list', 'ordered-list', 'check', 'outdent', 'indent', 'code', 'inline-code', 'table',
+                '|', 'undo', 'redo', 'upload', 'edit-mode', 'fullscreen', 'preview'
+            ],
+            toolbarConfig: {
+                pin: true
+            },
+            theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
+            preview: {
                 theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
-                preview: {
-                    theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
-                    list: { dark: "Dark", light: "Light" },
-                    path: '/static/vendor/vditor/3.10.4/dist/content-theme',
-                    math: { engine: 'MathJax', inlineDigit: true },
-                    actions: []
-                },
-                cache: {
-                    enable: true,
-                    id: '{%if let Some(i)=issue%}issue-{{i.id}}{%else%}new-issue{%endif%}'
-                },
-                focus() {
-                    $("#editor").tooltip('toggle').attr("data-original-title", "").tooltip("hide");
-                },
-                after() {
-                    $('button[data-type="preview"]').click(function () {
-                        $("#submit").toggleClass('d-none');
-                        $("#preview").toggleClass('d-none');
-                    });
-                },
-                upload: {
-                    url: "/upload",
-                    fieldName: 'file',
-                    multiple: false,
-                    format: (f, respTxt) => `{"msg":"","code":0,"data":{"errFiles":[],"succMap":{"${f[0].name}":"${respTxt}"}}}`,
-                    linkToImgUrl: "/upload-by-link"
-                }
-            });
-            window.themeSwitcher.listener.push(function (dark) {
-                vEditor.setTheme(dark ? 'dark' : 'light');
-            });
-            $("#preview").click(function () {
-                $('button[data-type="preview"]').click();
-            });
-            $("#form").submit(function (e) {
-                if (!this.topic.value) {
-                    e.preventDefault();
-                    return false;
-                }
-                if (!this.title.value) {
-                    e.preventDefault();
-                    return false;
-                }
-                var md = vEditor.getValue();
-                if (!md || !md.trim()) {
-                    $("#editor").tooltip('hide').attr("data-original-title", "必填内容").tooltip("show");
-                    e.preventDefault();
-                    return false;
-                } else {
-                    $("<input />").attr("type", "hidden")
-                        .attr("name", "markdown")
-                        .attr("value", md)
-                        .appendTo("#form");
-                    $("<input />").attr("type", "hidden")
-                        .attr("name", "html")
-                        .attr("value", $(".vditor-preview .vditor-reset").html())
-                        .appendTo("#form");
-                    vEditor.clearCache();
-                    return true;
-                }
-            });
+                list: { dark: "Dark", light: "Light" },
+                path: '/static/vendor/vditor/3.10.4/dist/content-theme',
+                math: { engine: 'MathJax', inlineDigit: true },
+                actions: []
+            },
+            cache: {
+                enable: true,
+                id: '{%if let Some(i)=issue%}issue-{{i.id}}{%else%}new-issue{%endif%}'
+            },
+            focus() {
+                $("#editor").tooltip('toggle').attr("data-original-title", "").tooltip("hide");
+            },
+            after() {
+                $('button[data-type="preview"]').click(function () {
+                    $("#submit").toggleClass('d-none');
+                    $("#preview").toggleClass('d-none');
+                });
+            },
+            upload: {
+                url: "/upload",
+                fieldName: 'file',
+                multiple: false,
+                format: (f, respTxt) => `{"msg":"","code":0,"data":{"errFiles":[],"succMap":{"${f[0].name}":"${respTxt}"}}}`,
+                linkToImgUrl: "/upload-by-link"
+            }
+        });
+        window.themeSwitcher.listener.push(function (dark) {
+            vEditor.setTheme(dark ? 'dark' : 'light');
+        });
+        $("#preview").click(function () {
+            $('button[data-type="preview"]').click();
+        });
+        $("#form").submit(function (e) {
+            if (!this.topic.value) {
+                e.preventDefault();
+                return false;
+            }
+            if (!this.title.value) {
+                e.preventDefault();
+                return false;
+            }
+            var md = vEditor.getValue();
+            if (!md || !md.trim()) {
+                $("#editor").tooltip('hide').attr("data-original-title", "必填内容").tooltip("show");
+                e.preventDefault();
+                return false;
+            } else {
+                $("<input />").attr("type", "hidden")
+                    .attr("name", "markdown")
+                    .attr("value", md)
+                    .appendTo("#form");
+                $("<input />").attr("type", "hidden")
+                    .attr("name", "html")
+                    .attr("value", $(".vditor-preview .vditor-reset").html())
+                    .appendTo("#form");
+                vEditor.clearCache();
+                return true;
+            }
+        });
         })
     </script>
 </body>

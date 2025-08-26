@@ -1,9 +1,16 @@
 use dtiku_bbs::model::TopicType;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IssueReq {
     pub topic: TopicType,
     pub title: String,
     pub markdown: String,
     pub html: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IssueDetailReq {
+    #[serde(default)]
+    pub html: bool,
 }

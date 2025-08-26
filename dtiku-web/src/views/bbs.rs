@@ -1,3 +1,4 @@
+use super::filters;
 use super::GlobalVariables;
 use super::PageExt;
 use crate::plugins::grpc_client::artalk::VoteStats;
@@ -5,6 +6,7 @@ use askama::Template;
 use askama_web::WebTemplate;
 use chrono::NaiveDateTime;
 use dtiku_base::model::user_info;
+use dtiku_bbs::model::issue::CollectIssueMarkdown;
 use dtiku_bbs::model::issue::ListIssue;
 use dtiku_bbs::model::{issue, IssueQuery, TopicType};
 use spring_sea_orm::pagination::Page;
@@ -23,6 +25,7 @@ pub struct FullIssue {
     pub id: i32,
     pub topic: TopicType,
     pub title: String,
+    pub toc: String,
     pub markdown: String,
     pub html: String,
     pub user_id: i32,
@@ -46,12 +49,20 @@ impl FullIssue {
         id_user_map: &mut std::collections::HashMap<i32, user_info::Model>,
     ) -> Self {
         let key = format!("/bbs/issue/{}", issue.id);
+        let (toc, markdown) = if issue.collect {
+            let collect = serde_json::from_str::<CollectIssueMarkdown>(&issue.markdown)
+                .expect("collect issue require CollectIssueMarkdown");
+            (collect.toc, collect.content)
+        } else {
+            ("".to_string(), issue.markdown)
+        };
         FullIssue {
             user: id_user_map.get(&issue.user_id).cloned(),
             id: issue.id,
             title: issue.title,
             topic: issue.topic,
-            markdown: issue.markdown,
+            toc,
+            markdown: markdown,
             html: issue.html,
             user_id: issue.user_id,
             pin: issue.pin,
@@ -78,6 +89,7 @@ impl FullIssue {
             id: issue.id,
             title: issue.title,
             topic: issue.topic,
+            toc: "".to_string(),
             markdown: "".to_string(),
             html: "".to_string(),
             user_id: issue.user_id,
