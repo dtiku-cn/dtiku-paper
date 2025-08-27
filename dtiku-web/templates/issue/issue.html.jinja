@@ -118,7 +118,7 @@
     {% call general::header() %}
     {%if issue.collect%}
     <div id="collect-container" class="d-flex">
-        <aside id="collect-side" class="card-header">
+        <aside id="collect-side" class="card-header d-none d-sm-block">
             <header class="d-flex align-items-center mb-2">
                 <svg class="icon-svg icon-svg-md mr-2 d-print-none">
                     <use xlink:href="#{{issue.topic.icon()}}"></use>
@@ -128,7 +128,7 @@
             </header>
             <div id="collect-toc">{{issue.toc | markdown | safe}}</div>
         </aside>
-        <button id="toggle-side" class="sidebar-handle" title="收起/展开侧边栏">⟨</button>
+        <button id="toggle-side" class="sidebar-handle d-none d-sm-block" title="收起/展开侧边栏">⟨</button>
         <div id="toc" class="card-body vditor-reset">{{issue.html|safe}}</div>
     </div>
     <footer class="card-footer d-flex align-items-center d-print-none">
