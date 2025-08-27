@@ -33,6 +33,10 @@
             margin-left: -260px;
         }
 
+        #collect-container.collapsed .sidebar-handle {
+            height: 100%;
+        }
+
         .sidebar-handle {
             flex: 0 0 var(--handle);
             border: 0;
@@ -40,6 +44,9 @@
             cursor: pointer;
             position: relative;
             padding: 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
         }
 
         .sidebar-handle::before {
