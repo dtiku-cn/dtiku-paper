@@ -35,6 +35,9 @@
 
         #collect-container.collapsed .sidebar-handle {
             height: 100%;
+            position: absolute;
+            width: 12px;
+            bottom: 0;
         }
 
         .sidebar-handle {
@@ -118,9 +121,9 @@
     {% call general::header() %}
     {%if issue.collect%}
     <div id="collect-container" class="d-flex">
-        <aside id="collect-side" class="card-header d-none d-sm-block">
+        <aside id="collect-side" class="card-header d-none d-sm-block d-print-none">
             <header class="d-flex align-items-center mb-2">
-                <svg class="icon-svg icon-svg-md mr-2 d-print-none">
+                <svg class="icon-svg icon-svg-md mr-2">
                     <use xlink:href="#{{issue.topic.icon()}}"></use>
                 </svg>
                 <strong class="d-none d-md-block d-print-none">【{{issue.topic.text()}}】</strong>
@@ -128,7 +131,7 @@
             </header>
             <div id="collect-toc">{{issue.toc | markdown | safe}}</div>
         </aside>
-        <button id="toggle-side" class="sidebar-handle d-none d-sm-block" title="收起/展开侧边栏">⟨</button>
+        <button id="toggle-side" class="sidebar-handle d-none d-sm-block d-print-none" title="收起/展开侧边栏">⟨</button>
         <div id="toc" class="card-body vditor-reset">{{issue.html|safe}}</div>
     </div>
     <footer class="card-footer d-flex align-items-center d-print-none">
