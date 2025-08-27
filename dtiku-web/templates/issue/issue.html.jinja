@@ -12,15 +12,21 @@
     {% call issue::issue_detail_style() %}
     <style>
         #collect-container {
-            display: flex;
             min-height: 100vh;
             --handle: 12px;
         }
 
         #collect-side {
             min-width: 260px;
+            height: 100vh;
             border-right: 1px solid var(--light);
-            transition: flex-basis 0.25s ease;
+            transition: margin-left 0.25s ease;
+            position: sticky;
+            top: 0;
+        }
+
+        #collect-container.collapsed {
+            overflow: hidden;
         }
 
         #collect-container.collapsed #collect-side {
@@ -104,7 +110,7 @@
 <body class="container">
     {% call general::header() %}
     {%if issue.collect%}
-    <div id="collect-container" class="d-flex overflow-hidden">
+    <div id="collect-container" class="d-flex">
         <aside id="collect-side" class="card-header">
             <header class="d-flex align-items-center mb-2">
                 <svg class="icon-svg icon-svg-md mr-2 d-print-none">
