@@ -202,7 +202,7 @@
     {# painter要放在window.floatButtonAddon下面加载 #}
     {% call painter::painter() %}
     <script>
-        $(function () {
+        function rerender_collect_toc() {
             let counter = 0;
 
             // 构建折叠 TOC
@@ -216,34 +216,61 @@
 
                     $subUl.wrap(`<div class="collapse ms-3" id="${collapseId}"></div>`);
 
-                    let text = $li.clone().children().remove().end().text().trim();
+                    // 找 li 下的第一个 a 链接
+                    const $a = $li.children('a').first();
+                    if ($a.length) {
+                        // 保存原始 href
+                        const href = $a.attr('href');
+                        $a.attr('data-href', href);
 
-                    if (text) {
-                        const $toggle = $(`
+                        // 改造为折叠控制
+                        $a.attr({
+                            'href': '#' + collapseId,
+                            'data-toggle': 'collapse',
+                            'role': 'button',
+                            'aria-expanded': 'false',
+                            'aria-controls': collapseId
+                        });
+                    } else {
+                        // 如果没有 a，用原逻辑处理纯文本
+                        let text = $li.clone().children().remove().end().text().trim();
+                        if (text) {
+                            const $toggle = $(`
 <a href="#${collapseId}" class="toc-toggle" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="${collapseId}">
 ${text}
 </a>
-        `);
-                        $li.contents().filter(function () {
-                            return this.nodeType === 3 && this.nodeValue.trim() === text;
-                        }).remove();
-                        $li.prepend($toggle);
+                `);
+                            $li.contents().filter(function () {
+                                return this.nodeType === 3 && this.nodeValue.trim() === text;
+                            }).remove();
+                            $li.prepend($toggle);
+                        }
                     }
                 }
             });
-
+        }
+        $(function () {
+            rerender_collect_toc();
             // 点击 TOC 链接触发 AJAX
             $('#collect-toc').on('click', 'a', function (e) {
+                e.preventDefault(); // 阻止跳转
                 const href = $(this).attr('href');
 
+                let data_href = $(this).attr('data-href');
                 // 如果是折叠链接（#开头），阻止默认折叠跳转
                 if (href.startsWith('#')) {
-                    e.preventDefault(); // 阻止跳转
                     $(href).collapse('toggle'); // 调用 Bootstrap 折叠
-                    return;
+
+                    if (!data_href) {
+                        return
+                    }
+                } else {
+                    data_href = href;
                 }
 
-                e.preventDefault();
+                if ($("#toc").data("current-href") === data_href) {
+                    return;
+                }
 
                 var $mask = $(`
 <div class="loading-mask">
@@ -254,9 +281,10 @@ ${text}
 `);
                 $('#toc').append($mask);
                 // 发起 AJAX 请求
-                $.get(`${href}?html=true`, function (data) {
+                $.get(`${data_href}?html=true`, function (data) {
                     $('#toc').html(data); // 将请求的 HTML 渲染到 toc 元素下
                     tocbot.refresh();
+                    $("#toc").data("current-href", data_href)
                 }).always(function () {
                     // 移除遮罩
                     $mask.remove();
