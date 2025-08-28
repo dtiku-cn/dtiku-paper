@@ -129,7 +129,7 @@
                     <use xlink:href="#{{issue.topic.icon()}}"></use>
                 </svg>
                 <strong class="d-none d-md-block d-print-none">【{{issue.topic.text()}}】</strong>
-                <strong class="mr-auto">{{issue.title}}</strong>
+                <strong class="mr-auto"><a href="/bbs/issue/{{issue.id}}">{{issue.title}}</a></strong>
             </header>
             <div id="collect-toc">{{issue.toc | markdown | safe}}</div>
         </aside>

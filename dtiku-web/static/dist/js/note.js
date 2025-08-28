@@ -157,6 +157,7 @@ window.FloatButton = function (options) {
     }, options);
 
     function buildCss() {
+        $("#float-btn-style").remove();
         var s = options.menu.length;
         var ac = 0;
         var menuCss = options.menu.reverse().map(function (m, i) {
@@ -174,7 +175,7 @@ window.FloatButton = function (options) {
                     "#float-buttons > div:nth-child(" + rn + "){transform:translateY(-" + t + "rem) !important;opacity: 1;}"
             }
         }).join("");
-        return "<style>#float-buttons {position: fixed;bottom: 4rem;right: 3rem;z-index: 122;color:#007bff;}"+
+        return "<style id='float-btn-style'>#float-buttons {position: fixed;bottom: 4rem;right: 3rem;z-index: 122;color:#007bff;}" +
             "#float-buttons .icon-svg{margin:2px;font-size:40px;}" +
             "#float-buttons > div {position: fixed;right: 0;z-index: 23;transition: all .2s;box-shadow: 3px 3px 6px 3px rgba(0, 0, 0, .3);}" +
             menuCss +
@@ -184,6 +185,7 @@ window.FloatButton = function (options) {
     }
 
     function buildHtml() {
+        $("#float-buttons").remove();
         var menuHtml = options.menu.map(function (m, index) {
             return m.render ? "<div class='" + options.buttonCss.join(" ") + "' data-index='" + index + "'>" + m.render() + "</div>" : ""
         }).join("");
@@ -214,11 +216,8 @@ window.FloatButton = function (options) {
     };
 };
 
-$(function () {
-    var fontRem = Number(localStorage.getItem("paper-font-size")) || 1, $paper = $(".paper");
-    $paper = $paper.size() === 0 ? $('#printcontent') : $paper;
-    $paper.css("font-size", fontRem + "rem");
-    window.floatButton = new FloatButton({
+window.FloatButton.build = function () {
+    return new FloatButton({
         cssClass: ['d-print-none'],
         menu: [{
             style: 'always',
@@ -271,4 +270,11 @@ $(function () {
             return !!m;
         })
     });
+}
+
+$(function () {
+    var fontRem = Number(localStorage.getItem("paper-font-size")) || 1, $paper = $(".paper");
+    $paper = $paper.size() === 0 ? $('#printcontent') : $paper;
+    $paper.css("font-size", fontRem + "rem");
+    window.floatButton = window.FloatButton.build();
 });
