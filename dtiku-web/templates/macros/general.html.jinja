@@ -193,7 +193,7 @@
 </nav>
 {% if global.cookie("dis-alert") != global.config.alert_message_key && !global.config.global_alert_message.is_empty() %}
 <div id="main-alert" class="alert alert-primary alert-dismissible d-print-none fade show" role="alert">
-    {{global.config.global_alert_message}}
+    {{global.config.global_alert_message|safe}}
     <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
     <script>
         $(function () {
