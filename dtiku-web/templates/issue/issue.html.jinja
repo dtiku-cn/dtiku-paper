@@ -122,55 +122,57 @@
 <body class="container">
     {% call general::header() %}
     {%if issue.collect%}
-    <div id="collect-container" class="d-flex">
-        <aside id="collect-side" class="card-header d-none d-sm-block d-print-none">
-            <header class="d-flex align-items-center mb-2">
-                <svg class="icon-svg icon-svg-md mr-2">
-                    <use xlink:href="#{{issue.topic.icon()}}"></use>
-                </svg>
-                <strong class="d-none d-md-block d-print-none">【{{issue.topic.text()}}】</strong>
-                <strong class="mr-auto"><a href="/bbs/issue/{{issue.id}}">{{issue.title}}</a></strong>
-            </header>
-            <div id="collect-toc">{{issue.toc | markdown | safe}}</div>
-        </aside>
-        <button id="toggle-side" class="sidebar-handle d-none d-sm-block d-print-none" title="收起/展开侧边栏">⟨</button>
-        <div id="toc" class="card-body vditor-reset">{{issue.html|safe}}</div>
+    <div class="card">
+        <div id="collect-container" class="d-flex">
+            <aside id="collect-side" class="card-header d-none d-sm-block d-print-none">
+                <header class="d-flex align-items-center mb-2">
+                    <svg class="icon-svg icon-svg-md mr-2">
+                        <use xlink:href="#{{issue.topic.icon()}}"></use>
+                    </svg>
+                    <strong class="d-none d-md-block d-print-none">【{{issue.topic.text()}}】</strong>
+                    <strong class="mr-auto"><a href="/bbs/issue/{{issue.id}}">{{issue.title}}</a></strong>
+                </header>
+                <div id="collect-toc">{{issue.toc | markdown | safe}}</div>
+            </aside>
+            <button id="toggle-side" class="sidebar-handle d-none d-sm-block d-print-none" title="收起/展开侧边栏">⟨</button>
+            <div id="toc" class="card-body vditor-reset">{{issue.html|safe}}</div>
+        </div>
+        <footer class="card-footer d-flex align-items-center d-print-none">
+            <div class="d-flex align-items-center mr-auto">
+                {% if let Some(u)=issue.user %}
+                <img id="{{u.id}}" class="border rounded-circle mr-2" style="height:2em" data-toggle="tooltip"
+                    src="{{u.avatar}}" title="{{u.name}}" alt="{{u.name}}" />
+                {% endif %}
+                <b class="d-none d-md-block">{{issue.author_name()}}</b>
+                <span data-toggle="tooltip"
+                    title='{{global.format(issue.created, "%Y-%m-%d %H:%M")}}'>发布于{{global.format_with_now(issue.created)}}</span>
+                {% if issue.created != issue.modified %}
+                <span class="d-none d-sm-block">&nbsp; | &nbsp;</span>
+                <span class="d-none d-sm-block" data-toggle="tooltip"
+                    title='{{global.format(issue.modified, "%Y-%m-%d %H:%M")}}'>更新于{{global.format_with_now(issue.modified)}}</span>
+                {% endif %}
+            </div>
+            <div class="artalk-page-vote d-flex">
+                <a id="agree" class="card-link d-flex align-items-center artalk-page-vote-up" title="赞同数"
+                    data-toggle="{%if global.user.is_none()%}modal{%else%}tooltip{%endif%}"
+                    href="{%if global.user.is_none()%}#loginModal{%else%}javascript:void(0){%endif%}">
+                    <svg class="icon-svg icon-svg-md mr-2">
+                        <use xlink:href="#ic-agree"></use>
+                    </svg>
+                    <b class="agree-count artalk-page-vote-up-count"></b>
+                </a>
+                <a id="disagree" class="card-link d-flex align-items-center artalk-page-vote-down" title="反对数"
+                    data-toggle="{%if global.user.is_none()%}modal{%else%}tooltip{%endif%}"
+                    href="{%if global.user.is_none()%}#loginModal{%else%}javascript:void(0){%endif%}">
+                    <svg class="icon-svg icon-svg-md mr-2">
+                        <use xlink:href="#ic-disagree"></use>
+                    </svg>
+                    <b class="agree-count artalk-page-vote-down-count"></b>
+                </a>
+            </div>
+        </footer>
+        <div id='toc-table' class='d-print-none'></div>
     </div>
-    <footer class="card-footer d-flex align-items-center d-print-none">
-        <div class="d-flex align-items-center mr-auto">
-            {% if let Some(u)=issue.user %}
-            <img id="{{u.id}}" class="border rounded-circle mr-2" style="height:2em" data-toggle="tooltip"
-                src="{{u.avatar}}" title="{{u.name}}" alt="{{u.name}}" />
-            {% endif %}
-            <b class="d-none d-md-block">{{issue.author_name()}}</b>
-            <span data-toggle="tooltip"
-                title='{{global.format(issue.created, "%Y-%m-%d %H:%M")}}'>发布于{{global.format_with_now(issue.created)}}</span>
-            {% if issue.created != issue.modified %}
-            <span class="d-none d-sm-block">&nbsp; | &nbsp;</span>
-            <span class="d-none d-sm-block" data-toggle="tooltip"
-                title='{{global.format(issue.modified, "%Y-%m-%d %H:%M")}}'>更新于{{global.format_with_now(issue.modified)}}</span>
-            {% endif %}
-        </div>
-        <div class="artalk-page-vote d-flex">
-            <a id="agree" class="card-link d-flex align-items-center artalk-page-vote-up" title="赞同数"
-                data-toggle="{%if global.user.is_none()%}modal{%else%}tooltip{%endif%}"
-                href="{%if global.user.is_none()%}#loginModal{%else%}javascript:void(0){%endif%}">
-                <svg class="icon-svg icon-svg-md mr-2">
-                    <use xlink:href="#ic-agree"></use>
-                </svg>
-                <b class="agree-count artalk-page-vote-up-count"></b>
-            </a>
-            <a id="disagree" class="card-link d-flex align-items-center artalk-page-vote-down" title="反对数"
-                data-toggle="{%if global.user.is_none()%}modal{%else%}tooltip{%endif%}"
-                href="{%if global.user.is_none()%}#loginModal{%else%}javascript:void(0){%endif%}">
-                <svg class="icon-svg icon-svg-md mr-2">
-                    <use xlink:href="#ic-disagree"></use>
-                </svg>
-                <b class="agree-count artalk-page-vote-down-count"></b>
-            </a>
-        </div>
-    </footer>
-    <div id='toc-table' class='d-print-none'></div>
     {%else%}
     <div class="card mb-3">
         <header class="card-header d-flex align-items-center py-2 pl-3 pr-2">
