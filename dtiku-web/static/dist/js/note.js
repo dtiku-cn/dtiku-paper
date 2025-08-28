@@ -217,6 +217,9 @@ window.FloatButton = function (options) {
 };
 
 window.FloatButton.build = function () {
+    var fontRem = Number(localStorage.getItem("paper-font-size")) || 1, $paper = $(".paper");
+    $paper = $paper.size() === 0 ? $('#printcontent') : $paper;
+    $paper.css("font-size", fontRem + "rem");
     return new FloatButton({
         cssClass: ['d-print-none'],
         menu: [{
@@ -273,8 +276,5 @@ window.FloatButton.build = function () {
 }
 
 $(function () {
-    var fontRem = Number(localStorage.getItem("paper-font-size")) || 1, $paper = $(".paper");
-    $paper = $paper.size() === 0 ? $('#printcontent') : $paper;
-    $paper.css("font-size", fontRem + "rem");
     window.floatButton = window.FloatButton.build();
 });
