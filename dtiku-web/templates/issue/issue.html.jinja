@@ -295,6 +295,7 @@ ${text}
                 // 发起 AJAX 请求
                 $.get(`${href}?html=true`, function (data) {
                     $('#toc').html(data); // 将请求的 HTML 渲染到 toc 元素下
+                    tocbot.refresh();
                 }).always(function () {
                     // 移除遮罩
                     $mask.remove();
