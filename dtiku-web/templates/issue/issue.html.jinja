@@ -200,6 +200,41 @@
     {% call general::footer() %}
     {% call issue::issue_detail_script() %}
     {# painter要放在window.floatButtonAddon下面加载 #}
+    {%if issue.collect%}
+    <script>
+        $(function () {
+            window.floatButtonAddon = [{
+                style: 'always',
+                render: function () {
+                    return "<div id='toc-btn' class='d-flex align-items-center'>" +
+                        "<svg class='icon-svg'><use xlink:href='#ic-toc'></use></svg>" +
+                        "</div>";
+                },
+                click: function () {
+                    $("#toc-table").fadeToggle();
+                }
+            }]
+        })
+    </script>
+    {%else%}
+    <script>
+        $(function () {
+            if ($("#toc-table .toc-list").size()) {
+                window.floatButtonAddon = [{
+                    style: 'always',
+                    render: function () {
+                        return "<div id='toc-btn' class='d-flex align-items-center'>" +
+                            "<svg class='icon-svg'><use xlink:href='#ic-toc'></use></svg>" +
+                            "</div>";
+                    },
+                    click: function () {
+                        $("#toc-table").fadeToggle();
+                    }
+                }]
+            }
+        })
+    </script>
+    {%endif%}
     {% call painter::painter() %}
     <script>
         function rerender_collect_toc() {
