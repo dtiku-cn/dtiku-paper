@@ -45,7 +45,7 @@
     <li role="presentation" class="nav-item">
         <a class="nav-link {%if loop.index==1%}active{%endif%}" role="tab" data-toggle="tab"
             href="#solution-{{q.id}}-{{s.id}}">
-            {%if global.config.show_vendor%}{{s.from_ty.text}}{%else%}参考解析{{global.chinese_num(loop.index)}}{%endif%}
+            {%if global.config.show_vendor%}{{s.from_ty}}{%else%}参考解析{{global.chinese_num(loop.index)}}{%endif%}
         </a>
     </li>
     {%endfor%}
