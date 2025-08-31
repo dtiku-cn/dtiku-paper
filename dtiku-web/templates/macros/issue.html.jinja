@@ -22,8 +22,13 @@
     }
 </style>
 <style>
-    .details.card {
+    .details.card,
+    details.card[open] {
         padding: 1em;
+    }
+
+    details.card[open] summary.card-header {
+        margin: -1em -1em 1em;
     }
 
     .card-body img,
