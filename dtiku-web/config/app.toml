@@ -1,3 +1,4 @@
+#:schema https://spring-rs.github.io/config-schema.json
 [web]
 port = 18080
 graceful = true
