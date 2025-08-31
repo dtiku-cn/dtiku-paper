@@ -322,7 +322,13 @@ ${text}
                 $.get(`${data_href}?html=true`, function (data) {
                     $('#toc').html(data); // 将请求的 HTML 渲染到 toc 元素下
                     tocbot.refresh();
-                    $("#toc").data("current-href", data_href)
+                    $("#toc").data("current-href", data_href);
+                    const toc_size = $("#toc-table .toc-list-item").size();
+                    if (toc_size && toc_size > 1) {
+                        $("#toc-table").show()
+                    } else {
+                        $("#toc-table").hide()
+                    }
                 }).always(function () {
                     // 移除遮罩
                     $mask.remove();
