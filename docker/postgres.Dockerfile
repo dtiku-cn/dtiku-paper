@@ -4,4 +4,5 @@ RUN apt-get update && apt-get install -y curl
 
 RUN curl -sfL https://install.pgx.sh | sh -
 
-RUN pgxman install pgvector
+RUN pgxman install pgvector && \
+    pgxman install pg_duckdb
