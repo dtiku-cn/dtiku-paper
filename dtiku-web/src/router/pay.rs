@@ -2,13 +2,14 @@ use super::Claims;
 use crate::{
     query::pay::TradeCreateQuery,
     views::{
-        pay::{PayRedirectTemplate, PayTradeCreateTemplate},
+        pay::{PayRedirectTemplate, PayTradeCreateTemplate, YsmPayNotify},
         GlobalVariables,
     },
 };
 use dtiku_pay::service::pay_order::PayOrderService;
+use spring::tracing;
 use spring_web::{
-    axum::{response::IntoResponse, Extension, Form},
+    axum::{response::IntoResponse, Extension, Form, Json},
     error::{KnownWebError, Result},
     extractor::Component,
     get, post,
@@ -43,12 +44,18 @@ async fn create_trade(
     })
 }
 
-#[post("/pay/alipay/callback")]
-async fn alipay_callback() -> Result<impl IntoResponse> {
+#[post("/pay/callback")]
+async fn pay_callback() -> Result<impl IntoResponse> {
     Ok("支付接口正在施工中...")
 }
 
-#[post("/pay/wechat/callback")]
-async fn wechat_callback() -> Result<impl IntoResponse> {
+#[post("/pay/notify")]
+async fn pay_notify(Json(body): Json<YsmPayNotify>) -> Result<impl IntoResponse> {
+    tracing::info!("回调成功{body:?}");
+    Ok("success")
+}
+
+#[post("/pay/nopay")]
+async fn nopay_render() -> Result<impl IntoResponse> {
     Ok("支付接口正在施工中...")
 }

@@ -57,6 +57,11 @@ impl OrderLevel {
         self.get_str("text").unwrap_or_default()
     }
 
+    /// 单位为分:
+    /// 30天10块钱
+    /// 90天30块钱
+    /// 180天60块钱
+    /// 360天120块钱
     #[inline]
     pub fn original_amount(&self) -> i32 {
         return self.days() / 30 * 1000;
@@ -67,11 +72,21 @@ impl OrderLevel {
         return format!("{}元", self.original_amount() / 100);
     }
 
+    /// 单位为分
+    /// 30天10块钱 = 不打折
+    /// 90天30块钱 = 3000 * 0.968 = 2904分
+    /// 180天60块钱 = 6000 * 0.917 = 5502分
+    /// 360天120块钱 = 12000 * 0.835 = 10020分
     #[inline]
     pub fn discount(&self) -> i32 {
         return ((self.original_amount() as f32) * self.discount_rate()) as i32;
     }
 
+    /// 单位为分(抹了零头)
+    /// 30天10块钱 = 不打折
+    /// 90天30块钱 = 3000 * 0.968 = 2900分 = 29块
+    /// 180天60块钱 = 6000 * 0.917 = 5500分 = 55块
+    /// 360天120块钱 = 12000 * 0.835 = 10000分 = 100块
     #[inline]
     pub fn amount(&self) -> i32 {
         return self.discount() / 100 * 100;

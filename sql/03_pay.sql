@@ -5,6 +5,7 @@ create table if not exists pay_order(
     user_id integer not null,
     level order_level not null,
     pay_from pay_from not null,
+    resp jsonb default null,
     confirm timestamp default null,
     created timestamp not null,
     modified timestamp not null

@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use spring::config::Configurable;
 
-#[derive(Debug, Configurable, Deserialize)]
+#[derive(Debug, Clone, Configurable, Deserialize)]
 #[config_prefix = "pay"]
 pub struct PayConfig {
     #[serde(default)]
@@ -16,4 +16,11 @@ pub struct PayConfig {
     pub alipay_app_cert_sn: String,
     pub alipay_app_private_key: String,
     pub alipay_app_public_key: String,
+    /////////////
+    /// https://www.yishoumi.cn/u/doc
+    pub yishoumi_appid: String,
+    pub yishoumi_notify_url: String,
+    pub yishoumi_nopay_url: String,
+    pub yishoumi_callback_url: String,
+    pub yishoumi_secret: String,
 }
