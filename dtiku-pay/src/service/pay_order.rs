@@ -12,6 +12,7 @@ use alipay_sdk_rust::{biz, response::TradePrecreateResponse};
 use anyhow::{anyhow, Context};
 use maplit::btreemap;
 use rand::{distr::Alphanumeric, Rng as _};
+use reqwest::header::CONTENT_TYPE;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, DbConn};
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -122,6 +123,7 @@ impl PayOrderService {
 
         let resp = reqwest::Client::new()
             .post("https://www.yishoumi.cn/u/payment")
+            .header(CONTENT_TYPE, "application/json")
             .json(&json!({
                 "appid":yishoumi_appid,
                 "mch_orderid":out_trade_no,
