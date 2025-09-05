@@ -153,7 +153,16 @@ impl PayOrderService {
             url: String,
         }
 
-        tracing::info!("支付返回状态: {}", resp.status());
+        if resp.status().is_success() {
+            tracing::info!("支付返回状态: {}", resp.status());
+        } else {
+            tracing::warn!(
+                "支付返回状态: {} ==> {}",
+                resp.status(),
+                resp.text().await.context("body获取失败")?
+            );
+            return Err(anyhow!("上游支付网关异常"));
+        }
 
         let r = resp
             .json::<Value>()
