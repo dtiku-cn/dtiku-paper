@@ -165,7 +165,7 @@ impl PayOrderService {
         .await
         .context("保存支付订单失败")?;
 
-        let r = serde_json::from_value::<Resp>(r).context("解析支付服务响应体失败")?;
+        let r = serde_json::from_value::<Resp>(r).context("解析支付服务响应体JSON失败")?;
 
         tracing::info!(order_id = r.order_id, sign = r.sign, "支付返回: {}", r.msg);
         if r.code == 0 {
