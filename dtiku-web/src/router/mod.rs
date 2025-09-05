@@ -89,7 +89,7 @@ pub fn routers() -> Router {
     // 单独的后台线程定时清理hashmap中的key，防止内存泄漏
     std::thread::spawn(move || loop {
         std::thread::sleep(interval);
-        tracing::info!("rate limiting storage size: {}", governor_limiter.len());
+        tracing::debug!("rate limiting storage size: {}", governor_limiter.len());
         governor_limiter.retain_recent();
     });
 
