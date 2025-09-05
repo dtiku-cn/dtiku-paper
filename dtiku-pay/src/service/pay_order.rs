@@ -151,6 +151,8 @@ impl PayOrderService {
             url: String,
         }
 
+        tracing::info!("支付返回状态: {}", resp.status());
+
         let r = resp
             .json::<Value>()
             .await
