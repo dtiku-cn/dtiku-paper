@@ -52,7 +52,7 @@ impl PayOrderService {
         let order_id = order.id;
         let amount = level.amount();
         let qrcode_url = match from {
-            PayFrom::Alipay => self.yishoumi_alipay(subject, order_id, amount).await?, //self.alipay(subject, order_id, amount)?,
+            PayFrom::Alipay => self.alipay(subject, order_id, amount).await?, //self.yishoumi_alipay(subject, order_id, amount).await?,
             PayFrom::Wechat => self.wechat_pay(subject, order_id, amount).await?,
         };
         Ok(qrcode_url)
@@ -211,7 +211,7 @@ impl PayOrderService {
         hex::encode(result)
     }
 
-    fn alipay(
+    async fn alipay(
         &self,
         subject: String,
         out_trade_no: i32,
@@ -226,6 +226,15 @@ impl PayOrderService {
             .ok_or_else(|| anyhow!("暂不支持支付宝"))?
             .trade_precreate(&biz_content)
             .context("支付宝订单创建失败")?;
+        let json_resp = serde_json::to_value(&resp).context("json序列化失败")?;
+        pay_order::ActiveModel {
+            id: Set(out_trade_no),
+            resp: Set(Some(json_resp)),
+            ..Default::default()
+        }
+        .update(&self.db)
+        .await
+        .context("更新失败")?;
         let TradePrecreateResponse {
             response,
             alipay_cert_sn,
