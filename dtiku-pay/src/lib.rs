@@ -69,10 +69,9 @@ mod tests {
     //     "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/alipayRootCert.crt";
     // const ALIPAY_CERT_PUBLIC_KEY_RSA2_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/alipayCertPublicKey_RSA2.crt";
 
-    const APP_CERT_SN_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/沙箱应用/appPublicCert.crt";
-    const ALIPAY_ROOT_CERT_FILE: &str =
-        "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/沙箱应用/alipayRootCert.crt";
-    const ALIPAY_CERT_PUBLIC_KEY_RSA2_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/沙箱应用/alipayPublicCert.crt";
+    const APP_CERT_SN_FILE: &str = "./sandbox/appPublicCert.crt";
+    const ALIPAY_ROOT_CERT_FILE: &str = "./sandbox/alipayRootCert.crt";
+    const ALIPAY_CERT_PUBLIC_KEY_RSA2_FILE: &str = "./sandbox/alipayPublicCert.crt";
 
     #[test]
     fn test_sn() {
