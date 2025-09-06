@@ -219,13 +219,13 @@ impl PayOrderService {
     ) -> anyhow::Result<Option<String>> {
         let alipay = self.alipay.clone();
         let mut biz_content: biz::TradePrecreateBiz = biz::TradePrecreateBiz::new();
-        biz_content.set_subject(subject.into());
+        biz_content.set_subject(subject.clone().into());
         biz_content.set_out_trade_no(out_trade_no.into());
         biz_content.set_total_amount(amount.into());
         let resp = alipay
             .ok_or_else(|| anyhow!("暂不支持支付宝"))?
             .trade_precreate(&biz_content)
-            .context("支付宝订单创建失败")?;
+            .with_context(|| format!("支付宝订单创建失败,{subject}={out_trade_no}={amount}"))?;
         let json_resp = serde_json::to_value(&resp).context("json序列化失败")?;
         pay_order::ActiveModel {
             id: Set(out_trade_no),
