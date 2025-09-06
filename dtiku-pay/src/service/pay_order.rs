@@ -1,22 +1,12 @@
-use std::{
-    collections::BTreeMap,
-    time::{SystemTime, UNIX_EPOCH},
-};
-
 use crate::{
     config::PayConfig,
     model::{pay_order, OrderLevel, PayFrom},
-    Alipay, WechatPayClient,
+    service::alipay,
+    WechatPayClient,
 };
-use alipay_sdk_rust::{biz, response::TradePrecreateResponse};
 use anyhow::{anyhow, Context};
-use maplit::btreemap;
-use rand::{distr::Alphanumeric, Rng as _};
-use reqwest::header::CONTENT_TYPE;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, DbConn};
 use serde::Deserialize;
-use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 use spring::{config::ConfigRef, plugin::service::Service, tracing};
 use wechat_pay_rust_sdk::{model::NativeParams, response::NativeResponse};
 
@@ -24,8 +14,6 @@ use wechat_pay_rust_sdk::{model::NativeParams, response::NativeResponse};
 pub struct PayOrderService {
     #[inject(component)]
     db: DbConn,
-    #[inject(component)]
-    alipay: Option<Alipay>,
     #[inject(component)]
     wechat: Option<WechatPayClient>,
     pay_config: ConfigRef<PayConfig>,
@@ -52,7 +40,7 @@ impl PayOrderService {
         let order_id = order.id;
         let amount = level.amount();
         let qrcode_url = match from {
-            PayFrom::Alipay => self.alipay(subject, order_id, amount).await?, //self.yishoumi_alipay(subject, order_id, amount).await?,
+            PayFrom::Alipay => self.alipay(subject, order_id, amount).await?,
             PayFrom::Wechat => self.wechat_pay(subject, order_id, amount).await?,
         };
         Ok(qrcode_url)
@@ -80,167 +68,66 @@ impl PayOrderService {
         Ok(code_url)
     }
 
-    async fn yishoumi_alipay(
-        &self,
-        subject: String,
-        order_id: i32,
-        amount: i32,
-    ) -> anyhow::Result<Option<String>> {
-        let PayConfig {
-            yishoumi_appid,
-            yishoumi_notify_url,
-            yishoumi_nopay_url,
-            yishoumi_callback_url,
-            yishoumi_secret,
-            ..
-        } = &*self.pay_config;
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis();
-        let rand_string: String = rand::rng()
-            .sample_iter(&Alphanumeric)
-            .take(6)
-            .map(char::from)
-            .collect();
-        let out_trade_no = format!("{:06}", order_id); // 字符串规则校验最少6字节
-
-        let sign = Self::ysm_sign_hash(
-            btreemap! {
-                "appid"=>yishoumi_appid.to_string(),
-                "mch_orderid"=>out_trade_no.to_string(),
-                "description"=>subject.to_string(),
-                "total"=> amount.to_string(),
-                "payType"=> 11.to_string(),
-                "notify_url"=> yishoumi_notify_url.to_string(),
-                "nopay_url"=> yishoumi_nopay_url.to_string(),
-                "callback_url"=> yishoumi_callback_url.to_string(),
-                "time"=> timestamp.to_string(),
-                "nonce_str"=>rand_string.to_string(),
-            },
-            yishoumi_secret,
-        );
-
-        let resp = reqwest::Client::new()
-            .post("https://www.yishoumi.cn/u/payment")
-            .header(CONTENT_TYPE, "application/json")
-            .json(&json!({
-                "appid":yishoumi_appid,
-                "mch_orderid":out_trade_no,
-                "description":subject,
-                "total": amount,
-                "payType": 11,
-                "notify_url": yishoumi_notify_url,
-                "nopay_url": yishoumi_nopay_url,
-                "callback_url": yishoumi_callback_url,
-                "time": timestamp,
-                "nonce_str":rand_string,
-                "sign":sign,
-            }))
-            .send()
-            .await
-            .context("发起支付失败")?;
-
-        #[derive(Debug, Deserialize)]
-        struct Resp {
-            code: i32,
-            msg: String,
-            #[serde(default, rename = "ordeid")]
-            order_id: String,
-            #[serde(default)]
-            sign: String,
-            #[serde(default)]
-            url: String,
-        }
-
-        if resp.status().is_success() {
-            tracing::info!("支付返回状态: {}", resp.status());
-        } else {
-            tracing::warn!(
-                "支付返回状态: {} ==> {}",
-                resp.status(),
-                resp.text().await.context("body获取失败")?
-            );
-            return Err(anyhow!("上游支付网关异常"));
-        }
-
-        let r = resp
-            .json::<Value>()
-            .await
-            .context("解析支付服务响应体失败")?;
-
-        pay_order::ActiveModel {
-            id: Set(order_id),
-            resp: Set(Some(r.clone())),
-            ..Default::default()
-        }
-        .update(&self.db)
-        .await
-        .context("保存支付订单失败")?;
-
-        let r = serde_json::from_value::<Resp>(r).context("解析支付服务响应体JSON失败")?;
-
-        tracing::info!(order_id = r.order_id, sign = r.sign, "支付返回: {}", r.msg);
-        if r.code == 0 {
-            Ok(Some(r.url))
-        } else {
-            Err(anyhow!("支付失败:{}", r.msg))
-        }
-    }
-
-    #[inline]
-    fn ysm_sign_hash(data: BTreeMap<&'static str, String>, secret: &str) -> String {
-        // BTreeMap 本身就是有序的，等价于 PHP 的 ksort
-        let mut parts = Vec::new();
-
-        for (key, value) in &data {
-            if *key == "hash" || value.is_empty() {
-                continue;
-            }
-            parts.push(format!("{}={}", key, value));
-        }
-
-        let str_to_sign = format!("{}{}", parts.join("&"), secret);
-
-        // sha256
-        let mut hasher = Sha256::new();
-        hasher.update(str_to_sign.as_bytes());
-        let result = hasher.finalize();
-
-        // 转 hex 字符串
-        hex::encode(result)
-    }
-
     async fn alipay(
         &self,
         subject: String,
         out_trade_no: i32,
         amount: i32,
     ) -> anyhow::Result<Option<String>> {
-        let alipay = self.alipay.clone();
-        let mut biz_content: biz::TradePrecreateBiz = biz::TradePrecreateBiz::new();
-        biz_content.set_subject(subject.clone().into());
-        biz_content.set_out_trade_no(out_trade_no.into());
-        biz_content.set_total_amount(amount.into());
-        let resp = alipay
-            .ok_or_else(|| anyhow!("暂不支持支付宝"))?
-            .trade_precreate(&biz_content)
-            .with_context(|| format!("支付宝订单创建失败,{subject}={out_trade_no}={amount}"))?;
-        let json_resp = serde_json::to_value(&resp).context("json序列化失败")?;
+        let PayConfig {
+            alipay_api_url,
+            alipay_app_id,
+            alipay_public_key,
+            alipay_app_private_key,
+            alipay_app_public_key,
+            ..
+        } = &*self.pay_config;
+        let alipay = alipay::qrcode::AlipayService::new(
+            alipay_api_url,
+            alipay_app_id,
+            "/pay/notify",
+            alipay_app_private_key,
+        )
+        .set_subject(&subject)
+        .set_out_trade_no(&out_trade_no.to_string())
+        .set_total_fee(amount.into());
+        let resp = alipay.do_pay();
+
         pay_order::ActiveModel {
             id: Set(out_trade_no),
-            resp: Set(Some(json_resp)),
+            resp: Set(Some(resp.clone())),
             ..Default::default()
         }
         .update(&self.db)
         .await
         .context("更新失败")?;
-        let TradePrecreateResponse {
-            response,
-            alipay_cert_sn,
-            sign,
-        } = resp;
-        tracing::info!("alipay resp sign ==> {sign:?}, alipay_cert_sn ==> {alipay_cert_sn:?}");
-        Ok(response.qr_code)
+
+        #[derive(Default, Debug, Clone, PartialEq, Deserialize)]
+        pub struct AlipayResp {
+            pub alipay_trade_precreate_response: AlipayTradePrecreateResponse,
+            pub sign: String,
+        }
+
+        #[derive(Default, Debug, Clone, PartialEq, Deserialize)]
+        pub struct AlipayTradePrecreateResponse {
+            pub code: String,
+            pub msg: String,
+
+            #[serde(default)]
+            pub out_trade_no: Option<String>,
+
+            #[serde(default)]
+            pub qr_code: Option<String>,
+
+            #[serde(default)]
+            pub sub_code: Option<String>,
+
+            #[serde(default)]
+            pub sub_msg: Option<String>,
+        }
+
+        let resp = serde_json::from_value::<AlipayResp>(resp).context("解析json成功")?;
+
+        Ok(resp.alipay_trade_precreate_response.qr_code)
     }
 }

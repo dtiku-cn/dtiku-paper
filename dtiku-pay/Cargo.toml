@@ -15,11 +15,11 @@ strum = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 itertools = { workspace = true }
-alipay_sdk_rust = { workspace = true }
 wechat-pay-rust-sdk = { workspace = true }
 derive_more = { workspace = true, features = ["deref", "deref_mut"] }
-reqwest = { workspace = true }
+reqwest = { workspace = true, features = ["blocking", "json"] }
 rand = { workspace = true }
-maplit = { workspace = true }
-sha2 = { workspace = true }
-hex = { workspace = true }
+openssl = { workspace = true }
+base64 = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
