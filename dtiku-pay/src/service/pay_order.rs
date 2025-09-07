@@ -50,7 +50,7 @@ impl PayOrderService {
         let order_id = order.id;
         let amount = level.amount();
         let qrcode_url = match from {
-            PayFrom::Alipay => self.alipay(subject, order_id, amount).await?,
+            PayFrom::Alipay => self.alipay(subject, order_id, amount / 100).await?,
             PayFrom::Wechat => self.wechat_pay(subject, order_id, amount).await?,
         };
         Ok(qrcode_url)

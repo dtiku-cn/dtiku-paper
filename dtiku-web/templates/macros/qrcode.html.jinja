@@ -2,6 +2,23 @@
 <script src='/static/vendor/qrcodejs-1.0.0/qrcode.min.js'></script>
 <script>
     $(function () {
+        function isMobile() {
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+
+            // 常见移动端关键字
+            const mobileRegex = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobi/i;
+
+            if (mobileRegex.test(ua)) {
+                return true;
+            }
+
+            // 兜底：小屏幕也视为移动端
+            if (window.innerWidth <= 768) {
+                return true;
+            }
+
+            return false;
+        }
         function encodeQrCodeUrl(text) {
             if (text.startsWith("http") || text.startsWith("wxp:")) {
                 return text;
@@ -42,6 +59,10 @@
                 $e.css("position", "relative").append("<svg style='" + style + "'>\n" +
                     "<use xlink:href=\"#ic-" + $e.data('icon') + "\"></use>\n" +
                     "</svg>");
+            }
+
+            if (isMobile()) {
+                window.location.href = url;
             }
         })
     })
