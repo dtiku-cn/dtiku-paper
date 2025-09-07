@@ -55,7 +55,7 @@
         </div>
     </form>
     <script src="/static/vendor/bootstrap-4.6.2/js/bootstrap.bundle.min.js"></script>
-    <script>{{ global.config.analytics_script }}</script>
+    <script>{{ global.config.analytics_script | safe }}</script>
     <script>
         $(function () {
             $("input[name='level']").change(function () {

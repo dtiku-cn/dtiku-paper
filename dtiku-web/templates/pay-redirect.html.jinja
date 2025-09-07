@@ -24,7 +24,7 @@
     <script src="/static/vendor/jquery-1.10.2/jquery.min.js"></script>
     <script src="{{global.config.iconfont_js_url}}"></script>
     {% call qrcode::qr_code_script(256) %}
-    <script>{{global.config.analytics_script}}</script>
+    <script>{{global.config.analytics_script | safe}}</script>
 </body>
 
 </html>
