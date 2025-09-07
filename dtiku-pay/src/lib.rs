@@ -64,15 +64,15 @@ pub struct WechatPayClient(Arc<WechatPay>);
 mod tests {
     use alipay_sdk_rust::cert;
 
-    // const APP_CERT_SN_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/appCertPublicKey_2021005156629151.crt";
-    // const ALIPAY_ROOT_CERT_FILE: &str =
-    //     "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/alipayRootCert.crt";
-    // const ALIPAY_CERT_PUBLIC_KEY_RSA2_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/alipayCertPublicKey_RSA2.crt";
-
-    const APP_CERT_SN_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/沙箱应用/appPublicCert.crt";
+    const APP_CERT_SN_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250907201037/appCertPublicKey_2021005188688168.crt";
     const ALIPAY_ROOT_CERT_FILE: &str =
-        "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/沙箱应用/alipayRootCert.crt";
-    const ALIPAY_CERT_PUBLIC_KEY_RSA2_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/沙箱应用/alipayPublicCert.crt";
+        "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250907201037/alipayRootCert.crt";
+    const ALIPAY_CERT_PUBLIC_KEY_RSA2_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250907201037/alipayCertPublicKey_RSA2.crt";
+
+    // const APP_CERT_SN_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/沙箱应用/appPublicCert.crt";
+    // const ALIPAY_ROOT_CERT_FILE: &str =
+    //     "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/沙箱应用/alipayRootCert.crt";
+    // const ALIPAY_CERT_PUBLIC_KEY_RSA2_FILE: &str = "/Users/holmofy/Documents/支付宝开放平台密钥工具/证书20250531174800/沙箱应用/alipayPublicCert.crt";
 
     #[test]
     fn test_sn() {
