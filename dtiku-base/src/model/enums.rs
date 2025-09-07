@@ -110,6 +110,8 @@ pub enum SystemConfigKey {
 pub enum ScheduleTaskType {
     #[strum(message = "同步粉笔数据")]
     FenbiSync,
+    #[strum(message = "同步华图数据")]
+    HuatuSync,
     #[strum(message = "成语统计")]
     IdiomStats,
     #[strum(message = "Web答案采集")]
