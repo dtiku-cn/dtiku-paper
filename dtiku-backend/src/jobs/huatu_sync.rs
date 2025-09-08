@@ -749,21 +749,17 @@ impl OriginQuestion {
                         options: choices.0.clone(),
                     }
                 }
-                "多选题" | "多项选择题" | "双选题" => QuestionExtra::MultiChoice {
+                "多选题" | "多项选择题" | "双选题" | "M选N选择题" => QuestionExtra::MultiChoice {
                     options: choices.0.clone(),
                 },
                 "不定项选择题" => QuestionExtra::IndefiniteChoice {
                     options: choices.0.clone(),
                 },
-                "填空题" => QuestionExtra::FillBlank,
-                "M选N选择题"
-                | "完型填空"
-                | "完形填空"
-                | "阅读理解"
-                | "阅读理解7选5"
-                | "非选择题"
-                | "诊断题"
-                | "专题研讨"
+                "填空题" | "其他创新题" => QuestionExtra::FillBlank,
+                "判断题" => QuestionExtra::TrueFalse,
+                "匹配题"
+                | "匹配题(旧)"=>QuestionExtra::ClosedEndedQA { qa: vec![] },
+                "专题研讨"
                 | "主观题"
                 | "书面表达"
                 | "任务型阅读"
@@ -773,18 +769,20 @@ impl OriginQuestion {
                 | "作文题"
                 | "公文写作"
                 | "公文写作题"
-                | "共用答案单选题"
-                | "其他创新题"
                 | "写作"
                 | "写作题"
                 | "分析写作"
                 | "分析题"
                 | "判断简析题"
                 | "判断解析"
-                | "判断说理题"
-                | "判断题"
-                | "匹配题"
-                | "匹配题(旧)"
+                | "判断说理题"=>QuestionExtra::OpenEndedQA { qa: vec![] },
+                "完型填空"
+                | "完形填空"
+                | "阅读理解"
+                | "阅读理解7选5"
+                | "非选择题"
+                | "诊断题"
+                | "共用答案单选题"
                 | "单句语法填空"
                 | "占位题"
                 | "古文翻译题"
