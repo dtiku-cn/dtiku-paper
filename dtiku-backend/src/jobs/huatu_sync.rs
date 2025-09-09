@@ -742,8 +742,37 @@ impl OriginQuestion {
             answer_require,
             ..
         } = self;
-        let mut active_model = if let Some(ty) = ty {
+        let mut active_model = if choices.len() > 0 {
+            let extra = if let Some(ty) = ty {
+                match ty.as_str() {
+                    "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
+                        QuestionExtra::SingleChoice {
+                            options: choices.0.clone(),
+                        }
+                    },
+                    "多选题" | "多项选择题" | "双选题" | "M选N选择题" => QuestionExtra::MultiChoice {
+                        options: choices.0.clone(),
+                    },
+                    "不定项选择题" => QuestionExtra::IndefiniteChoice {
+                        options: choices.0.clone(),
+                    },
+                    _ => QuestionExtra::IndefiniteChoice {
+                        options: choices.0.clone(),
+                    },
+                }
+            } else {
+                QuestionExtra::IndefiniteChoice {
+                    options: choices.0.clone(),
+                }
+            };
+            question::ActiveModel {
+                content: Set(content.to_owned()),
+                extra: Set(extra),
+                ..Default::default()
+            }
+        } else if let Some(ty) = ty {
             let extra = match ty.as_str() {
+                "占位题" => QuestionExtra::Placeholder,
                 "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
                     QuestionExtra::SingleChoice {
                         options: choices.0.clone(),
@@ -755,10 +784,14 @@ impl OriginQuestion {
                 "不定项选择题" => QuestionExtra::IndefiniteChoice {
                     options: choices.0.clone(),
                 },
-                "填空题" | "其他创新题" => QuestionExtra::FillBlank,
+                "填空题" 
+                | "其他创新题"
+                | "单句语法填空"
+                | "古诗文默写" => QuestionExtra::FillBlank,
                 "判断题" => QuestionExtra::TrueFalse,
                 "匹配题"
-                | "匹配题(旧)"=>QuestionExtra::ClosedEndedQA { qa: vec![] },
+                | "匹配题(旧)"
+                | "句型转换"=>QuestionExtra::ClosedEndedQA { qa: vec![] },
                 "专题研讨"
                 | "主观题"
                 | "书面表达"
@@ -775,7 +808,9 @@ impl OriginQuestion {
                 | "分析题"
                 | "判断简析题"
                 | "判断解析"
-                | "判断说理题"=>QuestionExtra::OpenEndedQA { qa: vec![] },
+                | "判断说理题"
+                | "古文翻译题"
+                | "句段理解题" => QuestionExtra::OpenEndedQA { qa: vec![] },
                 "完型填空"
                 | "完形填空"
                 | "阅读理解"
@@ -783,12 +818,6 @@ impl OriginQuestion {
                 | "非选择题"
                 | "诊断题"
                 | "共用答案单选题"
-                | "单句语法填空"
-                | "占位题"
-                | "古文翻译题"
-                | "古诗文默写"
-                | "句型转换"
-                | "句段理解题"
                 | "名著阅读"
                 | "名词解析"
                 | "名词解释题"

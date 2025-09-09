@@ -260,19 +260,27 @@ pub enum QuestionExtra {
     // 单选题
     #[serde(rename = "sc")]
     #[strum(serialize = "sc")]
-    SingleChoice { options: Vec<QuestionChoice> },
+    SingleChoice {
+        options: Vec<QuestionChoice>,
+    },
     // 多选题
     #[serde(rename = "mc")]
     #[strum(serialize = "mc")]
-    MultiChoice { options: Vec<QuestionChoice> },
+    MultiChoice {
+        options: Vec<QuestionChoice>,
+    },
     // 不定项选择题
     #[serde(rename = "ic")]
     #[strum(serialize = "ic")]
-    IndefiniteChoice { options: Vec<QuestionChoice> },
+    IndefiniteChoice {
+        options: Vec<QuestionChoice>,
+    },
     // 完形填空选择题
     #[serde(rename = "bc")]
     #[strum(serialize = "bc")]
-    BlankChoice { options: Vec<QuestionChoice> },
+    BlankChoice {
+        options: Vec<QuestionChoice>,
+    },
     // 填空题
     #[serde(rename = "fb")]
     #[strum(serialize = "fb")]
@@ -288,15 +296,21 @@ pub enum QuestionExtra {
     // 分步式解答题
     #[serde(rename = "sqa")]
     #[strum(serialize = "sqa")]
-    StepByStepQA { qa: Vec<QA> },
+    StepByStepQA {
+        qa: Vec<QA>,
+    },
     // 封闭式解答题
     #[serde(rename = "cqa")]
     #[strum(serialize = "cqa")]
-    ClosedEndedQA { qa: Vec<QA> },
+    ClosedEndedQA {
+        qa: Vec<QA>,
+    },
     // 开放式解答题
     #[serde(rename = "oqa")]
     #[strum(serialize = "oqa")]
-    OpenEndedQA { qa: Vec<QA> },
+    OpenEndedQA {
+        qa: Vec<QA>,
+    },
     // 听力题
     #[serde(rename = "lq")]
     #[strum(serialize = "lq")]
@@ -304,11 +318,17 @@ pub enum QuestionExtra {
     // 选词题
     #[serde(rename = "ws")]
     #[strum(serialize = "ws")]
-    WordSelection { options: Vec<QuestionChoice> },
+    WordSelection {
+        options: Vec<QuestionChoice>,
+    },
     // 复合型
     #[serde(rename = "c")]
     #[strum(serialize = "c")]
-    Compose { options: Vec<QuestionChoice> },
+    Compose {
+        options: Vec<QuestionChoice>,
+    },
+    // 占位题
+    Placeholder,
 }
 
 impl QuestionExtra {
