@@ -756,6 +756,7 @@ impl OriginQuestion {
                     "不定项选择题" => QuestionExtra::IndefiniteChoice {
                         options: choices.0.clone(),
                     },
+                    "判断题" => QuestionExtra::TrueFalse,
                     _ => QuestionExtra::IndefiniteChoice {
                         options: choices.0.clone(),
                     },
@@ -777,7 +778,7 @@ impl OriginQuestion {
                     QuestionExtra::SingleChoice {
                         options: choices.0.clone(),
                     }
-                }
+                },
                 "多选题" | "多项选择题" | "双选题" | "M选N选择题" => QuestionExtra::MultiChoice {
                     options: choices.0.clone(),
                 },
@@ -791,7 +792,10 @@ impl OriginQuestion {
                 "判断题" => QuestionExtra::TrueFalse,
                 "匹配题"
                 | "匹配题(旧)"
-                | "句型转换"=>QuestionExtra::ClosedEndedQA { qa: vec![] },
+                | "句型转换"
+                | "字形题"
+                | "字句抄写题"
+                | "完善流程题"=>QuestionExtra::ClosedEndedQA { qa: vec![] },
                 "专题研讨"
                 | "主观题"
                 | "书面表达"
@@ -822,11 +826,8 @@ impl OriginQuestion {
                 | "名词解析"
                 | "名词解释题"
                 | "图示题"
-                | "字句抄写题"
-                | "字形题"
                 | "字母和单词注音"
                 | "字音题"
-                | "完善流程题"
                 | "完成对话"
                 | "实践题"
                 | "实验综合题"
@@ -898,7 +899,7 @@ impl OriginQuestion {
                 | "阅读表达"
                 | "音乐作品分析题"
                 | "音乐创编题"
-                | "音乐编创题" => QuestionExtra::FillBlank,
+                | "音乐编创题" => QuestionExtra::StepByStepQA { qa: vec![] },
                 _unknown => return Err(anyhow!("unexpect question type: {_unknown}")),
             };
             question::ActiveModel {
