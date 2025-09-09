@@ -753,7 +753,7 @@ impl OriginQuestion {
                     "多选题" | "多项选择题" | "双选题" | "M选N选择题" => QuestionExtra::MultiChoice {
                         options: choices.0.clone(),
                     },
-                    "不定项选择题" => QuestionExtra::IndefiniteChoice {
+                    "不定项选择题" | "案例选择题" => QuestionExtra::IndefiniteChoice {
                         options: choices.0.clone(),
                     },
                     "判断题" => QuestionExtra::TrueFalse,
@@ -774,7 +774,8 @@ impl OriginQuestion {
         } else if let Some(ty) = ty {
             let extra = match ty.as_str() {
                 "占位题" => QuestionExtra::Placeholder,
-                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
+                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"
+                | "汉语言基础知识综合类"/*英语*/ => {
                     QuestionExtra::SingleChoice {
                         options: choices.0.clone(),
                     }
@@ -782,20 +783,22 @@ impl OriginQuestion {
                 "多选题" | "多项选择题" | "双选题" | "M选N选择题" => QuestionExtra::MultiChoice {
                     options: choices.0.clone(),
                 },
-                "不定项选择题" => QuestionExtra::IndefiniteChoice {
+                "不定项选择题" | "案例选择题" => QuestionExtra::IndefiniteChoice {
                     options: choices.0.clone(),
                 },
                 "填空题" 
                 | "其他创新题"
                 | "单句语法填空"
-                | "古诗文默写" => QuestionExtra::FillBlank,
+                | "古诗文默写"
+                | "短文填空" => QuestionExtra::FillBlank,
                 "判断题" => QuestionExtra::TrueFalse,
                 "匹配题"
                 | "匹配题(旧)"
                 | "句型转换"
                 | "字形题"
                 | "字句抄写题"
-                | "完善流程题"=>QuestionExtra::ClosedEndedQA { qa: vec![] },
+                | "完善流程题"
+                | "旋律辨析"=>QuestionExtra::ClosedEndedQA { qa: vec![] },
                 "专题研讨"
                 | "主观题"
                 | "书面表达"
@@ -814,7 +817,13 @@ impl OriginQuestion {
                 | "判断解析"
                 | "判断说理题"
                 | "古文翻译题"
-                | "句段理解题" => QuestionExtra::OpenEndedQA { qa: vec![] },
+                | "句段理解题"
+                | "材料分析题"
+                | "案例分析题"
+                | "案例应用题"
+                | "活动设计题"
+                | "短文改错"
+                | "科学探究题" => QuestionExtra::OpenEndedQA { qa: vec![] },
                 "完型填空"
                 | "完形填空"
                 | "阅读理解"
@@ -852,18 +861,8 @@ impl OriginQuestion {
                 | "文字填空题"
                 | "文言文阅读"
                 | "方案设计题"
-                | "旋律辨析"
-                | "材料分析题"
-                | "案例分析题"
-                | "案例应用题"
-                | "案例选择题"
-                | "汉语言基础知识综合类"
-                | "活动设计题"
                 | "现代文阅读"
                 | "生活中的算法"
-                | "短文填空"
-                | "短文改错"
-                | "科学探究题"
                 | "程序题"
                 | "简答题"
                 | "简述题"
