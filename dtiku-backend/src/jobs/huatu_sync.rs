@@ -6,7 +6,8 @@ use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra};
 use dtiku_paper::model::question::QuestionExtra;
 use dtiku_paper::model::solution::{
-    FillBlank, MultiChoice, SingleChoice, SolutionExtra, StepByStepAnswer, TrueFalseChoice,
+    AnswerAnalysis, BlankAnswer, FillBlank, MultiChoice, OtherAnswer, SingleChoice, SolutionExtra,
+    StepByStepAnswer, TrueFalseChoice,
 };
 use dtiku_paper::model::{
     exam_category, label, material, paper, paper_material, question, question_keypoint, solution,
@@ -823,7 +824,9 @@ impl OriginQuestion {
                 | "案例应用题"
                 | "活动设计题"
                 | "短文改错"
-                | "科学探究题" => QuestionExtra::OpenEndedQA { qa: vec![] },
+                | "科学探究题"
+                | "探究题"
+                | "操作题" => QuestionExtra::OpenEndedQA { qa: vec![] },
                 "完型填空"
                 | "完形填空"
                 | "阅读理解"
@@ -844,8 +847,6 @@ impl OriginQuestion {
                 | "对联题"
                 | "应用题"
                 | "排序题"
-                | "探究题"
-                | "操作题"
                 | "教学情境分析题"
                 | "教学情景分析"
                 | "教学活动设计"
@@ -922,6 +923,7 @@ impl OriginQuestion {
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
         let Self {
             ty,
+            choices,
             answer_list,
             analysis,
             answer_require,
@@ -929,6 +931,77 @@ impl OriginQuestion {
             extend,
             ..
         } = self;
+        if choices.len() > 0 {
+            let extra = if let Some(ty) = ty {
+                match ty.as_str() {
+                    "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
+                        let answer_str = answer_list.clone().unwrap_or_default();
+                        let answer = serde_json::from_str::<Vec<String>>(&answer_str)
+                            .with_context(||format!("parse answer_list failed: {answer_str}"))?
+                            .into_iter()
+                            .map(|i|i.parse())
+                            .collect::<Result<Vec<u8>, ParseIntError>>()
+                            .context("parse int error")?;
+                        let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                        if let Some(extend) = extend{
+                            analysis = format!("{analysis}<br/>{extend}");
+                        }
+                        SolutionExtra::SingleChoice (SingleChoice{
+                            answer:answer[0],
+                            analysis,
+                        })
+                    },
+                    "多选题" | "多项选择题" | "双选题" | "M选N选择题" => {
+                        let answer_str = answer_list.clone().unwrap_or_default();
+                        let answer = serde_json::from_str::<Vec<String>>(&answer_str)
+                            .with_context(||format!("parse answer_list failed: {answer_str}"))?
+                            .into_iter()
+                            .map(|i|i.parse())
+                            .collect::<Result<Vec<u8>, ParseIntError>>()
+                            .context("parse int error")?;
+                        let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                        if let Some(extend) = extend {
+                            analysis = format!("{analysis}<br/>{extend}");
+                        }
+                        SolutionExtra::MultiChoice(MultiChoice {
+                            answer,
+                            analysis,
+                        })
+                    },
+                    "判断题" => SolutionExtra::TrueFalse(TrueFalseChoice{answer:true,analysis:"".to_string()}),
+                    "不定项选择题" | "案例选择题"| _ => {
+                        let answer_str = answer_list.clone().unwrap_or_default();
+                        let answer = serde_json::from_str::<Vec<String>>(&answer_str)
+                            .with_context(||format!("parse answer_list failed: {answer_str}"))?
+                            .into_iter()
+                            .map(|i|i.parse())
+                            .collect::<Result<Vec<u8>, ParseIntError>>()
+                            .context("parse int error")?;
+                        let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                        if let Some(extend) = extend {
+                            analysis = format!("{analysis}<br/>{extend}");
+                        }
+                        SolutionExtra::IndefiniteChoice(MultiChoice{
+                            answer,
+                            analysis,
+                        })
+                    },
+                }
+            } else {
+                let answer_str = answer_list.clone().unwrap_or_default();
+                let answer = serde_json::from_str::<Vec<String>>(&answer_str)
+                    .with_context(|| format!("parse answer_list failed: {answer_str}"))?
+                    .into_iter()
+                    .map(|i| i.parse())
+                    .collect::<Result<Vec<u8>, ParseIntError>>()
+                    .context("parse int error")?;
+                let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                if let Some(extend) = extend {
+                    analysis = format!("{analysis}<br/>{extend}");
+                }
+                SolutionExtra::IndefiniteChoice(MultiChoice { answer, analysis })
+            };
+        }
         let extra = match ty {
             None => {
                 let solution = answer_list.clone().unwrap_or_default();
@@ -943,6 +1016,17 @@ impl OriginQuestion {
                 })
             }
             Some(ty) => match ty.as_str() {
+                "占位题" => {
+                    let answer = answer_list.clone().unwrap_or_default();
+                    let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    if let Some(extend) = extend{
+                        analysis = format!("{analysis}<br/>{extend}");
+                    }
+                    SolutionExtra::BlankAnswer(BlankAnswer {
+                        answer,
+                        analysis
+                    })
+                },
                 "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
                     let answer_str = answer_list.clone().unwrap_or_default();
                     let answer = serde_json::from_str::<Vec<String>>(&answer_str)
@@ -959,8 +1043,8 @@ impl OriginQuestion {
                         answer:answer[0],
                         analysis,
                     })
-                }
-                "多选题" | "多项选择题" | "双选题" => {
+                },
+                "多选题" | "多项选择题" | "双选题" | "M选N选择题" => {
                     let answer_str = answer_list.clone().unwrap_or_default();
                     let answer = serde_json::from_str::<Vec<String>>(&answer_str)
                         .with_context(||format!("parse answer_list failed: {answer_str}"))?
@@ -972,12 +1056,13 @@ impl OriginQuestion {
                     if let Some(extend) = extend{
                         analysis = format!("{analysis}<br/>{extend}");
                     }
-                    SolutionExtra::MultiChoice(MultiChoice{
+                    SolutionExtra::MultiChoice(MultiChoice {
                         answer,
                         analysis,
                     })
                 },
-                "不定项选择题" => {
+                "判断题" => SolutionExtra::TrueFalse(TrueFalseChoice{answer:true,analysis:"".to_string()}),
+                "不定项选择题" | "案例选择题" => {
                     let answer_str = answer_list.clone().unwrap_or_default();
                     let answer = serde_json::from_str::<Vec<String>>(&answer_str)
                         .with_context(||format!("parse answer_list failed: {answer_str}"))?
@@ -986,7 +1071,7 @@ impl OriginQuestion {
                         .collect::<Result<Vec<u8>, ParseIntError>>()
                         .context("parse int error")?;
                     let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
-                    if let Some(extend) = extend{
+                    if let Some(extend) = extend {
                         analysis = format!("{analysis}<br/>{extend}");
                     }
                     SolutionExtra::IndefiniteChoice(MultiChoice{
@@ -994,7 +1079,11 @@ impl OriginQuestion {
                         analysis,
                     })
                 },
-                "填空题"=>{
+                "填空题" 
+                | "其他创新题"
+                | "单句语法填空"
+                | "古诗文默写"
+                | "短文填空" => {
                     let analysis = if analysis == answer_require{
                         let analysis = analysis.to_owned().unwrap_or_default();
                         if let Some(extend) = extend{
@@ -1002,7 +1091,7 @@ impl OriginQuestion {
                         }else{
                             format!("{analysis}")
                         }
-                    }else{
+                    } else {
                         let answer_require = answer_require.to_owned().unwrap_or_default();
                         let analysis = analysis.to_owned().unwrap_or_default();
                         if let Some(extend) = extend{
@@ -1016,14 +1105,24 @@ impl OriginQuestion {
                         analysis,
                     })
                 }
-                |"M选N选择题"
-                | "完型填空"
-                | "完形填空"
-                | "阅读理解"
-                | "阅读理解7选5"
-                | "非选择题"
-                | "诊断题"
-                | "专题研讨"
+                "匹配题"
+                | "匹配题(旧)"
+                | "句型转换"
+                | "字形题"
+                | "字句抄写题"
+                | "完善流程题"
+                | "旋律辨析" => SolutionExtra::ClosedEndedQA(AnswerAnalysis {
+                    answer: answers.join(","),
+                    analysis: {
+                        let mut analysis = refer_analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                        if let Some(extend) = extend{
+                            format!("{analysis}<br/>{extend}")
+                        }else{
+                            analysis
+                        }
+                    }
+                }),
+                "专题研讨"
                 | "主观题"
                 | "书面表达"
                 | "任务型阅读"
@@ -1033,8 +1132,6 @@ impl OriginQuestion {
                 | "作文题"
                 | "公文写作"
                 | "公文写作题"
-                | "共用答案单选题"
-                | "其他创新题"
                 | "写作"
                 | "写作题"
                 | "分析写作"
@@ -1042,24 +1139,29 @@ impl OriginQuestion {
                 | "判断简析题"
                 | "判断解析"
                 | "判断说理题"
-                | "判断题"
-                | "匹配题"
-                | "匹配题(旧)"
-                | "单句语法填空"
-                | "占位题"
                 | "古文翻译题"
-                | "古诗文默写"
-                | "句型转换"
                 | "句段理解题"
+                | "材料分析题"
+                | "案例分析题"
+                | "案例应用题"
+                | "活动设计题"
+                | "短文改错"
+                | "科学探究题"
+                | "探究题"
+                | "操作题" => QuestionExtra::OpenEndedQA { qa: vec![] },
+                "完型填空"
+                | "完形填空"
+                | "阅读理解"
+                | "阅读理解7选5"
+                | "非选择题"
+                | "诊断题"
+                | "共用答案单选题"
                 | "名著阅读"
                 | "名词解析"
                 | "名词解释题"
                 | "图示题"
-                | "字句抄写题"
-                | "字形题"
                 | "字母和单词注音"
                 | "字音题"
-                | "完善流程题"
                 | "完成对话"
                 | "实践题"
                 | "实验综合题"
@@ -1067,8 +1169,6 @@ impl OriginQuestion {
                 | "对联题"
                 | "应用题"
                 | "排序题"
-                | "探究题"
-                | "操作题"
                 | "教学情境分析题"
                 | "教学情景分析"
                 | "教学活动设计"
@@ -1084,18 +1184,8 @@ impl OriginQuestion {
                 | "文字填空题"
                 | "文言文阅读"
                 | "方案设计题"
-                | "旋律辨析"
-                | "材料分析题"
-                | "案例分析题"
-                | "案例应用题"
-                | "案例选择题"
-                | "汉语言基础知识综合类"
-                | "活动设计题"
                 | "现代文阅读"
                 | "生活中的算法"
-                | "短文填空"
-                | "短文改错"
-                | "科学探究题"
                 | "程序题"
                 | "简答题"
                 | "简述题"
@@ -1131,7 +1221,7 @@ impl OriginQuestion {
                 | "阅读表达"
                 | "音乐作品分析题"
                 | "音乐创编题"
-                | "音乐编创题" => SolutionExtra::TrueFalse(TrueFalseChoice{answer:true,analysis:"".to_string()}),
+                | "音乐编创题" => QuestionExtra::StepByStepQA { qa: vec![] },
                 _unknown => return Err(anyhow!("unexpect question type: {_unknown}")),
             },
         };
