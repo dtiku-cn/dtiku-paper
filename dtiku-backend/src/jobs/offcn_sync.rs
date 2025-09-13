@@ -1,3 +1,4 @@
+use super::{JobScheduler, PaperSyncer};
 use crate::plugins::embedding::Embedding;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
@@ -8,8 +9,7 @@ use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
-
-use super::{JobScheduler, PaperSyncer};
+use sqlx::Row;
 
 #[derive(Clone, Service)]
 #[service(prototype)]
@@ -177,7 +177,29 @@ impl OffcnSyncService {
     }
 
     async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
-        todo!()
+        let source_paper_id = paper.id;
+        let target_exam_id: i32 =
+            sqlx::query("select target_id from label where id = $1 and from_ty='huatu'")
+                .bind(paper.label_id)
+                .fetch_one(&self.source_db)
+                .await
+                .with_context(|| format!("find target_id for label#{}", paper.label_id))?
+                .try_get("target_id")
+                .context("get target_id failed")?;
+        let paper = paper.save_paper(&self.target_db, target_exam_id).await?;
+
+        self.sync_questions_and_materials(source_paper_id, &paper)
+            .await?;
+
+        Ok(paper)
+    }
+
+    async fn sync_questions_and_materials(
+        &self,
+        source_paper_id: i64,
+        paper: &paper::Model,
+    ) -> anyhow::Result<()> {
+        Ok(())
     }
 }
 
@@ -215,11 +237,4 @@ impl OriginPaper {
     ) -> anyhow::Result<paper::Model> {
         todo!()
     }
-}
-
-struct PaperBlock {
-    name: String,
-    blockId: i32,
-    doneCount: i32,
-    totalCount: i32,
 }
