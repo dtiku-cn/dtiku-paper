@@ -1004,6 +1004,10 @@ impl OriginQuestion {
                 }
                 SolutionExtra::IndefiniteChoice(MultiChoice { answer, analysis })
             };
+            return Ok(solution::ActiveModel {
+                extra: Set(extra),
+                ..Default::default()
+            })
         }
         let extra = match ty {
             None => {
