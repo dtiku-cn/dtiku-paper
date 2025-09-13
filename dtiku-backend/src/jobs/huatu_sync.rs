@@ -7,7 +7,7 @@ use dtiku_paper::model::paper::{Chapters, EssayCluster, PaperChapter, PaperExtra
 use dtiku_paper::model::question::QuestionExtra;
 use dtiku_paper::model::solution::{
     AnswerAnalysis, BlankAnswer, FillBlank, MultiChoice, OtherAnswer, SingleChoice, SolutionExtra,
-    StepByStepAnswer, TrueFalseChoice,
+    StepAnalysis, StepByStepAnswer, TrueFalseChoice,
 };
 use dtiku_paper::model::{
     exam_category, label, material, paper, paper_material, question, question_keypoint, solution,
@@ -320,6 +320,7 @@ impl HuatuSyncService {
                 jsonb_extract_path(extra,'choices') as choices,
                 (jsonb_extract_path(extra,'difficult'))::real as difficult,
                 nullif(jsonb_extract_path(extra,'answerList'), 'null') as answer_list,
+                nullif(jsonb_extract_path(extra,'answers'), 'null') as answers,
                 jsonb_extract_path_text(extra,'analysis') as analysis,
                 jsonb_extract_path_text(extra,'extend') as extend,
                 jsonb_extract_path_text(extra,'answerRequire') as answer_require,
@@ -726,6 +727,7 @@ struct OriginQuestion {
     choices: Json<Vec<String>>,
     difficult: f32,
     answer_list: Option<String>,
+    answers: Option<Json<Vec<Vec<String>>>>,
     analysis: Option<String>,
     extend: Option<String>,
     answer_require: Option<String>,
@@ -925,6 +927,7 @@ impl OriginQuestion {
             ty,
             choices,
             answer_list,
+            answers,
             analysis,
             answer_require,
             refer_analysis,
@@ -1084,7 +1087,7 @@ impl OriginQuestion {
                 | "单句语法填空"
                 | "古诗文默写"
                 | "短文填空" => {
-                    let analysis = if analysis == answer_require{
+                    let analysis = if analysis == answer_require {
                         let analysis = analysis.to_owned().unwrap_or_default();
                         if let Some(extend) = extend{
                             format!("{analysis}<br/>{extend}")
@@ -1112,9 +1115,9 @@ impl OriginQuestion {
                 | "字句抄写题"
                 | "完善流程题"
                 | "旋律辨析" => SolutionExtra::ClosedEndedQA(AnswerAnalysis {
-                    answer: answers.join(","),
+                    answer: answers.to_owned().map(|ans|ans.0.iter().flatten().join(",")).unwrap_or_default(),
                     analysis: {
-                        let mut analysis = refer_analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                        let analysis = refer_analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
                         if let Some(extend) = extend{
                             format!("{analysis}<br/>{extend}")
                         }else{
@@ -1148,7 +1151,20 @@ impl OriginQuestion {
                 | "短文改错"
                 | "科学探究题"
                 | "探究题"
-                | "操作题" => QuestionExtra::OpenEndedQA { qa: vec![] },
+                | "操作题" => SolutionExtra::OpenEndedQA(StepByStepAnswer { solution: Some({
+                    let analysis = refer_analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    if let Some(extend) = extend{
+                        format!("{analysis}<br/>{extend}")
+                    }else{
+                        analysis
+                    }
+                }), analysis: {
+                    if let Some(answer_require) = answer_require{
+                        vec![StepAnalysis{ label:"analysis".to_string(), content: answer_require.clone()}]
+                    } else {
+                        vec![]
+                    }
+                } }),
                 "完型填空"
                 | "完形填空"
                 | "阅读理解"
@@ -1221,7 +1237,27 @@ impl OriginQuestion {
                 | "阅读表达"
                 | "音乐作品分析题"
                 | "音乐创编题"
-                | "音乐编创题" => QuestionExtra::StepByStepQA { qa: vec![] },
+                | "音乐编创题" => SolutionExtra::OtherQA(OtherAnswer { answer: Some({
+                    let analysis = refer_analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    if let Some(extend) = extend{
+                        format!("{analysis}<br/>{extend}")
+                    }else{
+                        analysis
+                    }
+                }), solution: Some({
+                    let analysis = refer_analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                    if let Some(extend) = extend{
+                        format!("{analysis}<br/>{extend}")
+                    }else{
+                        analysis
+                    }
+                }), analysis: {
+                    if let Some(answer_require) = answer_require{
+                        vec![StepAnalysis{ label:"analysis".to_string(), content: answer_require.clone()}]
+                    } else {
+                        vec![]
+                    }
+                } }),
                 _unknown => return Err(anyhow!("unexpect question type: {_unknown}")),
             },
         };
