@@ -16,6 +16,8 @@ use dtiku_paper::model::{
 use futures::StreamExt;
 use itertools::Itertools;
 use pinyin::ToPinyin;
+use scraper::Html;
+use sea_orm::prelude::PgVector;
 use sea_orm::{ActiveValue::Set, ConnectionTrait, EntityTrait, PaginatorTrait, QueryFilter};
 use sea_orm::{ColumnTrait, Statement};
 use serde::{Deserialize, Serialize};
@@ -745,7 +747,9 @@ impl OriginQuestion {
             answer_require,
             ..
         } = self;
+        let mut options_string = String::new();
         let mut active_model = if choices.len() > 0 {
+            options_string = choices.0.join("\n");
             let extra = if let Some(ty) = ty {
                 match ty.as_str() {
                     "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
@@ -779,15 +783,22 @@ impl OriginQuestion {
                 "占位题" => QuestionExtra::Placeholder,
                 "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"
                 | "汉语言基础知识综合类"/*英语*/ => {
+                    options_string = choices.0.join("\n");
                     QuestionExtra::SingleChoice {
                         options: choices.0.clone(),
                     }
                 },
-                "多选题" | "多项选择题" | "双选题" | "M选N选择题" => QuestionExtra::MultiChoice {
-                    options: choices.0.clone(),
+                "多选题" | "多项选择题" | "双选题" | "M选N选择题" => {
+                    options_string = choices.0.join("\n");
+                    QuestionExtra::MultiChoice {
+                        options: choices.0.clone(),
+                    }
                 },
-                "不定项选择题" | "案例选择题" => QuestionExtra::IndefiniteChoice {
-                    options: choices.0.clone(),
+                "不定项选择题" | "案例选择题" => {
+                    options_string = choices.0.join("\n");
+                    QuestionExtra::IndefiniteChoice {
+                        options: choices.0.clone(),
+                    }
                 },
                 "填空题" 
                 | "其他创新题"
@@ -916,6 +927,16 @@ impl OriginQuestion {
                 ..Default::default()
             }
         };
+        let content = active_model.content.take().unwrap_or_default();
+        let txt = {
+            // scraper::Html 底层用了 tendril::NonAtomic 和 Cell 类型，而这些类型不是线程安全的，所以它 不实现 Send。
+            // 用代码块，让html 变量在这里作用域结束，释放掉 Cell 的引用。
+            let html = Html::parse_fragment(&format!("{content}\n{options_string}"));
+            html.root_element().text().collect::<String>()
+        };
+        let embedding = model.text_embedding(&txt).await?;
+        active_model.content = Set(content);
+        active_model.embedding = Set(PgVector::from(embedding));
         if let Some(target_id) = self.target_id {
             active_model.id = Set(target_id);
         }
@@ -1007,7 +1028,7 @@ impl OriginQuestion {
             return Ok(solution::ActiveModel {
                 extra: Set(extra),
                 ..Default::default()
-            })
+            });
         }
         let extra = match ty {
             None => {
