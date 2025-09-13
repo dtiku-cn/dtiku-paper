@@ -135,13 +135,13 @@ impl OffcnSyncService {
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
                     select
-                            id,
-                            label_id,
-                            jsonb_extract_path_text(extra,'list') as list,
-                            jsonb_extract_path_text(extra,'title') as title,
-                            jsonb_extract_path_text(extra,'content') as content,
-                            jsonb_extract_path_text(extra,'paper_pattern') as paper_pattern,
-                            extra
+                        id,
+                        label_id,
+                        jsonb_extract_path_text(extra,'list') as list,
+                        jsonb_extract_path_text(extra,'title') as title,
+                        jsonb_extract_path_text(extra,'content') as content,
+                        jsonb_extract_path_text(extra,'paper_pattern') as paper_pattern,
+                        extra
                     from paper p
                     where  from_ty ='offcn' and id > $1 and id <= $2
                     "##,

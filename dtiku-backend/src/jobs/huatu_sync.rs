@@ -1262,7 +1262,8 @@ impl OriginQuestion {
                 | "阅读表达"
                 | "音乐作品分析题"
                 | "音乐创编题"
-                | "音乐编创题" => SolutionExtra::OtherQA(OtherAnswer { answer: Some({
+                | "音乐编创题" => SolutionExtra::OtherQA(OtherAnswer { 
+                    answer: Some({
                     let analysis = refer_analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
                     if let Some(extend) = extend{
                         format!("{analysis}<br/>{extend}")
