@@ -58,6 +58,7 @@ layers = ["Tracing"]
 
 [pay]
 ## https://openhome.alipay.com/develop/sandbox/app
+test_pay_amount = ${TEST_PAY_AMOUNT}
 wechat_pay_enable = false
 alipay_enable = true
 alipay_api_url = "${ALIPAY_API_URL:https://openapi-sandbox.dl.alipaydev.com/gateway.do}"
