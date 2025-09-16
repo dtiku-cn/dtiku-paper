@@ -5,6 +5,8 @@ use spring::config::Configurable;
 #[config_prefix = "pay"]
 pub struct PayConfig {
     #[serde(default)]
+    pub test_pay_amount: bool,
+    #[serde(default)]
     pub wechat_pay_enable: bool,
     #[serde(default)]
     pub alipay_enable: bool,

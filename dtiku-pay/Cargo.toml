@@ -19,7 +19,3 @@ alipay_sdk_rust = { workspace = true }
 wechat-pay-rust-sdk = { workspace = true }
 derive_more = { workspace = true, features = ["deref", "deref_mut"] }
 reqwest = { workspace = true }
-rand = { workspace = true }
-maplit = { workspace = true }
-sha2 = { workspace = true }
-hex = { workspace = true }

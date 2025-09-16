@@ -1,8 +1,3 @@
-use std::{
-    collections::BTreeMap,
-    time::{SystemTime, UNIX_EPOCH},
-};
-
 use crate::{
     config::PayConfig,
     model::{pay_order, OrderLevel, PayFrom},
@@ -10,13 +5,8 @@ use crate::{
 };
 use alipay_sdk_rust::{biz, response::TradePrecreateResponse};
 use anyhow::{anyhow, Context};
-use maplit::btreemap;
-use rand::{distr::Alphanumeric, Rng as _};
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, DbConn};
-use serde::Deserialize;
-use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
-use spring::{config::ConfigRef, plugin::service::Service, tracing};
+use spring::{plugin::service::Service, tracing};
 use wechat_pay_rust_sdk::{model::NativeParams, response::NativeResponse};
 
 #[derive(Clone, Service)]
@@ -27,6 +17,8 @@ pub struct PayOrderService {
     alipay: Option<Alipay>,
     #[inject(component)]
     wechat: Option<WechatPayClient>,
+    #[inject(config)]
+    config: PayConfig,
 }
 
 impl PayOrderService {
@@ -48,9 +40,13 @@ impl PayOrderService {
 
         let subject = format!("公考加油站{}会员", level.title());
         let order_id = order.id;
-        let amount = level.amount();
+        let amount = if self.config.test_pay_amount {
+            1 // 1分钱
+        } else {
+            level.amount()
+        };
         let qrcode_url = match from {
-            PayFrom::Alipay => self.alipay(subject, order_id, amount / 100).await?,
+            PayFrom::Alipay => self.alipay(subject, order_id, amount).await?,
             PayFrom::Wechat => self.wechat_pay(subject, order_id, amount).await?,
         };
         Ok(qrcode_url)
@@ -88,7 +84,7 @@ impl PayOrderService {
         let mut biz_content: biz::TradePrecreateBiz = biz::TradePrecreateBiz::new();
         biz_content.set_subject(subject.into());
         biz_content.set_out_trade_no(out_trade_no.into());
-        biz_content.set_total_amount(amount.into());
+        biz_content.set_total_amount((amount / 100).into());
         let resp = alipay
             .ok_or_else(|| anyhow!("暂不支持支付宝"))?
             .trade_precreate(&biz_content)
