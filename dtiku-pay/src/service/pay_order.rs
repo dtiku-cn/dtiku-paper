@@ -93,7 +93,6 @@ impl PayOrderService {
         pay_order::ActiveModel {
             id: Set(out_trade_no),
             resp: Set(Some(resp_json)),
-
             ..Default::default()
         }
         .update(&self.db)
