@@ -20,13 +20,13 @@
             return false;
         }
         function encodeQrCodeUrl(text) {
-            if (text.startsWith("http") || text.startsWith("wxp:")) {
+            if (text.startsWith("http") || text.startsWith("wxp:") || text.startsWith("weixin")) {
                 return text;
             }
             if (location.host.startsWith('localhost')) {
                 return location.host + text;
             } else {
-                return "https://p.hufeifei.cn" + text;
+                return "https://p.dtiku.cn" + text;
             }
         }
 
