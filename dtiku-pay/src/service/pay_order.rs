@@ -5,7 +5,10 @@ use crate::{
     model::{pay_order, OrderLevel, PayFrom, PayOrder},
     Alipay, WechatPayClient,
 };
-use alipay_sdk_rust::{biz, response::TradePrecreateResponse};
+use alipay_sdk_rust::{
+    biz::{self, BizContenter},
+    response::TradePrecreateResponse,
+};
 use anyhow::{anyhow, Context};
 use sea_orm::{
     prelude::DateTime, sqlx::types::chrono::Local, ActiveModelTrait, ActiveValue::Set, DbConn,
@@ -94,6 +97,7 @@ impl PayOrderService {
         biz_content.set_subject(subject.into());
         biz_content.set_out_trade_no(out_trade_no.into());
         biz_content.set_total_amount((amount as f64 / 100.0).into());
+        biz_content.set("notify_url", self.config.alipay_callback_url.clone().into());
         let resp = alipay
             .ok_or_else(|| anyhow!("暂不支持支付宝"))?
             .trade_precreate(&biz_content)

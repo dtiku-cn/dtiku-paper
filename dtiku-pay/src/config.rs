@@ -18,4 +18,5 @@ pub struct PayConfig {
     pub alipay_app_cert_sn: String,
     pub alipay_app_private_key: String,
     pub alipay_app_public_key: String,
+    pub alipay_callback_url: String,
 }
