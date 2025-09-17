@@ -84,7 +84,7 @@ impl PayOrderService {
         let mut biz_content: biz::TradePrecreateBiz = biz::TradePrecreateBiz::new();
         biz_content.set_subject(subject.into());
         biz_content.set_out_trade_no(out_trade_no.into());
-        biz_content.set_total_amount((amount as f32 / 100).into());
+        biz_content.set_total_amount((amount as f32 / 100.0).into());
         let resp = alipay
             .ok_or_else(|| anyhow!("暂不支持支付宝"))?
             .trade_precreate(&biz_content)
