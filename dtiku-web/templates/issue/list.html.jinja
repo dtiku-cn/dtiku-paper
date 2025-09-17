@@ -21,6 +21,27 @@
             min-width: 10em;
             width: 80%;
         }
+
+        tr.pin>td:first-child::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -1.25rem;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 2.5rem 2.5rem 0 0;
+            border-color: var(--secondary) transparent transparent transparent;
+        }
+
+        tr.pin>td:first-child::after {
+            content: "📌";
+            position: absolute;
+            top: 0.25rem;
+            left: -1rem;
+            font-size: 1rem;
+            line-height: 1;
+        }
     </style>
 </head>
 
@@ -97,7 +118,7 @@
             {%if page.is_empty() %}<div class="mt-2 text-center">啊欧，空空如也</div>{%endif%}
             <table class="issue-list table">
                 {% for i in page.content %}
-                <tr>
+                <tr class="{%if i.pin%}pin{%endif%}">
                     <td>
                         <a href="/bbs/issue/{{i.id}}">
                             <svg class="icon-svg icon-svg-md mr-2">

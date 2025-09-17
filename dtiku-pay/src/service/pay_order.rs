@@ -1,13 +1,22 @@
+use std::collections::HashMap;
+
 use crate::{
     config::PayConfig,
-    model::{pay_order, OrderLevel, PayFrom},
+    model::{pay_order, OrderLevel, PayFrom, PayOrder},
     Alipay, WechatPayClient,
 };
 use alipay_sdk_rust::{biz, response::TradePrecreateResponse};
 use anyhow::{anyhow, Context};
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, DbConn};
+use sea_orm::{
+    prelude::DateTime, sqlx::types::chrono::Local, ActiveModelTrait, ActiveValue::Set, DbConn,
+};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
-use wechat_pay_rust_sdk::{model::NativeParams, response::NativeResponse};
+use wechat_pay_rust_sdk::{
+    model::NativeParams,
+    response::{NativeResponse, ResponseTrait},
+};
 
 #[derive(Clone, Service)]
 pub struct PayOrderService {
@@ -81,7 +90,7 @@ impl PayOrderService {
         amount: i32,
     ) -> anyhow::Result<Option<String>> {
         let alipay = self.alipay.clone();
-        let mut biz_content: biz::TradePrecreateBiz = biz::TradePrecreateBiz::new();
+        let mut biz_content = biz::TradePrecreateBiz::new();
         biz_content.set_subject(subject.into());
         biz_content.set_out_trade_no(out_trade_no.into());
         biz_content.set_total_amount((amount as f64 / 100.0).into());
@@ -106,4 +115,105 @@ impl PayOrderService {
         tracing::info!("alipay resp sign ==> {sign:?}, alipay_cert_sn ==> {alipay_cert_sn:?}");
         Ok(response.qr_code)
     }
+
+    pub async fn query_alipay_order(&self, model: pay_order::Model) -> anyhow::Result<()> {
+        let order_id = model.id;
+        let alipay = self.alipay.clone();
+        let mut biz_content = biz::TradeQueryBiz::new();
+        biz_content.set_out_trade_no(order_id.into());
+
+        let resp = alipay
+            .ok_or_else(|| anyhow!("暂不支持支付宝"))?
+            .trade_query(&biz_content)
+            .context("支付宝订单查询失败")?;
+
+        if resp.response.trade_status == Some("TRADE_SUCCESS".to_owned()) {
+            let now = Local::now().naive_local();
+
+            pay_order::ActiveModel {
+                id: Set(order_id),
+                confirm: Set(Some(now)),
+                resp: Set(Some(
+                    serde_json::to_value(resp).context("resp to json failed")?,
+                )),
+                ..Default::default()
+            }
+            .update(&self.db)
+            .await
+            .with_context(|| format!("update_pay_order({order_id}) failed"))?;
+
+            Ok(())
+        } else {
+            Err(anyhow!("订单状态不成功: {:?}", resp.response.trade_status))
+        }
+    }
+
+    pub async fn query_wechat_order(&self, model: pay_order::Model) -> anyhow::Result<()> {
+        match self.wechat.clone() {
+            Some(wechat) => {
+                let order_id = model.id;
+                let mchid = &wechat.mch_id;
+                let resp = wechat
+                    .get_pay::<WechatPayOrderResp>(&format!(
+                        "/v3/pay/transactions/out-trade-no/{order_id:06}?mchid={mchid}"
+                    ))
+                    .await
+                    .context("微信订单查询失败")?;
+
+                tracing::info!(
+                    "order#{order_id} confirm state: {}({})",
+                    resp.trade_state,
+                    resp.trade_state_desc
+                );
+
+                if resp.trade_state == "SUCCESS" {
+                    let now = Local::now().naive_local();
+
+                    pay_order::ActiveModel {
+                        id: Set(order_id),
+                        confirm: Set(Some(now)),
+                        resp: Set(Some(
+                            serde_json::to_value(resp).context("resp to json failed")?,
+                        )),
+                        ..Default::default()
+                    }
+                    .update(&self.db)
+                    .await
+                    .with_context(|| format!("update_pay_order({order_id}) failed"))?;
+
+                    Ok(())
+                } else {
+                    Err(anyhow!(
+                        "订单状态不成功: {}({})",
+                        resp.trade_state,
+                        resp.trade_state_desc
+                    ))
+                }
+            }
+            None => Err(anyhow!("暂不支持微信支付")),
+        }
+    }
+
+    pub async fn find_wait_confirm_after(
+        &self,
+        after_time: DateTime,
+    ) -> anyhow::Result<Vec<pay_order::Model>> {
+        PayOrder::find_wait_confirm_after(&self.db, after_time).await
+    }
 }
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WechatPayOrderResp {
+    pub appid: String,
+    pub mchid: String,
+    pub trade_state: String,
+    pub trade_state_desc: String,
+    pub out_trade_no: String,
+    pub transaction_id: String,
+    pub trade_type: String,
+    pub success_time: String,
+    #[serde(flatten)]
+    pub extra: HashMap<String, Value>,
+}
+
+impl ResponseTrait for WechatPayOrderResp {}

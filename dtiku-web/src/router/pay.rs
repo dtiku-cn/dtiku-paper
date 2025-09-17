@@ -2,14 +2,14 @@ use super::Claims;
 use crate::{
     query::pay::TradeCreateQuery,
     views::{
-        pay::{PayRedirectTemplate, PayTradeCreateTemplate, YsmPayNotify},
+        pay::{PayRedirectTemplate, PayTradeCreateTemplate},
         GlobalVariables,
     },
 };
 use dtiku_pay::service::pay_order::PayOrderService;
 use spring::tracing;
 use spring_web::{
-    axum::{response::IntoResponse, Extension, Form, Json},
+    axum::{response::IntoResponse, Extension, Form},
     error::{KnownWebError, Result},
     extractor::Component,
     get, post,
@@ -55,4 +55,3 @@ async fn alipay_callback(body: String) -> Result<impl IntoResponse> {
     tracing::info!("支付接口正在施工中...\n回调数据：{body}");
     Ok("success")
 }
-

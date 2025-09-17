@@ -4,6 +4,7 @@ mod huatu_sync;
 mod idiom_fetch;
 mod offcn_sync;
 mod web_solution_collect;
+mod pay_trade_fetcher;
 
 use crate::jobs::assets_saver::AssetsSaveService;
 use crate::jobs::huatu_sync::HuatuSyncService;

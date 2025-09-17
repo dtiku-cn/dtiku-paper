@@ -2,9 +2,7 @@ use crate::{
     domain::question::QuestionSearch,
     model::{
         self, paper_question,
-        question::{
-            self, PaperWithNum, QuestionSinglePaper, QuestionWithPaper, QuestionWithSolutions,
-        },
+        question::{self, PaperWithNum, QuestionSinglePaper, QuestionWithPaper},
         Material, Paper, PaperQuestion, Question, QuestionMaterial, Solution,
     },
     query::question::{PaperQuestionQuery, SectionType},
