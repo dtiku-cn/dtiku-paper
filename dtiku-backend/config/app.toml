@@ -1,3 +1,4 @@
+#:schema https://spring-rs.github.io/config-schema.json
 [web]
 port = 8000
 graceful = true
@@ -57,3 +58,17 @@ block_ip_pv_threshold = 1000
 block_user_agents = ""
 seo_user_agents = ""
 ip_blacklist = ""
+
+[pay]
+## https://openhome.alipay.com/develop/sandbox/app
+test_pay_amount = ${TEST_PAY_AMOUNT:false}
+wechat_pay_enable = false
+alipay_enable = true
+alipay_api_url = "${ALIPAY_API_URL:https://openapi-sandbox.dl.alipaydev.com/gateway.do}"
+alipay_app_id = "${ALIPAY_APP_ID:2021000149633962}"
+alipay_root_cert_sn = "${ALIPAY_ROOT_CERT_SN}"
+alipay_public_key = "${ALIPAY_PUBLIC_KEY}"
+alipay_app_cert_sn = "${ALIPAY_APP_CERT_SN}"
+alipay_app_private_key = "${ALIPAY_APP_PRIVATE_KEY}"
+alipay_app_public_key = "${ALIPAY_APP_PUBLIC_KEY}"
+alipay_callback_url = "${ALIPAY_CALLBACK_URL:https://p.dtiku.cn/pay/alipay/callback}"
