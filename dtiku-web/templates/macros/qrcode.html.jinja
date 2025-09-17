@@ -12,15 +12,10 @@
                 return true;
             }
 
-            // 兜底：小屏幕也视为移动端
-            if (window.innerWidth <= 768) {
-                return true;
-            }
-
             return false;
         }
         function encodeQrCodeUrl(text) {
-            if (text.startsWith("http") || text.startsWith("wxp:") || text.startsWith("weixin")) {
+            if (text.startsWith("http") || text.startsWith("wxp:") || text.startsWith("weixin") || text.startsWith("alipay")) {
                 return text;
             }
             if (location.host.startsWith('localhost')) {

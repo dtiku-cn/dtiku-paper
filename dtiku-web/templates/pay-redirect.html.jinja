@@ -22,6 +22,7 @@
     <div class="qrcode" style="display: flex;justify-content: center;position:relative" data-qrcode="{{qrcode_url}}"
         data-icon="{{pay_from}}"></div>
     <script src="/static/vendor/jquery-1.10.2/jquery.min.js"></script>
+    <script src="/static/vendor/js-cookie-3.0.5/js.cookie.min.js"></script>
     <script src="{{global.config.iconfont_js_url}}"></script>
     {% call qrcode::qr_code_script(256) %}
     <script>{{global.config.analytics_script | safe}}</script>
