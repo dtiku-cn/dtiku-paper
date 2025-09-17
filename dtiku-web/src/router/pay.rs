@@ -44,18 +44,13 @@ async fn create_trade(
     })
 }
 
-#[post("/pay/callback")]
-async fn pay_callback() -> Result<impl IntoResponse> {
-    Ok("支付接口正在施工中...")
+#[post("/pay/wechat/callback")]
+async fn wechat_pay_callback(body: String) -> Result<impl IntoResponse> {
+    Ok(format!("支付接口正在施工中...\n回调数据：{body}"))
 }
 
-#[post("/pay/notify")]
-async fn pay_notify(Json(body): Json<YsmPayNotify>) -> Result<impl IntoResponse> {
-    tracing::info!("回调成功{body:?}");
-    Ok("success")
+#[post("/pay/alipay/callback")]
+async fn alipay_callback(body: String) -> Result<impl IntoResponse> {
+    Ok(format!("支付接口正在施工中...\n回调数据：{body}"))
 }
 
-#[post("/pay/nopay")]
-async fn nopay_render() -> Result<impl IntoResponse> {
-    Ok("支付接口正在施工中...")
-}
