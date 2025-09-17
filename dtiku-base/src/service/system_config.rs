@@ -1,9 +1,11 @@
 use crate::model::{enums::SystemConfigKey, SystemConfig};
+use ipnet::IpNet;
 use itertools::Itertools as _;
 use sea_orm::DbConn;
 use serde::Deserialize;
 use spring::config::Configurable;
 use spring::plugin::service::Service;
+use spring_redis::cache;
 
 #[derive(Debug, Clone, Service)]
 pub struct SystemConfigService {
@@ -78,13 +80,53 @@ gen_config_getters! {
 }
 
 impl SystemConfigService {
-    pub async fn split_seo_user_agents(&self) -> Vec<String> {
+    #[cache("config:SeoUserAgents:parsed")]
+    pub async fn parsed_seo_user_agents(&self) -> Vec<String> {
         self.seo_user_agents()
             .await
             .ok()
             .unwrap_or_else(|| "Googlebot,Bingbot,Baiduspider,Sogou".to_string())
             .split(',')
             .map(|str| str.to_string())
+            .collect_vec()
+    }
+
+    #[cache("config:BlockUserAgents:parsed")]
+    pub async fn parsed_block_user_agents(&self) -> Vec<String> {
+        self.block_user_agents()
+            .await
+            .ok()
+            .unwrap_or_else(|| "curl,bot,crawle".to_string())
+            .split(',')
+            .map(|str| str.to_string())
+            .collect_vec()
+    }
+
+    #[cache("config:IpBlacklist:parsed")]
+    pub async fn parsed_ip_blacklist(&self) -> Vec<IpNet> {
+        self.ip_blacklist()
+            .await
+            .ok()
+            .unwrap_or_else(|| "".to_string())
+            .split(',')
+            .filter_map(|s| {
+                let s = s.trim();
+                if s.is_empty() {
+                    return None;
+                }
+                // 自动补 /32 或 /128
+                let s = if s.contains('/') {
+                    s.to_string()
+                } else if s.contains('.') {
+                    format!("{}/32", s)
+                } else {
+                    format!("{}/128", s)
+                };
+                match s.parse::<IpNet>() {
+                    Ok(net) => Some(net),
+                    Err(_) => None, // 解析失败就忽略
+                }
+            })
             .collect_vec()
     }
 }

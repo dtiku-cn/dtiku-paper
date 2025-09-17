@@ -196,7 +196,7 @@ async fn anti_bot(
     user_agent: UserAgent,
     client_ip: IpAddr,
 ) -> Option<Response> {
-    let seo_user_agents = sc_service.split_seo_user_agents().await;
+    let seo_user_agents = sc_service.parsed_seo_user_agents().await;
     if seo_user_agents
         .iter()
         .any(|seo_ua| user_agent.as_str().contains(seo_ua))
@@ -205,6 +205,22 @@ async fn anti_bot(
             tracing::trace!("confirmed to be from a legitimate crawler: {bot_name}");
             return None;
         }
+    }
+    let block_user_agents = sc_service.parsed_block_user_agents().await;
+    if block_user_agents.iter().any(|block_ua| {
+        user_agent
+            .as_str()
+            .to_lowercase()
+            .contains(&block_ua.to_lowercase())
+    }) {
+        tracing::warn!("blocked user agent: {}", user_agent.as_str());
+        return Some(StatusCode::FORBIDDEN.into_response());
+    }
+
+    let ip_blacklist = sc_service.parsed_ip_blacklist().await;
+    if ip_blacklist.iter().any(|net| net.contains(&client_ip)) {
+        tracing::warn!("blocked ip address: {}", client_ip);
+        return Some(StatusCode::FORBIDDEN.into_response());
     }
 
     let server_secret = "server-secret";

@@ -23,6 +23,7 @@ impl ActiveModelBehavior for ActiveModel {
         let config_key = self.key.as_ref();
         let mut redis = App::global().get_expect_component::<Redis>();
         let _: () = redis.del(format!("config:{config_key:?}")).await.unwrap();
+        let _: () = redis.del(format!("config:{config_key:?}:parsed")).await.unwrap();
         Ok(self)
     }
 }

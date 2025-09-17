@@ -85,7 +85,7 @@ impl TrafficAnalysis {
     }
 
     pub async fn seo_user_agents(&self) -> Vec<String> {
-        self.system_config_service.split_seo_user_agents().await
+        self.system_config_service.parsed_seo_user_agents().await
     }
 
     pub fn record(&self, t: Traffic) {

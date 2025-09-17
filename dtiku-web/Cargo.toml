@@ -62,6 +62,7 @@ hex = { workspace = true }
 dashmap = { workspace = true }
 hickory-resolver = { workspace = true, features = ["tokio"] }
 pulldown-cmark = { workspace = true }
+ipnet = { workspace = true }
 
 [build-dependencies]
 minify-html = "0.16"

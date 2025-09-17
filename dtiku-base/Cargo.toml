@@ -16,3 +16,4 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 itertools = { workspace = true }
 chrono = { workspace = true }
+ipnet = { workspace = true, features = ["serde"] }
