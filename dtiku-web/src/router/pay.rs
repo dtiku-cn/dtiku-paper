@@ -46,11 +46,13 @@ async fn create_trade(
 
 #[post("/pay/wechat/callback")]
 async fn wechat_pay_callback(body: String) -> Result<impl IntoResponse> {
-    Ok(format!("支付接口正在施工中...\n回调数据：{body}"))
+    tracing::info!("支付接口正在施工中...\n回调数据：{body}");
+    Ok("success")
 }
 
 #[post("/pay/alipay/callback")]
 async fn alipay_callback(body: String) -> Result<impl IntoResponse> {
-    Ok(format!("支付接口正在施工中...\n回调数据：{body}"))
+    tracing::info!("支付接口正在施工中...\n回调数据：{body}");
+    Ok("success")
 }
 
