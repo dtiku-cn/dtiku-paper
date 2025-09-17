@@ -87,6 +87,7 @@ impl SystemConfigService {
             .ok()
             .unwrap_or_else(|| "Googlebot,Bingbot,Baiduspider,Sogou".to_string())
             .split(',')
+            .filter(|s| !s.is_empty())
             .map(|str| str.to_string())
             .collect_vec()
     }
@@ -98,6 +99,7 @@ impl SystemConfigService {
             .ok()
             .unwrap_or_else(|| "curl,bot,crawle".to_string())
             .split(',')
+            .filter(|s| !s.is_empty())
             .map(|str| str.to_string())
             .collect_vec()
     }
@@ -109,6 +111,7 @@ impl SystemConfigService {
             .ok()
             .unwrap_or_else(|| "".to_string())
             .split(',')
+            .filter(|s| !s.is_empty())
             .filter_map(|s| {
                 let s = s.trim();
                 if s.is_empty() {
