@@ -7,7 +7,7 @@ graceful = true
 static = { enable = true, uri = "/", path = "frontend/dist" }
 
 [logger]
-# level = "debug"
+level = "${RUST_LOG:info}"
 pretty_backtrace = true
 
 [sqlx]
