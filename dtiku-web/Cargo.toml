@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 spring = { workspace = true }
 spring-web = { workspace = true }
+spring-stream = { workspace = true, features = ["redis"] }
 spring-sea-orm = { workspace = true, features = ["postgres", "with-web"] }
 spring-redis = { workspace = true }
 spring-opentelemetry = { workspace = true }

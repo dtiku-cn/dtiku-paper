@@ -1819,6 +1819,7 @@ dependencies = [
  "spring-opentelemetry",
  "spring-redis",
  "spring-sea-orm",
+ "spring-stream",
  "spring-web",
  "strum",
  "tokio",

@@ -14,6 +14,7 @@ use spring_opentelemetry::{
 };
 use spring_redis::RedisPlugin;
 use spring_sea_orm::SeaOrmPlugin;
+use spring_stream::StreamPlugin;
 use spring_web::{WebConfigurator, WebPlugin};
 
 #[tokio::main]
@@ -29,6 +30,7 @@ async fn main() {
         .add_router(router::routers())
         .add_plugin(WebPlugin)
         .add_plugin(RedisPlugin)
+        .add_plugin(StreamPlugin)
         .add_plugin(SeaOrmPlugin)
         .add_plugin(OpenTelemetryPlugin)
         .add_plugin(GrpcClientPlugin)

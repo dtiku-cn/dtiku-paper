@@ -15,6 +15,9 @@ uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/empty_tiku}"
 [sea-orm-web]
 one_indexed = true
 
+[stream]
+uri = "${REDIS_URL:redis://localhost}"
+
 [redis]
 uri = "${REDIS_URL:redis://localhost}"
 
