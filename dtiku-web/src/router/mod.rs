@@ -117,7 +117,7 @@ async fn global_error_page(
     req: Request,
     next: Next,
 ) -> Response {
-    if !req.uri().path().starts_with("/api") {
+    if !req.uri().path().starts_with("/api") || !req.uri().path().starts_with("/pay") {
         if let Some(resp) = anti_bot(&sc_service, &cookies, user_agent, client_ip).await {
             return resp;
         }

@@ -9,7 +9,7 @@ use crate::{
 use dtiku_pay::service::pay_order::PayOrderService;
 use spring::tracing;
 use spring_web::{
-    axum::{response::IntoResponse, Extension, Form},
+    axum::{http::header::HeaderMap, response::IntoResponse, Extension, Form},
     error::{KnownWebError, Result},
     extractor::Component,
     get, post,
@@ -44,14 +44,38 @@ async fn create_trade(
     })
 }
 
+/// https://pay.weixin.qq.com/doc/v3/merchant/4012791882
 #[post("/pay/wechat/callback")]
-async fn wechat_pay_callback(body: String) -> Result<impl IntoResponse> {
-    tracing::info!("支付接口正在施工中...\n回调数据：{body}");
-    Ok("success")
+async fn wechat_pay_callback(headers: HeaderMap, body: String) -> Result<impl IntoResponse> {
+    let serial = headers
+        .get("Wechatpay-Serial")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default();
+    let signature = headers
+        .get("Wechatpay-Signature")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default();
+    let timestamp = headers
+        .get("Wechatpay-Timestamp")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default();
+    let nonce = headers
+        .get("Wechatpay-Nonce")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default();
+
+    tracing::warn!(
+        serial = serial,
+        signature = signature,
+        timestamp = timestamp,
+        nonce = nonce,
+        "支付接口正在施工中...\n回调数据：{headers:?}{body}"
+    );
+    Ok("<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>")
 }
 
 #[post("/pay/alipay/callback")]
 async fn alipay_callback(body: String) -> Result<impl IntoResponse> {
-    tracing::info!("支付接口正在施工中...\n回调数据：{body}");
+    tracing::warn!("支付接口正在施工中...\n回调数据：{body}");
     Ok("success")
 }
