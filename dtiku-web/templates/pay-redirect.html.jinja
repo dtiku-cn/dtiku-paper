@@ -25,7 +25,7 @@
     <script src="/static/vendor/js-cookie-3.0.5/js.cookie.min.js"></script>
     <script src="{{global.config.iconfont_js_url}}"></script>
     {% call qrcode::qr_code_script(256) %}
-    <script>{ { global.config.analytics_script | safe } }</script>
+    <script>{{ global.config.analytics_script | safe }}</script>
     <script>
         $(function () {
             var timer = poll();
