@@ -9,7 +9,10 @@ use spring_stream::{
 };
 
 fn fill_redis_consumer_options(opts: &mut RedisConsumerOptions) {
-    let _ = opts.set_consumer_group(ConsumerGroup::new(env!("CARGO_PKG_NAME")));
+    let _ = opts
+        .set_auto_commit(AutoCommit::Immediate)
+        .set_mkstream(true) // 先创建消费组
+        .set_consumer_group(ConsumerGroup::new(env!("CARGO_PKG_NAME")));
 }
 
 #[stream_listener("pay_order.confirm", mode="LoadBalanced", redis_consumer_options=fill_redis_consumer_options)]
