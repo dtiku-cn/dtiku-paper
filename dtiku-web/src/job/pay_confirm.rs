@@ -3,10 +3,17 @@ use dtiku_pay::model::{pay_order, OrderStatus};
 use spring::tracing;
 use spring_stream::{
     extractor::{Component, Json},
+    redis::{AutoCommit, RedisConsumerOptions},
+    sea_streamer::{ConsumerGroup, ConsumerOptions},
     stream_listener,
 };
 
-#[stream_listener("pay_order.confirm")]
+fn fill_redis_consumer_options(opts: &mut RedisConsumerOptions) {
+    opts.set_auto_commit(AutoCommit::Immediate)
+        .set_consumer_group(ConsumerGroup::new(env!("CARGO_PKG_NAME")));
+}
+
+#[stream_listener("pay_order.confirm", redis_consumer_options=fill_redis_consumer_options)]
 pub(crate) async fn order_confirm(
     Component(us): Component<UserService>,
     Json(model): Json<pay_order::Model>,
@@ -28,7 +35,7 @@ pub(crate) async fn order_confirm(
             tracing::error!("confirm_user({user_id},{order_level}) failed>>>{e:?}");
         }
         Ok(u) => {
-            tracing::error!("confirm_user({user_id},{order_level}) success>>>{u:?}");
+            tracing::info!("confirm_user({user_id},{order_level}) success>>>{u:?}");
         }
     }
 }
