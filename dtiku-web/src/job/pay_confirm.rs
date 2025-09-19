@@ -7,7 +7,10 @@ use spring_stream::{
 };
 
 #[stream_listener("pay_order.confirm")]
-async fn order_confirm(Component(us): Component<UserService>, Json(model): Json<pay_order::Model>) {
+pub(crate) async fn order_confirm(
+    Component(us): Component<UserService>,
+    Json(model): Json<pay_order::Model>,
+) {
     if model.confirm.is_none() {
         tracing::info!("订单未确认:{model:?}");
         return;
