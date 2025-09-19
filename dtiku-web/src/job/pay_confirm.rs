@@ -1,5 +1,5 @@
 use crate::service::user::UserService;
-use dtiku_pay::model::pay_order;
+use dtiku_pay::model::{pay_order, OrderStatus};
 use spring::tracing;
 use spring_stream::{
     extractor::{Component, Json},
@@ -9,10 +9,16 @@ use spring_stream::{
 #[stream_listener("pay_order.confirm")]
 async fn order_confirm(Component(us): Component<UserService>, Json(model): Json<pay_order::Model>) {
     if model.confirm.is_none() {
+        tracing::info!("订单未确认:{model:?}");
+        return;
+    }
+    if model.status != OrderStatus::Paid {
+        tracing::info!("订单未付款:{model:?}");
         return;
     }
     let user_id = model.user_id;
     let order_level = model.level;
+    tracing::info!("user#{user_id}接收到已付款订单{order_level}:{model:?}");
     let r = us.confirm_user(user_id, order_level).await;
     match r {
         Err(e) => {
