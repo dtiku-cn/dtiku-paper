@@ -31,7 +31,7 @@ impl ActiveModelBehavior for ActiveModel {
             let _ = producer.send_json("pay_order", &model).await;
         } else if model.confirm.is_some() {
             let producer = App::global().get_expect_component::<Producer>();
-            let _ = producer.send_json("pay_order.confirm", &model).await;
+            let _ = producer.send_json("pay_order:confirm", &model).await;
         }
         Ok(model)
     }
