@@ -7,14 +7,15 @@ use crate::{
     },
 };
 use anyhow::Context;
-use dtiku_pay::service::pay_order::PayOrderService;
+use dtiku_pay::{model::PayOrder, service::pay_order::PayOrderService};
 use http::StatusCode;
+use sea_orm::DbConn;
 use serde_json::json;
 use spring::tracing;
 use spring_web::{
     axum::{http::header::HeaderMap, response::IntoResponse, Extension, Form, Json},
     error::{KnownWebError, Result},
-    extractor::Component,
+    extractor::{Component, Path},
     get, post,
 };
 
@@ -36,15 +37,31 @@ async fn create_trade(
     Extension(global): Extension<GlobalVariables>,
     Form(trade): Form<TradeCreateQuery>,
 ) -> Result<impl IntoResponse> {
-    let qrcode_url = ps
+    let (order_id, qrcode_url) = ps
         .create_order(claims.user_id, trade.level, trade.pay_from)
-        .await?
-        .ok_or_else(|| KnownWebError::internal_server_error("支付码生成失败"))?;
+        .await?;
+    let qrcode_url =
+        qrcode_url.ok_or_else(|| KnownWebError::internal_server_error("支付码生成失败"))?;
     Ok(PayRedirectTemplate {
         global,
+        order_id,
         qrcode_url,
         pay_from: trade.pay_from,
     })
+}
+
+#[post("/pay/{order_id}/status")]
+async fn pay_status(
+    claims: Claims,
+    Path(order_id): Path<i32>,
+    Component(db): Component<DbConn>,
+) -> Result<impl IntoResponse> {
+    Ok(Json(
+        PayOrder::find_order_status(&db, order_id, claims.user_id)
+            .await
+            .context("查询订单失败")?
+            .ok_or_else(|| KnownWebError::not_found("订单不存在"))?,
+    ))
 }
 
 /// https://pay.weixin.qq.com/doc/v3/merchant/4012791882

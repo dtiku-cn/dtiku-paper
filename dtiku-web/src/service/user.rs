@@ -3,7 +3,9 @@ use crate::{
     rpc::{self, artalk},
 };
 use anyhow::Context;
+use chrono::{Duration, Local};
 use dtiku_base::model::{user_info, UserInfo};
+use dtiku_pay::model::OrderLevel;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
 use spring::plugin::service::Service;
@@ -69,6 +71,23 @@ impl UserService {
             }
         };
         Ok(u)
+    }
+
+    pub async fn confirm_user(
+        &self,
+        user_id: i32,
+        order_level: OrderLevel,
+    ) -> anyhow::Result<user_info::Model> {
+        let now = Local::now().naive_local();
+        let expires = now + Duration::days(order_level.days() as i64);
+        user_info::ActiveModel {
+            id: Set(user_id),
+            expired: Set(expires),
+            ..Default::default()
+        }
+        .update(&self.db)
+        .await
+        .with_context(|| format!("update user failed"))
     }
 }
 

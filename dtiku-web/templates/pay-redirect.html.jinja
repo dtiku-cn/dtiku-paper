@@ -25,7 +25,35 @@
     <script src="/static/vendor/js-cookie-3.0.5/js.cookie.min.js"></script>
     <script src="{{global.config.iconfont_js_url}}"></script>
     {% call qrcode::qr_code_script(256) %}
-    <script>{{global.config.analytics_script | safe}}</script>
+    <script>{ { global.config.analytics_script | safe } }</script>
+    <script>
+        $(function () {
+            var timer = poll();
+
+            function ajaxSuccess(status) {
+                if ("paid" === status) {
+                    timer = timer && clearTimeout(timer);
+                    $(".qrcode").append("<div style='position:absolute;left:0;right:0;bottom:0;top:0;background: rgba(1,180,30,.9);color:white;display: flex;justify-content: center;align-items: center'>支付成功</div>");
+                    setTimeout(function () {
+                        window.parent && window.parent.location.reload();
+                    }, 1500);
+                } else {
+                    poll();
+                }
+            }
+
+            function poll() {
+                timer = setTimeout(function () {
+                    $.ajax({
+                        type: 'post',
+                        url: "/pay/{{order_id}}/status",
+                        success: ajaxSuccess
+                    })
+                }, 1500);
+                return timer;
+            }
+        });
+    </script>
 </body>
 
 </html>

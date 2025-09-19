@@ -1,11 +1,10 @@
 use chrono::{Duration, Local, NaiveDateTime};
 use dtiku_pay::{
-    model::{pay_order, PayFrom, PayOrder},
+    model::{pay_order, PayFrom},
     service::pay_order::PayOrderService,
 };
 use spring::tracing;
 use spring_job::{extractor::Component as JobComponent, fix_delay};
-use spring_sea_orm::DbConn;
 use spring_stream::{
     extractor::{Component as StreamComponent, Json},
     stream_listener,
@@ -44,11 +43,11 @@ async fn find_wait_confirm_order(svc: &PayOrderService, after_time: NaiveDateTim
 
 #[stream_listener("pay_order")]
 async fn trade_fetch(
-    StreamComponent(db): StreamComponent<PayOrderService>,
+    StreamComponent(svc): StreamComponent<PayOrderService>,
     Json(model): Json<pay_order::Model>,
 ) {
     let order_id = model.id;
-    if let Err(e) = inner_fetch_trade(model, &db).await {
+    if let Err(e) = inner_fetch_trade(model, &svc).await {
         tracing::error!("fetch_order({order_id}) failed>>>{e:?}")
     }
 }

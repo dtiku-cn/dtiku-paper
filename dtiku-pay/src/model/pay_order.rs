@@ -1,8 +1,9 @@
+use super::OrderStatus;
 pub use super::_entities::pay_order::*;
 use anyhow::Context;
 use sea_orm::{
     prelude::DateTime, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
-    ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
+    ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter, QuerySelect,
 };
 use spring::{async_trait, plugin::ComponentRegistry, App};
 use spring_stream::Producer;
@@ -15,6 +16,7 @@ impl ActiveModelBehavior for ActiveModel {
     {
         if insert {
             self.created = Set(Local::now().naive_local());
+            self.status = Set(OrderStatus::Created);
         }
         self.modified = Set(Local::now().naive_local());
         Ok(self)
@@ -27,6 +29,9 @@ impl ActiveModelBehavior for ActiveModel {
         if insert {
             let producer = App::global().get_expect_component::<Producer>();
             let _ = producer.send_json("pay_order", &model).await;
+        } else if model.confirm.is_some() {
+            let producer = App::global().get_expect_component::<Producer>();
+            let _ = producer.send_json("pay_order.confirm", &model).await;
         }
         Ok(model)
     }
@@ -42,5 +47,20 @@ impl Entity {
             .all(db)
             .await
             .with_context(|| format!("find_wait_confirm({time:?}) failed"))
+    }
+
+    pub async fn find_order_status<C: ConnectionTrait>(
+        db: &C,
+        order_id: i32,
+        user_id: i32,
+    ) -> anyhow::Result<Option<OrderStatus>> {
+        Entity::find()
+            .select_only()
+            .column(Column::Status)
+            .filter(Column::Id.eq(order_id).and(Column::UserId.eq(user_id)))
+            .into_tuple()
+            .one(db)
+            .await
+            .with_context(|| format!("find_order_status({order_id},{user_id}) failed"))
     }
 }

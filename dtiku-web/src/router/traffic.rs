@@ -1,7 +1,7 @@
+use crate::service::user::UserService;
 use chrono::{DateTime, Utc};
 use dashmap::DashMap;
 use dtiku_base::service::system_config::SystemConfigService;
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use spring::tracing;
 use std::cmp::{max, min};
@@ -11,8 +11,6 @@ use std::{
     time::Duration,
 };
 use tokio::time;
-
-use crate::service::user::UserService;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Traffic {

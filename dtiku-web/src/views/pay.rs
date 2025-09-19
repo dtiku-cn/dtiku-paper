@@ -16,6 +16,7 @@ pub struct PayTradeCreateTemplate {
 #[template(path = "pay-redirect.html.jinja")]
 pub struct PayRedirectTemplate {
     pub global: GlobalVariables,
+    pub order_id: i32,
     pub qrcode_url: String,
     pub pay_from: PayFrom,
 }

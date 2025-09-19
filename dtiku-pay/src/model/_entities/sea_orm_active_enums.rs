@@ -18,6 +18,87 @@ use strum::{EnumMessage, EnumProperty};
     strum :: Display,
     strum :: EnumProperty,
 )]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "order_status")]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
+pub enum OrderStatus {
+    #[sea_orm(string_value = "created")]
+    #[strum(props(text = "已创建"))]
+    Created,
+    #[sea_orm(string_value = "paid")]
+    #[strum(props(text = "已付款"))]
+    Paid,
+    #[sea_orm(string_value = "canceled")]
+    #[strum(props(text = "已取消"))]
+    Canceled,
+    #[sea_orm(string_value = "refunded")]
+    #[strum(props(text = "已退款"))]
+    Refunded,
+}
+
+impl OrderStatus {
+    /// SUCCESS--支付成功
+    /// REFUND--转入退款
+    /// NOTPAY--未支付
+    /// CLOSED--已关闭
+    /// REVOKED--已撤销(刷卡支付)
+    /// USERPAYING--用户支付中
+    /// PAYERROR--支付失败(其他原因，如银行返回失败)
+    /// ACCEPT--已接收，等待扣款(委托代扣)
+    /// 支付状态机请见下单API页面
+    pub fn from_wechat(trade_state: &str) -> Self {
+        match trade_state.to_ascii_uppercase().as_str() {
+            // 支付成功
+            "SUCCESS" => OrderStatus::Paid,
+            // 转入退款
+            "REFUND" => OrderStatus::Refunded,
+            // 未支付
+            "NOTPAY" => OrderStatus::Canceled,
+            // 已关闭
+            "CLOSED" => OrderStatus::Canceled,
+            // 已撤销（刷卡支付）
+            "REVOKED" => OrderStatus::Canceled,
+            // 支付失败
+            "PAYERROR" => OrderStatus::Canceled,
+            // 未知状态 → 默认给 Created
+            _ => OrderStatus::Created,
+        }
+    }
+
+    /// https://opendocs.alipay.com/support/01raw9
+    /// ● WAIT_BUYER_PAY：交易创建，等待买家付款。
+    /// ● TRADE_CLOSED：在指定时间段内未支付时关闭的交易或在交易完成全额退款成功时关闭的交易。
+    /// ● TRADE_SUCCESS：商家签约的产品支持退款功能的前提下，买家付款成功。
+    /// ● TRADE_FINISHED：商家签约的产品不支持退款功能的前提下，买家付款成功。
+    /// 或者，商家签约的产品支持退款功能的前提下，交易已经成功并且已经超过可退款期限。
+    pub fn from_alipay(trade_state: &str) -> Self {
+        match trade_state.to_ascii_uppercase().as_str() {
+            // 支付成功
+            "TRADE_SUCCESS" | "TRADE_FINISHED" => OrderStatus::Paid,
+            // 未支付
+            "TRADE_CLOSED" => OrderStatus::Canceled,
+            // 用户支付中
+            "WAIT_BUYER_PAY" => OrderStatus::Created,
+            // 未知状态 → 默认给 Created
+            _ => OrderStatus::Created,
+        }
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumIter,
+    DeriveActiveEnum,
+    Serialize,
+    Deserialize,
+    strum :: EnumString,
+    strum :: Display,
+    strum :: EnumProperty,
+)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "order_level")]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]

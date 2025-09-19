@@ -1,8 +1,6 @@
-use std::{collections::HashMap, env, fs::File, io::Write as _, path::Path};
-
 use crate::{
     config::PayConfig,
-    model::{pay_order, OrderLevel, PayFrom, PayOrder},
+    model::{pay_order, OrderLevel, OrderStatus, PayFrom, PayOrder},
     Alipay, WechatPayClient,
 };
 use alipay_sdk_rust::{
@@ -16,6 +14,7 @@ use sea_orm::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
+use std::{collections::HashMap, env, fs::File, io::Write as _, path::Path};
 use wechat_pay_rust_sdk::{
     model::{NativeParams, WechatPayDecodeData, WechatPayNotify},
     pay::PayNotifyTrait,
@@ -40,7 +39,7 @@ impl PayOrderService {
         user_id: i32,
         level: OrderLevel,
         from: PayFrom,
-    ) -> anyhow::Result<Option<String>> {
+    ) -> anyhow::Result<(i32, Option<String>)> {
         let order = pay_order::ActiveModel {
             user_id: Set(user_id),
             level: Set(level),
@@ -62,7 +61,7 @@ impl PayOrderService {
             PayFrom::Alipay => self.alipay(subject, order_id, amount).await?,
             PayFrom::Wechat => self.wechat_pay(subject, order_id, amount).await?,
         };
-        Ok(qrcode_url)
+        Ok((order_id, qrcode_url))
     }
 
     async fn wechat_pay(
@@ -132,25 +131,27 @@ impl PayOrderService {
             .trade_query(&biz_content)
             .context("支付宝订单查询失败")?;
 
-        if resp.response.trade_status == Some("TRADE_SUCCESS".to_owned()) {
-            let now = Local::now().naive_local();
+        let status_str = resp.response.trade_status.clone().unwrap_or_default();
 
-            pay_order::ActiveModel {
-                id: Set(order_id),
-                confirm: Set(Some(now)),
-                resp: Set(Some(
-                    serde_json::to_value(resp).context("resp to json failed")?,
-                )),
-                ..Default::default()
-            }
-            .update(&self.db)
-            .await
-            .with_context(|| format!("update_pay_order({order_id}) failed"))?;
+        tracing::info!("支付宝订单#{order_id}状态: {status_str}");
 
-            Ok(())
-        } else {
-            Err(anyhow!("订单状态不成功: {:?}", resp.response.trade_status))
+        let status = OrderStatus::from_alipay(&status_str);
+        let now = Local::now().naive_local();
+
+        pay_order::ActiveModel {
+            id: Set(order_id),
+            confirm: Set(Some(now)),
+            status: Set(status),
+            resp: Set(Some(
+                serde_json::to_value(resp).context("resp to json failed")?,
+            )),
+            ..Default::default()
         }
+        .update(&self.db)
+        .await
+        .with_context(|| format!("update_pay_order({order_id}) failed"))?;
+
+        Ok(())
     }
 
     pub async fn query_wechat_order(&self, model: pay_order::Model) -> anyhow::Result<()> {
@@ -166,34 +167,28 @@ impl PayOrderService {
                     .context("微信订单查询失败")?;
 
                 tracing::info!(
-                    "order#{order_id} confirm state: {}({})",
+                    "微信订单#{order_id}状态: {}({})",
                     resp.trade_state,
                     resp.trade_state_desc
                 );
 
-                if resp.trade_state == "SUCCESS" {
-                    let now = Local::now().naive_local();
+                let status = OrderStatus::from_wechat(&resp.trade_state);
+                let now = Local::now().naive_local();
 
-                    pay_order::ActiveModel {
-                        id: Set(order_id),
-                        confirm: Set(Some(now)),
-                        resp: Set(Some(
-                            serde_json::to_value(resp).context("resp to json failed")?,
-                        )),
-                        ..Default::default()
-                    }
-                    .update(&self.db)
-                    .await
-                    .with_context(|| format!("update_pay_order({order_id}) failed"))?;
-
-                    Ok(())
-                } else {
-                    Err(anyhow!(
-                        "订单状态不成功: {}({})",
-                        resp.trade_state,
-                        resp.trade_state_desc
-                    ))
+                pay_order::ActiveModel {
+                    id: Set(order_id),
+                    confirm: Set(Some(now)),
+                    status: Set(status),
+                    resp: Set(Some(
+                        serde_json::to_value(resp).context("resp to json failed")?,
+                    )),
+                    ..Default::default()
                 }
+                .update(&self.db)
+                .await
+                .with_context(|| format!("update_pay_order({order_id}) failed"))?;
+
+                Ok(())
             }
             None => Err(anyhow!("暂不支持微信支付")),
         }
@@ -304,26 +299,25 @@ impl PayOrderService {
                     )
                     .context("解析关联数据失败")?;
 
-                if data.trade_state == "SUCCESS" {
-                    let out_trade_no =
-                        data.out_trade_no.parse::<i32>().context("解析订单号失败")?;
-                    let now = Local::now().naive_local();
+                tracing::info!("接收到微信订单状态: {}", data.trade_state);
 
-                    pay_order::ActiveModel {
-                        id: Set(out_trade_no),
-                        confirm: Set(Some(now)),
-                        resp: Set(Some(
-                            serde_json::to_value(notify).context("resp to json failed")?,
-                        )),
-                        ..Default::default()
-                    }
-                    .update(&self.db)
-                    .await
-                    .with_context(|| format!("update_pay_order({out_trade_no}) failed"))?;
-                    Ok(())
-                } else {
-                    Err(anyhow!("订单状态不成功: {}", data.trade_state))
+                let status = OrderStatus::from_wechat(&data.trade_state);
+                let out_trade_no = data.out_trade_no.parse::<i32>().context("解析订单号失败")?;
+                let now = Local::now().naive_local();
+
+                pay_order::ActiveModel {
+                    id: Set(out_trade_no),
+                    confirm: Set(Some(now)),
+                    status: Set(status),
+                    resp: Set(Some(
+                        serde_json::to_value(notify).context("resp to json failed")?,
+                    )),
+                    ..Default::default()
                 }
+                .update(&self.db)
+                .await
+                .with_context(|| format!("update_pay_order({out_trade_no}) failed"))?;
+                Ok(())
             }
             None => Err(anyhow!("暂不支持微信支付")),
         }
