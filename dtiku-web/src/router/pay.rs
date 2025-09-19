@@ -6,10 +6,13 @@ use crate::{
         GlobalVariables,
     },
 };
+use anyhow::Context;
 use dtiku_pay::service::pay_order::PayOrderService;
+use http::StatusCode;
+use serde_json::json;
 use spring::tracing;
 use spring_web::{
-    axum::{http::header::HeaderMap, response::IntoResponse, Extension, Form},
+    axum::{http::header::HeaderMap, response::IntoResponse, Extension, Form, Json},
     error::{KnownWebError, Result},
     extractor::Component,
     get, post,
@@ -46,7 +49,11 @@ async fn create_trade(
 
 /// https://pay.weixin.qq.com/doc/v3/merchant/4012791882
 #[post("/pay/wechat/callback")]
-async fn wechat_pay_callback(headers: HeaderMap, body: String) -> Result<impl IntoResponse> {
+async fn wechat_pay_callback(
+    Component(p_service): Component<PayOrderService>,
+    headers: HeaderMap,
+    body: String,
+) -> Result<impl IntoResponse> {
     let serial = headers
         .get("Wechatpay-Serial")
         .and_then(|v| v.to_str().ok())
@@ -64,14 +71,36 @@ async fn wechat_pay_callback(headers: HeaderMap, body: String) -> Result<impl In
         .and_then(|v| v.to_str().ok())
         .unwrap_or_default();
 
-    tracing::warn!(
-        serial = serial,
-        signature = signature,
-        timestamp = timestamp,
-        nonce = nonce,
-        "支付接口正在施工中...\n回调数据：{headers:?}{body}"
-    );
-    Ok("<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>")
+    let notify = match p_service
+        .verify_signature(serial, timestamp, nonce, signature, &body)
+        .await
+        .context("verify_signature failed")
+    {
+        Err(e) => {
+            tracing::error!(
+                serial = serial,
+                signature = signature,
+                timestamp = timestamp,
+                nonce = nonce,
+                "微信支付回调验签失败: {e:#}"
+            );
+            return Ok((
+                StatusCode::BAD_REQUEST,
+                Json(json!({"code": "FAIL", "message": "验签失败"})),
+            ));
+        }
+        Ok(notify) => notify,
+    };
+
+    if let Err(e) = p_service.notify_wechat_pay(&notify).await {
+        tracing::error!("处理微信支付回调失败: {e:#}");
+        return Ok((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"code": "FAIL", "message": "处理失败"})),
+        ));
+    }
+
+    Ok((StatusCode::OK, Json("".into())))
 }
 
 #[post("/pay/alipay/callback")]
