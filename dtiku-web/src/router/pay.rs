@@ -127,9 +127,12 @@ async fn alipay_callback(
     body: Bytes,
 ) -> Result<impl IntoResponse> {
     if let Err(e) = p_service.alipay_verify_sign(&body).await {
-        tracing::error!("支付宝验签失败:{e:?}");
+        tracing::error!("支付宝验签失败:{e:#}");
         return Ok("fail");
     }
-    p_service.notify_alipay(&body).await;
+    if let Err(e) = p_service.notify_alipay(&body).await {
+        tracing::error!("处理支付宝回调失败: {e:#}");
+        return Ok("fail");
+    }
     Ok("success")
 }

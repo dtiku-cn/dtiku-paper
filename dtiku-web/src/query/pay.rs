@@ -1,5 +1,5 @@
 use dtiku_pay::model::{OrderLevel, PayFrom};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct TradeCreateQuery {
