@@ -9,6 +9,19 @@
     {% call general::meta() %}
     {% call general::headerfiles() %}
     <title>{{question.abbr(50)}}</title>
+    <style>
+    .recommends>.card {
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+    }
+
+    .recommends>.card:last-child{
+        margin-bottom: 0 !important;
+        border-bottom: none;
+        border-radius: .25rem;
+    }
+    </style>
 </head>
 
 <body class="container">
@@ -30,14 +43,16 @@
         {% call question::question_card(question) %}
     </div>
 
-    <div th:if="${recommends!=null && !recommends.isEmpty()}" class="card my-3">
+    {%if !recommends.is_empty()%}
+    <div class="card my-3">
         <div class="card-header text-white bg-info">类似题目</div>
-        <div class="card-body px-0">
+        <div class="card-body p-0 recommends">
             {%for q in recommends%}
-            {% call question::question_card(q) %}
+            {%call question::question_card(q)%}
             {%endfor%}
         </div>
     </div>
+    {%endif%}
     {% call artalk::comment(true,true,true,"快来参与讨论吧")%}
     {% call general::footer() %}
     {% call painter::painter() %}
