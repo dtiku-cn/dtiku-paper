@@ -343,6 +343,8 @@ impl PayOrderService {
         let notify = serde_urlencoded::from_bytes::<AlipayNotify>(raw_body)
             .context("支付宝notify解析失败")?;
 
+        tracing::info!("接收到支付宝订单状态: {}", notify.trade_status);
+
         let out_trade_no = notify.out_trade_no;
         let status = OrderStatus::from_alipay(&notify.trade_status);
         let now = Local::now().naive_local();
