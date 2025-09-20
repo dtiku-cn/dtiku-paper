@@ -13,7 +13,7 @@ use sea_orm::DbConn;
 use serde_json::json;
 use spring::tracing;
 use spring_web::{
-    axum::{http::header::HeaderMap, response::IntoResponse, Extension, Form, Json},
+    axum::{body::Bytes, http::header::HeaderMap, response::IntoResponse, Extension, Form, Json},
     error::{KnownWebError, Result},
     extractor::{Component, Path},
     get, post,
@@ -89,7 +89,7 @@ async fn wechat_pay_callback(
         .unwrap_or_default();
 
     let notify = match p_service
-        .verify_signature(serial, timestamp, nonce, signature, &body)
+        .wechat_verify_signature(serial, timestamp, nonce, signature, &body)
         .await
         .context("verify_signature failed")
     {
@@ -120,8 +120,18 @@ async fn wechat_pay_callback(
     Ok((StatusCode::OK, Json("".into())))
 }
 
+/// https://opendocs.alipay.com/open/194/103296
 #[post("/pay/alipay/callback")]
-async fn alipay_callback(body: String) -> Result<impl IntoResponse> {
+async fn alipay_callback(
+    Component(p_service): Component<PayOrderService>,
+    body: Bytes,
+) -> Result<impl IntoResponse> {
+    if let Err(e) = p_service.alipay_verify_sign(&body).await {
+        tracing::error!("支付宝验签失败:{e:?}");
+        return Ok("fail");
+    }
+    let body = str::from_utf8(&body).context("支付宝notify解析失败")?;
+
     tracing::warn!("支付接口正在施工中...\n回调数据：{body}");
     Ok("success")
 }

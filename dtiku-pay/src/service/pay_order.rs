@@ -193,7 +193,24 @@ impl PayOrderService {
         }
     }
 
-    pub async fn verify_signature(
+    pub async fn alipay_verify_sign(&self, raw_body: &[u8]) -> anyhow::Result<()> {
+        let alipay = self.alipay.clone();
+        match alipay {
+            Some(alipay) => {
+                let r = alipay
+                    .async_verify_sign(raw_body)
+                    .context("支付宝验签失败")?;
+                if r {
+                    Ok(())
+                } else {
+                    Err(anyhow!("支付宝验签失败"))
+                }
+            }
+            None => Err(anyhow!("暂不支持支付宝")),
+        }
+    }
+
+    pub async fn wechat_verify_signature(
         &self,
         serial: &str,
         timestamp: &str,
