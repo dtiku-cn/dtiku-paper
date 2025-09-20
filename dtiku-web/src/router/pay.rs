@@ -130,8 +130,6 @@ async fn alipay_callback(
         tracing::error!("支付宝验签失败:{e:?}");
         return Ok("fail");
     }
-    let body = str::from_utf8(&body).context("支付宝notify解析失败")?;
-
-    tracing::warn!("支付接口正在施工中...\n回调数据：{body}");
+    p_service.notify_alipay(&body).await;
     Ok("success")
 }

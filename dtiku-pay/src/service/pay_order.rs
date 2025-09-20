@@ -339,6 +339,30 @@ impl PayOrderService {
         }
     }
 
+    pub async fn notify_alipay(&self, raw_body: &[u8]) -> anyhow::Result<()> {
+        let notify = serde_urlencoded::from_bytes::<AlipayNotify>(raw_body)
+            .context("支付宝notify解析失败")?;
+
+        let out_trade_no = notify.out_trade_no;
+        let status = OrderStatus::from_alipay(&notify.trade_status);
+        let now = Local::now().naive_local();
+
+        pay_order::ActiveModel {
+            id: Set(out_trade_no),
+            confirm: Set(Some(now)),
+            status: Set(status),
+            resp: Set(Some(
+                serde_json::to_value(notify).context("resp to json failed")?,
+            )),
+            ..Default::default()
+        }
+        .update(&self.db)
+        .await
+        .with_context(|| format!("update_pay_order({out_trade_no}) failed"))?;
+
+        Ok(())
+    }
+
     pub async fn find_wait_confirm_after(
         &self,
         after_time: DateTime,
@@ -362,3 +386,49 @@ pub struct WechatPayOrderResp {
 }
 
 impl ResponseTrait for WechatPayOrderResp {}
+
+/// 支付宝异步通知参数
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AlipayNotify {
+    pub notify_time: String,
+    pub notify_type: String,
+    pub notify_id: String,
+    pub sign_type: String,
+    pub sign: String,
+
+    pub trade_no: String,
+    pub app_id: String,
+    pub auth_app_id: String,
+    pub out_trade_no: i32,
+    pub out_biz_no: Option<String>,
+
+    #[serde(alias = "buyer_id", alias = "buyer_open_id")]
+    pub buyer_id: Option<String>,
+    pub buyer_logon_id: Option<String>,
+    pub seller_id: Option<String>,
+    pub seller_email: Option<String>,
+
+    pub trade_status: String,
+    pub total_amount: String,
+    pub receipt_amount: Option<String>,
+    pub invoice_amount: Option<String>,
+    pub buyer_pay_amount: Option<String>,
+    pub point_amount: Option<String>,
+    pub refund_fee: Option<String>,
+    pub send_back_fee: Option<String>,
+
+    pub subject: Option<String>,
+    pub body: Option<String>,
+
+    pub gmt_create: Option<String>,
+    pub gmt_payment: Option<String>,
+    pub gmt_refund: Option<String>,
+    pub gmt_close: Option<String>,
+
+    pub fund_bill_list: Option<String>, // 原始 JSON 字符串，必要时再反序列化
+    pub voucher_detail_list: Option<String>, // 同上
+    pub biz_settle_mode: Option<String>,
+
+    pub merchant_app_id: Option<String>,
+    pub version: Option<String>,
+}
