@@ -35,6 +35,7 @@ impl Plugin for PayPlugin {
                 .alipay_root_cert_sn(&conf.alipay_root_cert_sn)
                 .alipay_public_key(&conf.alipay_public_key)
                 .app_cert_sn(&conf.alipay_app_cert_sn)
+                .notify_url(&conf.alipay_callback_url)
                 .charset_utf8()
                 .format_json()
                 .private_key(&conf.alipay_app_private_key)
