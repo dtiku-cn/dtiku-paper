@@ -15,4 +15,6 @@ pub struct GrpcClientConfig {
 pub struct OpenListConfig {
     pub(crate) username: String,
     pub(crate) password: String,
+    #[serde(default)]
+    pub(crate) use_origin: bool,
 }

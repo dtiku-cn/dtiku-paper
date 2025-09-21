@@ -52,6 +52,15 @@ impl Model {
         let path = self.compute_storage_path();
         format!("//s.dtiku.cn/{path}")
     }
+
+    pub fn compute_src_url(&self) -> String {
+        let src_url = &self.src_url;
+        if src_url.starts_with("//") {
+            format!("http:{src_url}")
+        } else {
+            src_url.clone()
+        }
+    }
 }
 
 impl ActiveModel {
