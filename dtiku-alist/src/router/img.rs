@@ -11,6 +11,7 @@ use spring_opendal::Op;
 use spring_sea_orm::DbConn;
 use spring_web::{
     axum::{
+        body::Bytes,
         response::{IntoResponse, Redirect},
         Json,
     },
@@ -35,21 +36,7 @@ async fn upload(
         let data = field.bytes().await.unwrap();
 
         if name == "file" {
-            let (dir_path, file_path) = dir_and_file_path();
-
-            dav.create_dir(&dir_path)
-                .await
-                .with_context(|| format!("mkdir for {dir_path} failed"))?;
-            let resp = dav
-                .write(&file_path, data)
-                .await
-                .with_context(|| format!("upload to {file_path} failed"))?;
-            tracing::info!("upload ==> {resp:?}");
-
-            let url = rpc::alist::get_file_path(&file_path, &config)
-                .await
-                .with_context(|| format!("get_file_info({file_path}) failed"))?;
-            return Ok(url);
+            return Ok(upload_file_data(&dav, &config, data).await?);
         }
     }
     Err(KnownWebError::bad_request("上传请求不正确").into())
@@ -85,18 +72,7 @@ async fn upload_by_link(
         .bytes()
         .await
         .with_context(|| format!("图片下载失败:{original_url}"))?;
-    let (dir_path, file_path) = dir_and_file_path();
-    dav.create_dir(&format!("{dir_path}/"))
-        .await
-        .with_context(|| format!("mkdir for {dir_path} failed"))?;
-    let resp = dav
-        .write(&file_path, data)
-        .await
-        .with_context(|| format!("upload to {file_path} failed"))?;
-    tracing::info!("upload ==> {resp:?}");
-    let url = rpc::alist::get_file_path(&file_path, &config)
-        .await
-        .with_context(|| format!("get_file_info({file_path}) failed"))?;
+    let url = upload_file_data(&dav, &config, data).await?;
     Ok(Json(json!({
         "msg": "上传成功",
         "code": 0,
@@ -105,6 +81,27 @@ async fn upload_by_link(
             "url": url
         }
     })))
+}
+
+async fn upload_file_data(
+    dav: &Op,
+    config: &OpenListConfig,
+    data: Bytes,
+) -> anyhow::Result<String> {
+    let (dir_path, file_path) = dir_and_file_path();
+
+    dav.create_dir(&format!("{dir_path}/"))
+        .await
+        .with_context(|| format!("mkdir for {dir_path} failed"))?;
+    let resp = dav
+        .write(&file_path, data)
+        .await
+        .with_context(|| format!("upload to {file_path} failed"))?;
+    tracing::info!("upload ==> {resp:?}");
+
+    rpc::alist::get_file_path(&file_path, &config)
+        .await
+        .with_context(|| format!("get_file_info({file_path}) failed"))
 }
 
 #[get("/assets/{year}/{month}/{day}/{id}")]
