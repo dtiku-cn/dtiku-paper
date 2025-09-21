@@ -7,7 +7,7 @@ publish = ["crates-io"]
 [dependencies]
 spring = { workspace = true }
 spring-redis = { workspace = true }
-spring-stream = { workspace = true, features = ["redis"] }
+spring-stream = { workspace = true, features = ["redis", "json"] }
 spring-sea-orm = { workspace = true, features = ["with-web"] }
 sea-orm = { workspace = true, features = ["sqlx-postgres", "postgres-vector"] }
 serde = { workspace = true }

@@ -51,7 +51,7 @@
                 imgUploader: async (f) => {
                     const form = new FormData()
                     form.set('file', f)
-                    const resp = await fetch('https://{{original_host}}/upload', {
+                    const resp = await fetch('https://s.dtiku.cn/upload', {
                         method: 'POST',
                         body: form,
                     });
