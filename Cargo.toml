@@ -8,6 +8,7 @@ members = [
     "dtiku-bbs",
     "dtiku-stats",
     "dtiku-base",
+    "dtiku-alist",
 ]
 
 [workspace.dependencies]
@@ -45,6 +46,7 @@ just-auth = "0.1"
 lazy_static = "1"
 maplit = "1.0"
 md5 = "0.8"
+notify = "8.1"
 once_cell = "1.21"
 openai-api-rs = "6.0"
 ouroboros = "0.18"

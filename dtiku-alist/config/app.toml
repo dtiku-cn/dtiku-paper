@@ -1,0 +1,29 @@
+#:schema https://spring-rs.github.io/config-schema.json
+[web]
+port = 18080
+graceful = true
+connect_info = true
+
+[logger]
+level = "${RUST_LOG:info}"
+override_filter = "${LOG_LEVEL_FILTER:info,axum=warn}"
+pretty_backtrace = true
+
+[sea-orm]
+uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/empty_tiku}"
+
+[stream]
+uri = "${REDIS_URL:redis://localhost}"
+
+[opentelemetry]
+enable = false
+
+[web-dav-client]
+username = "${WEB_DAV_USERNAME:xxx}"
+password = "${WEB_DAV_PASSWORD:xxx}"
+use_origin = ${ASSETS_USE_ORIGIN:false}
+
+[opendal]
+scheme = "webdav"
+options = { endpoint = "${WEB_DAV_HOST:https://alist.dtiku.cn/dav}", username = "${WEB_DAV_USERNAME:xxx}", password = "${WEB_DAV_PASSWORD:xxx}" }
+layers = ["Tracing"]

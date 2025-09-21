@@ -1,7 +1,6 @@
 mod bbs;
 mod home;
 mod idiom;
-mod img;
 mod key_point;
 mod paper;
 mod pay;

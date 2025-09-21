@@ -3,10 +3,7 @@ use crate::{
     model::{pay_order, OrderLevel, OrderStatus, PayFrom, PayOrder},
     Alipay, WechatPayClient,
 };
-use alipay_sdk_rust::{
-    biz::{self, BizContenter},
-    response::TradePrecreateResponse,
-};
+use alipay_sdk_rust::{biz, response::TradePrecreateResponse};
 use anyhow::{anyhow, Context};
 use sea_orm::{
     prelude::DateTime, sqlx::types::chrono::Local, ActiveModelTrait, ActiveValue::Set, DbConn,

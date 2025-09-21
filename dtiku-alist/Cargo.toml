@@ -1,0 +1,39 @@
+[package]
+name = "dtiku-alist"
+version = "0.0.1"
+edition = "2021"
+publish = ["crates-io"]
+
+[[bin]]
+name = "alist"
+path = "src/main.rs"
+
+[dependencies]
+spring = { workspace = true }
+spring-web = { workspace = true }
+spring-redis = { workspace = true }
+spring-stream = { workspace = true, features = ["redis"] }
+spring-sea-orm = { workspace = true, features = ["postgres", "with-web"] }
+spring-opentelemetry = { workspace = true }
+spring-opendal = { workspace = true, features = [
+    "services-webdav",
+    "layers-tracing",
+] }
+tokio = { workspace = true, features = ["full"] }
+dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+itertools = { workspace = true }
+feignhttp = { workspace = true, features = ["json"] }
+reqwest = { workspace = true }
+sea-orm = { workspace = true, features = ["sqlx-postgres"] }
+uuid = { workspace = true, features = ["v4"] }
+axum-extra = { workspace = true, features = ["multipart"] }
+lazy_static = { workspace = true }
+
+[build-dependencies]
+minify-html = "0.16"
+walkdir = "2"
+tonic-build = "0.13"

@@ -55,16 +55,6 @@ ip_blacklist = ""
 embedding_url = "${EMBEDDING_GRPC_URL:http://localhost:18000}"
 artalk_url = "${ARTALK_GRPC_URL:http://localhost:18090}"
 
-[web-dav-client]
-username = "${WEB_DAV_USERNAME:xxx}"
-password = "${WEB_DAV_PASSWORD:xxx}"
-use_origin = ${ASSETS_USE_ORIGIN:false}
-
-[opendal]
-scheme = "webdav"
-options = { endpoint = "${WEB_DAV_HOST:https://alist.dtiku.cn/dav}", username = "${WEB_DAV_USERNAME:xxx}", password = "${WEB_DAV_PASSWORD:xxx}" }
-layers = ["Tracing"]
-
 [pay]
 ## https://openhome.alipay.com/develop/sandbox/app
 test_pay_amount = ${TEST_PAY_AMOUNT:false}

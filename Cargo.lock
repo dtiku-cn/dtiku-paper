@@ -1608,6 +1608,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
+name = "dtiku-alist"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "axum-extra",
+ "chrono",
+ "dtiku-paper",
+ "feignhttp",
+ "itertools 0.14.0",
+ "lazy_static",
+ "minify-html",
+ "reqwest 0.12.23",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "spring",
+ "spring-opendal",
+ "spring-opentelemetry",
+ "spring-redis",
+ "spring-sea-orm",
+ "spring-stream",
+ "spring-web",
+ "tokio",
+ "tonic-build",
+ "uuid",
+ "walkdir",
+]
+
+[[package]]
 name = "dtiku-artalk"
 version = "0.0.1"
 dependencies = [
@@ -1824,7 +1853,6 @@ dependencies = [
  "serde_urlencoded",
  "sha2",
  "spring",
- "spring-opendal",
  "spring-opentelemetry",
  "spring-redis",
  "spring-sea-orm",
