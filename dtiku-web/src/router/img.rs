@@ -35,7 +35,7 @@ async fn upload(
         let data = field.bytes().await.unwrap();
 
         if name == "file" {
-            let (dir_path, file_path) = dir_and_file_path();
+            let (dir_path, file_path, balance_file_path) = dir_and_file_path();
             dav.create_dir(&format!("{dir_path}/"))
                 .await
                 .with_context(|| format!("mkdir for {dir_path} failed"))?;
@@ -44,7 +44,7 @@ async fn upload(
                 .await
                 .with_context(|| format!("upload to {file_path} failed"))?;
             tracing::info!("upload ==> {resp:?}");
-            let url = rpc::alist::get_file_path(&file_path, &config)
+            let url = rpc::alist::get_file_path(&balance_file_path, &config)
                 .await
                 .with_context(|| format!("get_file_info({file_path}) failed"))?;
             return Ok(url);
@@ -53,15 +53,17 @@ async fn upload(
     Err(KnownWebError::bad_request("上传请求不正确").into())
 }
 
-fn dir_and_file_path() -> (String, String) {
+fn dir_and_file_path() -> (String, String, String) {
     let now = Local::now();
     let year = now.year();
     let month = now.month();
     let day = now.day();
-    let dir_path = format!("pan.wo/artalk/{}/{:02}/{:02}", year, month, day);
+    let dir_path = format!("dtiku-raw/{}/{:02}/{:02}", year, month, day);
+    let balance_dir_path = format!("dtiku/{}/{:02}/{:02}", year, month, day); // alist会上传到云盘并实现负载均衡目录
     let uid = Uuid::new_v4();
     let file_path = format!("{dir_path}/{uid}");
-    (dir_path, file_path)
+    let balance_file_path = format!("{balance_dir_path}/{uid}");
+    (dir_path, file_path, balance_file_path)
 }
 
 #[derive(Debug, Deserialize)]
@@ -83,7 +85,7 @@ async fn upload_by_link(
         .bytes()
         .await
         .with_context(|| format!("图片下载失败:{original_url}"))?;
-    let (dir_path, file_path) = dir_and_file_path();
+    let (dir_path, file_path, balance_file_path) = dir_and_file_path();
     dav.create_dir(&format!("{dir_path}/"))
         .await
         .with_context(|| format!("mkdir for {dir_path} failed"))?;
@@ -92,7 +94,7 @@ async fn upload_by_link(
         .await
         .with_context(|| format!("upload to {file_path} failed"))?;
     tracing::info!("upload ==> {resp:?}");
-    let url = rpc::alist::get_file_path(&file_path, &config)
+    let url = rpc::alist::get_file_path(&balance_file_path, &config)
         .await
         .with_context(|| format!("get_file_info({file_path}) failed"))?;
     Ok(Json(json!({
