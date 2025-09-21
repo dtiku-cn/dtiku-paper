@@ -42,17 +42,6 @@ async fn upload(
     Err(KnownWebError::bad_request("上传请求不正确").into())
 }
 
-fn dir_and_file_path() -> (String, String) {
-    let now = Local::now();
-    let year = now.year();
-    let month = now.month();
-    let day = now.day();
-    let dir_path = format!("pan.wo/{year}/{month:02}/{day:02}");
-    let uid = Uuid::new_v4();
-    let file_path = format!("{dir_path}/{uid}");
-    (dir_path, file_path)
-}
-
 #[derive(Debug, Deserialize)]
 struct UploadUrlReq {
     pub url: String,
@@ -88,7 +77,13 @@ async fn upload_file_data(
     config: &OpenListConfig,
     data: Bytes,
 ) -> anyhow::Result<String> {
-    let (dir_path, file_path) = dir_and_file_path();
+    let now = Local::now();
+    let year = now.year();
+    let month = now.month();
+    let day = now.day();
+    let dir_path = format!("pan.wo/{year}/{month:02}/{day:02}");
+    let uid = Uuid::new_v4();
+    let file_path = format!("{dir_path}/{uid}");
 
     dav.create_dir(&format!("{dir_path}/"))
         .await
