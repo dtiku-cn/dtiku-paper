@@ -58,6 +58,7 @@ artalk_url = "${ARTALK_GRPC_URL:http://localhost:18090}"
 [web-dav-client]
 username = "${WEB_DAV_USERNAME:xxx}"
 password = "${WEB_DAV_PASSWORD:xxx}"
+use_origin = ${ASSETS_USE_ORIGIN:false}
 
 [opendal]
 scheme = "webdav"
