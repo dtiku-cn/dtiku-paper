@@ -109,11 +109,11 @@
                 });
             },
             upload: {
-                url: "https://s.dtiku.cn/upload",
+                url: "https://s.dtiku.cn/dtiku-alist-api/upload",
                 fieldName: 'file',
                 multiple: false,
                 format: (f, respTxt) => `{"msg":"","code":0,"data":{"errFiles":[],"succMap":{"${f[0].name}":"${respTxt}"}}}`,
-                linkToImgUrl: "https://s.dtiku.cn/upload-by-link"
+                linkToImgUrl: "https://s.dtiku.cn/dtiku-alist-api/upload-by-link"
             }
         });
         window.themeSwitcher.listener.push(function (dark) {

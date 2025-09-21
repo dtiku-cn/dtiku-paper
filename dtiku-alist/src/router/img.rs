@@ -20,7 +20,7 @@ use spring_web::{
 };
 use uuid::Uuid;
 
-#[post("/upload")]
+#[post("/dtiku-alist-api/upload")]
 async fn upload(
     Component(dav): Component<Op>,
     Config(config): Config<OpenListConfig>,
@@ -71,7 +71,7 @@ struct UploadUrlReq {
     pub url: String,
 }
 
-#[post("/upload-by-link")]
+#[post("/dtiku-alist-api/upload-by-link")]
 async fn upload_by_link(
     Component(dav): Component<Op>,
     Config(config): Config<OpenListConfig>,
