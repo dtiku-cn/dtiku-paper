@@ -2,7 +2,7 @@ use crate::{plugins::OpenListConfig, rpc};
 use anyhow::Context;
 use axum_extra::extract::Multipart;
 use chrono::{Datelike, Local};
-use dtiku_paper::model::{assets, Assets};
+use dtiku_paper::model::Assets;
 use sea_orm::EntityTrait;
 use serde::Deserialize;
 use serde_json::json;
