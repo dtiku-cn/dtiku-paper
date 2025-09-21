@@ -105,6 +105,8 @@ pub fn routers() -> Router {
         .fallback(not_found_handler)
 }
 
+static IGNORE_PREFIX: [&str; 3] = ["/api", "/pay", "/assets"];
+
 async fn global_error_page(
     ec_service: Component<ExamCategoryService>,
     sc_service: Component<SystemConfigService>,
@@ -117,7 +119,10 @@ async fn global_error_page(
     req: Request,
     next: Next,
 ) -> Response {
-    if !req.uri().path().starts_with("/api") && !req.uri().path().starts_with("/pay") {
+    if !IGNORE_PREFIX
+        .iter()
+        .any(|prefix| req.uri().path().starts_with(prefix))
+    {
         if let Some(resp) = anti_bot(&sc_service, &cookies, user_agent, client_ip).await {
             return resp;
         }
