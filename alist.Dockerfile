@@ -28,7 +28,7 @@ WORKDIR /runner
 
 COPY --from=builder /build/target/release/alist ./dtiku-alist
 
-COPY ./dtiku-alist/config ./configs
+COPY ./dtiku-alist/config ./config
 
 EXPOSE 8080
 
