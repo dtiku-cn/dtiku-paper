@@ -2,6 +2,7 @@ use crate::plugins::embedding::Embedding;
 use anyhow::Context as _;
 use dtiku_base::model::{schedule_task, ScheduleTask};
 use dtiku_paper::model::{assets, Assets};
+use futures::future;
 use sea_orm::{ActiveValue::Set, EntityTrait as _};
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
@@ -12,7 +13,7 @@ use spring_stream::{
     stream_listener,
 };
 
-const CLOUD_STORAGE: [&str; 6] = ["139", "ilanzou", "pan.wo", "photo.baidu", "115", "uc"];
+const CLOUD_STORAGE: [&str; 4] = ["139", "photo.baidu", "115", "uc"];
 
 #[stream_listener("assets")]
 async fn save_assets_in_realtime(
@@ -87,15 +88,25 @@ impl AssetsSaveService {
             .bytes()
             .await
             .with_context(|| format!("reqwest::get_img_body({img_url}) failed"))?;
-        Ok(for s in CLOUD_STORAGE {
-            if let Err(e) = self
-                .op
-                .write(&format!("{s}/{storage_path}"), body.clone())
-                .await
-            {
-                tracing::error!("save asset failed: {e:?}");
+
+        let futures = CLOUD_STORAGE.into_iter().map(|dir_prefix| {
+            let dav = self.op.clone();
+            let data = body.clone();
+            let file_path = format!("{dir_prefix}/{storage_path}/");
+            async move {
+                let resp = dav
+                    .write(&file_path, data)
+                    .await
+                    .with_context(|| format!("upload to {file_path} failed"))?;
+                tracing::info!("upload ==> {resp:?}");
+
+                Ok::<(), anyhow::Error>(())
             }
-        })
+        });
+
+        future::join_all(futures).await;
+
+        Ok(())
     }
 
     fn add_default_http(url: &str) -> String {

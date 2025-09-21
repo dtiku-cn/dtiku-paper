@@ -3,7 +3,6 @@ use anyhow::Context;
 use axum_extra::extract::Multipart;
 use chrono::{Datelike, Local};
 use dtiku_paper::model::Assets;
-use futures::future::join_all;
 use sea_orm::EntityTrait;
 use serde::Deserialize;
 use serde_json::json;
@@ -21,8 +20,6 @@ use spring_web::{
 };
 use uuid::Uuid;
 
-static BALANCE_UPLOAD_DIR: [&str; 2] = ["dtiku-raw", "pan.wo"];
-
 #[post("/dtiku-alist-api/upload")]
 async fn upload(
     Component(dav): Component<Op>,
@@ -38,30 +35,18 @@ async fn upload(
         let data = field.bytes().await.unwrap();
 
         if name == "file" {
-            let (dir_path, file_path, balance_file_path) = dir_and_file_path();
+            let (dir_path, file_path) = dir_and_file_path();
 
-            let futures = BALANCE_UPLOAD_DIR.into_iter().map(|dir_prefix| {
-                let dav = dav.clone();
-                let data = data.clone();
-                let dir_path = format!("{dir_prefix}/{dir_path}/");
-                let file_path = format!("{dir_prefix}/{file_path}/");
-                async move {
-                    dav.create_dir(&dir_path)
-                        .await
-                        .with_context(|| format!("mkdir for {dir_path} failed"))?;
-                    let resp = dav
-                        .write(&file_path, data)
-                        .await
-                        .with_context(|| format!("upload to {file_path} failed"))?;
-                    tracing::info!("upload ==> {resp:?}");
+            dav.create_dir(&dir_path)
+                .await
+                .with_context(|| format!("mkdir for {dir_path} failed"))?;
+            let resp = dav
+                .write(&file_path, data)
+                .await
+                .with_context(|| format!("upload to {file_path} failed"))?;
+            tracing::info!("upload ==> {resp:?}");
 
-                    Ok::<(), anyhow::Error>(())
-                }
-            });
-
-            join_all(futures).await;
-
-            let url = rpc::alist::get_file_path(&balance_file_path, &config)
+            let url = rpc::alist::get_file_path(&file_path, &config)
                 .await
                 .with_context(|| format!("get_file_info({file_path}) failed"))?;
             return Ok(url);
@@ -70,17 +55,15 @@ async fn upload(
     Err(KnownWebError::bad_request("上传请求不正确").into())
 }
 
-fn dir_and_file_path() -> (String, String, String) {
+fn dir_and_file_path() -> (String, String) {
     let now = Local::now();
     let year = now.year();
     let month = now.month();
     let day = now.day();
-    let dir_path = format!("{year}/{month:02}/{day:02}");
-    let balance_dir_path = format!("dtiku/{dir_path}"); // alist会上传到云盘并实现负载均衡目录
+    let dir_path = format!("pan.wo/{year}/{month:02}/{day:02}");
     let uid = Uuid::new_v4();
     let file_path = format!("{dir_path}/{uid}");
-    let balance_file_path = format!("{balance_dir_path}/{uid}");
-    (dir_path, file_path, balance_file_path)
+    (dir_path, file_path)
 }
 
 #[derive(Debug, Deserialize)]
@@ -102,7 +85,7 @@ async fn upload_by_link(
         .bytes()
         .await
         .with_context(|| format!("图片下载失败:{original_url}"))?;
-    let (dir_path, file_path, balance_file_path) = dir_and_file_path();
+    let (dir_path, file_path) = dir_and_file_path();
     dav.create_dir(&format!("{dir_path}/"))
         .await
         .with_context(|| format!("mkdir for {dir_path} failed"))?;
@@ -111,7 +94,7 @@ async fn upload_by_link(
         .await
         .with_context(|| format!("upload to {file_path} failed"))?;
     tracing::info!("upload ==> {resp:?}");
-    let url = rpc::alist::get_file_path(&balance_file_path, &config)
+    let url = rpc::alist::get_file_path(&file_path, &config)
         .await
         .with_context(|| format!("get_file_info({file_path}) failed"))?;
     Ok(Json(json!({
