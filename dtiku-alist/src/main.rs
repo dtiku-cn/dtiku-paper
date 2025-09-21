@@ -7,6 +7,7 @@ use spring_opendal::OpenDALPlugin;
 use spring_opentelemetry::{
     KeyValue, OpenTelemetryPlugin, ResourceConfigurator, SERVICE_NAME, SERVICE_VERSION,
 };
+use spring_redis::RedisPlugin;
 use spring_sea_orm::SeaOrmPlugin;
 use spring_stream::StreamPlugin;
 use spring_web::{WebConfigurator, WebPlugin};
@@ -21,6 +22,7 @@ async fn main() {
         ])
         .add_plugin(WebPlugin)
         .add_plugin(StreamPlugin)
+        .add_plugin(RedisPlugin)
         .add_plugin(SeaOrmPlugin)
         .add_plugin(OpenTelemetryPlugin)
         .add_plugin(OpenDALPlugin)
