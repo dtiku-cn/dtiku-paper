@@ -83,20 +83,13 @@ pub struct ArtalkResult<T> {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FileResp {
+    pub id: String,
     pub name: String,
     pub size: i64,
-    #[serde(rename = "is_dir")]
     pub is_dir: bool,
     pub modified: String,
     pub created: String,
     pub sign: String,
-    pub thumb: String,
-    #[serde(rename = "type")]
-    pub type_field: i64,
-    pub hashinfo: String,
-    #[serde(rename = "raw_url")]
     pub raw_url: String,
-    pub readme: String,
-    pub header: String,
     pub provider: String,
 }

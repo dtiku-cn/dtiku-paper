@@ -1,0 +1,12 @@
+###
+POST /api/fs/get
+Authorization: 
+Content-Type: application/json
+
+{
+  "path": "/pan.wo/2025/09/22/133b3284-20c2-4120-bef8-7d5906199d70",
+  "password": "",
+  "page": 1,
+  "per_page": 0,
+  "refresh": false
+}
