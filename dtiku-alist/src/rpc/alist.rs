@@ -83,7 +83,6 @@ pub struct ArtalkResult<T> {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FileResp {
-    pub id: String,
     pub name: String,
     pub size: i64,
     pub is_dir: bool,
