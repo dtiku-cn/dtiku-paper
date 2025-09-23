@@ -1,10 +1,10 @@
 ###
-POST /api/fs/get
-Authorization: 
+POST https://alist.dtiku.cn/api/fs/get
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImhvbG1vZnkiLCJwd2RfdHMiOjE3NDgxNDg2OTcsImV4cCI6MTc1ODgxNDA5NywibmJmIjoxNzU4NjQxMjk3LCJpYXQiOjE3NTg2NDEyOTd9._JARo87zNeSfAu_lQHVbFRaSxxsEMvVLztuZA_JkG40
 Content-Type: application/json
 
 {
-  "path": "/pan.wo/2025/09/22/133b3284-20c2-4120-bef8-7d5906199d70",
+  "path": "/assets/2025/8/26/2135257",
   "password": "",
   "page": 1,
   "per_page": 0,

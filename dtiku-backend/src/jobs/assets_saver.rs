@@ -13,7 +13,7 @@ use spring_stream::{
     stream_listener,
 };
 
-const CLOUD_STORAGE: [&str; 4] = ["139", "photo.baidu", "115", "uc"];
+const CLOUD_STORAGE: [&str; 3] = ["139", "115", "uc"];
 
 #[stream_listener("assets")]
 async fn save_assets_in_realtime(
