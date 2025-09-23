@@ -236,7 +236,7 @@ impl HuatuSyncService {
                             .update_progress(&progress, &self.target_db)
                             .await?;
                     }
-                    Err(e) => tracing::error!("find label failed: {:?}", e),
+                    Err(e) => tracing::error!("find paper failed: {:?}", e),
                 };
             }
         }
