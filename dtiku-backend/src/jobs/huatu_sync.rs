@@ -205,7 +205,7 @@ impl HuatuSyncService {
                             label_id,
                             coalesce(jsonb_extract_path_text(extra,'area'), jsonb_extract_path_text(extra,'areaName')) as area,
                             coalesce(jsonb_extract_path_text(extra,'name'), jsonb_extract_path_text(extra,'paperName')) as name,
-                            coalesce(jsonb_extract_path_text(extra,'type'), '-1') as ty,
+                            coalesce(jsonb_extract_path_text(extra,'type'), '-1')::integer as ty,
                             coalesce(jsonb_extract_path_text(extra,'year'), jsonb_extract_path_text(extra,'paperYear'))::integer as year,
                             jsonb_extract_path_text(extra,'modules') as modules,
                             jsonb_extract_path_text(extra,'topicNameList') as topics
