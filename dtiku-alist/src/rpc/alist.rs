@@ -35,7 +35,7 @@ pub async fn get_file_path(raw_path: &str, config: &OpenListConfig) -> anyhow::R
     Ok(format!("{static_url}/d{path}?sign={}", resp.data.sign))
 }
 
-#[cache("alist-token", expire = 172000)] // 默认48小时过期，所以过期时间设置为略小于172800
+#[cache("alist-token", expire = 170000)] // 默认48小时过期，所以过期时间设置为略小于172800
 async fn get_token(username: &str, password: &str) -> anyhow::Result<Option<String>> {
     let r = login(LoginReq { username, password })
         .await
