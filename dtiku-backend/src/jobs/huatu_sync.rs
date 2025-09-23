@@ -207,8 +207,8 @@ impl HuatuSyncService {
                             coalesce(jsonb_extract_path_text(extra,'name'), jsonb_extract_path_text(extra,'paperName')) as name,
                             coalesce(jsonb_extract_path_text(extra,'type'), '-1')::integer as ty,
                             coalesce(jsonb_extract_path_text(extra,'year'), jsonb_extract_path_text(extra,'paperYear'))::integer as year,
-                            jsonb_extract_path(extra,'modules') as modules,
-                            jsonb_extract_path(extra,'topicNameList') as topics
+                            jsonb_extract_path(extra,'modules')::jsonb as modules,
+                            jsonb_extract_path(extra,'topicNameList')::jsonb as topics
                     from paper p 
                     where from_ty ='huatu' and id > $1 and id <= $2
                     "##,
