@@ -341,6 +341,63 @@ impl QuestionExtra {
             _ => 0,
         }
     }
+
+    async fn replace_img_src<C: ConnectionTrait>(&self, qid: i32, db: &C) -> anyhow::Result<Self> {
+        Ok(match self {
+            Self::SingleChoice { options } => Self::SingleChoice {
+                options: Self::replace_options(options, qid, db).await?,
+            },
+            Self::MultiChoice { options } => Self::MultiChoice {
+                options: Self::replace_options(options, qid, db).await?,
+            },
+            Self::IndefiniteChoice { options } => Self::IndefiniteChoice {
+                options: Self::replace_options(options, qid, db).await?,
+            },
+            Self::BlankChoice { options } => Self::BlankChoice {
+                options: Self::replace_options(options, qid, db).await?,
+            },
+            Self::WordSelection { options } => Self::WordSelection {
+                options: Self::replace_options(options, qid, db).await?,
+            },
+            Self::Compose { options } => Self::Compose {
+                options: Self::replace_options(options, qid, db).await?,
+            },
+            Self::StepByStepQA { qa } => Self::StepByStepQA { qa: qa.to_owned() },
+            Self::ClosedEndedQA { qa } => Self::ClosedEndedQA { qa: qa.to_owned() },
+            Self::OpenEndedQA { qa } => Self::OpenEndedQA { qa: qa.to_owned() },
+            Self::Placeholder => self.to_owned(),
+            Self::FillBlank => self.to_owned(),
+            Self::BlankAnswer => self.to_owned(),
+            Self::TrueFalse => self.to_owned(),
+            _ => self.to_owned(),
+        })
+    }
+
+    async fn replace_options<C: ConnectionTrait>(
+        options: &Vec<String>,
+        qid: i32,
+        db: &C,
+    ) -> anyhow::Result<Vec<String>> {
+        let mut r = Vec::with_capacity(options.len());
+        for op in options {
+            let replaced_content = html::async_replace_img_src(op, |img_url| {
+                let img_url = img_url.to_string();
+                Box::pin(async move {
+                    let assets = assets::SourceAssets {
+                        src_type: SrcType::Question,
+                        src_id: qid,
+                        src_url: img_url,
+                    }
+                    .insert_on_conflict(db)
+                    .await?;
+                    Ok(assets.compute_storage_url())
+                })
+            })
+            .await?;
+            r.push(replaced_content);
+        }
+        Ok(r)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
@@ -619,9 +676,11 @@ impl ActiveModel {
             })
         })
         .await?;
+        let extra = model.extra.replace_img_src(model.id, db).await?;
         let model = ActiveModel {
             id: Set(model.id),
             content: Set(replaced_content),
+            extra: Set(extra),
             ..Default::default()
         }
         .update(db)
