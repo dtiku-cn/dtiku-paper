@@ -318,7 +318,7 @@ impl HuatuSyncService {
                 (jsonb_extract_path(extra,'area'))::int as area,
                 jsonb_extract_path_text(extra,'teachType') as ty,
                 jsonb_extract_path_text(extra,'stem') as content,
-                jsonb_extract_path(extra,'choices') as choices,
+                nullif(jsonb_extract_path(extra,'choices'), 'null') as choices,
                 (jsonb_extract_path(extra,'difficult'))::real as difficult,
                 nullif(jsonb_extract_path(extra,'answerList'), 'null') as answer_list,
                 nullif(jsonb_extract_path(extra,'answers'), 'null') as answers,
