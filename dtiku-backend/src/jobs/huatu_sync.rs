@@ -722,7 +722,7 @@ impl Into<PaperChapter> for &PaperBlock {
 struct OriginQuestion {
     id: i64,
     target_id: Option<i32>,
-    area: i32,
+    area: Option<i32>,
     year: i16,
     ty: Option<String>,
     content: String,
