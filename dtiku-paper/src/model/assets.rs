@@ -43,7 +43,7 @@ impl ActiveModelBehavior for ActiveModel {
 
 impl Model {
     pub fn compute_storage_path(&self) -> String {
-        let date = self.created.format("%Y/%m/%d").to_string();
+        let date = self.created.format("%Y/%m/%d/%H/%M").to_string();
         let id = self.id;
         format!("assets/{date}/{id}")
     }
