@@ -593,7 +593,7 @@ impl ExamTreeNode {
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct OriginLabel {
-    id: Option<i32>,
+    id: Option<i64>,
     name: Option<String>,
     parent_name: Option<String>,
 }

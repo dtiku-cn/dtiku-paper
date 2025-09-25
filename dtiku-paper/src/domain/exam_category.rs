@@ -1,7 +1,6 @@
+use crate::model::{exam_category, FromType};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-
-use crate::model::{exam_category, FromType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExamPaperType {
