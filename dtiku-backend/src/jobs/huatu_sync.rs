@@ -320,7 +320,7 @@ impl HuatuSyncService {
                 jsonb_extract_path_text(extra,'stem') as content,
                 jsonb_extract_path(extra, 'choices')::jsonb as choices,
                 (coalesce(jsonb_extract_path(extra,'difficult'), '0'))::real as difficult,
-                jsonb_extract_path(extra,'answerList') as answer_list,
+                jsonb_extract_path_text(extra,'answerList') as answer_list,
                 jsonb_extract_path(extra,'answers') as answers,
                 jsonb_extract_path_text(extra,'analysis') as analysis,
                 jsonb_extract_path_text(extra,'extend') as extend,
