@@ -318,16 +318,16 @@ impl HuatuSyncService {
                 (jsonb_extract_path(extra,'area'))::int as area,
                 jsonb_extract_path_text(extra,'teachType') as ty,
                 jsonb_extract_path_text(extra,'stem') as content,
-                (coalesce(jsonb_extract_path(extra, 'choices'), 'null'))::jsonb as choices,
+                jsonb_extract_path(extra, 'choices')::jsonb as choices,
                 (coalesce(jsonb_extract_path(extra,'difficult'), '0'))::real as difficult,
-                coalesce(jsonb_extract_path(extra,'answerList'), 'null') as answer_list,
-                coalesce(jsonb_extract_path(extra,'answers'), 'null') as answers,
+                jsonb_extract_path(extra,'answerList') as answer_list,
+                jsonb_extract_path(extra,'answers') as answers,
                 jsonb_extract_path_text(extra,'analysis') as analysis,
                 jsonb_extract_path_text(extra,'extend') as extend,
                 jsonb_extract_path_text(extra,'answerRequire') as answer_require,
                 jsonb_extract_path_text(extra,'referAnalysis') as refer_analysis,
-                coalesce(jsonb_extract_path_text(extra,'material'), 'null') as material,
-                coalesce(jsonb_extract_path(extra,'pointsName'), 'null') as points_name
+                jsonb_extract_path_text(extra,'material') as material,
+                jsonb_extract_path(extra,'pointsName') as points_name
             from question
             where from_ty = 'huatu'
             and id = any($1)
