@@ -724,7 +724,7 @@ struct OriginQuestion {
     area: Option<i32>,
     ty: Option<String>,
     content: String,
-    choices: Json<Vec<String>>,
+    choices: Option<Json<Vec<String>>>,
     difficult: f32,
     answer_list: Option<String>,
     answers: Option<Json<Vec<Vec<String>>>>,
@@ -745,6 +745,7 @@ impl OriginQuestion {
             answer_require,
             ..
         } = self;
+        let choices = choices.to_owned().unwrap_or_default();
         let mut options_string = String::new();
         let mut active_model = if choices.len() > 0 {
             options_string = choices.0.join("\n");
@@ -953,6 +954,7 @@ impl OriginQuestion {
             extend,
             ..
         } = self;
+        let choices = choices.to_owned().unwrap_or_default();
         if choices.len() > 0 {
             let extra = if let Some(ty) = ty {
                 match ty.as_str() {
