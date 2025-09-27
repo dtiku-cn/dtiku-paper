@@ -223,12 +223,14 @@ impl HuatuSyncService {
                         let source_id = row.id;
                         let paper = self.save_paper(row).await?;
 
-                        sqlx::query("update paper set target_id=$1 where id=$2 and from_ty='huatu'")
-                            .bind(paper.id)
-                            .bind(source_id)
-                            .execute(&self.source_db)
-                            .await
-                            .context("update source db label target_id failed")?;
+                        sqlx::query(
+                            "update paper set target_id=$1 where id=$2 and from_ty='huatu'",
+                        )
+                        .bind(paper.id)
+                        .bind(source_id)
+                        .execute(&self.source_db)
+                        .await
+                        .context("update source db label target_id failed")?;
 
                         progress.current = source_id;
                         self.task = self
@@ -389,6 +391,7 @@ impl HuatuSyncService {
                 .await
                 .context("insert question failed")?;
             let mut solution = q.to_solution()?;
+            solution.from_ty = Set(FromType::Huatu);
             solution.question_id = Set(q_in_db.id);
             solution.insert_on_conflict(&self.target_db).await?;
 
@@ -1288,7 +1291,6 @@ impl OriginQuestion {
             },
         };
         Ok(solution::ActiveModel {
-            from_ty: Set(FromType::Huatu),
             extra: Set(extra),
             ..Default::default()
         })
