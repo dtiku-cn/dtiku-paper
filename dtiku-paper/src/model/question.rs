@@ -398,6 +398,21 @@ impl QuestionExtra {
         }
         Ok(r)
     }
+
+    fn html(&self) -> String {
+        match &self {
+            Self::SingleChoice { options }
+            | Self::MultiChoice { options }
+            | Self::IndefiniteChoice { options }
+            | Self::BlankChoice { options }
+            | Self::WordSelection { options }
+            | Self::Compose { options } => options.join("\n"),
+            Self::StepByStepQA { qa } | Self::ClosedEndedQA { qa } | Self::OpenEndedQA { qa } => {
+                qa.iter().map(|qa| qa.title.as_str()).join("\n")
+            }
+            _ => "".to_string(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
@@ -612,6 +627,13 @@ impl ActiveModel {
                     .text()
                     .join("")
             };
+            let origin_text_content = {
+                let q_extra_content = Html::parse_fragment(&extra.html())
+                    .root_element()
+                    .text()
+                    .join("");
+                format!("{text_content}\n{q_extra_content}")
+            };
             let qs = Entity::find_by_embedding(db, embedding_vec).await?;
             for q in qs {
                 let text_content_length = text_content.chars().count();
@@ -629,21 +651,27 @@ impl ActiveModel {
                 }
 
                 let q_text_content = {
-                    Html::parse_fragment(&q.content)
+                    let content = Html::parse_fragment(&q.content)
                         .root_element()
                         .text()
-                        .join("")
+                        .join("");
+                    let extra_content = Html::parse_fragment(&q.extra.html())
+                        .root_element()
+                        .text()
+                        .join("");
+                    format!("{content}\n{extra_content}")
                 };
                 let q_text_content_length = q_text_content.chars().count();
-                if q_text_content_length > 100 && text_content_length > 100 {
+                let origin_text_content_length = origin_text_content.chars().count();
+                if q_text_content_length > 100 && origin_text_content_length > 100 {
                     let edit_distance =
-                        textdistance::str::levenshtein(&q_text_content, &text_content);
+                        textdistance::str::levenshtein(&q_text_content, &origin_text_content);
                     // 95%相似度: 100个字只有5个字不同
-                    if edit_distance * 20 < text_content_length.max(text_content_length) {
+                    if edit_distance * 20 < q_text_content_length.max(origin_text_content_length) {
                         return Ok(q);
                     } else {
                         tracing::warn!(
-                            "question text对比匹配失败==>{q_text_content}--->{text_content}"
+                            "question text对比匹配失败==>{q_text_content}--->{origin_text_content}"
                         );
                     }
                 }
