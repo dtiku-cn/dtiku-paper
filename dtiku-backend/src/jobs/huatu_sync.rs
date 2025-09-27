@@ -1288,6 +1288,7 @@ impl OriginQuestion {
             },
         };
         Ok(solution::ActiveModel {
+            from_ty: Set(FromType::Huatu),
             extra: Set(extra),
             ..Default::default()
         })

@@ -220,7 +220,7 @@ impl ActiveModel {
             )
             .exec_with_returning(db)
             .await
-            .context("insert question failed")?;
+            .context("insert solution failed")?;
 
         let replaced_extra = match model.extra.clone() {
             SolutionExtra::SingleChoice(mut sc) => {
