@@ -9,7 +9,7 @@ use crate::{
 use anyhow::Context as _;
 use axum::body::Body;
 use axum::http::{HeaderValue, Response};
-use dtiku_paper::model::Question;
+use dtiku_paper::model::{question, Question};
 use gaoya::minhash::{MinHasher, MinHasher64V1};
 use gaoya::simhash::SimHashBits;
 use gaoya::simhash::{SimHash, SimSipHasher128};
@@ -34,6 +34,8 @@ use spring_web::{
 #[post("/api/text_similarity")]
 async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoResponse> {
     let TextCompare { source, target } = q;
+    let source = question::RE_PUNCT.replace_all(&source, "").into_owned();
+    let target = question::RE_PUNCT.replace_all(&target, "").into_owned();
     let bag = textdistance::str::bag(&source, &target);
     let cosine = textdistance::str::cosine(&source, &target);
     let damerau_levenshtein = textdistance::str::damerau_levenshtein(&source, &target);
@@ -107,7 +109,12 @@ async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoRes
 
 #[post("/api/html_text")]
 async fn get_html_text(body: String) -> Result<impl IntoResponse> {
-    let text_content = { scraper::Html::parse_fragment(&body).root_element().text().join("") };
+    let text_content = {
+        scraper::Html::parse_fragment(&body)
+            .root_element()
+            .text()
+            .join("")
+    };
     Ok(text_content)
 }
 

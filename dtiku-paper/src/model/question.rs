@@ -615,7 +615,7 @@ impl Entity {
 
 //// 用于内容相似度对比的正则，去掉标点符号等，防止标点差异影响相似度
 lazy_static! {
-    static ref RE_PUNCT: Regex =
+    pub static ref RE_PUNCT: Regex =
         Regex::new(r###"[，,:：；;。\.？?！!、‘’“”\"\'（）()【】\[\]]"###).unwrap();
 }
 
