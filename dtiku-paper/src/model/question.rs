@@ -7,6 +7,8 @@ use crate::{
 };
 use anyhow::Context;
 use itertools::Itertools;
+use lazy_static::lazy_static;
+use regex::Regex;
 use scraper::Html;
 use sea_orm::{
     prelude::PgVector, sea_query::OnConflict, ActiveModelTrait, ActiveValue::Set, ColumnTrait,
@@ -611,6 +613,12 @@ impl Entity {
     }
 }
 
+//// 用于内容相似度对比的正则，去掉标点符号等，防止标点差异影响相似度
+lazy_static! {
+    static ref RE_PUNCT: Regex =
+        Regex::new(r###"[，,:：；;。\.？?！!、‘’“”\"\'（）()【】\[\]]"###).unwrap();
+}
+
 impl ActiveModel {
     pub async fn insert_on_conflict<C>(mut self, db: &C) -> anyhow::Result<Model>
     where
@@ -632,7 +640,9 @@ impl ActiveModel {
                     .root_element()
                     .text()
                     .join("");
-                format!("{text_content}\n{q_extra_content}")
+                RE_PUNCT
+                    .replace_all(&format!("{text_content}\n{q_extra_content}"), "")
+                    .into_owned()
             };
             let qs = Entity::find_by_embedding(db, embedding_vec).await?;
             for q in qs {
@@ -659,7 +669,9 @@ impl ActiveModel {
                         .root_element()
                         .text()
                         .join("");
-                    format!("{content}\n{extra_content}")
+                    RE_PUNCT
+                        .replace_all(&format!("{content}\n{extra_content}"), "")
+                        .into_owned()
                 };
                 let q_text_content_length = q_text_content.chars().count();
                 let origin_text_content_length = origin_text_content.chars().count();

@@ -1756,6 +1756,7 @@ dependencies = [
  "fancy-regex",
  "gaoya",
  "itertools 0.14.0",
+ "lazy_static",
  "md5 0.8.0",
  "once_cell",
  "pgvector",
