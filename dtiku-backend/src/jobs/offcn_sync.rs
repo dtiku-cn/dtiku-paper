@@ -179,7 +179,7 @@ impl OffcnSyncService {
     async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
         let source_paper_id = paper.id;
         let target_exam_id: i32 =
-            sqlx::query("select target_id from label where id = $1 and from_ty='huatu'")
+            sqlx::query("select target_id from label where id = $1 and from_ty='offcn'")
                 .bind(paper.label_id)
                 .fetch_one(&self.source_db)
                 .await

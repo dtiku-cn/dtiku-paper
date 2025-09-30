@@ -3,12 +3,13 @@ mod fenbi_sync;
 mod huatu_sync;
 mod idiom_fetch;
 mod offcn_sync;
-mod web_solution_collect;
 mod pay_trade_fetcher;
+mod web_solution_collect;
 
 use crate::jobs::assets_saver::AssetsSaveService;
 use crate::jobs::huatu_sync::HuatuSyncService;
 use crate::jobs::idiom_fetch::IdiomStatsService;
+use crate::jobs::offcn_sync::OffcnSyncService;
 use crate::jobs::web_solution_collect::WebSolutionCollectService;
 use crate::plugins::jobs::RunningJobs;
 use anyhow::Context;
@@ -48,6 +49,12 @@ async fn task_schedule(
         ScheduleTaskType::HuatuSync => {
             HuatuSyncService::build(task, instance)
                 .expect("build huatu sync service failed")
+                .start()
+                .await
+        }
+        ScheduleTaskType::OffcnSync => {
+            OffcnSyncService::build(task, instance)
+                .expect("build offcn sync service failed")
                 .start()
                 .await
         }

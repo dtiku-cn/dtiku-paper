@@ -112,6 +112,8 @@ pub enum ScheduleTaskType {
     FenbiSync,
     #[strum(message = "同步华图数据")]
     HuatuSync,
+    #[strum(message = "同步中公数据")]
+    OffcnSync,
     #[strum(message = "成语统计")]
     IdiomStats,
     #[strum(message = "Web答案采集")]
