@@ -259,7 +259,8 @@ impl OffcnSyncService {
                 extra->>'answer' as answer,
                 extra->>'explain_a' as explain,
                 extra->>'analysis' as analysis,
-                extra->>'step_explanation' as step_explanation
+                extra->>'step_explanation' as step_explanation,
+                extra->>'multi_material_id' as multi_material_id
             from question
             where from_ty='offcn'
             and id = any($1)
@@ -325,7 +326,8 @@ impl OffcnSyncService {
             solution.question_id = Set(q_in_db.id);
             solution.insert_on_conflict(&self.target_db).await?;
 
-            if let Some(m) = q.material {
+            if let Some(m) = q.multi_material_id {
+                // todo parse multi_material_id
                 let m_in_db = material::ActiveModel {
                     content: Set(m),
                     ..Default::default()
@@ -447,6 +449,7 @@ struct OriginQuestion {
     explain: Option<String>,
     analysis: Option<String>,
     step_explanation: Option<Json<Vec<String>>>,
+    multi_material_id: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Deserialize)]
