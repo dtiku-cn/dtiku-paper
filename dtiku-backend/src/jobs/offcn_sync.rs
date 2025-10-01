@@ -5,19 +5,16 @@ use crate::{
 };
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
-use dtiku_paper::model::{
-    label, material, paper, paper_material, question, question_keypoint, solution, FromType,
-    KeyPoint,
-};
+use dtiku_paper::model::{label, material, paper, paper_material, question, solution, FromType};
 use futures::StreamExt as _;
 use itertools::Itertools as _;
-use sea_orm::{ActiveValue::Set, ConnectionTrait, Statement};
+use sea_orm::{ActiveValue::Set, ConnectionTrait};
 use serde::Deserialize;
 use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
-use sqlx::Row;
+use sqlx::{types::Json, Row};
 use std::collections::HashMap;
 
 #[derive(Clone, Service)]
@@ -255,6 +252,7 @@ impl OffcnSyncService {
         let questions = sqlx::query_as::<_, OriginQuestion>(
             r##"
             select
+                id,
                 extra->>'type' as ty,
                 extra->>'stem' as content,
                 extra->>'choices' as choices,
@@ -346,107 +344,7 @@ impl OffcnSyncService {
                 .context("insert paper_material failed")?;
             }
 
-            let keypoint_path = match q.points_name {
-                Some(keypoints) => {
-                    let mut keypoint_ids = vec![];
-                    for keypoint_name in keypoints.0 {
-                        let paper_type = paper.paper_type;
-                        let kp = KeyPoint::find_by_paper_type_and_name(
-                            &self.target_db,
-                            paper_type,
-                            &keypoint_name,
-                        )
-                        .await
-                        .with_context(|| {
-                            format!("find paper_type#{paper_type} keypoint({keypoint_name}) failed")
-                        })?;
-
-                        if let Some(keypoint) = kp {
-                            question_keypoint::ActiveModel {
-                                question_id: Set(q_in_db.id),
-                                key_point_id: Set(keypoint.id),
-                                year: Set(paper.year),
-                            }
-                            .insert_on_conflict(&self.target_db)
-                            .await
-                            .context("insert question_keypoint failed")?;
-                            keypoint_ids.push(keypoint.id);
-                        }
-                    }
-                    KeyPoint::query_common_keypoint_path(&self.target_db, &keypoint_ids).await?
-                }
-                None => {
-                    let paper_type = paper.paper_type;
-                    if let Some(chapter_name) = paper.extra.compute_chapter_name(*num) {
-                        let kp = KeyPoint::find_by_paper_type_and_name(
-                            &self.target_db,
-                            paper_type,
-                            &chapter_name,
-                        )
-                        .await
-                        .with_context(|| {
-                            format!("find paper_type#{paper_type} keypoint({chapter_name}) failed")
-                        })?;
-                        if let Some(keypoint) = kp {
-                            KeyPoint::query_common_keypoint_path(
-                                &self.target_db,
-                                &vec![keypoint.id],
-                            )
-                            .await?
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                }
-            };
-
-            // ltree
-            let stmt = match &keypoint_path {
-                Some(path) => Statement::from_sql_and_values(
-                    sea_orm::DatabaseBackend::Postgres,
-                    r#"INSERT INTO paper_question (paper_id, question_id, sort, paper_type, keypoint_path, correct_ratio)
-                        VALUES ($1, $2, $3, $4, CAST($5 AS ltree), $6)
-                        ON CONFLICT (paper_id, question_id)
-                        DO UPDATE SET 
-                            sort=EXCLUDED.sort, 
-                            paper_type=EXCLUDED.paper_type, 
-                            keypoint_path=EXCLUDED.keypoint_path, 
-                            correct_ratio=EXCLUDED.correct_ratio
-                        "#,
-                    vec![
-                        paper.id.into(),
-                        q_in_db.id.into(),
-                        (*num as i16).into(),
-                        q_in_db.paper_type.into(),
-                        path.into(),
-                        correct_ratio.into(),
-                    ],
-                ),
-                None => Statement::from_sql_and_values(
-                    sea_orm::DatabaseBackend::Postgres,
-                    r#"INSERT INTO paper_question (paper_id, question_id, sort, paper_type, correct_ratio)
-                        VALUES ($1, $2, $3, $4, $5)
-                        ON CONFLICT (paper_id, question_id)
-                        DO UPDATE SET 
-                            sort=EXCLUDED.sort, 
-                            paper_type=EXCLUDED.paper_type, 
-                            correct_ratio=EXCLUDED.correct_ratio
-                        "#,
-                    vec![
-                        paper.id.into(),
-                        q_in_db.id.into(),
-                        (*num as i16).into(),
-                        q_in_db.paper_type.into(),
-                        correct_ratio.into(),
-                    ],
-                ),
-            };
-
-            self.target_db.execute(stmt).await.with_context(|| {
-                format!("insert paper_question failed, key_point_path:{keypoint_path:?}")
-            })?;
+            // todo save
         }
 
         Ok(())
@@ -542,6 +440,21 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct OriginQuestion {
     id: i64,
+    ty: i16,
+    content: String,
+    choices: Option<Json<Vec<Choice>>>,
+    answer: Option<Json<Vec<String>>>,
+    explain: Option<String>,
+    analysis: Option<String>,
+    step_explanation: Option<Json<Vec<String>>>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Deserialize)]
+pub struct Choice {
+    pub choice: String,
+    pub choice_id: i64,
+    pub is_correct: i64,
+    pub question_id: i64,
 }
 
 impl OriginQuestion {
