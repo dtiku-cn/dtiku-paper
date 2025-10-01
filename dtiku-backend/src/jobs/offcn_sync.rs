@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use super::{JobScheduler, PaperSyncer};
 use crate::{
     jobs::{MaterialIdNumber, QuestionIdNumber},
@@ -7,15 +5,20 @@ use crate::{
 };
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
-use dtiku_paper::model::{label, material, paper, paper_material, question_keypoint, KeyPoint};
+use dtiku_paper::model::{
+    label, material, paper, paper_material, question, question_keypoint, solution, FromType,
+    KeyPoint,
+};
 use futures::StreamExt as _;
 use itertools::Itertools as _;
-use sea_orm::{ActiveValue::Set, ConnectionTrait};
+use sea_orm::{ActiveValue::Set, ConnectionTrait, Statement};
+use serde::Deserialize;
 use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
 use sqlx::Row;
+use std::collections::HashMap;
 
 #[derive(Clone, Service)]
 #[service(prototype)]
@@ -308,7 +311,7 @@ impl OffcnSyncService {
         }
 
         for q in questions {
-            let correct_ratio = 1.0 - q.difficult / 10.0;
+            let correct_ratio = 1.0;
             let num = qid_num_map
                 .get(&q.id)
                 .expect("qid is not exists in qid_num_map");
@@ -520,21 +523,33 @@ struct OriginMaterial {
     pub content: String,
 }
 
+impl TryInto<material::ActiveModel> for OriginMaterial {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<material::ActiveModel, Self::Error> {
+        let mut am = material::ActiveModel {
+            content: Set(self.content),
+            extra: Set(vec![]),
+            ..Default::default()
+        };
+        if let Some(id) = self.target_id {
+            am.id = Set(id);
+        }
+        Ok(am)
+    }
+}
+
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct OriginQuestion {
     id: i64,
-    target_id: Option<i32>,
-    area: Option<i32>,
-    ty: Option<String>,
-    content: String,
-    choices: Option<Json<Vec<String>>>,
-    difficult: f32,
-    answer_list: Option<String>,
-    answers: Option<Json<Vec<Vec<String>>>>,
-    analysis: Option<String>,
-    extend: Option<String>,
-    answer_require: Option<String>,
-    refer_analysis: Option<String>,
-    material: Option<String>,
-    points_name: Option<Json<Vec<String>>>,
+}
+
+impl OriginQuestion {
+    async fn to_question(&self, embedding: &Embedding) -> anyhow::Result<question::ActiveModel> {
+        todo!()
+    }
+
+    fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
+        todo!()
+    }
 }
