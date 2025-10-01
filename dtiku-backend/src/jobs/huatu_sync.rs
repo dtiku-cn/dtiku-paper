@@ -296,7 +296,7 @@ impl HuatuSyncService {
                 material_id,
                 number
             from paper_material
-            where from_ty = 'fenbi'
+            where from_ty = 'huatu'
             and paper_id = $1
             order by number
             "##,
@@ -537,7 +537,7 @@ impl HuatuSyncService {
         .insert_on_conflict(&self.target_db)
         .await
         .context("insert paper_material failed")?;
-        sqlx::query("update material set target_id=$1 where id=$2 and from_ty='fenbi'")
+        sqlx::query("update material set target_id=$1 where id=$2 and from_ty='huatu'")
             .bind(m_in_db.id)
             .bind(source_material_id)
             .execute(&self.source_db)

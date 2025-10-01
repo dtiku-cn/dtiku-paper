@@ -1,10 +1,16 @@
+use std::collections::HashMap;
+
 use super::{JobScheduler, PaperSyncer};
-use crate::plugins::embedding::Embedding;
+use crate::{
+    jobs::{MaterialIdNumber, QuestionIdNumber},
+    plugins::embedding::Embedding,
+};
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
-use dtiku_paper::model::{label, paper};
+use dtiku_paper::model::{label, material, paper, paper_material, question_keypoint, KeyPoint};
 use futures::StreamExt as _;
-use sea_orm::ConnectionTrait;
+use itertools::Itertools as _;
+use sea_orm::{ActiveValue::Set, ConnectionTrait};
 use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
@@ -199,6 +205,273 @@ impl OffcnSyncService {
         source_paper_id: i64,
         paper: &paper::Model,
     ) -> anyhow::Result<()> {
+        let question_ids: Vec<QuestionIdNumber> = sqlx::query_as(
+            r##"
+            select
+                question_id,
+                number
+            from paper_question
+            where from_ty = 'offcn'
+            and paper_id = $1
+            order by number
+            "##,
+        )
+        .bind(source_paper_id)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find question_ids({source_paper_id}) failed"))?;
+
+        let qid_num_map: HashMap<_, _> = question_ids
+            .into_iter()
+            .map(|q| (q.question_id, q.number))
+            .collect();
+        let qids = qid_num_map.keys().cloned().collect_vec();
+
+        let material_ids: Vec<MaterialIdNumber> = sqlx::query_as(
+            r##"
+            select
+                material_id,
+                number
+            from paper_material
+            where from_ty = 'offcn'
+            and paper_id = $1
+            order by number
+            "##,
+        )
+        .bind(source_paper_id)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find material_ids({source_paper_id}) failed"))?;
+
+        let mid_num_map: HashMap<_, _> = material_ids
+            .into_iter()
+            .map(|m| (m.material_id, m.number + 1))
+            .collect();
+        let mids = mid_num_map.keys().cloned().collect_vec();
+
+        let questions = sqlx::query_as::<_, OriginQuestion>(
+            r##"
+            select
+                extra->>'type' as ty,
+                extra->>'stem' as content,
+                extra->>'choices' as choices,
+                extra->>'answer' as answer,
+                extra->>'explain_a' as explain,
+                extra->>'analysis' as analysis,
+                extra->>'step_explanation' as step_explanation
+            from question
+            where from_ty='offcn'
+            and id = any($1)
+        "##,
+        )
+        .bind(qids)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find questions({source_paper_id}) failed"))?;
+
+        let materials = sqlx::query_as::<_, OriginMaterial>(
+            r##"
+            select
+                id,
+                target_id,
+                jsonb_extract_path_text(extra,'content') as content
+            from material
+            where from_ty = 'offcn'
+            and id = any($1)
+        "##,
+        )
+        .bind(mids)
+        .fetch_all(&self.source_db)
+        .await
+        .with_context(|| format!("find material({source_paper_id}) failed"))?;
+
+        self.save_questions_and_materials(questions, materials, paper, &qid_num_map, &mid_num_map)
+            .await?;
+        Ok(())
+    }
+
+    async fn save_questions_and_materials(
+        &self,
+        questions: Vec<OriginQuestion>,
+        materials: Vec<OriginMaterial>,
+        paper: &paper::Model,
+        qid_num_map: &HashMap<i64, i32>,
+        mid_num_map: &HashMap<i64, i32>,
+    ) -> anyhow::Result<()> {
+        let mut material_num = 1;
+        for m in materials {
+            let num = mid_num_map
+                .get(&m.id)
+                .expect("mid is not exists in mid_num_map");
+            material_num = material_num.max(*num);
+            self.save_material(m, paper.id, *num).await?;
+        }
+
+        for q in questions {
+            let correct_ratio = 1.0 - q.difficult / 10.0;
+            let num = qid_num_map
+                .get(&q.id)
+                .expect("qid is not exists in qid_num_map");
+            let mut question = q.to_question(&self.embedding).await?;
+            question.exam_id = Set(paper.exam_id);
+            question.paper_type = Set(paper.paper_type);
+            let q_in_db = question
+                .insert_on_conflict(&self.target_db)
+                .await
+                .context("insert question failed")?;
+            let mut solution = q.to_solution()?;
+            solution.from_ty = Set(FromType::Huatu);
+            solution.question_id = Set(q_in_db.id);
+            solution.insert_on_conflict(&self.target_db).await?;
+
+            if let Some(m) = q.material {
+                let m_in_db = material::ActiveModel {
+                    content: Set(m),
+                    ..Default::default()
+                }
+                .insert_on_conflict(&self.target_db)
+                .await?;
+                let num = material_num;
+                material_num += 1;
+                paper_material::ActiveModel {
+                    paper_id: Set(paper.id),
+                    material_id: Set(m_in_db.id),
+                    sort: Set(num as i16),
+                }
+                .insert_on_conflict(&self.target_db)
+                .await
+                .context("insert paper_material failed")?;
+            }
+
+            let keypoint_path = match q.points_name {
+                Some(keypoints) => {
+                    let mut keypoint_ids = vec![];
+                    for keypoint_name in keypoints.0 {
+                        let paper_type = paper.paper_type;
+                        let kp = KeyPoint::find_by_paper_type_and_name(
+                            &self.target_db,
+                            paper_type,
+                            &keypoint_name,
+                        )
+                        .await
+                        .with_context(|| {
+                            format!("find paper_type#{paper_type} keypoint({keypoint_name}) failed")
+                        })?;
+
+                        if let Some(keypoint) = kp {
+                            question_keypoint::ActiveModel {
+                                question_id: Set(q_in_db.id),
+                                key_point_id: Set(keypoint.id),
+                                year: Set(paper.year),
+                            }
+                            .insert_on_conflict(&self.target_db)
+                            .await
+                            .context("insert question_keypoint failed")?;
+                            keypoint_ids.push(keypoint.id);
+                        }
+                    }
+                    KeyPoint::query_common_keypoint_path(&self.target_db, &keypoint_ids).await?
+                }
+                None => {
+                    let paper_type = paper.paper_type;
+                    if let Some(chapter_name) = paper.extra.compute_chapter_name(*num) {
+                        let kp = KeyPoint::find_by_paper_type_and_name(
+                            &self.target_db,
+                            paper_type,
+                            &chapter_name,
+                        )
+                        .await
+                        .with_context(|| {
+                            format!("find paper_type#{paper_type} keypoint({chapter_name}) failed")
+                        })?;
+                        if let Some(keypoint) = kp {
+                            KeyPoint::query_common_keypoint_path(
+                                &self.target_db,
+                                &vec![keypoint.id],
+                            )
+                            .await?
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                }
+            };
+
+            // ltree
+            let stmt = match &keypoint_path {
+                Some(path) => Statement::from_sql_and_values(
+                    sea_orm::DatabaseBackend::Postgres,
+                    r#"INSERT INTO paper_question (paper_id, question_id, sort, paper_type, keypoint_path, correct_ratio)
+                        VALUES ($1, $2, $3, $4, CAST($5 AS ltree), $6)
+                        ON CONFLICT (paper_id, question_id)
+                        DO UPDATE SET 
+                            sort=EXCLUDED.sort, 
+                            paper_type=EXCLUDED.paper_type, 
+                            keypoint_path=EXCLUDED.keypoint_path, 
+                            correct_ratio=EXCLUDED.correct_ratio
+                        "#,
+                    vec![
+                        paper.id.into(),
+                        q_in_db.id.into(),
+                        (*num as i16).into(),
+                        q_in_db.paper_type.into(),
+                        path.into(),
+                        correct_ratio.into(),
+                    ],
+                ),
+                None => Statement::from_sql_and_values(
+                    sea_orm::DatabaseBackend::Postgres,
+                    r#"INSERT INTO paper_question (paper_id, question_id, sort, paper_type, correct_ratio)
+                        VALUES ($1, $2, $3, $4, $5)
+                        ON CONFLICT (paper_id, question_id)
+                        DO UPDATE SET 
+                            sort=EXCLUDED.sort, 
+                            paper_type=EXCLUDED.paper_type, 
+                            correct_ratio=EXCLUDED.correct_ratio
+                        "#,
+                    vec![
+                        paper.id.into(),
+                        q_in_db.id.into(),
+                        (*num as i16).into(),
+                        q_in_db.paper_type.into(),
+                        correct_ratio.into(),
+                    ],
+                ),
+            };
+
+            self.target_db.execute(stmt).await.with_context(|| {
+                format!("insert paper_question failed, key_point_path:{keypoint_path:?}")
+            })?;
+        }
+
+        Ok(())
+    }
+
+    async fn save_material(
+        &self,
+        m: OriginMaterial,
+        paper_id: i32,
+        num: i32,
+    ) -> Result<(), anyhow::Error> {
+        let source_material_id = m.id;
+        let material = TryInto::<material::ActiveModel>::try_into(m)?;
+        let m_in_db = material.insert_on_conflict(&self.target_db).await?;
+        paper_material::ActiveModel {
+            paper_id: Set(paper_id),
+            material_id: Set(m_in_db.id),
+            sort: Set(num as i16),
+        }
+        .insert_on_conflict(&self.target_db)
+        .await
+        .context("insert paper_material failed")?;
+        sqlx::query("update material set target_id=$1 where id=$2 and from_ty='offcn'")
+            .bind(m_in_db.id)
+            .bind(source_material_id)
+            .execute(&self.source_db)
+            .await
+            .context("update source db paper target_id failed")?;
         Ok(())
     }
 }
@@ -237,4 +510,31 @@ impl OriginPaper {
     ) -> anyhow::Result<paper::Model> {
         todo!()
     }
+}
+
+#[derive(Debug, Clone, Deserialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+struct OriginMaterial {
+    pub id: i64,
+    pub target_id: Option<i32>,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+struct OriginQuestion {
+    id: i64,
+    target_id: Option<i32>,
+    area: Option<i32>,
+    ty: Option<String>,
+    content: String,
+    choices: Option<Json<Vec<String>>>,
+    difficult: f32,
+    answer_list: Option<String>,
+    answers: Option<Json<Vec<Vec<String>>>>,
+    analysis: Option<String>,
+    extend: Option<String>,
+    answer_require: Option<String>,
+    refer_analysis: Option<String>,
+    material: Option<String>,
+    points_name: Option<Json<Vec<String>>>,
 }
