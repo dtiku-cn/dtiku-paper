@@ -12,9 +12,11 @@ pretty_backtrace = true
 
 [sqlx]
 uri = "${SRC_DATABASE_URL}"
+max_connections = 5
 
 [sea-orm]
 uri = "${DATABASE_URL}"
+max_connections = 5
 
 [sea-orm-web]
 one_indexed = true
