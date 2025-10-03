@@ -10,6 +10,7 @@ use dtiku_paper::model::{
 };
 use futures::StreamExt as _;
 use itertools::Itertools as _;
+use scraper::Html;
 use sea_orm::{ActiveValue::Set, ConnectionTrait, Statement};
 use serde::Deserialize;
 use serde_json::Value;
@@ -113,10 +114,10 @@ impl OffcnSyncService {
             match row {
                 Ok(row) => {
                     let source_id = row.id;
-                    let label = row.save_to(&self.target_db).await?;
+                    let exam_id = row.select_from(&self.target_db).await?;
 
                     sqlx::query("update label set target_id=$1 where id=$2 and from_ty='offcn'")
-                        .bind(label.id)
+                        .bind(exam_id)
                         .bind(source_id)
                         .execute(&self.source_db)
                         .await
@@ -255,7 +256,9 @@ impl OffcnSyncService {
             r##"
             select
                 id,
+                target_id,
                 extra->>'type' as ty,
+                extra->>'form' AS form,
                 extra->>'stem' as content,
                 extra->>'choices' as choices,
                 extra->>'answer' as answer,
@@ -392,21 +395,14 @@ struct OriginLabel {
 }
 
 impl OriginLabel {
-    async fn save_to<C: ConnectionTrait>(self, db: &C) -> anyhow::Result<label::Model> {
-        todo!()
-    }
-
     async fn select_from<C: ConnectionTrait>(self, db: &C) -> anyhow::Result<Option<i16>> {
         let stmt = Statement::from_sql_and_values(
             sea_orm::DatabaseBackend::Postgres,
             r##"
-            select ec2.id as id from exam_category ec1
-            left join exam_category ec2 
-            on ec1.id = ec2.pid
-            where ec2."name" = $1
-            and ec1."name" = $2
+            select id from exam_category
+            where "name" = $1
             "##,
-            vec![self.name.clone().into(), self.parent_name.clone().into()],
+            vec![self.parent_name.clone().into()],
         );
 
         let r = db.query_one(stmt).await.with_context(|| {
@@ -427,13 +423,21 @@ impl OriginLabel {
 
 #[derive(Debug, sqlx::FromRow)]
 struct OriginPaper {
-    name: Option<String>,
-    date: Option<String>,
-    topic: Option<String>,
-    ty: Option<i32>,
-    chapters: Option<String>,
+    list: Option<Json<Vec<ChapterItem>>>,
+    title: String,
+    content: Option<String>,
+    paper_pattern: Option<i32>,
     id: i64,
     label_id: i64,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChapterItem {
+    pub name: String,
+    pub block_id: i64,
+    pub done_count: i64,
+    pub total_count: i64,
 }
 
 impl OriginPaper {
@@ -472,7 +476,9 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct OriginQuestion {
     id: i64,
+    target_id: Option<i32>,
     ty: i16,
+    form: i16,
     content: String,
     choices: Option<Json<Vec<Choice>>>,
     answer: Option<Json<Vec<String>>>,
@@ -501,8 +507,56 @@ pub struct ExplainFile {
 }
 
 impl OriginQuestion {
-    async fn to_question(&self, embedding: &Embedding) -> anyhow::Result<question::ActiveModel> {
-        todo!()
+    async fn to_question(&self, model: &Embedding) -> anyhow::Result<question::ActiveModel> {
+        let Self {
+            ty,
+            content,
+            choices,
+            ..
+        } = self;
+
+        match ty{
+            1=>{
+                QuestionExtra::SingleChoice{
+
+                }
+            },
+            2=>{
+                QuestionExtra::SingleChoice{
+                    
+                }
+            },
+            3=>{
+
+            },
+            5=>{
+
+            },
+            6=>{
+
+            },
+            7=>{
+
+            }
+        }
+
+        let txt = {
+            // scraper::Html 底层用了 tendril::NonAtomic 和 Cell 类型，而这些类型不是线程安全的，所以它 不实现 Send。
+            // 用代码块，让html 变量在这里作用域结束，释放掉 Cell 的引用。
+            let html = Html::parse_fragment(&format!("{content}\n{options_string}"));
+            html.root_element().text().collect::<String>()
+        };
+        let embedding = model.text_embedding(&txt).await?;
+        let mut am = question::ActiveModel {
+            content: Set(content),
+            extra: Set(extra),
+            embedding: Set(embedding),
+            ..Default::default()
+        };
+        if let Some(target_id) = self.target_id {
+            active_model.id = Set(target_id);
+        }
+        Ok(am)
     }
 
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
