@@ -15,7 +15,7 @@ use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
 use sqlx::{types::Json, Row};
-use std::collections::HashMap;
+use std::{collections::HashMap, num::ParseIntError};
 
 #[derive(Clone, Service)]
 #[service(prototype)]
@@ -247,7 +247,7 @@ impl OffcnSyncService {
             .into_iter()
             .map(|m| (m.material_id, m.number + 1))
             .collect();
-        let mids = mid_num_map.keys().cloned().collect_vec();
+        let mut mids = mid_num_map.keys().cloned().collect_vec();
 
         let questions = sqlx::query_as::<_, OriginQuestion>(
             r##"
@@ -270,6 +270,18 @@ impl OffcnSyncService {
         .fetch_all(&self.source_db)
         .await
         .with_context(|| format!("find questions({source_paper_id}) failed"))?;
+
+        for q in &questions {
+            if let Some(multi_material_id) = &q.multi_material_id {
+                mids.extend(
+                    multi_material_id
+                        .split(",")
+                        .map(|mid| mid.parse())
+                        .collect::<Result<Vec<i64>, ParseIntError>>()
+                        .context("parse i32 failed")?,
+                );
+            }
+        }
 
         let materials = sqlx::query_as::<_, OriginMaterial>(
             r##"
@@ -322,31 +334,12 @@ impl OffcnSyncService {
                 .await
                 .context("insert question failed")?;
             let mut solution = q.to_solution()?;
-            solution.from_ty = Set(FromType::Huatu);
+            solution.from_ty = Set(FromType::Offcn);
             solution.question_id = Set(q_in_db.id);
             solution.insert_on_conflict(&self.target_db).await?;
 
-            if let Some(m) = q.multi_material_id {
-                // todo parse multi_material_id
-                let m_in_db = material::ActiveModel {
-                    content: Set(m),
-                    ..Default::default()
-                }
-                .insert_on_conflict(&self.target_db)
-                .await?;
-                let num = material_num;
-                material_num += 1;
-                paper_material::ActiveModel {
-                    paper_id: Set(paper.id),
-                    material_id: Set(m_in_db.id),
-                    sort: Set(num as i16),
-                }
-                .insert_on_conflict(&self.target_db)
-                .await
-                .context("insert paper_material failed")?;
-            }
-
-            // todo save
+            // todo save paper_question
+            
         }
 
         Ok(())
