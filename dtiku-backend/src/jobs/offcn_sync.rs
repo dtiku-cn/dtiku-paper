@@ -10,7 +10,7 @@ use dtiku_paper::model::{
 };
 use futures::StreamExt as _;
 use itertools::Itertools as _;
-use sea_orm::{ActiveValue::Set, ConnectionTrait};
+use sea_orm::{ActiveValue::Set, ConnectionTrait, Statement};
 use serde::Deserialize;
 use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
@@ -394,6 +394,34 @@ struct OriginLabel {
 impl OriginLabel {
     async fn save_to<C: ConnectionTrait>(self, db: &C) -> anyhow::Result<label::Model> {
         todo!()
+    }
+
+    async fn select_from<C: ConnectionTrait>(self, db: &C) -> anyhow::Result<Option<i16>> {
+        let stmt = Statement::from_sql_and_values(
+            sea_orm::DatabaseBackend::Postgres,
+            r##"
+            select ec2.id as id from exam_category ec1
+            left join exam_category ec2 
+            on ec1.id = ec2.pid
+            where ec2."name" = $1
+            and ec1."name" = $2
+            "##,
+            vec![self.name.clone().into(), self.parent_name.clone().into()],
+        );
+
+        let r = db.query_one(stmt).await.with_context(|| {
+            format!(
+                "query exam_category failed, name:{:?}<<parent_name:{:?}",
+                self.name, self.parent_name
+            )
+        })?;
+        Ok(match r {
+            Some(qr) => {
+                let id: i16 = qr.try_get("", "id").context("get id column failed")?;
+                Some(id)
+            }
+            None => None,
+        })
     }
 }
 
