@@ -3,15 +3,19 @@ use crate::{
     jobs::{MaterialIdNumber, QuestionIdNumber},
     plugins::embedding::Embedding,
 };
+use anyhow::anyhow;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::{
-    label, material, paper, paper_material, paper_question, question, solution, FromType,
+    material, paper, paper_material, paper_question,
+    question::{self, QuestionExtra},
+    solution::{self, MultiChoice, SingleChoice, SolutionExtra, StepByStepAnswer, TrueFalseChoice},
+    FromType,
 };
 use futures::StreamExt as _;
 use itertools::Itertools as _;
 use scraper::Html;
-use sea_orm::{ActiveValue::Set, ConnectionTrait, Statement};
+use sea_orm::{prelude::PgVector, ActiveValue::Set, ConnectionTrait, Statement};
 use serde::Deserialize;
 use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
@@ -509,38 +513,37 @@ pub struct ExplainFile {
 impl OriginQuestion {
     async fn to_question(&self, model: &Embedding) -> anyhow::Result<question::ActiveModel> {
         let Self {
-            ty,
+            form,
             content,
             choices,
             ..
         } = self;
 
-        match ty{
-            1=>{
-                QuestionExtra::SingleChoice{
-
-                }
-            },
-            2=>{
-                QuestionExtra::SingleChoice{
-                    
-                }
-            },
-            3=>{
-
-            },
-            5=>{
-
-            },
-            6=>{
-
-            },
-            7=>{
-
-            }
+        fn get_options(choices: Option<Json<Vec<Choice>>>) -> Vec<String> {
+            choices
+                .unwrap_or_default()
+                .0
+                .into_iter()
+                .map(|c| c.choice)
+                .collect_vec()
         }
+        let extra = match form {
+            0 | 1 => QuestionExtra::SingleChoice {
+                options: get_options(choices.clone()),
+            },
+            2 => QuestionExtra::IndefiniteChoice {
+                options: get_options(choices.clone()),
+            },
+            3 => QuestionExtra::TrueFalse,
+            4 => QuestionExtra::OpenEndedQA { qa: vec![] },
+            5 => QuestionExtra::MultiChoice {
+                options: get_options(choices.clone()),
+            },
+            _ => return Err(anyhow!("异常情况")),
+        };
 
         let txt = {
+            let options_string = get_options(choices.clone()).join("\n");
             // scraper::Html 底层用了 tendril::NonAtomic 和 Cell 类型，而这些类型不是线程安全的，所以它 不实现 Send。
             // 用代码块，让html 变量在这里作用域结束，释放掉 Cell 的引用。
             let html = Html::parse_fragment(&format!("{content}\n{options_string}"));
@@ -548,18 +551,93 @@ impl OriginQuestion {
         };
         let embedding = model.text_embedding(&txt).await?;
         let mut am = question::ActiveModel {
-            content: Set(content),
+            content: Set(content.clone()),
             extra: Set(extra),
-            embedding: Set(embedding),
+            embedding: Set(PgVector::from(embedding)),
             ..Default::default()
         };
         if let Some(target_id) = self.target_id {
-            active_model.id = Set(target_id);
+            am.id = Set(target_id);
         }
         Ok(am)
     }
 
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
-        todo!()
+        let Self {
+            form,
+            choices,
+            answer,
+            analysis,
+            explain,
+            explain_file,
+            step_explanation,
+            ..
+        } = self;
+
+        fn get_options_answer(choices: Option<Json<Vec<Choice>>>) -> Vec<u8> {
+            choices
+                .map(|json| {
+                    json.0
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, c)| {
+                            if c.is_correct == 1 {
+                                Some(i as u8)
+                            } else {
+                                None
+                            }
+                        })
+                        .collect()
+                })
+                .unwrap_or_default()
+        }
+        let extra = match form {
+            0 | 1 => SolutionExtra::SingleChoice(SingleChoice {
+                answer: get_options_answer(choices.clone()).remove(0),
+                analysis: if let Some(analysis) = analysis {
+                    let explain = explain.clone().unwrap_or_default();
+                    format!("{analysis}\n{explain}")
+                } else {
+                    explain.clone().unwrap_or_default()
+                },
+            }),
+            2 => SolutionExtra::IndefiniteChoice(MultiChoice {
+                answer: get_options_answer(choices.clone()),
+                analysis: if let Some(analysis) = analysis {
+                    let explain = explain.clone().unwrap_or_default();
+                    format!("{analysis}\n{explain}")
+                } else {
+                    explain.clone().unwrap_or_default()
+                },
+            }),
+            3 => SolutionExtra::TrueFalse(TrueFalseChoice {
+                answer: true,
+                analysis: if let Some(analysis) = analysis {
+                    let explain = explain.clone().unwrap_or_default();
+                    format!("{analysis}\n{explain}")
+                } else {
+                    explain.clone().unwrap_or_default()
+                },
+            }),
+            4 => SolutionExtra::OpenEndedQA(StepByStepAnswer {
+                solution: todo!(),
+                analysis: todo!(),
+            }),
+            5 => SolutionExtra::MultiChoice(MultiChoice {
+                answer: get_options_answer(choices.clone()),
+                analysis: if let Some(analysis) = analysis {
+                    let explain = explain.clone().unwrap_or_default();
+                    format!("{analysis}\n{explain}")
+                } else {
+                    explain.clone().unwrap_or_default()
+                },
+            }),
+            _ => return Err(anyhow!("异常情况")),
+        };
+
+        Ok(solution::ActiveModel {
+            extra: Set(extra),
+            ..Default::default()
+        })
     }
 }
