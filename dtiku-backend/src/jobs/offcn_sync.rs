@@ -489,7 +489,7 @@ struct OriginQuestion {
     explain: Option<String>,
     explain_file: Option<Json<Vec<ExplainFile>>>,
     analysis: Option<String>,
-    step_explanation: Option<Json<Vec<String>>>,
+    // step_explanation: Option<Json<Vec<String>>>,
     multi_material_id: Option<String>,
 }
 
@@ -570,7 +570,6 @@ impl OriginQuestion {
             analysis,
             explain,
             explain_file,
-            step_explanation,
             ..
         } = self;
 
@@ -620,8 +619,8 @@ impl OriginQuestion {
                 },
             }),
             4 => SolutionExtra::OpenEndedQA(StepByStepAnswer {
-                solution: todo!(),
-                analysis: todo!(),
+                solution: Some(answer.clone().unwrap().0.join("\n")),
+                analysis: vec![],
             }),
             5 => SolutionExtra::MultiChoice(MultiChoice {
                 answer: get_options_answer(choices.clone()),
