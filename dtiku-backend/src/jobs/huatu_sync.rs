@@ -662,15 +662,15 @@ impl OriginPaper {
             let ec = EssayCluster {
                 topic: topics,
                 blocks: vec![
-                    PaperBlock {
+                    paper::PaperBlock {
                         name: "注意事项".to_string(),
                         desc: "".to_string(),
                     },
-                    PaperBlock {
+                    paper::PaperBlock {
                         name: "给定材料".to_string(),
                         desc: "".to_string(),
                     },
-                    PaperBlock {
+                    paper::PaperBlock {
                         name: "作答要求".to_string(),
                         desc: "".to_string(),
                     },
