@@ -2,15 +2,18 @@ use super::{JobScheduler, PaperSyncer};
 use crate::{
     jobs::{MaterialIdNumber, QuestionIdNumber},
     plugins::embedding::Embedding,
+    utils::regex as regex_util,
 };
 use anyhow::anyhow;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::{
-    material, paper, paper_material, paper_question,
+    label, material,
+    paper::{self, Chapters, EssayCluster, PaperBlock, PaperChapter, PaperExtra},
+    paper_material, paper_question,
     question::{self, QuestionExtra},
     solution::{self, MultiChoice, SingleChoice, SolutionExtra, StepByStepAnswer, TrueFalseChoice},
-    FromType,
+    ExamCategory, FromType, Label,
 };
 use futures::StreamExt as _;
 use itertools::Itertools as _;
@@ -444,13 +447,92 @@ pub struct ChapterItem {
     pub total_count: i64,
 }
 
+impl Into<PaperChapter> for &ChapterItem {
+    fn into(self) -> PaperChapter {
+        PaperChapter {
+            name: self.name.clone(),
+            desc: "".to_string(),
+            count: self.total_count as i16,
+        }
+    }
+}
+
 impl OriginPaper {
     async fn save_paper<C: ConnectionTrait>(
         self,
         db: &C,
-        label_id: i32,
+        target_exam_id: i32,
     ) -> anyhow::Result<paper::Model> {
-        todo!()
+        let extra = if self.paper_pattern.unwrap_or_default() <= 1 {
+            let chapters = self
+                .list
+                .expect(&format!("paper#{} modules 不存在", self.id));
+            let cs = Chapters {
+                desc: None,
+                chapters: chapters.iter().map(|m: &ChapterItem| m.into()).collect(),
+            };
+            PaperExtra::Chapters(cs)
+        } else {
+            let ec = EssayCluster {
+                topic: None,
+                blocks: vec![
+                    PaperBlock {
+                        name: "注意事项".to_string(),
+                        desc: self.content.clone().unwrap_or_default(),
+                    },
+                    PaperBlock {
+                        name: "给定材料".to_string(),
+                        desc: "".to_string(),
+                    },
+                    PaperBlock {
+                        name: "作答要求".to_string(),
+                        desc: "".to_string(),
+                    },
+                ],
+            };
+            PaperExtra::EssayCluster(ec)
+        };
+        let paper_type = target_exam_id as i16;
+        let exam = ExamCategory::find_root_by_id(db, paper_type)
+            .await?
+            .expect(&format!(
+                "paper_type#{} exam root_id not found",
+                target_exam_id
+            ));
+        if let Some(area) = regex_util::pick_area(&self.title) {
+            let label =
+                Label::find_by_exam_id_and_paper_type_and_name(db, exam.id, paper_type, &area)
+                    .await?;
+            let label = match label {
+                Some(l) => l,
+                None => label::ActiveModel {
+                    name: Set(area),
+                    pid: Set(0),
+                    exam_id: Set(exam.id),
+                    paper_type: Set(paper_type),
+                    hidden: Set(false),
+                    ..Default::default()
+                }
+                .insert_on_conflict(db)
+                .await
+                .context("label insert failed")?,
+            };
+            let year = regex_util::pick_year(&self.title);
+            paper::ActiveModel {
+                year: Set(year.expect(&format!("paper#{} year 不存在", self.id)) as i16),
+                title: Set(self.title),
+                exam_id: Set(exam.id),
+                paper_type: Set(paper_type),
+                label_id: Set(label.id),
+                extra: Set(extra),
+                ..Default::default()
+            }
+            .insert_on_conflict(db)
+            .await
+            .context("paper insert failed")
+        } else {
+            todo!()
+        }
     }
 }
 
