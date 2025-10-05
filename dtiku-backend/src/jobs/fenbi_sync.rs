@@ -562,6 +562,11 @@ impl FenbiSyncService {
                 .expect("qid is not exists in qid_num_map");
             let (replaced_content, mut origin_mids) =
                 regex_util::replace_material_id_ref(&q.content, mid_num_map);
+            for sa in &mut q.solution_accessories.0 {
+                let (replaced_content, _) =
+                    regex_util::replace_material_id_ref(&sa.content, mid_num_map);
+                sa.content = replaced_content;
+            }
             q.content = replaced_content;
             let mut question = q.to_question(&self.embedding).await?;
             question.exam_id = Set(paper.exam_id);
