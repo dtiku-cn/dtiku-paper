@@ -94,14 +94,18 @@ impl SolutionExtra {
             | Self::FillBlank(FillBlank { analysis, .. })
             | Self::BlankAnswer(BlankAnswer { analysis, .. }) => analysis.to_string(),
             Self::ClosedEndedQA(AnswerAnalysis { answer, .. }) => answer.to_string(),
-            Self::OpenEndedQA(StepByStepAnswer { solution, analysis }) => match solution {
-                Some(sol) => sol.to_string(),
-                None => analysis
+            Self::OpenEndedQA(StepByStepAnswer { solution, analysis }) => {
+                if let Some(sol) = solution {
+                    if !sol.is_empty() {
+                        return sol.to_string();
+                    }
+                }
+                analysis
                     .iter()
                     .filter(|s| ["demonstrate", "reference", "sfdt"].contains(&s.label.as_str()))
                     .map(|s| s.content.as_str())
-                    .join("。"),
-            },
+                    .join("。")
+            }
             Self::OtherQA(OtherAnswer {
                 answer,
                 solution,
