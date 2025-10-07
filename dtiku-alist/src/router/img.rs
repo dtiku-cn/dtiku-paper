@@ -99,13 +99,13 @@ async fn upload_file_data(
         .with_context(|| format!("get_file_info({file_path}) failed"))
 }
 
-#[get("/assets/{year}/{month}/{day}/{id}")]
+#[get("/assets/{year}/{month}/{day}/{hour}/{min}/{id}")]
 async fn get_img(
     Component(db): Component<DbConn>,
     Config(config): Config<OpenListConfig>,
-    Path((year, month, day, id)): Path<(i32, i32, i32, i32)>,
+    Path((year, month, day, hour, min, id)): Path<(i32, i32, i32, i32, i32, i32)>,
 ) -> Result<impl IntoResponse> {
-    let file_path = format!("/assets/{year}/{month}/{day}/{id}");
+    let file_path = format!("/assets/{year}/{month}/{day}/{hour}/{min}/{id}");
     if config.use_origin {
         let assets = Assets::find_by_id(id)
             .one(&db)
