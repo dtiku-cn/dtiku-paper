@@ -45,7 +45,7 @@ where
 {
     // 这里用正则，而不是scraper，因为scraper中的ElementRef不是线程安全的
     // 匹配 <img ... src="..."> 或 src='...' 或 src=无引号
-    let re = Regex::new(r#"<img\b[^>]*?\bsrc\s*=\s*(['"]?)([^'"\s>]+)\1"#).unwrap();
+    let re = Regex::new(r#"<img\b[^>]*?\bsrc\s*=\s*(['"]?)(?!(?:data|blob|cid):)([^'"\s>]+)\1"#).unwrap();
 
     let mut result = String::new();
     let mut last_end = 0;
