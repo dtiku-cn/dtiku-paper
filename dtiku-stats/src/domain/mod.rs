@@ -11,6 +11,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IdiomStats {
     pub text: String,
+    pub baobian: String,
     pub explain: String,
     pub idiom_id: i32,
     pub question_count: i64,
@@ -26,15 +27,17 @@ pub struct IdiomRefStatsWithoutLabel {
 
 impl IdiomRefStatsWithoutLabel {
     pub fn with_idiom(self, id_text_map: &HashMap<i32, BriefIdiom>) -> IdiomStats {
+        let explain = id_text_map
+            .get(&self.idiom_id)
+            .map(|i| i.explain.clone())
+            .unwrap_or_default();
         IdiomStats {
             text: id_text_map
                 .get(&self.idiom_id)
                 .map(|i| i.text.clone())
                 .unwrap_or_default(),
-            explain: id_text_map
-                .get(&self.idiom_id)
-                .map(|i| i.explain.clone())
-                .unwrap_or_default(),
+            explain: explain.definition,
+            baobian: explain.baobian,
             idiom_id: self.idiom_id,
             question_count: self.question_count,
             paper_count: self.paper_count,
@@ -46,7 +49,8 @@ impl IdiomStats {
     pub fn from(stats: Option<&IdiomRefStatsWithoutLabel>, m: idiom::Model) -> Self {
         Self {
             text: m.text,
-            explain: m.explain,
+            baobian: m.explain.baobian,
+            explain: m.explain.definition,
             idiom_id: m.id,
             question_count: stats.map(|s| s.question_count).unwrap_or_default(),
             paper_count: stats.map(|s| s.paper_count).unwrap_or_default(),
@@ -57,9 +61,11 @@ impl IdiomStats {
         brief_idiom: Option<&BriefIdiom>,
         s: IdiomRefStatsWithoutLabel,
     ) -> Self {
+        let explain = brief_idiom.map(|i| i.explain.clone()).unwrap_or_default();
         Self {
             text: brief_idiom.map(|i| i.text.clone()).unwrap_or_default(),
-            explain: brief_idiom.map(|i| i.explain.clone()).unwrap_or_default(),
+            explain: explain.definition,
+            baobian: explain.baobian,
             idiom_id: s.idiom_id,
             question_count: s.question_count,
             paper_count: s.paper_count,
@@ -94,8 +100,8 @@ impl IdiomDetail {
         let jyc = self.jyc.iter().map(|i| &i.text).collect_vec();
         self.detail
             .content
-            .jyc
-            .iter()
+            .jyc()
+            .into_iter()
             .filter(|t| !jyc.contains(t))
             .collect_vec()
     }
@@ -104,8 +110,8 @@ impl IdiomDetail {
         let fyc = self.fyc.iter().map(|i| &i.text).collect_vec();
         self.detail
             .content
-            .fyc
-            .iter()
+            .fyc()
+            .into_iter()
             .filter(|t| !fyc.contains(t))
             .collect_vec()
     }
