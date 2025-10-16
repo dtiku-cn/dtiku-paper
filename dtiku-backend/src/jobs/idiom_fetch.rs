@@ -154,10 +154,11 @@ impl IdiomStatsService {
                                     tokio::time::sleep(Duration::from_secs(1)).await;
                                 }
                                 let explain = resp.unwrap().data;
+                                let basic_explain = (&explain).into();
                                 let saved_idiom = idiom::ActiveModel {
                                     text: Set(idiom.to_string()),
                                     ty: Set(ty),
-                                    explain: Set(explain),
+                                    explain: Set(basic_explain),
                                     content: Set(explain.into()),
                                     ..Default::default()
                                 }

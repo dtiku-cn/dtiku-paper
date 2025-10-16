@@ -14,6 +14,35 @@ use serde::{Deserialize, Serialize};
 use spring::async_trait;
 use std::collections::HashMap;
 
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+pub struct BasicExplain {
+    pub baobian: String,
+    pub definition: String,
+}
+
+impl Into<BasicExplain> for &IdiomExplainEntry {
+    fn into(self) -> BasicExplain {
+        match &self {
+            IdiomExplainEntry::Idiom(IdiomEntry {
+                baobian,
+                definition_info,
+                ..
+            }) => BasicExplain {
+                baobian: baobian.clone(),
+                definition: definition_info.as_ref().unwrap().definition.clone(),
+            },
+            IdiomExplainEntry::Term(TermEntry {
+                baobian,
+                baike_info,
+                ..
+            }) => BasicExplain {
+                baobian: baobian.clone(),
+                definition: baike_info.as_ref().unwrap().baike_mean.clone(),
+            },
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(tag = "type", content = "data")]
 pub enum IdiomExplainEntry {
@@ -22,6 +51,14 @@ pub enum IdiomExplainEntry {
 
     #[serde(rename = "term")]
     Term(TermEntry),
+}
+impl IdiomExplainEntry {
+    pub(crate) fn jyc(&self) -> Vec<&String> {
+        todo!()
+    }
+    pub(crate) fn fyc(&self) -> Vec<&String> {
+        todo!()
+    }
 }
 
 //
@@ -155,7 +192,7 @@ pub struct BriefIdiom {
     #[sea_orm(from_col = "text")]
     pub text: String,
     #[sea_orm(from_col = "explain")]
-    pub explain: String,
+    pub explain: BasicExplain,
 }
 
 #[async_trait]
@@ -197,7 +234,7 @@ impl Entity {
 
     pub async fn find_by_texts<C: ConnectionTrait>(
         db: &C,
-        texts: Vec<String>,
+        texts: Vec<&String>,
         labels: &Vec<i32>,
     ) -> anyhow::Result<Vec<IdiomStats>> {
         let brief = Entity::find()

@@ -129,8 +129,8 @@ impl IdiomService {
             .context("Idiom::get_idiom_detail() failed")?;
 
         if let Some(idiom) = idiom {
-            let jyc = Idiom::find_by_texts(&self.db, idiom.content.jyc.clone(), &labels).await?;
-            let fyc = Idiom::find_by_texts(&self.db, idiom.content.fyc.clone(), &labels).await?;
+            let jyc = Idiom::find_by_texts(&self.db, idiom.content.jyc().clone(), &labels).await?;
+            let fyc = Idiom::find_by_texts(&self.db, idiom.content.fyc().clone(), &labels).await?;
 
             let mut ref_filter = idiom_ref::Column::IdiomId.eq(idiom.id);
             if !labels.is_empty() {
