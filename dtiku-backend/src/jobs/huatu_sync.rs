@@ -210,7 +210,7 @@ impl HuatuSyncService {
                             jsonb_extract_path(extra,'modules')::jsonb as modules,
                             jsonb_extract_path(extra,'topicNameList')::jsonb as topics
                     from paper p 
-                    where from_ty ='huatu' and id > $1 and id <= $2
+                    where from_ty ='huatu' and target_id is null and id > $1 and id <= $2
                     "##,
             )
                 .bind(current)
