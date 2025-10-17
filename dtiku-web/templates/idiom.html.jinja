@@ -3,6 +3,7 @@
 {%- import "macros/elements.html.min.jinja" as elements -%}
 {%- import "macros/painter.html.min.jinja" as painter -%}
 {%- import "macros/question.html.min.jinja" as question -%}
+{%- import "macros/idiom.html.min.jinja" as idiom -%}
 <!doctype html>
 <html lang="zh">
 
@@ -66,7 +67,7 @@
         <li>{{lj.show_name}}</li>
         {%endfor%}
     </ol>
-    {%call jyc_fyc(idiom.detail.content.jyc(), idiom.detail.content.fyc(), idiom)%}
+    {%call idiom::jyc_fyc(idiom.detail.content.jyc(), idiom.detail.content.fyc(), idiom)%}
     {% elif let IdiomExplainEntry::Term(t) = idiom.detail.content %}
     <ul class="nav nav-tabs" id="termTab" role="tablist">
         <li class="nav-item" role="presentation">
