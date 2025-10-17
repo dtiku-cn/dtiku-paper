@@ -16,6 +16,7 @@ pretty_backtrace = true
 
 [sea-orm]
 uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/empty_tiku}"
+max_connections = ${MAX_DB_CONNECTION:1}
 
 [sea-orm-web]
 one_indexed = true
