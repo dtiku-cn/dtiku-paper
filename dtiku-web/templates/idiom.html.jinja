@@ -43,88 +43,47 @@
         <a rel="external nofollow" target="_blank"
             href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">{{idiom.detail.text}}</a>
     </h1>
-    <div class="m-4 text-muted">{{idiom.detail.explain}}</div>
-    {%if !idiom.detail.content.liju.is_empty()%}
-    <h3>例句</h3>
-    <div class="m-4 text-muted">{{idiom.detail.content.liju | safe}}</div>
-    {%endif%}
-    {%if !idiom.detail.content.jyc.is_empty() && !idiom.detail.content.fyc.is_empty() %}
-    <div class="card mb-3">
-        <header class="d-flex card-header align-items-center">
-            <svg class="icon-svg icon-svg-sm mr-2">
-                <use xlink:href="#ic-list"></use>
-            </svg>
-            <b>词语辨析</b>
-        </header>
-        {%if !idiom.detail.content.jyc.is_empty() %}
-        <table class="table idiom-list">
-            <tr class="table-secondary">
-                <th class="text-center px-0 py-2">近义词</th>
-                <th class="py-2 {%if idiom.jyc.is_empty()%}d-none{%endif%}">释义</th>
-                <th class="text-center px-0 py-2 {%if idiom.jyc.is_empty()%}d-none{%endif%}">真题</th>
-            </tr>
-            {%for s in idiom.jyc%}
-            <tr>
-                <td class="text-center px-0">
-                    <a rel="external nofollow" target="_blank"
-                        href="https://hanyu.sogou.com/result?query={{s.text}}">{{s.text}}</a>
-                </td>
-                <td>{{s.explain}}</td>
-                <td class="text-center px-0">
-                    <a href="/{{idiom.detail.ty}}/{{s.text}}?">{{s.paper_count}}</a>
-                </td>
-            </tr>
-            {%endfor%}
-            {%if !idiom.other_jyc().is_empty() %}
-            <tr>
-                <td colspan="3" class="p-3">
-                    {%for t in idiom.other_jyc()%}
-                    <a class="mr-2" rel="external nofollow" target="_blank"
-                        href="https://hanyu.sogou.com/result?query={{t}}">{{t}}</a>
-                    {%endfor%}
-                    <a rel="external nofollow" target="_blank"
-                        href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">...</a>
-                </td>
-            </tr>
-            {%endif%}
-        </table>
-        {%endif%}
-        {%if !idiom.detail.content.fyc.is_empty() %}
-        <table class="table idiom-list">
-            <tr class="table-secondary">
-                <th class="text-center px-0 py-2">反义词</th>
-                <th class="py-2 {%if idiom.fyc.is_empty()%}d-none{%endif%}">释义</th>
-                <th class="text-center px-0 py-2 {%if idiom.fyc.is_empty()%}d-none{%endif%}">真题</th>
-            </tr>
-            {%for s in idiom.fyc%}
-            <tr>
-                <td class="text-center px-0">
-                    <a rel="external nofollow" target="_blank"
-                        href="'https://dict.baidu.com/s?ptype=zici&wd='+${s.text}">{{s.text}}</a>
-                </td>
-                <td>{{s.explain}}</td>
-                <td class="text-center px-0">
-                    <a rel="external nofollow" target="_blank"
-                        href="/{{idiom.detail.ty}}/{{s.text}}">{{s.paper_count}}</a>
-                </td>
-            </tr>
-            {%endfor%}
-            {%if !idiom.other_fyc().is_empty() %}
-            <tr>
-                <td colspan="3" class="p-3">
-                    {%for t in idiom.other_fyc()%}
-                    <a class="mr-2" rel="external nofollow" target="_blank"
-                        href="https://hanyu.sogou.com/result?query={{t}}">{{t}}</a>
-                    {%endfor%}
-                    <a rel="external nofollow" target="_blank"
-                        href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">...</a>
-                </td>
-            </tr>
-            {%endif%}
-        </table>
-        {%endif%}
+    <div class="m-4 text-muted">
+        <span
+            class='badge {%if idiom.detail.explain.baobian.contains("褒")%}badge-success{%elif idiom.detail.explain.baobian.contains("贬")%}badge-warning{%else%}badge-secondary{%endif%}'>
+            {{idiom.detail.explain.baobian}}
+        </span>
+        <span>{{idiom.detail.explain.definition}}</span>
     </div>
+    {% if let IdiomExplainEntry::Idiom(i) = idiom.detail.content %}
+    {%if let Some(d) = i.definition_info%}
+    <p>基本: {{d.definition}}</p>
+    {%if d.similar_definition.is_empty()%}<p>比喻: {{d.similar_definition}}</p>{%endif%}
+    {%if d.modern_definition.is_empty()%}<p>今义: {{d.modern_definition}}</p>{%endif%}
+    <ul>
+        {%for dm in d.detail_means%}
+        <li>{{dm.word}}: {{dm.definition}}</li>
+        {%endfor%}
+    </ul>
     {%endif%}
+    <ol>
+        {%for lj in i.liju%}
+        <li>{{lj.show_name}}</li>
+        {%endfor%}
+    </ol>
+    {%call jyc_fyc(idiom.detail.content.jyc(), idiom.detail.content.fyc(), idiom)%}
+    {% elif let IdiomExplainEntry::Term(t) = idiom.detail.content %}
+    <ul class="nav nav-tabs" id="termTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="basicDefinition" data-toggle="tab" data-target="#basicDefinitionContent" type="button" role="tab">基本释义</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="detailDefinition" data-toggle="tab" data-target="#detailDefinitionContent" type="button" role="tab">详细释义</button>
+        </li>
+    </ul>
+    <div class="tab-content" id="termTabContent">
+        <div class="tab-pane fade show active" id="basicDefinitionContent" role="tabpanel">
+            
+        </div>
+        <div class="tab-pane fade" id="detailDefinitionContent" role="tabpanel">
+        </div>
+    </div>
+    {% endif %}
 
     <div class="card mb-3">
         <header class="d-flex card-header align-items-center">

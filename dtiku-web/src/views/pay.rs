@@ -3,7 +3,6 @@ use askama::Template;
 use askama_web::WebTemplate;
 use dtiku_pay::model::OrderLevel;
 use dtiku_pay::model::PayFrom;
-use serde::Serialize;
 use strum::IntoEnumIterator;
 
 #[derive(Template, WebTemplate)]

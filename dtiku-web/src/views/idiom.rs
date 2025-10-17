@@ -5,6 +5,7 @@ use askama::Template;
 use askama_web::WebTemplate;
 use dtiku_paper::domain::label::LabelTree;
 use dtiku_paper::model::question::QuestionExtra;
+use dtiku_stats::model::idiom::IdiomExplainEntry;
 use dtiku_stats::{
     domain::{IdiomDetail, IdiomStats},
     model::sea_orm_active_enums::IdiomType,
@@ -23,7 +24,7 @@ pub struct ListIdiomTemplate {
 }
 
 #[derive(Template, WebTemplate)]
-#[template(path = "idiom.html.min.jinja")]
+#[template(path = "idiom.html.jinja")]
 pub struct IdiomDetailTemplate {
     pub global: GlobalVariables,
     pub idiom: IdiomDetail,

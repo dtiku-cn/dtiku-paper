@@ -53,10 +53,10 @@ pub enum IdiomExplainEntry {
     Term(TermEntry),
 }
 impl IdiomExplainEntry {
-    pub(crate) fn jyc(&self) -> Vec<&String> {
+    pub fn jyc(&self) -> Vec<&String> {
         todo!()
     }
-    pub(crate) fn fyc(&self) -> Vec<&String> {
+    pub fn fyc(&self) -> Vec<&String> {
         todo!()
     }
 }

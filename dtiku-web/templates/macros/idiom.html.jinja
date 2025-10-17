@@ -1,0 +1,79 @@
+{% macro jyc_fyc(jyc, fyc, idiom)%}
+{%if !jyc.is_empty() && !fyc.is_empty() %}
+<div class="card mb-3">
+<header class="d-flex card-header align-items-center">
+    <svg class="icon-svg icon-svg-sm mr-2">
+        <use xlink:href="#ic-list"></use>
+    </svg>
+    <b>词语辨析</b>
+</header>
+{%if !jyc.is_empty() %}
+<table class="table idiom-list">
+    <tr class="table-secondary">
+        <th class="text-center px-0 py-2">近义词</th>
+        <th class="py-2 {%if idiom.jyc.is_empty()%}d-none{%endif%}">释义</th>
+        <th class="text-center px-0 py-2 {%if idiom.jyc.is_empty()%}d-none{%endif%}">真题</th>
+    </tr>
+    {%for s in idiom.jyc%}
+    <tr>
+        <td class="text-center px-0">
+            <a rel="external nofollow" target="_blank"
+                href="https://hanyu.sogou.com/result?query={{s.text}}">{{s.text}}</a>
+        </td>
+        <td>{{s.explain}}</td>
+        <td class="text-center px-0">
+            <a href="/{{idiom.detail.ty}}/{{s.text}}?">{{s.paper_count}}</a>
+        </td>
+    </tr>
+    {%endfor%}
+    {%if !idiom.other_jyc().is_empty() %}
+    <tr>
+        <td colspan="3" class="p-3">
+            {%for t in idiom.other_jyc()%}
+            <a class="mr-2" rel="external nofollow" target="_blank"
+                href="https://hanyu.sogou.com/result?query={{t}}">{{t}}</a>
+            {%endfor%}
+            <a rel="external nofollow" target="_blank"
+                href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">...</a>
+        </td>
+    </tr>
+    {%endif%}
+</table>
+{%endif%}
+{%if !fyc.is_empty() %}
+<table class="table idiom-list">
+    <tr class="table-secondary">
+        <th class="text-center px-0 py-2">反义词</th>
+        <th class="py-2 {%if idiom.fyc.is_empty()%}d-none{%endif%}">释义</th>
+        <th class="text-center px-0 py-2 {%if idiom.fyc.is_empty()%}d-none{%endif%}">真题</th>
+    </tr>
+    {%for s in idiom.fyc%}
+    <tr>
+        <td class="text-center px-0">
+            <a rel="external nofollow" target="_blank"
+                href="'https://dict.baidu.com/s?ptype=zici&wd='+${s.text}">{{s.text}}</a>
+        </td>
+        <td>{{s.explain}}</td>
+        <td class="text-center px-0">
+            <a rel="external nofollow" target="_blank"
+                href="/{{idiom.detail.ty}}/{{s.text}}">{{s.paper_count}}</a>
+        </td>
+    </tr>
+    {%endfor%}
+    {%if !idiom.other_fyc().is_empty() %}
+    <tr>
+        <td colspan="3" class="p-3">
+            {%for t in idiom.other_fyc()%}
+            <a class="mr-2" rel="external nofollow" target="_blank"
+                href="https://hanyu.sogou.com/result?query={{t}}">{{t}}</a>
+            {%endfor%}
+            <a rel="external nofollow" target="_blank"
+                href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">...</a>
+        </td>
+    </tr>
+    {%endif%}
+</table>
+{%endif%}
+</div>
+{%endif%}
+{% endmacro jyc_fyc %}
