@@ -329,7 +329,7 @@ impl HuatuSyncService {
                 jsonb_extract_path_text(extra,'answerRequire') as answer_require,
                 jsonb_extract_path_text(extra,'referAnalysis') as refer_analysis,
                 jsonb_extract_path_text(extra,'material') as material,
-                jsonb_extract_path(extra,'pointsName') as points_name
+                coalesce(jsonb_extract_path(extra,'pointsName'), '[]'::jsonb) as points_name
             from question
             where from_ty = 'huatu'
             and id = any($1)
