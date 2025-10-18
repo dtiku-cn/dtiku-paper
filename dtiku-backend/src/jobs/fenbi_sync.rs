@@ -386,6 +386,7 @@ impl FenbiSyncService {
                         label_id
                     from paper
                     where from_ty = 'fenbi' and target_id is null and id > $1
+                    order by id
                     limit 100
                     "##,
             )

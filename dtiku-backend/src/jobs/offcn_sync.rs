@@ -147,7 +147,6 @@ impl OffcnSyncService {
     async fn sync_paper(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
         while progress.current < progress.total {
             let current = progress.current;
-            let next_step_id: i64 = current + 100;
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
                     select
@@ -160,6 +159,7 @@ impl OffcnSyncService {
                         extra
                     from paper p
                     where  from_ty ='offcn' and target_id is null and id > $1
+                    order by id
                     limit 100
                     "##,
             )

@@ -197,7 +197,6 @@ impl HuatuSyncService {
     async fn sync_paper(&mut self, progress: &mut Progress<i64>) -> anyhow::Result<()> {
         while progress.current < progress.total {
             let current = progress.current;
-            let next_step_id: i64 = current + 100;
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
                     select 
@@ -211,6 +210,7 @@ impl HuatuSyncService {
                             jsonb_extract_path(extra,'topicNameList')::jsonb as topics
                     from paper p 
                     where from_ty ='huatu' and target_id is null and id > $1
+                    order by id
                     limit 100
                     "##,
             )
