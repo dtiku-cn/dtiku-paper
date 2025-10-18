@@ -374,7 +374,6 @@ impl FenbiSyncService {
         tracing::info!("start sync paper");
         while progress.current < progress.total {
             let current = progress.current;
-            let next_step_id: i64 = current + 100;
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
                     select
@@ -386,11 +385,11 @@ impl FenbiSyncService {
                         id,
                         label_id
                     from paper
-                    where from_ty = 'fenbi' and target_id is null and id > $1 and id <= $2
+                    where from_ty = 'fenbi' and target_id is null and id > $1
+                    limit 100
                     "##,
             )
             .bind(current)
-            .bind(next_step_id)
             .fetch(&self.source_db);
 
             while let Some(row) = stream.next().await {
@@ -408,7 +407,7 @@ impl FenbiSyncService {
                         .await
                         .context("update source db paper target_id failed")?;
 
-                        progress.current = source_id;
+                        progress.current = source_id.max(progress.current);
                         self.task = self
                             .task
                             .update_progress(&progress, &self.target_db)
@@ -416,9 +415,6 @@ impl FenbiSyncService {
                     }
                     Err(e) => tracing::error!("fetch origin paper row failed: {:?}", e),
                 };
-            }
-            if progress.current < next_step_id {
-                progress.current = next_step_id;
             }
         }
         Ok(())
