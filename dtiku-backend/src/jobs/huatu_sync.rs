@@ -323,13 +323,13 @@ impl HuatuSyncService {
                 jsonb_extract_path(extra, 'choices')::jsonb as choices,
                 (coalesce(jsonb_extract_path(extra,'difficult'), '0'))::real as difficult,
                 jsonb_extract_path_text(extra,'answerList') as answer_list,
-                jsonb_extract_path(extra,'answers') as answers,
+                nullif(jsonb_extract_path(extra,'answers'), 'null'::jsonb) as answers,
                 jsonb_extract_path_text(extra,'analysis') as analysis,
                 jsonb_extract_path_text(extra,'extend') as extend,
                 jsonb_extract_path_text(extra,'answerRequire') as answer_require,
                 jsonb_extract_path_text(extra,'referAnalysis') as refer_analysis,
                 jsonb_extract_path_text(extra,'material') as material,
-                jsonb_extract_path(extra,'pointsName') as points_name
+                nullif(jsonb_extract_path(extra,'pointsName'), 'null'::jsonb) as points_name
             from question
             where from_ty = 'huatu'
             and id = any($1)
@@ -414,10 +414,10 @@ impl HuatuSyncService {
                 .context("insert paper_material failed")?;
             }
 
-            let keypoint_path = match q.points_name.and_then(|pn| pn.0) {
+            let keypoint_path = match q.points_name {
                 Some(keypoints) => {
                     let mut keypoint_ids = vec![];
-                    for keypoint_name in keypoints {
+                    for keypoint_name in keypoints.0 {
                         let paper_type = paper.paper_type;
                         let kp = KeyPoint::find_by_paper_type_and_name(
                             &self.target_db,
@@ -749,7 +749,7 @@ struct OriginQuestion {
     answer_require: Option<String>,
     refer_analysis: Option<String>,
     material: Option<String>,
-    points_name: Option<Json<Option<Vec<String>>>>,
+    points_name: Option<Json<Vec<String>>>,
 }
 
 impl OriginQuestion {
