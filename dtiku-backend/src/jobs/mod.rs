@@ -83,7 +83,7 @@ async fn task_schedule(
 #[async_trait]
 trait JobScheduler {
     async fn start(&mut self) {
-        tracing::info!("job start==>{self:?}");
+        tracing::info!("job start==>{:?}", self.current_task());
         let result = self.inner_start().await;
         let success = if let Err(e) = result {
             tracing::error!("task schedule error:{:?}", e);
