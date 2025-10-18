@@ -254,7 +254,7 @@ impl HuatuSyncService {
                 .await
                 .with_context(|| format!("find target_id for label#{}", paper.label_id))?
                 .try_get("target_id")
-                .context("get target_id failed")?;
+                .with_context(|| format!("get target_id_for_paper({source_paper_id}) failed"))?;
         let paper = paper.save_paper(&self.target_db, target_exam_id).await?;
 
         self.sync_questions_and_materials(source_paper_id, &paper)

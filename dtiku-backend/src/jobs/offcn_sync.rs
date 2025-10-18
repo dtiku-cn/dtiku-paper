@@ -158,7 +158,7 @@ impl OffcnSyncService {
                         jsonb_extract_path_text(extra,'paper_pattern') as paper_pattern,
                         extra
                     from paper p
-                    where  from_ty ='offcn' and target_id is null and id > $1
+                    where from_ty ='offcn' and target_id is null and id > $1
                     order by id
                     limit 100
                     "##,
@@ -199,7 +199,12 @@ impl OffcnSyncService {
                 .bind(paper.label_id)
                 .fetch_one(&self.source_db)
                 .await
-                .with_context(|| format!("find target_id for label#{}", paper.label_id))?
+                .with_context(|| {
+                    format!(
+                        "find target_id for label#{} paper+{}",
+                        paper.label_id, paper.id
+                    )
+                })?
                 .try_get("target_id")
                 .context("get target_id failed")?;
         let paper = paper.save_paper(&self.target_db, target_exam_id).await?;
