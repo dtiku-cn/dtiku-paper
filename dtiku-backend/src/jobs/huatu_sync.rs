@@ -414,10 +414,10 @@ impl HuatuSyncService {
                 .context("insert paper_material failed")?;
             }
 
-            let keypoint_path = match q.points_name {
+            let keypoint_path = match q.points_name.and_then(|pn| pn.0) {
                 Some(keypoints) => {
                     let mut keypoint_ids = vec![];
-                    for keypoint_name in keypoints.0 {
+                    for keypoint_name in keypoints {
                         let paper_type = paper.paper_type;
                         let kp = KeyPoint::find_by_paper_type_and_name(
                             &self.target_db,
@@ -749,7 +749,7 @@ struct OriginQuestion {
     answer_require: Option<String>,
     refer_analysis: Option<String>,
     material: Option<String>,
-    points_name: Option<Json<Vec<String>>>,
+    points_name: Option<Json<Option<Vec<String>>>>,
 }
 
 impl OriginQuestion {
