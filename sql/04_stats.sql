@@ -3,7 +3,7 @@ create type idiom_type as enum('idiom', 'word');
 create table if not exists idiom(
     id serial primary key,
     text varchar(6) not null,
-    explain varchar(1024) not null,
+    explain jsonb not null,
     ty idiom_type not null,
     content jsonb not null,
     created timestamp not null,
