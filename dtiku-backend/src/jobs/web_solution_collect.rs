@@ -2,19 +2,19 @@ use crate::config::openai::OpenAIConfig;
 use anyhow::Context as _;
 use dtiku_base::model::{schedule_task, ScheduleTask};
 use dtiku_paper::model::{
-    question,
-    scraper_solution::{self, ExtractResult},
-    ExamCategory, Material, PaperQuestion, Question, Solution,
+    question, scraper_solution, ExamCategory, Material, PaperQuestion, Question, Solution,
 };
 use itertools::Itertools as _;
 use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
 use reqwest_scraper::ScraperResponse;
 use sea_orm::{ActiveValue::Set, EntityTrait as _};
 use search_api::{baidu, bing, sogou, SearchItem};
+use serde::Deserialize;
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
 use spring_opendal::Op;
 use spring_sea_orm::DbConn;
+use std::fmt::Display;
 use url::Url;
 
 #[derive(Debug, Service)]
@@ -156,9 +156,11 @@ impl WebSolutionCollectService {
             scraper_solution::ActiveModel {
                 question_id: Set(question_id),
                 src_url: Set(url),
-
+                content: Set(result.to_string()),
                 ..Default::default()
-            };
+            }
+            .insert_on_conflict(&self.db)
+            .await?;
         }
         Ok(())
     }
@@ -243,5 +245,29 @@ impl WebSolutionCollectService {
         let json = json.trim_matches('`');
 
         serde_json::from_str(json).context("parse llm json failed")
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ExtractResult {
+    answer: Option<String>,
+    analysis: Option<String>,
+}
+
+impl Display for ExtractResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut parts = Vec::new();
+        if let Some(answer) = &self.answer {
+            parts.push(format!("答案:\n {}", answer));
+        }
+        if let Some(analysis) = &self.analysis {
+            parts.push(format!("解析:\n {}", analysis));
+        }
+
+        if parts.is_empty() {
+            write!(f, "\n")
+        } else {
+            write!(f, "{}", parts.join("\n"))
+        }
     }
 }
