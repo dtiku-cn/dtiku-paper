@@ -11,7 +11,6 @@ use dtiku_stats::model::{
 };
 use itertools::Itertools;
 use reqwest;
-use reqwest_scraper::{FromCssSelector, ScraperResponse};
 use sea_orm::{ActiveValue::Set, EntityTrait, Iterable};
 use serde::Deserialize;
 use serde_json::Value;

@@ -12,6 +12,7 @@ pub mod question;
 pub mod question_keypoint;
 pub mod question_keypoint_stats;
 pub mod question_material;
+pub mod scraper_solution;
 pub mod solution;
 
 pub use _entities::prelude::*;

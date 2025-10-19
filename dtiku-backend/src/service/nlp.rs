@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::config::openai::OpenAIConfig;
 use crate::plugins::embedding::Embedding;
 use crate::utils::hnsw::{HNSWIndex, IdAndEmbedding};
@@ -11,6 +9,7 @@ use scraper::Html;
 use sea_orm::EntityTrait;
 use spring::plugin::service::Service;
 use spring_sea_orm::DbConn;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Service)]
 pub struct NLPService {
