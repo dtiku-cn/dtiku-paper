@@ -717,7 +717,7 @@ impl ActiveModel {
                         ));
                     }
                 }
-                tracing::info!("{compare_stpes:?}>>>>\n{q_text_content}\n----{origin_text_content}")
+                tracing::info!("{compare_stpes:?}>>>>\n{q_text_content}\n----\n{origin_text_content}")
             }
             self.embedding = Set(embedding);
             self.content = Set(content);
