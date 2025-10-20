@@ -560,7 +560,7 @@ impl Entity {
     pub async fn find_by_embedding<C>(
         db: &C,
         embedding: Vec<f32>,
-    ) -> anyhow::Result<Vec<(Model, f32)>>
+    ) -> anyhow::Result<Vec<(Model, f64)>>
     where
         C: ConnectionTrait,
     {
@@ -582,7 +582,7 @@ impl Entity {
         let mut result = Vec::new();
         for row in rows {
             let model = Model::from_query_result(&row, "").unwrap();
-            let distance: f32 = row.try_get("", "distance").unwrap();
+            let distance: f64 = row.try_get("", "distance").unwrap();
             result.push((model, distance));
         }
         Ok(result)
