@@ -557,23 +557,35 @@ impl Entity {
             .collect())
     }
 
-    pub async fn find_by_embedding<C>(db: &C, embedding: Vec<f32>) -> anyhow::Result<Vec<Model>>
+    pub async fn find_by_embedding<C>(
+        db: &C,
+        embedding: Vec<f32>,
+    ) -> anyhow::Result<Vec<(Model, f32)>>
     where
         C: ConnectionTrait,
     {
-        Model::find_by_statement(Statement::from_sql_and_values(
+        let stmt = Statement::from_sql_and_values(
             sea_orm::DatabaseBackend::Postgres,
             r#"
-                SELECT *
-                FROM question
-                ORDER BY embedding <=> $1
+                SELECT
+                    q.*, 
+                    q.embedding <=> $1 AS distance
+                FROM question q
+                ORDER BY distance
                 LIMIT 10
             "#,
             vec![PgVector::from(embedding).into()],
-        ))
-        .all(db)
-        .await
-        .context("Question::find_by_embedding() failed")
+        );
+
+        let rows = db.query_all(stmt).await?;
+
+        let mut result = Vec::new();
+        for row in rows {
+            let model = Model::from_query_result(&row, "").unwrap();
+            let distance: f32 = row.try_get("", "distance").unwrap();
+            result.push((model, distance));
+        }
+        Ok(result)
     }
 
     pub async fn recommend_question<C>(
@@ -645,8 +657,8 @@ impl ActiveModel {
                     .replace_all(&format!("{text_content}\n{q_extra_content}"), "")
                     .into_owned()
             };
-            let qs = Entity::find_by_embedding(db, embedding_vec).await?;
-            for q in qs {
+            let qs_and_distance = Entity::find_by_embedding(db, embedding_vec).await?;
+            for (q, semantic_distance) in qs_and_distance {
                 let q_content_has_media = html::contains_media(&content);
                 let text_content_length = text_content.chars().count();
                 if content == q.content {
@@ -693,11 +705,11 @@ impl ActiveModel {
                     let jaro_winkler =
                         textdistance::str::jaro_winkler(&q_text_content, &origin_text_content);
                     // 90%相似度: 20个字只能有2个字不同(针对纯文本，没有图片的)
-                    if jaro_winkler > 0.95 {
+                    if jaro_winkler > 0.95 || jaro_winkler > 0.9 && semantic_distance < 0.0001 {
                         return Ok(q);
                     } else {
                         tracing::warn!(
-                            "jaro_winkler={jaro_winkler} question text对比匹配失败==>{q_text_content}--->{origin_text_content}"
+                            "jaro_winkler={jaro_winkler} distance={semantic_distance} question text对比匹配失败==>{q_text_content}--->{origin_text_content}"
                         );
                     }
                 }
