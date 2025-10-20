@@ -628,6 +628,7 @@ impl ActiveModel {
             // embedding算法去重
             let embedding_vec = embedding.to_vec();
             let content = self.content.take().unwrap();
+            let content_has_media = html::contains_media(&content);
             let extra = self.extra.take().unwrap();
             let text_content = {
                 Html::parse_fragment(&content)
@@ -646,6 +647,7 @@ impl ActiveModel {
             };
             let qs = Entity::find_by_embedding(db, embedding_vec).await?;
             for q in qs {
+                let q_content_has_media = html::contains_media(&content);
                 let text_content_length = text_content.chars().count();
                 if content == q.content {
                     // 完全相同，包括图片等html内容
@@ -675,10 +677,13 @@ impl ActiveModel {
                 };
                 let q_text_content_length = q_text_content.chars().count();
                 let origin_text_content_length = origin_text_content.chars().count();
-                if q_text_content_length > 100 && origin_text_content_length > 100 {
+                if q_text_content_length > 100 && origin_text_content_length > 100
+                    || !content_has_media && !q_content_has_media
+                {
                     let edit_distance =
                         textdistance::str::levenshtein(&q_text_content, &origin_text_content);
                     // 95%相似度: 100个字只有5个字不同
+                    //            20个字只能有1个字不同(针对纯文本，没有图片的)
                     if edit_distance * 20 < q_text_content_length.max(origin_text_content_length) {
                         return Ok(q);
                     } else {
