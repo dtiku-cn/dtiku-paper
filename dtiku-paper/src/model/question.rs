@@ -663,18 +663,19 @@ impl ActiveModel {
             for (q, semantic_distance) in qs_and_distance {
                 let q_content_has_media = html::contains_media(&content);
                 let text_content_length = text_content.chars().count();
+                let mut compare_stpes = vec![];
                 if content == q.content {
                     // 完全相同，包括图片等html内容
                     if text_content_length > 20 {
                         return Ok(q);
-                    } else if extra == q.extra {
+                    }
+                    if extra == q.extra {
                         // 如果内容和extra都相同，直接返回
                         return Ok(q);
-                    } else {
-                        tracing::warn!("question对比匹配失败==>{content}--->{}", q.content);
-                        tracing::warn!("question extra对比匹配失败==>{extra:?}--->{:?}", q.extra);
                     }
+                    compare_stpes.push("question.extra对比失败".to_string());
                 }
+                compare_stpes.push("question.content对比失败".to_string());
 
                 let q_text_content = {
                     let content = Html::parse_fragment(&q.content)
@@ -699,9 +700,9 @@ impl ActiveModel {
                     if edit_distance * 20 < q_text_content_length.max(origin_text_content_length) {
                         return Ok(q);
                     } else {
-                        tracing::warn!(
-                            "levenshtein={edit_distance} question text对比匹配失败==>\n{q_text_content}----\n{origin_text_content}"
-                        );
+                        compare_stpes.push(format!(
+                            "levenshtein距离对比失败: levenshtein={edit_distance}"
+                        ));
                     }
                 }
                 if !content_has_media && !q_content_has_media {
@@ -711,11 +712,12 @@ impl ActiveModel {
                     if jaro_winkler > 0.95 || jaro_winkler > 0.9 && semantic_distance < 0.0001 {
                         return Ok(q);
                     } else {
-                        tracing::warn!(
-                            "jaro_winkler={jaro_winkler} distance={semantic_distance} question text对比匹配失败==>\n{q_text_content}----\n{origin_text_content}"
-                        );
+                        compare_stpes.push(format!(
+                            "jaro_winkler距离对比失败: jaro_winkler={jaro_winkler} distance={semantic_distance}"
+                        ));
                     }
                 }
+                tracing::info!("{compare_stpes:?}>>>>\n{q_text_content}\n----{origin_text_content}")
             }
             self.embedding = Set(embedding);
             self.content = Set(content);
