@@ -629,6 +629,7 @@ impl Entity {
 lazy_static! {
     pub static ref RE_PUNCT: Regex =
         Regex::new(r###"[，,:：；;。\.？?！!、‘’“”\"\'（）()【】\[\]]"###).unwrap();
+    pub static ref RE_WHITESPACE: Regex = Regex::new(r"\s+").unwrap();
 }
 
 impl ActiveModel {
@@ -653,9 +654,10 @@ impl ActiveModel {
                     .root_element()
                     .text()
                     .join("");
-                RE_PUNCT
+                let s1 = RE_PUNCT
                     .replace_all(&format!("{text_content}\n{q_extra_content}"), "")
-                    .into_owned()
+                    .into_owned();
+                RE_WHITESPACE.replace_all(&s1, " ").into_owned()
             };
             let qs_and_distance = Entity::find_by_embedding(db, embedding_vec).await?;
             for (q, semantic_distance) in qs_and_distance {
@@ -683,9 +685,10 @@ impl ActiveModel {
                         .root_element()
                         .text()
                         .join("");
-                    RE_PUNCT
+                    let s1 = RE_PUNCT
                         .replace_all(&format!("{content}\n{extra_content}"), "")
-                        .into_owned()
+                        .into_owned();
+                    RE_WHITESPACE.replace_all(&s1, " ").into_owned()
                 };
                 let q_text_content_length = q_text_content.chars().count();
                 let origin_text_content_length = origin_text_content.chars().count();
@@ -697,7 +700,7 @@ impl ActiveModel {
                         return Ok(q);
                     } else {
                         tracing::warn!(
-                            "levenshtein={edit_distance} question text对比匹配失败==>{q_text_content}--->{origin_text_content}"
+                            "levenshtein={edit_distance} question text对比匹配失败==>\n{q_text_content}----\n{origin_text_content}"
                         );
                     }
                 }
@@ -709,7 +712,7 @@ impl ActiveModel {
                         return Ok(q);
                     } else {
                         tracing::warn!(
-                            "jaro_winkler={jaro_winkler} distance={semantic_distance} question text对比匹配失败==>{q_text_content}--->{origin_text_content}"
+                            "jaro_winkler={jaro_winkler} distance={semantic_distance} question text对比匹配失败==>\n{q_text_content}----\n{origin_text_content}"
                         );
                     }
                 }
