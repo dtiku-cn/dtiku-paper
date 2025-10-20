@@ -1,9 +1,6 @@
 use anyhow::Context as _;
 use fancy_regex::Regex as FancyRegex;
-use once_cell::sync::Lazy;
-use regex::Regex;
 use scraper::{Html, Selector};
-use std::collections::HashSet;
 use std::future::Future;
 
 /// 替换 HTML 中所有 <img> 标签的 src 属性
