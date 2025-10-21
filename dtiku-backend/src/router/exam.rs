@@ -1,4 +1,4 @@
-use crate::views::GetListResult;
+use crate::views::{exam::ExamQuery, GetListResult};
 use anyhow::Context;
 use dtiku_paper::{
     model::{query::label::LabelQuery, ExamCategory, Label},
@@ -12,12 +12,12 @@ use spring_web::{
     get, post,
 };
 
-#[get("/api/exam/{pid}")]
+#[get("/api/exam")]
 async fn list_exam(
     Component(db): Component<DbConn>,
-    Path(pid): Path<i16>,
+    Query(query): Query<ExamQuery>,
 ) -> Result<impl IntoResponse> {
-    let exams = ExamCategory::find_children_by_pid(&db, pid)
+    let exams = ExamCategory::find_children_by_pid(&db, query.pid, query.from_ty)
         .await
         .context("查询ExamCategory失败")?;
     Ok(Json(GetListResult::from(exams)))

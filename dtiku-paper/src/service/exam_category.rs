@@ -1,6 +1,6 @@
 use crate::{
     domain::exam_category::ExamPaperType,
-    model::{exam_category, ExamCategory},
+    model::{exam_category, ExamCategory, FromType},
 };
 use anyhow::Context;
 use itertools::Itertools;
@@ -27,7 +27,8 @@ impl ExamCategoryService {
 
     #[cache("paper_types:{root_id}", expire = 86400)]
     pub async fn find_leaf_paper_types(&self, root_id: i16) -> anyhow::Result<Vec<ExamPaperType>> {
-        let ecs = ExamCategory::find_children_by_pid(&self.db, root_id).await?;
+        let ecs =
+            ExamCategory::find_children_by_pid(&self.db, root_id, Some(FromType::Fenbi)).await?;
         let pids: Vec<i16> = ecs.iter().map(|ec| ec.id).collect();
         let leaf = ExamCategory::find_children_by_pids(&self.db, pids).await?;
         let mut grouped = leaf

@@ -1,4 +1,5 @@
 pub use super::_entities::exam_category::*;
+use crate::model::FromType;
 use anyhow::Context;
 use sea_orm::{
     sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
@@ -7,12 +8,20 @@ use sea_orm::{
 use spring_redis::cache;
 
 impl Entity {
-    pub async fn find_children_by_pid<C>(db: &C, pid: i16) -> anyhow::Result<Vec<Model>>
+    pub async fn find_children_by_pid<C>(
+        db: &C,
+        pid: i16,
+        from_ty: Option<FromType>,
+    ) -> anyhow::Result<Vec<Model>>
     where
         C: ConnectionTrait,
     {
+        let mut filter = Column::Pid.eq(pid);
+        if let Some(ft) = from_ty {
+            filter = filter.and(Column::FromTy.eq(ft));
+        }
         Entity::find()
-            .filter(Column::Pid.eq(pid))
+            .filter(filter)
             .order_by_asc(Column::Id)
             .all(db)
             .await
