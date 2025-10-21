@@ -704,6 +704,8 @@ impl ActiveModel {
                             "levenshtein距离对比失败: levenshtein={edit_distance}"
                         ));
                     }
+                } else {
+                    compare_stpes.push(format!("不满足levenshtein对比条件; q_text_content_length={q_text_content_length} origin_text_content_length={origin_text_content_length}"));
                 }
                 if !content_has_media && !q_content_has_media {
                     let jaro_winkler =
@@ -716,8 +718,12 @@ impl ActiveModel {
                             "jaro_winkler距离对比失败: jaro_winkler={jaro_winkler} distance={semantic_distance}"
                         ));
                     }
+                } else {
+                    compare_stpes.push(format!("不满足jaro_winkler对比条件; q_content_has_media={q_content_has_media} content_has_media={content_has_media}"));
                 }
-                tracing::info!("{compare_stpes:?}>>>>\n{q_text_content}\n----\n{origin_text_content}")
+                tracing::info!(
+                    "{compare_stpes:?}>>>>\n{q_text_content}\n----\n{origin_text_content}"
+                )
             }
             self.embedding = Set(embedding);
             self.content = Set(content);
