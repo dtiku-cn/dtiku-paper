@@ -401,6 +401,18 @@ impl QuestionExtra {
         Ok(r)
     }
 
+    fn options_html(&self) -> String {
+        match &self {
+            Self::SingleChoice { options }
+            | Self::MultiChoice { options }
+            | Self::IndefiniteChoice { options }
+            | Self::BlankChoice { options }
+            | Self::WordSelection { options }
+            | Self::Compose { options } => options.join("\n"),
+            _ => "".to_string(),
+        }
+    }
+
     fn html(&self) -> String {
         match &self {
             Self::SingleChoice { options }
@@ -650,7 +662,7 @@ impl ActiveModel {
                     .join("")
             };
             let origin_text_content = {
-                let q_extra_content = Html::parse_fragment(&extra.html())
+                let q_extra_content = Html::parse_fragment(&extra.options_html())
                     .root_element()
                     .text()
                     .join("");
@@ -682,7 +694,7 @@ impl ActiveModel {
                         .root_element()
                         .text()
                         .join("");
-                    let extra_content = Html::parse_fragment(&q.extra.html())
+                    let extra_content = Html::parse_fragment(&q.extra.options_html())
                         .root_element()
                         .text()
                         .join("");
