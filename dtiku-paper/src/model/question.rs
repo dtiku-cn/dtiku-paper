@@ -719,21 +719,21 @@ impl ActiveModel {
                 } else {
                     compare_stpes.push(format!("不满足levenshtein对比条件; q_text_content_length={q_text_content_length} origin_text_content_length={origin_text_content_length}"));
                 }
-                if !content_has_media && !q_content_has_media {
-                    let jaro_winkler =
-                        textdistance::str::jaro_winkler(&q_text_content, &origin_text_content);
-                    let jaccard = textdistance::str::jaccard(&q_text_content, &origin_text_content);
-                    // 90%相似度: 20个字只能有2个字不同(针对纯文本，没有图片的)
-                    if jaro_winkler > 0.90
-                        || jaccard > 0.90
-                        || (jaro_winkler > 0.85 || jaccard > 0.85) && semantic_distance < 0.01
-                    {
+                let jaro_winkler =
+                    textdistance::str::jaro_winkler(&q_text_content, &origin_text_content);
+                let jaccard = textdistance::str::jaccard(&q_text_content, &origin_text_content);
+                // 90%相似度: 20个字只能有2个字不同(针对纯文本，没有图片的)
+                if jaro_winkler > 0.90
+                    || jaccard > 0.90
+                    || (jaro_winkler > 0.85 || jaccard > 0.85) && semantic_distance < 0.01
+                {
+                    if !content_has_media && !q_content_has_media {
                         return Ok(q);
-                    } else {
-                        compare_stpes.push(format!(
-                            "jaro_winkler距离对比失败: jaro_winkler={jaro_winkler} jaccard={jaccard} distance={semantic_distance}"
-                        ));
+                    } else if content_has_media && q_content_has_media {
                     }
+                    compare_stpes.push(format!(
+                        "jaro_winkler距离对比失败: jaro_winkler={jaro_winkler} jaccard={jaccard} distance={semantic_distance}"
+                    ));
                 } else {
                     compare_stpes.push(format!("不满足jaro_winkler|jaccard对比条件; q_content_has_media={q_content_has_media} content_has_media={content_has_media}"));
                 }

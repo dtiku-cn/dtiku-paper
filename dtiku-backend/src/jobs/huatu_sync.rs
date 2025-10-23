@@ -200,14 +200,14 @@ impl HuatuSyncService {
             let mut stream = sqlx::query_as::<_, OriginPaper>(
                 r##"
                     select 
-                            id,
-                            label_id,
-                            coalesce(jsonb_extract_path_text(extra,'area'), jsonb_extract_path_text(extra,'areaName')) as area,
-                            coalesce(jsonb_extract_path_text(extra,'name'), jsonb_extract_path_text(extra,'paperName')) as name,
-                            coalesce(jsonb_extract_path_text(extra,'type'), '-1')::integer as ty,
-                            coalesce(jsonb_extract_path_text(extra,'year'), jsonb_extract_path_text(extra,'paperYear'))::integer as year,
-                            jsonb_extract_path(extra,'modules')::jsonb as modules,
-                            jsonb_extract_path(extra,'topicNameList')::jsonb as topics
+                        id,
+                        label_id,
+                        coalesce(jsonb_extract_path_text(extra,'area'), jsonb_extract_path_text(extra,'areaName')) as area,
+                        coalesce(jsonb_extract_path_text(extra,'name'), jsonb_extract_path_text(extra,'paperName')) as name,
+                        coalesce(jsonb_extract_path_text(extra,'type'), '-1')::integer as ty,
+                        coalesce(jsonb_extract_path_text(extra,'year'), jsonb_extract_path_text(extra,'paperYear'))::integer as year,
+                        jsonb_extract_path(extra,'modules')::jsonb as modules,
+                        jsonb_extract_path(extra,'topicNameList')::jsonb as topics
                     from paper p 
                     where from_ty ='huatu' and target_id is null and id > $1
                     order by id
