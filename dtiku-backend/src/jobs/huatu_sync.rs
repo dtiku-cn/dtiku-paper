@@ -585,10 +585,14 @@ impl ExamTreeNode {
             name: Set(self.name.clone()),
             prefix: Set(self
                 .name
-                .as_str()
-                .to_pinyin()
-                .into_iter()
-                .filter_map(|s| s.map(|py| py.plain()))
+                .chars()
+                .map(|ch| {
+                    if let Some(py) = ch.to_pinyin() {
+                        py.plain().to_string()
+                    } else {
+                        ch.to_string() // 保留原字符
+                    }
+                })
                 .join("")),
             pid: Set(pid),
             from_ty: Set(FromType::Huatu),
