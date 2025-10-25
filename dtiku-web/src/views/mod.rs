@@ -137,6 +137,13 @@ impl GlobalVariables {
         self.user.as_ref().map(|u| u.id)
     }
 
+    pub fn user_is_expired(&self) -> bool {
+        self.user
+            .as_ref()
+            .map(|u| u.is_expired())
+            .unwrap_or_default()
+    }
+
     pub fn has_cookie(&self, cookie_name: &str) -> bool {
         self.cookies.get(cookie_name).is_some()
     }
