@@ -1039,7 +1039,9 @@ impl OriginQuestion {
             } else {
                 let answer_str = answer_list.clone().unwrap_or_default();
                 let answer = serde_json::from_str::<Vec<String>>(&answer_str)
-                    .with_context(|| format!("parse q#{id} answer_list for Vec<String> failed: {answer_str}"))?
+                    .with_context(|| {
+                        format!("parse q#{id} answer_list for Vec<String> failed: \"{answer_str}\"")
+                    })?
                     .into_iter()
                     .map(|i| i.parse())
                     .collect::<Result<Vec<u8>, ParseIntError>>()
@@ -1059,7 +1061,11 @@ impl OriginQuestion {
             None => {
                 let solution = answer_list.clone().unwrap_or_default();
                 let solutions = serde_json::from_str::<Vec<AnswerListItem>>(&solution)
-                    .with_context(|| format!("parse q#{id} answer_list to Vec<AnswerListItem> failed: [{solution}]"))?
+                    .with_context(|| {
+                        format!(
+                            "parse q#{id} answer_list to Vec<AnswerListItem> failed: \"{solution}\""
+                        )
+                    })?
                     .iter()
                     .map(|i| i.to_string())
                     .join("<br/><hr/><br/>");
@@ -1083,7 +1089,7 @@ impl OriginQuestion {
                 "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
                     let answer_str = answer_list.clone().unwrap_or_default();
                     let answer = serde_json::from_str::<Vec<String>>(&answer_str)
-                        .with_context(||format!("parse q#{id} answer_list for Vec<String> failed: {answer_str}"))?
+                        .with_context(||format!("parse q#{id} answer_list for Vec<String> failed: \"{answer_str}\""))?
                         .into_iter()
                         .map(|i|i.parse())
                         .collect::<Result<Vec<u8>, ParseIntError>>()
@@ -1100,7 +1106,7 @@ impl OriginQuestion {
                 "多选题" | "多项选择题" | "双选题" | "M选N选择题" => {
                     let answer_str = answer_list.clone().unwrap_or_default();
                     let answer = serde_json::from_str::<Vec<String>>(&answer_str)
-                        .with_context(||format!("parse q#{id} answer_list for Vec<String> failed: {answer_str}"))?
+                        .with_context(||format!("parse q#{id} answer_list for Vec<String> failed: \"{answer_str}\""))?
                         .into_iter()
                         .map(|i|i.parse())
                         .collect::<Result<Vec<u8>, ParseIntError>>()
@@ -1118,7 +1124,7 @@ impl OriginQuestion {
                 "不定项选择题" | "案例选择题" => {
                     let answer_str = answer_list.clone().unwrap_or_default();
                     let answer = serde_json::from_str::<Vec<String>>(&answer_str)
-                        .with_context(||format!("parse q#{id} answer_list for Vec<String> failed: {answer_str}"))?
+                        .with_context(||format!("parse q#{id} answer_list for Vec<String> failed: \"{answer_str}\""))?
                         .into_iter()
                         .map(|i|i.parse())
                         .collect::<Result<Vec<u8>, ParseIntError>>()
@@ -1209,7 +1215,7 @@ impl OriginQuestion {
                         analysis
                     }
                 }), analysis: {
-                    if let Some(answer_require) = answer_require{
+                    if let Some(answer_require) = answer_require {
                         vec![StepAnalysis{ label:"analysis".to_string(), content: answer_require.clone()}]
                     } else {
                         vec![]
