@@ -804,13 +804,22 @@ impl OriginQuestion {
         } else if let Some(ty) = ty {
             let extra = match ty.as_str() {
                 "占位题" => QuestionExtra::Placeholder,
-                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题" /*英语*/
-                | "汉语言基础知识综合类" => {
+                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题" /*英语*/ => {
                     options_string = choices.0.join("\n");
                     QuestionExtra::SingleChoice {
                         options: choices.0.clone(),
                     }
                 },
+                "汉语言基础知识综合类" => {
+                    if choices.0.is_empty() {
+                        QuestionExtra::StepByStepQA { qa: vec![] }
+                    }else{
+                        options_string = choices.0.join("\n");
+                        QuestionExtra::SingleChoice {
+                            options: choices.0.clone(),
+                        }
+                    }
+                }
                 "多选题" | "多项选择题" | "双选题" | "M选N选择题" => {
                     options_string = choices.0.join("\n");
                     QuestionExtra::MultiChoice {
@@ -1086,8 +1095,7 @@ impl OriginQuestion {
                         analysis
                     })
                 },
-                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/
-                | "汉语言基础知识综合类" => {
+                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题" /*英语*/ =>{
                     let answer_str = answer_list.clone().unwrap_or_default();
                     let answer = serde_json::from_str::<Vec<String>>(&answer_str)
                         .with_context(||format!("parse q#{id} answer_list for Vec<String> failed: \"{answer_str}\""))?
@@ -1096,13 +1104,54 @@ impl OriginQuestion {
                         .collect::<Result<Vec<u8>, ParseIntError>>()
                         .context("parse int error")?;
                     let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
-                    if let Some(extend) = extend{
+                    if let Some(extend) = extend {
                         analysis = format!("{analysis}<br/>{extend}");
                     }
                     SolutionExtra::SingleChoice (SingleChoice{
                         answer:answer[0],
                         analysis,
                     })
+                },
+                "汉语言基础知识综合类" => {
+                    if let Some(answer_str) = answer_list.clone(){
+                        let answer = serde_json::from_str::<Vec<String>>(&answer_str)
+                            .with_context(||format!("parse q#{id} answer_list for Vec<String> failed: \"{answer_str}\""))?
+                            .into_iter()
+                            .map(|i|i.parse())
+                            .collect::<Result<Vec<u8>, ParseIntError>>()
+                            .context("parse int error")?;
+                        let mut analysis = analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                        if let Some(extend) = extend {
+                            analysis = format!("{analysis}<br/>{extend}");
+                        }
+                        SolutionExtra::SingleChoice (SingleChoice{
+                            answer:answer[0],
+                            analysis,
+                        })
+                    } else {
+                        SolutionExtra::OtherQA(OtherAnswer {
+                            answer: Some({
+                            let analysis = refer_analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                            if let Some(extend) = extend{
+                                format!("{analysis}<br/>{extend}")
+                            }else{
+                                analysis
+                            }
+                        }), solution: Some({
+                            let analysis = refer_analysis.as_ref().map(|a| a.to_owned()).unwrap_or_default();
+                            if let Some(extend) = extend{
+                                format!("{analysis}<br/>{extend}")
+                            }else{
+                                analysis
+                            }
+                        }), analysis: {
+                            if let Some(answer_require) = answer_require{
+                                vec![StepAnalysis{ label:"analysis".to_string(), content: answer_require.clone()}]
+                            } else {
+                                vec![]
+                            }
+                        }})
+                    }
                 },
                 "多选题" | "多项选择题" | "双选题" | "M选N选择题" => {
                     let answer_str = answer_list.clone().unwrap_or_default();
