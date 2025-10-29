@@ -804,8 +804,8 @@ impl OriginQuestion {
         } else if let Some(ty) = ty {
             let extra = match ty.as_str() {
                 "占位题" => QuestionExtra::Placeholder,
-                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"
-                | "汉语言基础知识综合类"/*英语*/ => {
+                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题" /*英语*/
+                | "汉语言基础知识综合类" => {
                     options_string = choices.0.join("\n");
                     QuestionExtra::SingleChoice {
                         options: choices.0.clone(),
@@ -1086,7 +1086,8 @@ impl OriginQuestion {
                         analysis
                     })
                 },
-                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/ => {
+                "单选选择题" | "单选题" | "单项选择题" | "选择题" | "阅读理解题"/*英语*/
+                | "汉语言基础知识综合类" => {
                     let answer_str = answer_list.clone().unwrap_or_default();
                     let answer = serde_json::from_str::<Vec<String>>(&answer_str)
                         .with_context(||format!("parse q#{id} answer_list for Vec<String> failed: \"{answer_str}\""))?
