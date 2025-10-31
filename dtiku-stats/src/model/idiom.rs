@@ -44,7 +44,7 @@ impl Into<BasicExplain> for &IdiomExplainEntry {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
-#[serde(tag = "type", content = "data")]
+#[serde(tag = "type")]
 pub enum IdiomExplainEntry {
     #[serde(rename = "idiom")]
     Idiom(IdiomEntry),
@@ -105,6 +105,7 @@ pub struct WordDefinition {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[serde(rename_all = "camelCase")]
 pub struct Liju {
     pub name: String,
     pub show_name: String,

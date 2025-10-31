@@ -198,3 +198,14 @@ impl IdiomStatsService {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_baidu() {
+        let resp = BaiduApiResponse::fetch("血气方刚").await;
+        println!("{resp:?}")
+    }
+}
