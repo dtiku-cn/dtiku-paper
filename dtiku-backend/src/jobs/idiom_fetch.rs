@@ -147,7 +147,7 @@ impl IdiomStatsService {
                             } else {
                                 let resp = BaiduApiResponse::fetch(idiom).await;
                                 if let Err(e) = resp {
-                                    tracing::error!("拉取【{idiom}】百度字典失败:{e:?}");
+                                    tracing::warn!("拉取【{idiom}】百度字典失败:{e}");
                                     continue;
                                 } else {
                                     tokio::time::sleep(Duration::from_secs(1)).await;
