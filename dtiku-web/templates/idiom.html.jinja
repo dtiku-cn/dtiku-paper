@@ -53,9 +53,22 @@
     </div>
     {% if let IdiomExplainEntry::Idiom(i) = idiom.detail.content %}
     {%if let Some(d) = i.definition_info%}
-    <p class="mx-4"><span class="badge badge-success">基本释义</span>{{d.definition}}</p>
-    {%if d.similar_definition.is_empty()%}<p class="mx-4"><span class="badge badge-danger">比喻</span>{{d.similar_definition}}</p>{%endif%}
-    {%if d.modern_definition.is_empty()%}<p class="mx-4"><span class="badge badge-info">今义</span>{{d.modern_definition}}</p>{%endif%}
+    <p class="mx-4">
+        <span class="badge badge-success">基本释义</span>
+        {{d.definition}}
+    </p>
+    {%if d.similar_definition.is_empty()%}
+    <p class="mx-4">
+        <span class="badge badge-danger">比喻</span>
+        {{d.similar_definition}}
+    </p>
+    {%endif%}
+    {%if d.modern_definition.is_empty()%}
+    <p class="mx-4">
+        <span class="badge badge-info">今义</span>
+        {{d.modern_definition}}
+    </p>
+    {%endif%}
     <ul class="mx-4">
         {%for dm in d.detail_means%}
         <li>{{dm.word}}: {{dm.definition}}</li>
@@ -71,15 +84,17 @@
     {% elif let IdiomExplainEntry::Term(t) = idiom.detail.content %}
     <ul class="nav nav-tabs" id="termTab" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="basicDefinition" data-toggle="tab" data-target="#basicDefinitionContent" type="button" role="tab">基本释义</button>
+            <button class="nav-link active" id="basicDefinition" data-toggle="tab" data-target="#basicDefinitionContent"
+                type="button" role="tab">基本释义</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="detailDefinition" data-toggle="tab" data-target="#detailDefinitionContent" type="button" role="tab">详细释义</button>
+            <button class="nav-link" id="detailDefinition" data-toggle="tab" data-target="#detailDefinitionContent"
+                type="button" role="tab">详细释义</button>
         </li>
     </ul>
     <div class="tab-content" id="termTabContent">
         <div class="tab-pane fade show active" id="basicDefinitionContent" role="tabpanel">
-            
+
         </div>
         <div class="tab-pane fade" id="detailDefinitionContent" role="tabpanel">
         </div>
