@@ -107,8 +107,8 @@
                 <span class="badge badge-info">例句</span>
             <ul>
                 {%for lj in bd.liju%}
-                <li>{{lj.show_name | safe}}</span>
-                    {%endfor%}
+                <li>{{lj.show_name | safe}}</li>
+                {%endfor%}
             </ul>
             </p>
             {%endfor%}
@@ -120,7 +120,7 @@
                 <span class="badge badge-info">例句</span>
             <ul>
                 {%for lj in dd.liju%}
-                <li>{{lj.show_name}}</li>
+                <li>{{lj.show_name | safes}}</li>
                 {%endfor%}
             </ul>
             </p>
