@@ -53,16 +53,16 @@
     </div>
     {% if let IdiomExplainEntry::Idiom(i) = idiom.detail.content %}
     {%if let Some(d) = i.definition_info%}
-    <p><span class="badge badge-success">基本</span>{{d.definition}}</p>
-    {%if d.similar_definition.is_empty()%}<p><span class="badge badge-danger">比喻</span>{{d.similar_definition}}</p>{%endif%}
-    {%if d.modern_definition.is_empty()%}<p><span class="badge badge-info">今义</span>{{d.modern_definition}}</p>{%endif%}
-    <ul>
+    <p class="mx-4"><span class="badge badge-success">基本释义</span>{{d.definition}}</p>
+    {%if d.similar_definition.is_empty()%}<p class="mx-4"><span class="badge badge-danger">比喻</span>{{d.similar_definition}}</p>{%endif%}
+    {%if d.modern_definition.is_empty()%}<p class="mx-4"><span class="badge badge-info">今义</span>{{d.modern_definition}}</p>{%endif%}
+    <ul class="mx-4">
         {%for dm in d.detail_means%}
         <li>{{dm.word}}: {{dm.definition}}</li>
         {%endfor%}
     </ul>
     {%endif%}
-    <ol>
+    <ol class="ml-2">
         {%for lj in i.liju%}
         <li>{{lj.show_name | safe}}</li>
         {%endfor%}
