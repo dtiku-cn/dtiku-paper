@@ -64,7 +64,7 @@
     {%endif%}
     <ol>
         {%for lj in i.liju%}
-        <li>{{lj.show_name}}</li>
+        <li>{{lj.show_name | safe}}</li>
         {%endfor%}
     </ol>
     {%call idiom::jyc_fyc(idiom.detail.content.jyc(), idiom.detail.content.fyc(), idiom)%}

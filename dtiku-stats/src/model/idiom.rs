@@ -27,10 +27,23 @@ impl Into<BasicExplain> for &IdiomExplainEntry {
                 baobian,
                 definition_info,
                 ..
-            }) => BasicExplain {
-                baobian: baobian.clone(),
-                definition: definition_info.as_ref().unwrap().definition.clone(),
-            },
+            }) => {
+                let DefinitionInfo {
+                    definition,
+                    ancient_definition,
+                    modern_definition,
+                    ..
+                } = definition_info.as_ref().unwrap();
+                let definition = if definition.is_empty() {
+                    format!("{ancient_definition} {modern_definition}")
+                } else {
+                    definition.to_string()
+                };
+                BasicExplain {
+                    baobian: baobian.clone(),
+                    definition: definition,
+                }
+            }
             IdiomExplainEntry::Term(TermEntry {
                 baobian,
                 baike_info,
