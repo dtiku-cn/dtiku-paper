@@ -29,6 +29,11 @@
             vertical-align: middle !important;
         }
 
+        .idiom-list td:nth-child(2),
+        .idiom-list th:nth-child(2) {
+            padding: 0;
+        }
+
         .idiom-list td>p {
             margin: 0 !important;
         }
@@ -106,7 +111,9 @@
                     <td class="text-center">
                         <a rel="external nofollow" target="_blank" href="/{{model}}/{{s.text}}">{{s.text}}</a>
                     </td>
-                    <td><span class='badge {%if s.baobian.contains("褒")%}badge-success{%elif s.baobian.contains("贬")%}badge-warning{%else%}badge-secondary{%endif%}'>{{s.baobian}}</span></td>
+                    <td><span
+                            class='badge {%if s.baobian.contains("褒")%}badge-success{%elif s.baobian.contains("贬")%}badge-warning{%else%}badge-secondary{%endif%}'>{{s.baobian}}</span>
+                    </td>
                     <td>{{s.explain}}</td>
                     <td class="text-center d-none d-md-table-cell">共{{s.question_count}}题</td>
                     <td class="text-center">
