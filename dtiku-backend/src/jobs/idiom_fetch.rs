@@ -206,6 +206,9 @@ mod tests {
     #[tokio::test]
     async fn test_baidu() {
         let resp = BaiduApiResponse::fetch("血气方刚").await;
-        println!("{resp:?}")
+        println!("{resp:?}");
+
+        let resp = BaiduApiResponse::fetch("接纳").await;
+        println!("{resp:?}");
     }
 }

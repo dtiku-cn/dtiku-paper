@@ -122,7 +122,7 @@ pub struct WordRef {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(rename_all = "camelCase")]
 pub struct Citation {
-    pub source_chapter: String,
+    pub source_chapter: Option<String>,
     pub source: String,
     pub dynasty: String,
     pub cite_original_text: String,
