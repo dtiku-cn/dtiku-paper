@@ -92,6 +92,7 @@ pub struct DefinitionInfo {
     pub similar_definition: String,
     pub ancient_definition: String,
     pub modern_definition: String,
+    #[serde(default)]
     pub detail_means: Vec<WordDefinition>,
     pub usage_tips: Vec<String>,
     pub yicuodian: Vec<String>,
@@ -138,6 +139,7 @@ pub struct Citation {
 pub struct TermEntry {
     pub term_version: Option<i32>,
     pub imgs: Vec<String>,
+    #[serde(default)]
     pub comprehensive_definition: Vec<ComprehensiveDefinition>,
     pub modifier: Vec<WordRef>,
     #[serde(default)]
