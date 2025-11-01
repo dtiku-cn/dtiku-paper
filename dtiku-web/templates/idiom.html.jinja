@@ -93,8 +93,8 @@
                 type="button" role="tab">详细释义</button>
         </li>
     </ul>
-    <div class="tab-content" id="termTabContent">
-        <div class="tab-pane fade show active" id="basicDefinitionContent" role="tabpanel">
+    <div class="tab-content card" id="termTabContent">
+        <div class="tab-pane card-body fade show active" id="basicDefinitionContent" role="tabpanel">
             {%for bd in cd.basic_definition%}
             <p>{{bd.definition}}</p>
             <p>
@@ -113,7 +113,7 @@
             </p>
             {%endfor%}
         </div>
-        <div class="tab-pane fade" id="detailDefinitionContent" role="tabpanel">
+        <div class="tab-pane card-body fade" id="detailDefinitionContent" role="tabpanel">
             {%for dd in cd.detail_definition%}
             <p>{{dd.definition}}</p>
             <p>
