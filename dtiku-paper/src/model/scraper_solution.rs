@@ -4,7 +4,7 @@ use sea_orm::{ActiveModelBehavior, ConnectionTrait};
 impl ActiveModelBehavior for ActiveModel {}
 
 impl ActiveModel {
-    pub async fn insert_on_conflict<C>(mut self, db: &C) -> anyhow::Result<Model>
+    pub async fn insert_on_conflict<C>(mut self, _db: &C) -> anyhow::Result<Model>
     where
         C: ConnectionTrait,
     {

@@ -55,10 +55,33 @@ pub enum IdiomExplainEntry {
 
 impl IdiomExplainEntry {
     pub fn jyc(&self) -> Vec<&String> {
-        todo!()
+        match self {
+            Self::Idiom(idiom) => idiom.synonyms.iter().map(|w| &w.name).collect(),
+            Self::Term(term) => term
+                .comprehensive_definition
+                .iter()
+                .flat_map(|t| {
+                    t.basic_definition
+                        .iter()
+                        .flat_map(|w| w.synonyms.iter().map(|w| &w.name))
+                })
+                .collect(),
+        }
     }
+
     pub fn fyc(&self) -> Vec<&String> {
-        todo!()
+        match self {
+            Self::Idiom(idiom) => idiom.antonym.iter().map(|w| &w.name).collect(),
+            Self::Term(term) => term
+                .comprehensive_definition
+                .iter()
+                .flat_map(|t| {
+                    t.basic_definition
+                        .iter()
+                        .flat_map(|w| w.antonym.iter().map(|w| &w.name))
+                })
+                .collect(),
+        }
     }
 }
 
