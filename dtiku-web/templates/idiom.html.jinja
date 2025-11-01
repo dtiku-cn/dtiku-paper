@@ -119,14 +119,14 @@
             <p>
                 <span class="badge badge-info">例句</span>
             <ul>
-                {%for lj in bd.liju%}
+                {%for lj in dd.liju%}
                 <li>{{lj.show_name}}</li>
                 {%endfor%}
             </ul>
             </p>
             <div>
                 <span class="badge badge-primary">引证</span>
-                {%for cite in bd.cite_list%}
+                {%for cite in dd.cite_list%}
                 <p>
                     <span>{{cite.cite_original_text}}</span>
                     <span>{{cite.dynasty}} {{cite.author}} {{cite.source}}</span>
