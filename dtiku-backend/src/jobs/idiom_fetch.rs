@@ -11,12 +11,49 @@ use dtiku_stats::model::{
 };
 use itertools::Itertools;
 use reqwest;
+use reqwest_scraper::{FromCssSelector, ScraperResponse};
 use sea_orm::{ActiveValue::Set, EntityTrait, Iterable};
 use serde::Deserialize;
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use std::time::Duration;
+
+#[derive(Debug, FromCssSelector)]
+pub struct SogouIdiomExplain {
+    #[selector(
+        path = "#main div.words-details h4>span",
+        default = "<undefined>",
+        text
+    )]
+    idiom: String,
+
+    #[selector(path = "#shiyiDiv", text)]
+    shiyi: Option<String>,
+
+    #[selector(path = "#shiyidetailDiv", inner_html)]
+    shiyidetail: Option<String>,
+
+    #[selector(path = "#liju ul.item-list", html)]
+    liju: Option<String>,
+
+    #[selector(path = "#jyc ul.words-list>li a.text-default", text)]
+    jyc: Vec<String>,
+
+    #[selector(path = "#fyc ul.words-list>li a.text-default", text)]
+    fyc: Vec<String>,
+}
+
+impl SogouIdiomExplain {
+    pub async fn fetch(idiom: &str) -> anyhow::Result<Self> {
+        let html = reqwest::get(format!("https://hanyu.sogou.com/result?query={idiom}"))
+            .await?
+            .css_selector()
+            .await?;
+
+        Ok(Self::from_html(html)?)
+    }
+}
 
 ////////////////////////////////baidu
 ///
@@ -145,6 +182,12 @@ impl IdiomStatsService {
                             {
                                 idiom_in_db
                             } else {
+                                let sogou_explain = SogouIdiomExplain::fetch(idiom).await;
+                                if let Err(e) = sogou_explain {
+                                    tracing::warn!("拉取【{idiom}】搜狗字典失败:{e:?}");
+                                    continue;
+                                }
+                                let sogou_explain = sogou_explain.expect("sogou explain failed");
                                 let resp = BaiduApiResponse::fetch(idiom).await;
                                 if let Err(e) = resp {
                                     tracing::warn!("拉取【{idiom}】百度字典失败:{e:?}");
@@ -153,7 +196,13 @@ impl IdiomStatsService {
                                     tokio::time::sleep(Duration::from_secs(1)).await;
                                 }
                                 let explain = resp.unwrap().data;
-                                let basic_explain = (&explain).into();
+                                let mut basic_explain: idiom::BasicExplain = (&explain).into();
+                                basic_explain.definition = if let Some(sogou) = sogou_explain.shiyi
+                                {
+                                    sogou
+                                } else {
+                                    basic_explain.definition
+                                };
                                 let saved_idiom = idiom::ActiveModel {
                                     text: Set(idiom.to_string()),
                                     ty: Set(ty),
