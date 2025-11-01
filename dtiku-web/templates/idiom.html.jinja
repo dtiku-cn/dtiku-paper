@@ -53,9 +53,9 @@
     </div>
     {% if let IdiomExplainEntry::Idiom(i) = idiom.detail.content %}
     {%if let Some(d) = i.definition_info%}
-    <p>基本: {{d.definition}}</p>
-    {%if d.similar_definition.is_empty()%}<p>比喻: {{d.similar_definition}}</p>{%endif%}
-    {%if d.modern_definition.is_empty()%}<p>今义: {{d.modern_definition}}</p>{%endif%}
+    <p><span class="badge badge-success">基本</span>{{d.definition}}</p>
+    {%if d.similar_definition.is_empty()%}<p><span class="badge badge-danger">比喻</span>{{d.similar_definition}}</p>{%endif%}
+    {%if d.modern_definition.is_empty()%}<p><span class="badge badge-info">今义</span>{{d.modern_definition}}</p>{%endif%}
     <ul>
         {%for dm in d.detail_means%}
         <li>{{dm.word}}: {{dm.definition}}</li>
