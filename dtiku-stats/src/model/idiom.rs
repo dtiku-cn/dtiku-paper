@@ -139,6 +139,7 @@ pub struct TermEntry {
     pub imgs: Vec<String>,
     pub comprehensive_definition: Vec<ComprehensiveDefinition>,
     pub modifier: Vec<WordRef>,
+    #[serde(default)]
     pub baike_info: Option<BaikeInfoField>,
     pub baobian: String,
     pub structure: String,

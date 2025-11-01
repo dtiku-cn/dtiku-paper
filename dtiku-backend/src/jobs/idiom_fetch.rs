@@ -210,5 +210,11 @@ mod tests {
 
         let resp = BaiduApiResponse::fetch("接纳").await;
         println!("{resp:?}");
+
+        let resp = BaiduApiResponse::fetch("翘首以盼").await;
+        println!("{resp:?}");
+
+        let resp = BaiduApiResponse::fetch("建言献策").await;
+        println!("{resp:?}");
     }
 }
