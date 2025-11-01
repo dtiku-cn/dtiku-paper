@@ -54,7 +54,7 @@
     {% if let IdiomExplainEntry::Idiom(i) = idiom.detail.content %}
     {%if let Some(d) = i.definition_info%}
     <p class="mx-4">
-        <span class="badge badge-success">基本释义</span>
+        <span class="badge badge-primary">基本释义</span>
         {{d.definition}}
     </p>
     {%if d.similar_definition.is_empty()%}
