@@ -52,6 +52,7 @@ pub enum IdiomExplainEntry {
     #[serde(rename = "term")]
     Term(TermEntry),
 }
+
 impl IdiomExplainEntry {
     pub fn jyc(&self) -> Vec<&String> {
         todo!()

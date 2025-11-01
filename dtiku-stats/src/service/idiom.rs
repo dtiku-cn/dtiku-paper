@@ -126,7 +126,7 @@ impl IdiomService {
     ) -> anyhow::Result<Option<IdiomDetail>> {
         let idiom = Idiom::find_by_text(&self.db, text)
             .await
-            .context("Idiom::get_idiom_detail() failed")?;
+            .with_context(|| format!("Idiom::get_idiom_detail({text}) failed"))?;
 
         if let Some(idiom) = idiom {
             let jyc = Idiom::find_by_texts(&self.db, idiom.content.jyc().clone(), &labels).await?;
