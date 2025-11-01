@@ -197,9 +197,17 @@ impl IdiomStatsService {
                                 }
                                 let explain = resp.unwrap().data;
                                 let mut basic_explain: idiom::BasicExplain = (&explain).into();
-                                basic_explain.definition = if let Some(sogou) = sogou_explain.shiyi
+                                basic_explain.definition = if let Some(sogou_shiyi) =
+                                    sogou_explain.shiyi
                                 {
-                                    sogou
+                                    if sogou_shiyi.is_empty() && sogou_explain.shiyidetail.is_some()
+                                    {
+                                        sogou_explain.shiyidetail.unwrap()
+                                    } else if !sogou_shiyi.is_empty() {
+                                        sogou_shiyi
+                                    } else {
+                                        basic_explain.definition
+                                    }
                                 } else {
                                     basic_explain.definition
                                 };
