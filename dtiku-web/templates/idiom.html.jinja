@@ -82,6 +82,7 @@
     </ol>
     {%call idiom::jyc_fyc(idiom.detail.content.jyc(), idiom.detail.content.fyc(), idiom)%}
     {% elif let IdiomExplainEntry::Term(t) = idiom.detail.content %}
+    {% if let Some(cd) = t.comprehensive_definition.first() %}
     <ul class="nav nav-tabs" id="termTab" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="basicDefinition" data-toggle="tab" data-target="#basicDefinitionContent"
@@ -94,11 +95,48 @@
     </ul>
     <div class="tab-content" id="termTabContent">
         <div class="tab-pane fade show active" id="basicDefinitionContent" role="tabpanel">
-
+            {%for bd in cd.basic_definition%}
+            <p>{{bd.definition}}</p>
+            <p>
+                <span class="badge badge-primary">组词</span>
+                {%for zc in bd.zuci%}
+                <span>{{zc.name}}</span>
+                {%endfor%}
+            </p>
+            <p>
+                <span class="badge badge-info">例句</span>
+            <ul>
+                {%for lj in bd.liju%}
+                <li>{{lj.show_name}}</span>
+                    {%endfor%}
+            </ul>
+            </p>
+            {%endfor%}
         </div>
         <div class="tab-pane fade" id="detailDefinitionContent" role="tabpanel">
+            {%for dd in cd.detail_definition%}
+            <p>{{dd.definition}}</p>
+            <p>
+                <span class="badge badge-info">例句</span>
+            <ul>
+                {%for lj in bd.liju%}
+                <li>{{lj.show_name}}</li>
+                {%endfor%}
+            </ul>
+            </p>
+            <div>
+                <span class="badge badge-primary">引证</span>
+                {%for cite in bd.cite_list%}
+                <p>
+                    <span>{{cite.cite_original_text}}</span>
+                    <span>{{cite.dynasty}} {{cite.author}} {{cite.source}}</span>
+                </p>
+                {%endfor%}
+            </div>
+            {%endfor%}
         </div>
     </div>
+    {%endif%}
     {% endif %}
 
     <div class="card mb-3">
