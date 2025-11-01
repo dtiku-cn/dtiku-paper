@@ -37,7 +37,7 @@ impl Into<BasicExplain> for &IdiomExplainEntry {
                 ..
             }) => BasicExplain {
                 baobian: baobian.clone(),
-                definition: baike_info.as_ref().unwrap().baike_mean.clone(),
+                definition: baike_info.as_ref().unwrap().baike_mean(),
             },
         }
     }
@@ -135,14 +135,33 @@ pub struct Citation {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(rename_all = "camelCase")]
 pub struct TermEntry {
-    pub term_version: i32,
+    pub term_version: Option<i32>,
     pub imgs: Vec<String>,
     pub comprehensive_definition: Vec<ComprehensiveDefinition>,
     pub modifier: Vec<WordRef>,
-    pub baike_info: Option<BaikeInfo>,
+    pub baike_info: Option<BaikeInfoField>,
     pub baobian: String,
     pub structure: String,
-    pub term_style: i32,
+    pub term_style: Option<i32>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum BaikeInfoField {
+    Single(BaikeInfo),
+    Multiple(Vec<BaikeInfo>),
+}
+
+impl BaikeInfoField {
+    fn baike_mean(&self) -> String {
+        match self {
+            Self::Single(baike_info) => baike_info.baike_mean.clone(),
+            Self::Multiple(multi) => multi
+                .first()
+                .map(|b| b.baike_mean.clone())
+                .unwrap_or_default(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
