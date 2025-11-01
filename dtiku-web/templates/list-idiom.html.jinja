@@ -94,6 +94,7 @@
                 <tr>
                     <th class="text-center px-0 py-2" width="{%if model.is_idiom()%}100{%else%}70{%endif%}">
                         {{model.text()}}</th>
+                    <th class="py-2">词性</th>
                     <th class="py-2">释义</th>
                     <th class="text-center d-none d-md-table-cell px-0 py-2">出现频次</th>
                     <th class="text-center px-0 py-2">真题<span class="d-none d-md-inline">试卷</span></th>
@@ -105,6 +106,7 @@
                     <td class="text-center">
                         <a rel="external nofollow" target="_blank" href="/{{model}}/{{s.text}}">{{s.text}}</a>
                     </td>
+                    <td>{{s.baobian}}</td>
                     <td>{{s.explain}}</td>
                     <td class="text-center d-none d-md-table-cell">共{{s.question_count}}题</td>
                     <td class="text-center">
