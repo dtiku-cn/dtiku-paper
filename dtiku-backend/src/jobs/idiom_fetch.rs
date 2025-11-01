@@ -214,6 +214,9 @@ mod tests {
         let resp = BaiduApiResponse::fetch("翘首以盼").await;
         println!("{resp:?}");
 
+        let resp = BaiduApiResponse::fetch("历久弥新").await;
+        println!("{resp:?}");
+
         let resp = BaiduApiResponse::fetch("建言献策").await;
         println!("{resp:?}");
     }
