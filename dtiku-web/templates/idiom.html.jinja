@@ -101,7 +101,6 @@
                 <li>{{lj.show_name | safe}}</li>
                 {%endfor%}
             </ol>
-            {%call idiom::jyc_fyc(idiom.detail.content.jyc(), idiom.detail.content.fyc(), idiom)%}
             {% elif let BaiduIdiomExplainEntry::Term(t) = idiom.detail.content.baidu %}
             {% if let Some(cd) = t.comprehensive_definition.first() %}
             <ul class="nav nav-tabs" id="termTab" role="tablist">
@@ -163,6 +162,7 @@
             {%endif%}
         </div>
     </div>
+    {%call idiom::jyc_fyc(idiom.detail.content.jyc(), idiom.detail.content.fyc(), idiom)%}
     <div class="card mb-3">
         <header class="d-flex card-header align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">
