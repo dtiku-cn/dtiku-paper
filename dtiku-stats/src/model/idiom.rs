@@ -12,7 +12,7 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use spring::async_trait;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct BasicExplain {
@@ -28,11 +28,17 @@ pub struct ExplainContent {
 
 impl ExplainContent {
     pub fn jyc(&self) -> Vec<&String> {
-        self.baidu.jyc()
+        let mut set = HashSet::new();
+        set.extend(self.baidu.jyc());
+        set.extend(self.sogou.jyc.iter());
+        set.into_iter().collect()
     }
 
     pub fn fyc(&self) -> Vec<&String> {
-        self.baidu.fyc()
+        let mut set = HashSet::new();
+        set.extend(self.baidu.fyc());
+        set.extend(self.sogou.fyc.iter());
+        set.into_iter().collect()
     }
 }
 
