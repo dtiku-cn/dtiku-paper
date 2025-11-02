@@ -51,94 +51,108 @@
         </span>
         <span>{{idiom.detail.explain.definition}}</span>
     </div>
-    {% if let IdiomExplainEntry::Idiom(i) = idiom.detail.content %}
-    {%if let Some(d) = i.definition_info%}
-    <p class="mx-4">
-        <span class="badge badge-primary">基本释义</span>
-        {{d.definition}}
-    </p>
-    {%if d.similar_definition.is_empty()%}
-    <p class="mx-4">
-        <span class="badge badge-danger">比喻</span>
-        {{d.similar_definition}}
-    </p>
-    {%endif%}
-    {%if d.modern_definition.is_empty()%}
-    <p class="mx-4">
-        <span class="badge badge-info">今义</span>
-        {{d.modern_definition}}
-    </p>
-    {%endif%}
-    <ul class="mx-4">
-        {%for dm in d.detail_means%}
-        <li>{{dm.word}}: {{dm.definition}}</li>
-        {%endfor%}
-    </ul>
-    {%endif%}
-    <ol class="ml-2">
-        {%for lj in i.liju%}
-        <li>{{lj.show_name | safe}}</li>
-        {%endfor%}
-    </ol>
-    {%call idiom::jyc_fyc(idiom.detail.content.jyc(), idiom.detail.content.fyc(), idiom)%}
-    {% elif let IdiomExplainEntry::Term(t) = idiom.detail.content %}
-    {% if let Some(cd) = t.comprehensive_definition.first() %}
-    <ul class="nav nav-tabs" id="termTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="basicDefinition" data-toggle="tab" data-target="#basicDefinitionContent"
-                type="button" role="tab">基本释义</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="detailDefinition" data-toggle="tab" data-target="#detailDefinitionContent"
-                type="button" role="tab">详细释义</button>
-        </li>
-    </ul>
-    <div class="tab-content card mb-3" id="termTabContent">
-        <div class="tab-pane card-body fade show active" id="basicDefinitionContent" role="tabpanel">
-            {%for bd in cd.basic_definition%}
-            <p>{{bd.definition}}</p>
-            <p>
-                <span class="badge badge-primary">组词</span>
-                {%for zc in bd.zuci%}
-                <span>{{zc.name}}</span>
-                {%endfor%}
-            </p>
-            <p>
-                <span class="badge badge-info">例句</span>
-            <ul>
-                {%for lj in bd.liju%}
-                <li>{{lj.show_name | safe}}</li>
-                {%endfor%}
-            </ul>
-            </p>
-            {%endfor%}
+    <nav class="nav nav-pills nav-fill">
+        <a class="nav-link active" href="#sogou-explain">搜狗字典</a>
+        <a class="nav-link" href="#baidu-explain">百度词典</a>
+    </nav>
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="sogou-explain" role="tabpanel">
+            <div class="m-4 text-muted">{{idiom.detail.content.sogou.shiyidetail}}</div>
+            {%if !idiom.detail.content.sogou.liju.is_empty()%}
+            <h3>例句</h3>
+            <div class="m-4 text-muted">{{idiom.detail.content.sogou.liju | safe}}</div>
+            {%endif%}
         </div>
-        <div class="tab-pane card-body fade" id="detailDefinitionContent" role="tabpanel">
-            {%for dd in cd.detail_definition%}
-            <p>{{dd.definition}}</p>
-            <p>
-                <span class="badge badge-info">例句</span>
-            <ul>
-                {%for lj in dd.liju%}
-                <li>{{lj.show_name | safe}}</li>
+        <div class="tab-pane fade" id="baidu-explain" role="tabpanel">
+            {%if let BaiduIdiomExplainEntry::Idiom(i) = idiom.detail.content.baidu%}
+            {%if let Some(d) = i.definition_info%}
+            <p class="mx-4">
+                <span class="badge badge-primary">基本释义</span>
+                {{d.definition}}
+            </p>
+            {%if d.similar_definition.is_empty()%}
+            <p class="mx-4">
+                <span class="badge badge-danger">比喻</span>
+                {{d.similar_definition}}
+            </p>
+            {%endif%}
+            {%if d.modern_definition.is_empty()%}
+            <p class="mx-4">
+                <span class="badge badge-info">今义</span>
+                {{d.modern_definition}}
+            </p>
+            {%endif%}
+            <ul class="mx-4">
+                {%for dm in d.detail_means%}
+                <li>{{dm.word}}: {{dm.definition}}</li>
                 {%endfor%}
             </ul>
-            </p>
-            <div>
-                <span class="badge badge-primary">引证</span>
-                {%for cite in dd.cite_list%}
-                <p>
-                    <span>{{cite.cite_original_text}}</span>
-                    <span>{{cite.dynasty}} —— {{cite.author}} {{cite.source}}</span>
-                </p>
+            {%endif%}
+            <ol class="ml-2">
+                {%for lj in i.liju%}
+                <li>{{lj.show_name | safe}}</li>
                 {%endfor%}
+            </ol>
+            {%call idiom::jyc_fyc(idiom.detail.content.jyc(), idiom.detail.content.fyc(), idiom)%}
+            {% elif let BaiduIdiomExplainEntry::Term(t) = idiom.detail.content.baidu %}
+            {% if let Some(cd) = t.comprehensive_definition.first() %}
+            <ul class="nav nav-tabs" id="termTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="basicDefinition" data-toggle="tab"
+                        data-target="#basicDefinitionContent" type="button" role="tab">基本释义</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="detailDefinition" data-toggle="tab"
+                        data-target="#detailDefinitionContent" type="button" role="tab">详细释义</button>
+                </li>
+            </ul>
+            <div class="tab-content card mb-3" id="termTabContent">
+                <div class="tab-pane card-body fade show active" id="basicDefinitionContent" role="tabpanel">
+                    {%for bd in cd.basic_definition%}
+                    <p>{{bd.definition}}</p>
+                    <p>
+                        <span class="badge badge-primary">组词</span>
+                        {%for zc in bd.zuci%}
+                        <span>{{zc.name}}</span>
+                        {%endfor%}
+                    </p>
+                    <p>
+                        <span class="badge badge-info">例句</span>
+                    <ul>
+                        {%for lj in bd.liju%}
+                        <li>{{lj.show_name | safe}}</li>
+                        {%endfor%}
+                    </ul>
+                    </p>
+                    {%endfor%}
+                </div>
+                <div class="tab-pane card-body fade" id="detailDefinitionContent" role="tabpanel">
+                    {%for dd in cd.detail_definition%}
+                    <p>{{dd.definition}}</p>
+                    <p>
+                        <span class="badge badge-info">例句</span>
+                    <ul>
+                        {%for lj in dd.liju%}
+                        <li>{{lj.show_name | safe}}</li>
+                        {%endfor%}
+                    </ul>
+                    </p>
+                    <div>
+                        <span class="badge badge-primary">引证</span>
+                        {%for cite in dd.cite_list%}
+                        <p>
+                            <span>{{cite.cite_original_text}}</span>
+                            <span>{{cite.dynasty}} —— {{cite.author}} {{cite.source}}</span>
+                        </p>
+                        {%endfor%}
+                    </div>
+                    {%endfor%}
+                </div>
             </div>
-            {%endfor%}
+            {%endif%}
+            {%endif%}
         </div>
     </div>
-    {%endif%}
-    {% endif %}
-
     <div class="card mb-3">
         <header class="d-flex card-header align-items-center">
             <svg class="icon-svg icon-svg-sm mr-2">

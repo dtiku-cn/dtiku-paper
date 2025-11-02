@@ -20,10 +20,26 @@ pub struct BasicExplain {
     pub definition: String,
 }
 
-impl Into<BasicExplain> for &IdiomExplainEntry {
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+pub struct ExplainContent {
+    pub baidu: BaiduIdiomExplainEntry,
+    pub sogou: SogouIdiomExplain,
+}
+
+impl ExplainContent {
+    pub fn jyc(&self) -> Vec<&String> {
+        self.baidu.jyc()
+    }
+
+    pub fn fyc(&self) -> Vec<&String> {
+        self.baidu.fyc()
+    }
+}
+
+impl Into<BasicExplain> for &BaiduIdiomExplainEntry {
     fn into(self) -> BasicExplain {
         match &self {
-            IdiomExplainEntry::Idiom(IdiomEntry {
+            BaiduIdiomExplainEntry::Idiom(IdiomEntry {
                 baobian,
                 definition_info,
                 ..
@@ -44,7 +60,7 @@ impl Into<BasicExplain> for &IdiomExplainEntry {
                     definition: definition,
                 }
             }
-            IdiomExplainEntry::Term(TermEntry {
+            BaiduIdiomExplainEntry::Term(TermEntry {
                 baobian,
                 baike_info,
                 ..
@@ -56,9 +72,9 @@ impl Into<BasicExplain> for &IdiomExplainEntry {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum IdiomExplainEntry {
+pub enum BaiduIdiomExplainEntry {
     #[serde(rename = "idiom")]
     Idiom(IdiomEntry),
 
@@ -66,7 +82,7 @@ pub enum IdiomExplainEntry {
     Term(TermEntry),
 }
 
-impl IdiomExplainEntry {
+impl BaiduIdiomExplainEntry {
     pub fn jyc(&self) -> Vec<&String> {
         match self {
             Self::Idiom(idiom) => idiom.synonyms.iter().map(|w| &w.name).collect(),
@@ -98,10 +114,18 @@ impl IdiomExplainEntry {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SogouIdiomExplain {
+    pub shiyidetail: String,
+    pub liju: String,
+    pub jyc: Vec<String>,
+    pub fyc: Vec<String>,
+}
+
 //
 // ---------------- idiom ----------------
 //
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IdiomEntry {
     pub idiom_version: i32,

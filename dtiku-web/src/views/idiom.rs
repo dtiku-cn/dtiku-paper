@@ -5,7 +5,7 @@ use askama::Template;
 use askama_web::WebTemplate;
 use dtiku_paper::domain::label::LabelTree;
 use dtiku_paper::model::question::QuestionExtra;
-use dtiku_stats::model::idiom::IdiomExplainEntry;
+use dtiku_stats::model::idiom::BaiduIdiomExplainEntry;
 use dtiku_stats::{
     domain::{IdiomDetail, IdiomStats},
     model::sea_orm_active_enums::IdiomType,

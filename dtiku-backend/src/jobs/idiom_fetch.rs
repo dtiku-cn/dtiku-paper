@@ -4,7 +4,9 @@ use dtiku_paper::model::{
     paper, question::QuestionExtra, ExamCategory, Paper, PaperQuestion, Question,
 };
 use dtiku_stats::model::{
-    idiom::{self, IdiomExplainEntry},
+    idiom::{
+        self, BaiduIdiomExplainEntry, ExplainContent, SogouIdiomExplain as SogouIdiomExplainModel,
+    },
     idiom_ref,
     sea_orm_active_enums::IdiomType,
     Idiom,
@@ -19,7 +21,7 @@ use spring::{plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use std::time::Duration;
 
-#[derive(Debug, FromCssSelector)]
+#[derive(Debug, Clone, FromCssSelector)]
 pub struct SogouIdiomExplain {
     #[selector(
         path = "#main div.words-details h4>span",
@@ -55,13 +57,24 @@ impl SogouIdiomExplain {
     }
 }
 
+impl Into<SogouIdiomExplainModel> for SogouIdiomExplain {
+    fn into(self) -> SogouIdiomExplainModel {
+        SogouIdiomExplainModel {
+            shiyidetail: self.shiyidetail.unwrap_or_default().replace(" ", ""),
+            liju: self.liju.unwrap_or_default().replace(" ", ""),
+            jyc: self.jyc,
+            fyc: self.fyc,
+        }
+    }
+}
+
 ////////////////////////////////baidu
 ///
 #[derive(Debug, Deserialize)]
 pub struct BaiduApiResponse {
     pub errno: i32,
     pub errmsg: String,
-    pub data: IdiomExplainEntry,
+    pub data: BaiduIdiomExplainEntry,
 }
 
 impl BaiduApiResponse {
@@ -195,8 +208,13 @@ impl IdiomStatsService {
                                 } else {
                                     tokio::time::sleep(Duration::from_secs(1)).await;
                                 }
-                                let explain = resp.unwrap().data;
-                                let mut basic_explain: idiom::BasicExplain = (&explain).into();
+                                let baidu_explain = resp.unwrap().data;
+                                let content = ExplainContent {
+                                    baidu: baidu_explain.clone().into(),
+                                    sogou: sogou_explain.clone().into(),
+                                };
+                                let mut basic_explain: idiom::BasicExplain =
+                                    (&baidu_explain).into();
                                 basic_explain.definition = if let Some(sogou_shiyi) =
                                     sogou_explain.shiyi
                                 {
@@ -215,7 +233,7 @@ impl IdiomStatsService {
                                     text: Set(idiom.to_string()),
                                     ty: Set(ty),
                                     explain: Set(basic_explain),
-                                    content: Set(explain.into()),
+                                    content: Set(content),
                                     ..Default::default()
                                 }
                                 .insert_on_conflict(&self.db)
