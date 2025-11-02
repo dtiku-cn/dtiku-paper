@@ -63,7 +63,7 @@
     </nav>
     <div class="tab-content">
         <div class="tab-pane fade show active" id="sogou-explain" role="tabpanel">
-            <div class="m-4 text-muted">{{idiom.detail.content.sogou.shiyidetail}}</div>
+            <div class="m-4 text-muted">{{idiom.detail.content.sogou.shiyidetail | safe}}</div>
             {%if !idiom.detail.content.sogou.liju.is_empty()%}
             <h3>例句</h3>
             <div class="m-4 text-muted">{{idiom.detail.content.sogou.liju | safe}}</div>
