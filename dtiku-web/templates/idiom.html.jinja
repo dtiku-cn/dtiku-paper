@@ -45,10 +45,12 @@
             href="https://hanyu.sogou.com/result?query={{idiom.detail.text}}">{{idiom.detail.text}}</a>
     </h1>
     <div class="m-4 text-muted">
+        {%if !idiom.detail.explain.baobian.is_empty()%}
         <span
             class='badge {%if idiom.detail.explain.baobian.contains("褒")%}badge-success{%elif idiom.detail.explain.baobian.contains("贬")%}badge-warning{%else%}badge-secondary{%endif%}'>
             {{idiom.detail.explain.baobian}}
         </span>
+        {%endif%}
         <span>{{idiom.detail.explain.definition}}</span>
     </div>
     <nav class="nav nav-pills nav-fill" role="tablist">
@@ -61,7 +63,7 @@
             <b>百度词典</b>
         </a>
     </nav>
-    <div class="tab-content mt-4">
+    <div class="tab-content mt-3">
         <div class="tab-pane fade show active" id="sogou-explain" role="tabpanel">
             <div class="m-4 text-muted">{{idiom.detail.content.sogou.shiyidetail | safe}}</div>
             {%if !idiom.detail.content.sogou.liju.is_empty()%}
