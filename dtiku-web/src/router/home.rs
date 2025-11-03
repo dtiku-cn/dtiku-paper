@@ -1,4 +1,7 @@
-use crate::views::{home::HomeTemplate, GlobalVariables};
+use crate::{
+    router::EXAM_ID,
+    views::{home::HomeTemplate, GlobalVariables},
+};
 use dtiku_paper::{model::paper, service::paper::PaperService};
 use dtiku_stats::{
     domain::IdiomStats, model::sea_orm_active_enums::IdiomType, query::IdiomQuery,
@@ -40,8 +43,9 @@ async fn get_papers(
     global: &GlobalVariables,
     prefix: &str,
 ) -> anyhow::Result<Vec<paper::Model>> {
+    let exam_id = EXAM_ID.get();
     let papers = if let Some(paper_type) = global.get_paper_type_by_prefix(prefix) {
-        ps.find_paper_by_type(paper_type.id).await?
+        ps.find_paper_by_type(exam_id, paper_type.id).await?
     } else {
         vec![]
     };

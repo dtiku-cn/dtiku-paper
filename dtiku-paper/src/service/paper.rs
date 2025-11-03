@@ -74,9 +74,15 @@ impl PaperService {
             .with_context(|| format!("Paper::search_by_name({paper_type},{name}) failed"))
     }
 
-    pub async fn find_paper_by_type(&self, paper_type: i16) -> anyhow::Result<Vec<paper::Model>> {
+    pub async fn find_paper_by_type(
+        &self,
+        exam_id: i16,
+        paper_type: i16,
+    ) -> anyhow::Result<Vec<paper::Model>> {
         let hidden_labels = Label::find_hidden_label_id_by_paper_type(&self.db, paper_type).await?;
-        let mut filter = paper::Column::PaperType.eq(paper_type);
+        let mut filter = paper::Column::ExamId
+            .eq(exam_id)
+            .and(paper::Column::PaperType.eq(paper_type));
         if !hidden_labels.is_empty() {
             filter = filter.and(paper::Column::LabelId.is_not_in(hidden_labels));
         }
