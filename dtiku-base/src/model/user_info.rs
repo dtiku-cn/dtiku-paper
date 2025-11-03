@@ -26,7 +26,14 @@ impl Model {
     }
 
     pub fn due_time(&self) -> String {
-        self.expired.format("%Y%m%d%H%M%S").to_string()
+        let now = Local::now().naive_local();
+        let diff = self.expired - now;
+
+        if diff.num_days() >= 0 && diff.num_days() <= 7 {
+            format!("还有{}天", diff.num_days())
+        } else {
+            self.expired.format("%Y-%m-%d %H:%M").to_string()
+        }
     }
 }
 
