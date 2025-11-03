@@ -93,7 +93,7 @@
             {%for q in questions %}
             {%if let Some(answer) = q.get_answer() %}
             <a class="text-reset text-center" href="#q-{{q.num}}">
-                <b>{{q.num}}</b>、<b class="-answer-">{{answer}}</b>
+                <b>{{q.num}}</b>、<b class="-answer-">{{answer | safe}}</b>
             </a>
             {%endif%}
             {%endfor%}

@@ -75,6 +75,9 @@ impl SolutionExtra {
                     Some("F".to_string())
                 }
             }
+            Self::BlankAnswer(BlankAnswer { answer, .. }) => Some(answer.clone()),
+            Self::FillBlank(FillBlank { blanks, .. }) => Some(blanks.join(" ")),
+            Self::OtherQA(OtherAnswer { answer, .. }) => answer.clone(),
             _ => None,
         }
     }

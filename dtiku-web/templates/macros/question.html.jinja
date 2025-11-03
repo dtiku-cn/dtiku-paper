@@ -223,7 +223,7 @@
     <a class="btn btn-link" role="button" data-toggle="collapse" href="#answer-{{q.id}}">查看解析</a>
     <div class="collapse" id="answer-{{q.id}}">
         {% if let Some(answer) = q.get_answer()%}
-        <div>参考答案：<b class="-answer-">{{answer}}</b></div>
+        <div>参考答案：<b class="-answer-">{{answer | safe}}</b></div>
         {% endif %}
         {%call question_solution(q)%}
     </div>
