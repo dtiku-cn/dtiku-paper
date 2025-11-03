@@ -57,7 +57,12 @@ impl Entity {
         C: ConnectionTrait,
     {
         Entity::find()
-            .filter(Column::Pid.eq(pid).and(Column::Prefix.eq(prefix)))
+            .filter(
+                Column::FromTy
+                    .eq(FromType::Fenbi)
+                    .and(Column::Pid.eq(pid))
+                    .and(Column::Prefix.eq(prefix)),
+            )
             .one(db)
             .await
             .with_context(|| format!("exam_category::find_by_prefix({prefix}) failed"))
