@@ -1,7 +1,7 @@
 create extension if not exists vector;
 create extension if not exists ltree;
 create extension if not exists pg_trgm;
-create type from_type as enum ('fenbi', 'huatu', 'offcn', 'chinagwy');
+create type from_type as enum ('fenbi', 'huatu', 'offcn', 'chinagwy', 'mock_exam');
 create type src_type as enum('question', 'material', 'solution');
 -- 考试类型：root_id为exam_id; leaf_id为paper_type
 drop table if exists exam_category;

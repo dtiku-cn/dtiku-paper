@@ -52,4 +52,6 @@ pub enum FromType {
     Offcn,
     #[sea_orm(string_value = "chinagwy")]
     Chinagwy,
+    #[sea_orm(string_value = "mock_exam")]
+    MockExam,
 }
