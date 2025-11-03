@@ -122,6 +122,7 @@ impl IdiomService {
     pub async fn get_idiom_detail(
         &self,
         text: &str,
+        exam_id: i16,
         labels: Vec<i32>,
     ) -> anyhow::Result<Option<IdiomDetail>> {
         let idiom = Idiom::find_by_text(&self.db, text)
@@ -132,7 +133,9 @@ impl IdiomService {
             let jyc = Idiom::find_by_texts(&self.db, idiom.content.jyc().clone(), &labels).await?;
             let fyc = Idiom::find_by_texts(&self.db, idiom.content.fyc().clone(), &labels).await?;
 
-            let mut ref_filter = idiom_ref::Column::IdiomId.eq(idiom.id);
+            let mut ref_filter = idiom_ref::Column::IdiomId
+                .eq(idiom.id)
+                .and(idiom_ref::Column::ExamId.eq(exam_id));
             if !labels.is_empty() {
                 ref_filter = ref_filter.and(idiom_ref::Column::LabelId.is_in(labels));
             }

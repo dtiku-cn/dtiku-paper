@@ -1,9 +1,7 @@
 use crate::{
-    query::idiom::IdiomReq,
-    views::{
-        idiom::{IdiomDetailTemplate, IdiomPrintTemplate, ListIdiomTemplate},
-        GlobalVariables,
-    },
+    query::idiom::IdiomReq, router::EXAM_ID, views::{
+        GlobalVariables, idiom::{IdiomDetailTemplate, IdiomPrintTemplate, ListIdiomTemplate}
+    }
 };
 use anyhow::Context;
 use axum_extra::extract::Query;
@@ -108,8 +106,9 @@ async fn idiom_detail(
     Query(req): Query<IdiomReq>,
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
+    let exam_id = EXAM_ID.get();
     let idiom = is
-        .get_idiom_detail(&text, req.labels)
+        .get_idiom_detail(&text, exam_id, req.labels)
         .await?
         .ok_or_else(|| KnownWebError::not_found("成语未找到"))?;
 
