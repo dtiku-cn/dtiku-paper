@@ -8,8 +8,10 @@ use sea_orm::{
     ConnectionTrait, DbErr, EntityTrait, FromQueryResult, QueryFilter, Statement,
 };
 use serde::Serialize;
-use spring::async_trait;
-use spring_redis::cache;
+use spring::plugin::ComponentRegistry as _;
+use spring::{async_trait, App};
+use spring_redis::redis::AsyncCommands;
+use spring_redis::{cache, Redis};
 use spring_sea_orm::pagination::{Page, Pagination, PaginationExt};
 
 #[derive(Debug, FromQueryResult, Serialize)]
@@ -44,6 +46,18 @@ impl ActiveModelBehavior for ActiveModel {
         }
         self.modified = Set(now);
         Ok(self)
+    }
+
+    async fn after_save<C>(model: Model, _db: &C, insert: bool) -> Result<Model, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        if !insert {
+            let user_id = model.id;
+            let mut redis = App::global().get_expect_component::<Redis>();
+            let _: () = redis.del(format!("user:{user_id}")).await.unwrap();
+        }
+        Ok(model)
     }
 }
 
