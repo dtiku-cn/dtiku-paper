@@ -10,6 +10,8 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub ty: IdiomType,
     #[sea_orm(primary_key)]
+    pub paper_type: i16,
+    #[sea_orm(primary_key)]
     pub label_id: i32,
     #[sea_orm(primary_key)]
     pub idiom_id: i32,

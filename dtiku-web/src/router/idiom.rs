@@ -1,7 +1,10 @@
 use crate::{
-    query::idiom::IdiomReq, router::EXAM_ID, views::{
-        GlobalVariables, idiom::{IdiomDetailTemplate, IdiomPrintTemplate, ListIdiomTemplate}
-    }
+    query::idiom::IdiomReq,
+    router::EXAM_ID,
+    views::{
+        idiom::{IdiomDetailTemplate, IdiomPrintTemplate, ListIdiomTemplate},
+        GlobalVariables,
+    },
 };
 use anyhow::Context;
 use axum_extra::extract::Query;

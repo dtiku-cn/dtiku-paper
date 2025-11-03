@@ -31,7 +31,9 @@ impl IdiomService {
         paper_type: i16,
         query: &IdiomQuery,
     ) -> anyhow::Result<Page<IdiomStats>> {
-        let mut filter = idiom_ref_stats::Column::Ty.eq(ty);
+        let mut filter = idiom_ref_stats::Column::Ty
+            .eq(ty)
+            .and(idiom_ref_stats::Column::PaperType.eq(paper_type));
         if !query.label_id.is_empty() {
             filter = filter.and(idiom_ref_stats::Column::LabelId.is_in(query.label_id.clone()));
         } else {

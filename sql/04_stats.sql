@@ -29,9 +29,10 @@ create index if not exists idx_idiom_ref_idiom_id on idiom_ref(idiom_id);
 create materialized view idiom_ref_stats as
 select
   ty,
+  paper_type,
   label_id,
   idiom_id,
   count(distinct question_id) as question_count,
   count(distinct paper_id) as paper_count
 from idiom_ref
-group by ty, label_id, idiom_id;
+group by ty, paper_type, label_id, idiom_id;
