@@ -110,12 +110,18 @@ async fn idiom_detail(
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     let exam_id = EXAM_ID.get();
-    let idiom = is
-        .get_idiom_detail(&text, exam_id, req.labels)
-        .await?
-        .ok_or_else(|| KnownWebError::not_found("成语未找到"))?;
+    match global.get_paper_type_by_prefix("xingce") {
+        Some(paper_type) => {
+            let paper_type: i16 = paper_type.id;
+            let idiom = is
+                .get_idiom_detail(&text, exam_id, paper_type, req.labels)
+                .await?
+                .ok_or_else(|| KnownWebError::not_found("成语未找到"))?;
 
-    Ok(IdiomDetailTemplate { global, idiom })
+            Ok(IdiomDetailTemplate { global, idiom })
+        }
+        None => Err(KnownWebError::bad_request("错误的试卷类型"))?,
+    }
 }
 
 #[get("/idiom-print/{model}")]

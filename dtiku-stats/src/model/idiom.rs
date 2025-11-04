@@ -325,6 +325,7 @@ impl Entity {
 
     pub async fn find_by_texts<C: ConnectionTrait>(
         db: &C,
+        paper_type: i16,
         texts: Vec<&String>,
         labels: &Vec<i32>,
     ) -> anyhow::Result<Vec<IdiomStats>> {
@@ -340,7 +341,9 @@ impl Entity {
         let id_idiom_map: HashMap<i32, _> = brief.into_iter().map(|i| (i.id, i)).collect();
         let idiom_ids = id_idiom_map.keys().cloned().collect_vec();
 
-        let mut ref_stats_filter = idiom_ref_stats::Column::IdiomId.is_in(idiom_ids);
+        let mut ref_stats_filter = idiom_ref_stats::Column::IdiomId
+            .is_in(idiom_ids)
+            .and(idiom_ref_stats::Column::PaperType.eq(paper_type));
         if !labels.is_empty() {
             ref_stats_filter =
                 ref_stats_filter.and(idiom_ref_stats::Column::LabelId.is_in(labels.clone()));

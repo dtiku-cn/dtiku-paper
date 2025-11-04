@@ -125,6 +125,7 @@ impl IdiomService {
         &self,
         text: &str,
         exam_id: i16,
+        paper_type: i16,
         labels: Vec<i32>,
     ) -> anyhow::Result<Option<IdiomDetail>> {
         let idiom = Idiom::find_by_text(&self.db, text)
@@ -132,8 +133,12 @@ impl IdiomService {
             .with_context(|| format!("Idiom::get_idiom_detail({text}) failed"))?;
 
         if let Some(idiom) = idiom {
-            let jyc = Idiom::find_by_texts(&self.db, idiom.content.jyc().clone(), &labels).await?;
-            let fyc = Idiom::find_by_texts(&self.db, idiom.content.fyc().clone(), &labels).await?;
+            let jyc =
+                Idiom::find_by_texts(&self.db, paper_type, idiom.content.jyc().clone(), &labels)
+                    .await?;
+            let fyc =
+                Idiom::find_by_texts(&self.db, paper_type, idiom.content.fyc().clone(), &labels)
+                    .await?;
 
             let mut ref_filter = idiom_ref::Column::IdiomId
                 .eq(idiom.id)
