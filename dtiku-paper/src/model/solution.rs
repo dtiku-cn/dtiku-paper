@@ -5,6 +5,7 @@ use crate::{
 };
 use anyhow::Context;
 use itertools::Itertools;
+use phf::phf_map;
 use sea_orm::{
     sea_query::OnConflict, ActiveModelTrait as _, ActiveValue::Set, ColumnTrait, ConnectionTrait,
     EntityTrait, FromJsonQueryResult, QueryFilter,
@@ -46,6 +47,19 @@ pub enum SolutionExtra {
     #[serde(rename = "o")]
     OtherQA(OtherAnswer),
 }
+
+static LABEL_MAP: phf::Map<&'static str, &'static str> = phf_map! {
+    "demonstrate" => "示范答题",
+    "reference" => "参考答案",
+    "sfdt" => "示范答题",
+    "kcnl" => "考察能力",
+    "stzd" => "试题指导",
+    "swdt" => "思维导图",
+    "xgzt" => "相关真题",
+    "process" => "答题过程",
+    "tzys" => "题旨延伸",
+    "sdjd" => "审题解读",
+};
 
 impl SolutionExtra {
     pub fn is_answer(&self, index0: usize) -> bool {
@@ -151,9 +165,12 @@ impl SolutionExtra {
                     String::new()
                 };
                 for a in analysis {
-                    if ["demonstrate", "reference", "sfdt"].contains(&a.label.as_str()) {
+                    let label = LABEL_MAP.get(&a.label.as_str());
+                    if let Some(label) = label {
                         if !html.is_empty() {
-                            html.push_str("<br/><b>参考示例</b><br/>");
+                            html.push_str(&format!("<br/><b>{label}</b><br/>"));
+                        } else {
+                            html.push_str(&format!("<b>{label}</b><br/>"));
                         }
                     } else {
                         if !html.is_empty() {
