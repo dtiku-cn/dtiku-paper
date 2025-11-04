@@ -130,6 +130,42 @@ impl SolutionExtra {
             }
         }
     }
+
+    pub fn get_full_html(&self) -> String {
+        match self {
+            Self::SingleChoice(SingleChoice { analysis, .. })
+            | Self::BlankChoice(SingleChoice { analysis, .. })
+            | Self::MultiChoice(MultiChoice { analysis, .. })
+            | Self::IndefiniteChoice(MultiChoice { analysis, .. })
+            | Self::TrueFalse(TrueFalseChoice { analysis, .. })
+            | Self::FillBlank(FillBlank { analysis, .. })
+            | Self::BlankAnswer(BlankAnswer { analysis, .. })
+            | Self::ClosedEndedQA(AnswerAnalysis { analysis, .. }) => analysis.to_string(),
+            Self::OpenEndedQA(StepByStepAnswer { solution, analysis })
+            | Self::OtherQA(OtherAnswer {
+                solution, analysis, ..
+            }) => {
+                let mut html = if let Some(sol) = solution {
+                    sol.to_string()
+                } else {
+                    String::new()
+                };
+                for a in analysis {
+                    if ["demonstrate", "reference", "sfdt"].contains(&a.label.as_str()) {
+                        if !html.is_empty() {
+                            html.push_str("<br/><b>参考示例</b><br/>");
+                        }
+                    } else {
+                        if !html.is_empty() {
+                            html.push_str("<br/>");
+                        }
+                    }
+                    html.push_str(&a.content);
+                }
+                html
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]

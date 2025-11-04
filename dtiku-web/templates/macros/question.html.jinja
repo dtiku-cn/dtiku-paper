@@ -73,7 +73,7 @@
     {%for s in solutions%}
     <div role="tabpanel" id="solution-{{q.id}}-{{s.id}}"
         class="{{s.from_ty}}-solution solution tab-pane card-body bg-light {%if loop.index==1%}active{%else%}fade{%endif%}">
-        {{s.extra.get_html() | safe}}
+        {{s.extra.get_full_html() | safe}}
     </div>
     {%endfor%}
     {%endif%}
