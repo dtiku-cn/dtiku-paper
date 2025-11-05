@@ -3,6 +3,7 @@ use crate::query::UserQuery;
 use anyhow::Context;
 use chrono::Days;
 use sea_orm::entity::prelude::*;
+use sea_orm::QueryOrder;
 use sea_orm::{
     sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set, ColumnTrait,
     ConnectionTrait, DbErr, EntityTrait, FromQueryResult, QueryFilter, Statement,
@@ -98,6 +99,7 @@ impl Entity {
     ) -> anyhow::Result<Page<Model>> {
         Entity::find()
             .filter(query)
+            .order_by_desc(Column::Created)
             .page(db, &pagination)
             .await
             .context("UserInfo::find_page_by_query() failed")
