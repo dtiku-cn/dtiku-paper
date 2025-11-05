@@ -92,7 +92,7 @@ impl AssetsSaveService {
         let futures = CLOUD_STORAGE.into_iter().map(|dir_prefix| {
             let dav = self.op.clone();
             let data = body.clone();
-            let file_path = format!("{dir_prefix}/{storage_path}/");
+            let file_path = format!("{dir_prefix}/{storage_path}");
             async move {
                 let resp = dav
                     .write(&file_path, data)
