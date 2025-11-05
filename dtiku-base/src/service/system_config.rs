@@ -69,6 +69,7 @@ gen_config_getters! {
     (cdn_assets, CdnAssets, serde_json::Value),
     (alert_message_key, AlertMessageKey, String),
     (global_alert_message, GlobalAlertMessage, String),
+    (home_sidebar, HomeSidebar, String),
     (analytics_script, AnalyticsScript, String),
     (global_style, GlobalStyle, String),
     (global_head_files, GlobalHeadFiles, String),

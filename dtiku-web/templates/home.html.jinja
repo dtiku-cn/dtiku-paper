@@ -90,6 +90,9 @@
             </div>
         </div>
         <div class="col-sm-12 col-lg-3 col-xl-3">
+            {%if !global.config.home_sidebar.is_empty()%}
+            {{global.config.home_sidebar|safe}}
+            {%endif%}
             <div class="card mb-3">
                 <header class="d-flex card-header align-items-center p-1 pl-3">
                     <svg class="icon-svg icon-svg-sm mr-2">

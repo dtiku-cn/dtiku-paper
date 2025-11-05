@@ -62,6 +62,9 @@ pub enum SystemConfigKey {
     #[strum(message = "全局告警消息")]
     GlobalAlertMessage,
 
+    #[strum(message = "首页侧边栏")]
+    HomeSidebar,
+
     #[strum(message = "埋点统计脚本,详见百度统计,谷歌统计等")]
     AnalyticsScript,
 
