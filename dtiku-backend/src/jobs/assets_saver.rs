@@ -94,12 +94,15 @@ impl AssetsSaveService {
             let data = body.clone();
             let file_path = format!("{dir_prefix}/{storage_path}");
             async move {
-                let resp = dav
-                    .write(&file_path, data)
-                    .await
-                    .with_context(|| format!("upload to {file_path} failed"))?;
-                tracing::info!("upload ==> {resp:?}");
-
+                if !dav.exists(&file_path) {
+                    let resp = dav
+                        .write(&file_path, data)
+                        .await
+                        .with_context(|| format!("upload to {file_path} failed"))?;
+                    tracing::debug!("upload ==> {resp:?}");
+                } else {
+                    tracing::info!("{file_path} exists");
+                }
                 Ok::<(), anyhow::Error>(())
             }
         });
