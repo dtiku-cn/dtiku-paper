@@ -52,6 +52,7 @@ use_cdn_asset = false
 cdn_assets = ""
 alert_message_key = ""
 global_alert_message = ""
+home_sidebar = ""
 analytics_script = ""
 global_style = ""
 global_head_files = ""
