@@ -94,7 +94,7 @@ impl AssetsSaveService {
             let data = body.clone();
             let file_path = format!("{dir_prefix}/{storage_path}");
             async move {
-                if !dav.exists(&file_path) {
+                if !dav.exists(&file_path).await? {
                     let resp = dav
                         .write(&file_path, data)
                         .await
