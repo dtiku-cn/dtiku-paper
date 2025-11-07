@@ -105,3 +105,20 @@ async fn list_pay_orders(
     Ok(Json(result))
 }
 
+#[derive(Debug, Serialize)]
+pub struct PayStats {
+    pub stats: Vec<dtiku_pay::model::PayStatsByDay>,
+    pub unpaid_user_count: i64,
+}
+
+#[get("/api/pay/stats")]
+async fn pay_stats(Component(db): Component<DbConn>) -> Result<impl IntoResponse> {
+    let stats = PayOrder::stats_by_day(&db).await?;
+    let total_unpaid_user_count = PayOrder::total_unpaid_user_count(&db).await?;
+    
+    Ok(Json(PayStats {
+        stats,
+        unpaid_user_count: total_unpaid_user_count,
+    }))
+}
+

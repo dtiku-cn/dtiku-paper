@@ -3,10 +3,24 @@ pub use super::_entities::pay_order::*;
 use anyhow::Context;
 use sea_orm::{
     prelude::DateTime, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
-    ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter, QuerySelect,
+    ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromQueryResult, QueryFilter, QuerySelect, Statement,
 };
+use serde::Serialize;
 use spring::{async_trait, plugin::ComponentRegistry, App};
 use spring_stream::Producer;
+
+#[derive(Debug, FromQueryResult, Serialize)]
+pub struct PayStatsByDay {
+    pub day: DateTime,
+    pub paid_count: i64,
+    pub paid_amount: i64,
+    pub unpaid_user_count: i64,
+}
+
+#[derive(Debug, FromQueryResult, Serialize)]
+pub struct UnpaidUserCount {
+    pub unpaid_user_count: i64,
+}
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -62,5 +76,81 @@ impl Entity {
             .one(db)
             .await
             .with_context(|| format!("find_order_status({order_id},{user_id}) failed"))
+    }
+
+    pub async fn stats_by_day<C: ConnectionTrait>(db: &C) -> anyhow::Result<Vec<PayStatsByDay>> {
+        let db_backend = db.get_database_backend();
+
+        let stmt = Statement::from_sql_and_values(
+            db_backend,
+            r#"
+            WITH paid_stats AS (
+                SELECT 
+                    date_trunc('day', confirm) as day,
+                    COUNT(*) as paid_count,
+                    SUM(CASE 
+                        WHEN level = 'monthly' THEN 1000
+                        WHEN level = 'quarterly' THEN 2900
+                        WHEN level = 'half_year' THEN 5500
+                        WHEN level = 'annual' THEN 10000
+                        ELSE 0
+                    END) as paid_amount
+                FROM pay_order
+                WHERE status = 'paid' AND confirm IS NOT NULL
+                GROUP BY day
+            ),
+            unpaid_stats AS (
+                SELECT 
+                    date_trunc('day', created) as day,
+                    COUNT(DISTINCT user_id) as unpaid_user_count
+                FROM pay_order
+                WHERE status = 'created'
+                GROUP BY day
+            ),
+            all_days AS (
+                SELECT day FROM paid_stats
+                UNION
+                SELECT day FROM unpaid_stats
+            )
+            SELECT 
+                all_days.day,
+                COALESCE(paid_stats.paid_count, 0) as paid_count,
+                COALESCE(paid_stats.paid_amount, 0) as paid_amount,
+                COALESCE(unpaid_stats.unpaid_user_count, 0) as unpaid_user_count
+            FROM all_days
+            LEFT JOIN paid_stats ON all_days.day = paid_stats.day
+            LEFT JOIN unpaid_stats ON all_days.day = unpaid_stats.day
+            ORDER BY all_days.day
+            "#
+            .to_owned(),
+            vec![],
+        );
+
+        PayStatsByDay::find_by_statement(stmt)
+            .all(db)
+            .await
+            .context("PayStatsByDay execute failed")
+    }
+
+    pub async fn total_unpaid_user_count<C: ConnectionTrait>(db: &C) -> anyhow::Result<i64> {
+        let db_backend = db.get_database_backend();
+
+        let stmt = Statement::from_sql_and_values(
+            db_backend,
+            r#"
+            SELECT COUNT(DISTINCT user_id) as unpaid_user_count
+            FROM pay_order
+            WHERE status = 'created'
+            "#
+            .to_owned(),
+            vec![],
+        );
+
+        let result = UnpaidUserCount::find_by_statement(stmt)
+            .one(db)
+            .await
+            .context("UnpaidUserCount execute failed")?;
+
+        Ok(result.map(|r| r.unpaid_user_count).unwrap_or(0))
     }
 }
