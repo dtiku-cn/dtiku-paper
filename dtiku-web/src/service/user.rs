@@ -48,7 +48,7 @@ impl UserService {
             .await
             .context("get user detail failed")?;
 
-        let u = match u {
+        let mut u = match u {
             Some(u) => u,
             None => {
                 let UserResp {
@@ -70,6 +70,30 @@ impl UserService {
                 .with_context(|| format!("insert user failed"))?
             }
         };
+
+        // 检查用户的创建时间和过期时间是否均早于2025-11-07
+        // 如果是，则将过期时间延长到当前时间 + 7天
+        // 这么做的目的是为了让老用户能使用体验卡的功能
+        let cutoff_date = chrono::NaiveDate::from_ymd_opt(2025, 11, 7)
+            .and_then(|date| date.and_hms_opt(0, 0, 0))
+            .expect("invalid cutoff date");
+        
+        if u.created < cutoff_date && u.expired < cutoff_date {
+            let now = Local::now().naive_local();
+            let new_expired = now + Duration::days(7);
+            
+            let updated_user = user_info::ActiveModel {
+                id: Set(user_id),
+                expired: Set(new_expired),
+                ..Default::default()
+            }
+            .update(&self.db)
+            .await
+            .context("update user expired date failed")?;
+            
+            u = updated_user;
+        }
+
         Ok(u)
     }
 
