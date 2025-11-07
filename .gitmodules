@@ -1,3 +1,6 @@
 [submodule "dtiku-backend/frontend"]
 	path = dtiku-backend/frontend
 	url = https://github.com/dtiku-cn/admin-frontend.git
+[submodule "dtiku-mobile"]
+	path = dtiku-mobile
+	url = git@github.com:dtiku-cn/dtiku-mobile.git
