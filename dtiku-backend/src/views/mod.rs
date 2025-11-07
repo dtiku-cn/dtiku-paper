@@ -1,9 +1,9 @@
 use serde::Serialize;
 
 pub mod config;
+pub mod exam;
 pub mod task;
 pub mod test;
-pub mod exam;
 
 #[derive(Debug, Serialize)]
 pub struct GetListResult<T> {

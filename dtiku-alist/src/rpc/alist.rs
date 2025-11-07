@@ -1,9 +1,9 @@
 use crate::plugins::OpenListConfig;
 use anyhow::Context;
-use spring_redis::cache;
 use feignhttp::post;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use spring_redis::cache;
 use std::env;
 
 lazy_static! {

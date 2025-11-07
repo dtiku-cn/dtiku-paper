@@ -2,6 +2,7 @@ mod config;
 mod exam;
 mod keypoint;
 mod matviews;
+mod pay;
 mod task;
 mod test;
 mod user;

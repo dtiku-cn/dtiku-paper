@@ -1,11 +1,11 @@
-use crate::views::{GlobalVariables, shenlun_category::ShenlunCategoryTemplate};
+use crate::views::{shenlun_category::ShenlunCategoryTemplate, GlobalVariables};
 use dtiku_paper::{
     domain::keypoint::KeyPointTree,
     service::{keypoint::KeyPointService, question::QuestionService},
 };
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
-    axum::{Extension, response::IntoResponse},
+    axum::{response::IntoResponse, Extension},
     error::Result,
     extractor::{Component, Path},
     get,

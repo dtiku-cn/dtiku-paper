@@ -2,8 +2,8 @@ pub use super::_entities::paper_question::*;
 use crate::query::question::PaperQuestionQuery;
 use anyhow::Context;
 use sea_orm::{
-    ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter, QuerySelect,
     sea_query::{IntoCondition, OnConflict},
+    ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter, QuerySelect,
 };
 use std::collections::HashMap;
 

@@ -1,2 +1,2 @@
-pub mod regex;
 pub mod hnsw;
+pub mod regex;

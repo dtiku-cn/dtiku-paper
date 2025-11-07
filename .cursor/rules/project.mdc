@@ -1,0 +1,37 @@
+---
+alwaysApply: true
+---
+
+# 项目规则
+
+## 技术栈总览
+- **Rust 服务端**：Rust 2021 工作区，核心依托自研 `spring` 系列 crates（`spring-web` 基于 Axum，`spring-stream`、`spring-job` 处理异步与任务调度，`spring-redis`、`spring-sea-orm`、`spring-sqlx` 负责缓存与数据访问）。广泛使用 `Tokio`、`SeaORM`（含 PostgreSQL/pgvector）、`SQLx`、`Askama` 模板、`Tonic/Prost` gRPC、`OpenDAL` 对象存储、`OpenTelemetry` observability。
+- **Web 前端**：`dtiku-backend/frontend` 采用 Vite + React 18 + TypeScript，配套 Ant Design、ECharts；编译产物打包进入 Rust 后端的静态资源中。
+- **公共模块**：`dtiku-base` 聚合领域模型与通用服务；`dtiku-paper`、`dtiku-bbs`、`dtiku-stats`、`dtiku-pay` 等 crate 划分不同业务域；`dtiku-alist`、`dtiku-artalk` 对第三方系统进行二次封装扩展。
+- **基础设施**：PostgreSQL、Redis、Alist/WebDAV、Artalk、HuggingFace 模型缓存（参见 `docker/` 与 `Justfile`）；统一通过 Dockerfile 与 GitHub Actions 制作镜像。
+
+## 仓库结构
+- `dtiku-base`：系统基础服务。
+- `dtiku-paper`｜`dtiku-bbs`｜`dtiku-stats`｜`dtiku-pay`：各业务域的领域模型、查询层与服务实现。
+- `dtiku-web`：面向用户的 Web 站点，结合 Askama 模板、`templates/` Jinja 模板与静态资源目录。
+- `dtiku-backend`：后台管理 API，包含 React 管理端源码（`frontend/`）。
+- `dtiku-alist`｜`dtiku-artalk`：对接外部存储与评论系统的网关/适配服务。
+- `proto/`：gRPC 协议定义；需通过 `tonic-build` 生成代码。
+- `sql/`：数据库初始化及重建脚本。
+- 根目录 Dockerfile、`docker-compose.yaml`、`Justfile`：本地开发、打包、模型下载等辅助脚本。
+
+## 构建与运行
+- **Rust 服务**：开发阶段可借助 `just dev-web` / `just dev-bk` 触发 `cargo watch` 热重载。
+- **前端**：在 `dtiku-backend/frontend` 内执行 `npm install`，开发使用 `npm run dev`，构建使用 `npm run build`，Lint 使用 `npm run lint`。
+- **容器化**：`backend.Dockerfile`、`web.Dockerfile` 等定义服务镜像；`docker-compose.yaml` 协调 PostgreSQL、Redis 及依赖组件。
+- **模型资源**：通过 `just hf_download` 使用 HuggingFace 镜像拉取所需向量化/图像模型，并缓存于 `./.hf-cache/`。
+
+## 开发规范
+- **代码风格**：提交前运行 `cargo fmt --all` 与 `cargo clippy --workspace --all-targets --all-features`；前端保持 ESLint（`npm run lint`）与格式化一致。
+- **配置管理**：各服务 `config/app.toml` 为开发配置，`app-prod.toml` 为生产模板；避免直接提交敏感信息，新增配置需在 PRODUCTION 与 DEV 同步补充注释。
+- **模块划分**：领域逻辑放在对应 crate 的 `domain/` 或 `service/` 下；数据库访问集中在 `model/`（SeaORM 实体）与 `query/` 层；HTTP 路由统一在 `router/`，视图模板在 `views/` 或 `templates/`。
+- **接口约定**：REST API 使用 `spring-web` + Axum handler。
+
+## 测试与质量保证
+- **数据库脚本**：结构变更优先在 `sql/` 中补充脚本，并同步更新对应 SeaORM 实体；如需代码生成，使用 `just gen-model`。
+- **集成验证**：涉及 gRPC 接口调整时同步更新 `proto/`，并运行 `cargo build --workspace` 以确保生成代码无误。
