@@ -14,6 +14,7 @@ alwaysApply: true
 - `dtiku-base`：系统基础服务。
 - `dtiku-paper`｜`dtiku-bbs`｜`dtiku-stats`｜`dtiku-pay`：各业务域的领域模型、查询层与服务实现。
 - `dtiku-web`：面向用户的 Web 站点，结合 Askama 模板、`templates/` Jinja 模板与静态资源目录。
+- `dtiku-mobile`：React Native + Expo的移动端项目。
 - `dtiku-backend`：后台管理 API，包含 React 管理端源码（`frontend/`）。
 - `dtiku-alist`｜`dtiku-artalk`：对接外部存储与评论系统的网关/适配服务。
 - `proto/`：gRPC 协议定义；需通过 `tonic-build` 生成代码。
