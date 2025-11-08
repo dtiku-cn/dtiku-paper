@@ -10,6 +10,10 @@ dev-web:
 dev-bk:
     cargo watch --workdir ./dtiku-backend -x run
 
+## run dtiku-mobile-api
+dev-mobile:
+    cargo watch --workdir ./dtiku-mobile-api -x run
+
 ## build backend
 build-bk:
     docker build --tag holmofy/dtiku-backend:latest -f backend.Dockerfile .
@@ -17,6 +21,10 @@ build-bk:
 ## build web
 build-web:
     docker build --tag holmofy/dtiku-web:latest -f web.Dockerfile .
+
+## build mobile-api
+build-mobile:
+    docker build --tag holmofy/dtiku-mobile-api:latest -f mobile-api.Dockerfile .
 
 ## download hugging_face model
 hf_download:

@@ -1,4 +1,3 @@
-mod api;
 mod bbs;
 mod home;
 mod idiom;

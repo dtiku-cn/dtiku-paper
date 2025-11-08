@@ -11,6 +11,7 @@ use spring_web::{
 use sea_orm::DbConn;
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct PayCreateRequest {
     pub product_name: String,
     pub product_description: Option<String>,
@@ -35,9 +36,8 @@ async fn api_pay_create(
     Component(ps): Component<PayOrderService>,
     Json(req): Json<PayCreateRequest>,
 ) -> Result<impl IntoResponse> {
-    // 默认使用月度会员级别和微信支付
-    let level = OrderLevel::Monthly; // 使用月度会员
-    let pay_from = PayFrom::Wechat; // PayFrom 的默认值（微信）
+    let level = OrderLevel::Monthly;
+    let pay_from = PayFrom::Wechat;
 
     let (order_id, qrcode_url) = ps.create_order(claims.user_id, level, pay_from).await?;
 
@@ -58,7 +58,6 @@ async fn api_pay_query(
     Path(order_id): Path<String>,
     Component(db): Component<DbConn>,
 ) -> Result<impl IntoResponse> {
-    // 将字符串 order_id 转换为 i32
     let order_id: i32 = order_id
         .parse()
         .map_err(|_| KnownWebError::bad_request("无效的订单 ID"))?;

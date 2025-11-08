@@ -1,0 +1,44 @@
+#:schema https://spring-rs.github.io/config-schema.json
+[web]
+port = 18088
+graceful = true
+connect_info = true
+
+[web.middlewares]
+logger = { enable = false, level = "${WEB_LOG_LEVEL:info}", override_filter = "${WEB_LOG_LEVEL_FILTER:info}" }
+
+[logger]
+level = "${RUST_LOG:info}"
+override_filter = "${LOG_LEVEL_FILTER:info,axum=warn}"
+pretty_backtrace = true
+
+[sea-orm]
+uri = "${DATABASE_URL:postgres://postgres:12345@localhost:5432/empty_tiku}"
+max_connections = ${MAX_DB_CONNECTION:10}
+
+[sea-orm-web]
+one_indexed = true
+
+[stream]
+uri = "${REDIS_URL:redis://localhost}"
+
+[redis]
+uri = "${REDIS_URL:redis://localhost}"
+
+[opentelemetry]
+enable = false
+
+[pay]
+## https://openhome.alipay.com/develop/sandbox/app
+test_pay_amount = ${TEST_PAY_AMOUNT:false}
+wechat_pay_enable = false
+alipay_enable = true
+alipay_api_url = "${ALIPAY_API_URL:https://openapi-sandbox.dl.alipaydev.com/gateway.do}"
+alipay_app_id = "${ALIPAY_APP_ID:2021000149633962}"
+alipay_root_cert_sn = "${ALIPAY_ROOT_CERT_SN}"
+alipay_public_key = "${ALIPAY_PUBLIC_KEY}"
+alipay_app_cert_sn = "${ALIPAY_APP_CERT_SN}"
+alipay_app_private_key = "${ALIPAY_APP_PRIVATE_KEY}"
+alipay_app_public_key = "${ALIPAY_APP_PUBLIC_KEY}"
+alipay_callback_url = "${ALIPAY_CALLBACK_URL:https://p.dtiku.cn/pay/alipay/callback}"
+

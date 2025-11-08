@@ -1,4 +1,3 @@
-use crate::views::GlobalVariables;
 use dtiku_paper::{
     domain::paper::PaperMode,
     model::paper,
@@ -8,13 +7,14 @@ use dtiku_paper::{
 use serde::{Deserialize, Serialize};
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
-    axum::{response::IntoResponse, Extension, Json},
+    axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
     get,
 };
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct PaperListQuery {
     pub page: Option<u64>,
     pub page_size: Option<u64>,
@@ -50,11 +50,11 @@ impl From<paper::Model> for PaperResponse {
             id: p.id,
             title: p.title,
             year: p.year,
-            province: None, // paper 模型没有 province 字段
+            province: None,
             paper_type: p.paper_type,
             label_id: p.label_id,
-            mode: 0, // paper 模型没有 mode 字段
-            created_at: chrono::Local::now().naive_local(), // paper 模型没有 created_at 字段
+            mode: 0,
+            created_at: chrono::Local::now().naive_local(),
         }
     }
 }
@@ -63,7 +63,6 @@ impl From<paper::Model> for PaperResponse {
 #[get("/api/paper/list")]
 async fn api_paper_list(
     Component(ps): Component<PaperService>,
-    Extension(global): Extension<GlobalVariables>,
     Query(q): Query<PaperListQuery>,
 ) -> Result<impl IntoResponse> {
     let page = q.page.unwrap_or(1);
@@ -74,18 +73,8 @@ async fn api_paper_list(
         size: page_size,
     };
 
-    // 如果指定了 exam_category_id，使用它；否则使用默认的试卷类型
-    let paper_type = if let Some(exam_id) = q.exam_category_id {
-        exam_id
-    } else {
-        // 使用行测试卷类型作为默认值
-        global
-            .get_paper_type_by_prefix("xingce")
-            .map(|pt| pt.id)
-            .unwrap_or(0)
-    };
-
-    let label_id = 0; // 使用默认标签
+    let paper_type = q.exam_category_id.unwrap_or(0);
+    let label_id = 0;
 
     let query = ListPaperQuery {
         paper_type,
@@ -120,22 +109,10 @@ async fn api_paper_detail(
 /// GET /api/paper/cluster
 #[get("/api/paper/cluster")]
 async fn api_paper_cluster(
-    Extension(global): Extension<GlobalVariables>,
     Query(q): Query<PaperListQuery>,
 ) -> Result<impl IntoResponse> {
-    // 简化实现：返回按年份的统计数据
-    // 实际项目中应该使用更复杂的聚类算法
-    
-    let paper_type = if let Some(exam_id) = q.exam_category_id {
-        exam_id
-    } else {
-        global
-            .get_paper_type_by_prefix("xingce")
-            .map(|pt| pt.id)
-            .unwrap_or(0)
-    };
+    let paper_type = q.exam_category_id.unwrap_or(0);
 
-    // 返回简单的聚类结构
     let cluster_data = serde_json::json!({
         "paper_type": paper_type,
         "cluster": {}

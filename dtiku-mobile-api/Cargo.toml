@@ -1,0 +1,43 @@
+[package]
+name = "dtiku-mobile-api"
+version = "0.0.1"
+edition = "2021"
+publish = ["crates-io"]
+
+[[bin]]
+name = "mobile-api"
+path = "src/main.rs"
+
+[dependencies]
+spring = { workspace = true }
+spring-web = { workspace = true }
+spring-stream = { workspace = true, features = ["redis"] }
+spring-sea-orm = { workspace = true, features = ["postgres", "with-web"] }
+spring-redis = { workspace = true }
+spring-opentelemetry = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+dtiku-base = { path = "../dtiku-base", version = "0.0.1" }
+dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }
+dtiku-bbs = { path = "../dtiku-bbs", version = "0.0.1" }
+dtiku-pay = { path = "../dtiku-pay", version = "0.0.1" }
+dtiku-stats = { path = "../dtiku-stats", version = "0.0.1" }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+http = { workspace = true }
+axum = { workspace = true }
+axum-extra = { workspace = true, features = [
+    "cookie",
+    "typed-header",
+    "query",
+] }
+axum-client-ip = { workspace = true }
+tower_governor = { workspace = true, features = ["tracing"] }
+lazy_static = { workspace = true }
+jsonwebtoken = { workspace = true }
+derive_more = { workspace = true, features = ["deref", "deref_mut"] }
+sea-orm = { workspace = true, features = ["sqlx-postgres"] }
+cookie = { workspace = true }
+rustls = { workspace = true }
+

@@ -1,4 +1,3 @@
-use crate::router::EXAM_ID;
 use dtiku_paper::{
     domain::question::QuestionSearch,
     model::question::{self, QuestionWithPaper},
@@ -13,12 +12,14 @@ use spring_web::{
 };
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct QuestionSearchQuery {
     pub keyword: Option<String>,
     pub question_type: Option<String>,
     pub tags: Option<Vec<String>>,
     pub page: Option<u64>,
     pub page_size: Option<u64>,
+    pub exam_id: Option<i16>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -61,7 +62,6 @@ impl From<question::Model> for QuestionResponse {
 
 impl From<QuestionWithPaper> for QuestionResponse {
     fn from(q: QuestionWithPaper) -> Self {
-        // 从第一个试卷获取 exam_id 和 paper_type
         let (exam_id, paper_type) = q.papers.first().map(|p| (p.paper.exam_id, p.paper.paper_type)).unwrap_or((0, 0));
         Self {
             id: q.id,
@@ -91,13 +91,12 @@ async fn api_question_search(
 
     let search = QuestionSearch {
         content: keyword,
-        exam_id: Some(EXAM_ID.get()),
+        exam_id: q.exam_id,
         paper_type: None,
     };
 
     let mut questions = qs.search_question(&search).await?;
     
-    // 手动应用分页限制
     let page_size = q.page_size.unwrap_or(20) as usize;
     questions.truncate(page_size);
 
@@ -133,17 +132,14 @@ async fn api_question_recommend(
     Query(q): Query<QuestionRecommendQuery>,
     Component(qs): Component<QuestionService>,
 ) -> Result<impl IntoResponse> {
-    // 使用一个示例 ID，实际应用中应该根据参数来推荐
     let base_id = q.exclude_ids.as_ref().and_then(|ids| ids.first().copied()).unwrap_or(1);
     
     let mut questions = qs.recommend_question(base_id).await?;
 
-    // 应用限制
     if let Some(limit) = q.limit {
         questions.truncate(limit);
     }
 
-    // 排除指定的 ID
     if let Some(exclude_ids) = q.exclude_ids {
         questions.retain(|q| !exclude_ids.contains(&q.id));
     }
@@ -156,8 +152,6 @@ async fn api_question_recommend(
 async fn api_question_section(
     Query(q): Query<QuestionSectionQuery>,
 ) -> Result<impl IntoResponse> {
-    // 这里需要更详细的查询参数，暂时返回空结果
-    // 实际实现需要根据 section_id 查询对应章节的题目
     Ok(Json(serde_json::json!({
         "questions": [],
         "section_id": q.section_id,

@@ -1,4 +1,5 @@
-use crate::{router::Claims, service::issue::IssueService, views::bbs::FullIssue};
+use crate::router::Claims;
+use crate::service::issue::IssueService;
 use anyhow::Context;
 use dtiku_bbs::model::{issue, IssueQuery, TopicType};
 use sea_orm::{
@@ -14,6 +15,7 @@ use spring_web::{
 };
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct IssueListQuery {
     pub page: Option<u64>,
     pub page_size: Option<u64>,
@@ -22,6 +24,7 @@ pub struct IssueListQuery {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct IssueCreateRequest {
     pub title: String,
     pub content: String,
@@ -30,6 +33,7 @@ pub struct IssueCreateRequest {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct IssueUpdateRequest {
     pub title: Option<String>,
     pub content: Option<String>,
@@ -53,19 +57,6 @@ pub struct PaginatedResponse<T> {
     pub total: u64,
     pub page: u64,
     pub page_size: u64,
-}
-
-impl From<FullIssue> for IssueResponse {
-    fn from(i: FullIssue) -> Self {
-        Self {
-            id: i.id,
-            title: i.title,
-            content: i.markdown.clone(),
-            user_id: i.user_id,
-            created: i.created,
-            modified: i.modified,
-        }
-    }
 }
 
 impl From<issue::Model> for IssueResponse {
@@ -110,11 +101,12 @@ async fn api_issue_list(
 #[get("/api/issue/{id}")]
 async fn api_issue_detail(
     Path(id): Path<i32>,
-    Component(is): Component<IssueService>,
+    Component(db): Component<DbConn>,
 ) -> Result<impl IntoResponse> {
-    let issue = is
-        .find_issue_by_id(id)
-        .await?
+    let issue = issue::Entity::find_by_id(id)
+        .one(&db)
+        .await
+        .context("查询帖子失败")?
         .ok_or_else(|| KnownWebError::not_found("帖子不存在"))?;
 
     Ok(Json(IssueResponse::from(issue)))
@@ -127,7 +119,6 @@ async fn api_issue_create(
     Component(db): Component<DbConn>,
     Json(req): Json<IssueCreateRequest>,
 ) -> Result<impl IntoResponse> {
-    // 简单的 markdown 到 html 转换（实际项目应该使用专业的 markdown 解析器）
     let html = req.content.clone();
 
     let new_issue = issue::ActiveModel {
@@ -135,7 +126,7 @@ async fn api_issue_create(
         markdown: Set(req.content),
         html: Set(html),
         user_id: Set(claims.user_id),
-        topic: Set(TopicType::Xingce), // 默认使用行测主题
+        topic: Set(TopicType::Xingce),
         ..Default::default()
     };
 
@@ -152,7 +143,6 @@ async fn api_issue_update(
     Component(db): Component<DbConn>,
     Json(req): Json<IssueUpdateRequest>,
 ) -> Result<impl IntoResponse> {
-    // 检查帖子是否存在并且属于当前用户
     let existing = issue::Entity::find_by_id(id)
         .one(&db)
         .await
@@ -191,7 +181,6 @@ async fn api_issue_delete(
     Path(id): Path<i32>,
     Component(db): Component<DbConn>,
 ) -> Result<impl IntoResponse> {
-    // 检查帖子是否存在并且属于当前用户
     let existing = issue::Entity::find_by_id(id)
         .one(&db)
         .await

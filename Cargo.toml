@@ -4,6 +4,7 @@ members = [
     "dtiku-artalk",
     "dtiku-backend",
     "dtiku-web",
+    "dtiku-mobile-api",
     "dtiku-pay",
     "dtiku-paper",
     "dtiku-bbs",

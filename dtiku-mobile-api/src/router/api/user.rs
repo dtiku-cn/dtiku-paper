@@ -1,4 +1,5 @@
-use crate::{router::{encode, Claims}, service::user::UserService};
+use crate::router::{encode, Claims};
+use crate::service::user::UserService;
 use anyhow::Context;
 use axum_extra::extract::{
     cookie::{Cookie, SameSite},
@@ -17,12 +18,14 @@ use spring_web::{
 };
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct LoginRequest {
     pub username: String,
     pub password: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct RegisterRequest {
     pub username: String,
     pub password: String,
@@ -50,9 +53,9 @@ impl From<user_info::Model> for UserResponse {
         Self {
             id: u.id,
             name: u.name,
-            email: Some(format!("{}@dtiku.cn", u.wechat_id)), // 从 wechat_id 生成临时邮箱
+            email: Some(format!("{}@dtiku.cn", u.wechat_id)),
             avatar_url: Some(u.avatar),
-            vip_level: 0, // user_info 模型没有 vip_level 字段，使用默认值
+            vip_level: 0,
             vip_expired_at: Some(u.expired),
         }
     }
@@ -65,16 +68,13 @@ async fn api_user_login(
     cookies: CookieJar,
     Json(req): Json<LoginRequest>,
 ) -> Result<impl IntoResponse> {
-    // 简单实现：通过用户名查找用户（实际项目应该验证密码）
     let user = us
         .find_user_by_name(&req.username)
         .await?
         .ok_or_else(|| KnownWebError::unauthorized("用户名或密码错误"))?;
 
-    // TODO: 实际项目中应该验证密码
-    // 这里暂时简化处理
+    // TODO: 验证密码
 
-    // 生成 JWT token
     let claims = Claims {
         user_id: user.id,
         exp: (Utc::now() + Duration::days(30)).timestamp() as u64,
@@ -82,7 +82,6 @@ async fn api_user_login(
     };
     let token = encode(claims).context("token creation failed")?;
 
-    // 设置 cookie
     let mut token_cookie = Cookie::new("token", token.clone());
     token_cookie.set_domain(".dtiku.cn");
     token_cookie.set_path("/");
@@ -107,10 +106,9 @@ async fn api_user_register(
     cookies: CookieJar,
     Json(req): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse> {
-    // 创建新用户
     let new_user = user_info::ActiveModel {
         name: Set(req.username.clone()),
-        wechat_id: Set(req.username.clone()), // 临时使用用户名作为 wechat_id
+        wechat_id: Set(req.username.clone()),
         avatar: Set("".to_string()),
         ..Default::default()
     };
@@ -120,7 +118,6 @@ async fn api_user_register(
         .await
         .context("创建用户失败")?;
 
-    // 生成 JWT token
     let claims = Claims {
         user_id: user.id,
         exp: (Utc::now() + Duration::days(30)).timestamp() as u64,
@@ -128,7 +125,6 @@ async fn api_user_register(
     };
     let token = encode(claims).context("token creation failed")?;
 
-    // 设置 cookie
     let mut token_cookie = Cookie::new("token", token.clone());
     token_cookie.set_domain(".dtiku.cn");
     token_cookie.set_path("/");
@@ -159,7 +155,6 @@ async fn api_user_info(
 /// POST /api/user/logout
 #[post("/api/user/logout")]
 async fn api_user_logout(cookies: CookieJar) -> Result<impl IntoResponse> {
-    // 清除 token cookie
     let mut token_cookie = Cookie::new("token", "");
     token_cookie.set_domain(".dtiku.cn");
     token_cookie.set_path("/");
