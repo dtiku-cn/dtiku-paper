@@ -6,7 +6,7 @@ use spring_web::{
     axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
     extractor::{Component, Path},
-    get, post,
+    get_api, post_api,
 };
 use sea_orm::DbConn;
 
@@ -30,7 +30,7 @@ pub struct PayOrderResponse {
 }
 
 /// POST /api/pay/create
-#[post("/api/pay/create")]
+#[post_api("/api/pay/create")]
 async fn api_pay_create(
     claims: Claims,
     Component(ps): Component<PayOrderService>,
@@ -52,7 +52,7 @@ async fn api_pay_create(
 }
 
 /// GET /api/pay/query/{id}
-#[get("/api/pay/query/{id}")]
+#[get_api("/api/pay/query/{id}")]
 async fn api_pay_query(
     claims: Claims,
     Path(order_id): Path<String>,

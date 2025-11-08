@@ -10,7 +10,7 @@ use spring_web::{
     axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
-    get,
+    get_api,
 };
 
 #[derive(Debug, Deserialize)]
@@ -60,7 +60,7 @@ impl From<paper::Model> for PaperResponse {
 }
 
 /// GET /api/paper/list
-#[get("/api/paper/list")]
+#[get_api("/api/paper/list")]
 async fn api_paper_list(
     Component(ps): Component<PaperService>,
     Query(q): Query<PaperListQuery>,
@@ -93,7 +93,7 @@ async fn api_paper_list(
 }
 
 /// GET /api/paper/{id}
-#[get("/api/paper/{id}")]
+#[get_api("/api/paper/{id}")]
 async fn api_paper_detail(
     Path(id): Path<i32>,
     Component(ps): Component<PaperService>,
@@ -107,7 +107,7 @@ async fn api_paper_detail(
 }
 
 /// GET /api/paper/cluster
-#[get("/api/paper/cluster")]
+#[get_api("/api/paper/cluster")]
 async fn api_paper_cluster(
     Query(q): Query<PaperListQuery>,
 ) -> Result<impl IntoResponse> {

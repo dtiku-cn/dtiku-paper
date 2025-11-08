@@ -11,7 +11,7 @@ use spring_web::{
     axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
-    delete, get, post, put,
+    delete_api, get_api, post_api, put_api,
 };
 
 #[derive(Debug, Deserialize)]
@@ -73,7 +73,7 @@ impl From<issue::Model> for IssueResponse {
 }
 
 /// GET /api/issue/list
-#[get("/api/issue/list")]
+#[get_api("/api/issue/list")]
 async fn api_issue_list(
     Component(is): Component<IssueService>,
     Query(q): Query<IssueListQuery>,
@@ -98,7 +98,7 @@ async fn api_issue_list(
 }
 
 /// GET /api/issue/{id}
-#[get("/api/issue/{id}")]
+#[get_api("/api/issue/{id}")]
 async fn api_issue_detail(
     Path(id): Path<i32>,
     Component(db): Component<DbConn>,
@@ -113,7 +113,7 @@ async fn api_issue_detail(
 }
 
 /// POST /api/issue/create
-#[post("/api/issue/create")]
+#[post_api("/api/issue/create")]
 async fn api_issue_create(
     claims: Claims,
     Component(db): Component<DbConn>,
@@ -136,7 +136,7 @@ async fn api_issue_create(
 }
 
 /// PUT /api/issue/{id}/update
-#[put("/api/issue/{id}/update")]
+#[put_api("/api/issue/{id}/update")]
 async fn api_issue_update(
     claims: Claims,
     Path(id): Path<i32>,
@@ -175,7 +175,7 @@ async fn api_issue_update(
 }
 
 /// DELETE /api/issue/{id}/delete
-#[delete("/api/issue/{id}/delete")]
+#[delete_api("/api/issue/{id}/delete")]
 async fn api_issue_delete(
     claims: Claims,
     Path(id): Path<i32>,

@@ -14,7 +14,7 @@ use spring_web::{
     axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
     extractor::Component,
-    get, post,
+    get_api, post_api,
 };
 
 #[derive(Debug, Deserialize)]
@@ -62,7 +62,7 @@ impl From<user_info::Model> for UserResponse {
 }
 
 /// POST /api/user/login
-#[post("/api/user/login")]
+#[post_api("/api/user/login")]
 async fn api_user_login(
     Component(us): Component<UserService>,
     cookies: CookieJar,
@@ -100,7 +100,7 @@ async fn api_user_login(
 }
 
 /// POST /api/user/register
-#[post("/api/user/register")]
+#[post_api("/api/user/register")]
 async fn api_user_register(
     Component(db): Component<DbConn>,
     cookies: CookieJar,
@@ -113,10 +113,7 @@ async fn api_user_register(
         ..Default::default()
     };
 
-    let user = new_user
-        .insert(&db)
-        .await
-        .context("创建用户失败")?;
+    let user = new_user.insert(&db).await.context("创建用户失败")?;
 
     let claims = Claims {
         user_id: user.id,
@@ -143,7 +140,7 @@ async fn api_user_register(
 }
 
 /// GET /api/user/info
-#[get("/api/user/info")]
+#[get_api("/api/user/info")]
 async fn api_user_info(
     claims: Claims,
     Component(us): Component<UserService>,
@@ -153,7 +150,7 @@ async fn api_user_info(
 }
 
 /// POST /api/user/logout
-#[post("/api/user/logout")]
+#[post_api("/api/user/logout")]
 async fn api_user_logout(cookies: CookieJar) -> Result<impl IntoResponse> {
     let mut token_cookie = Cookie::new("token", "");
     token_cookie.set_domain(".dtiku.cn");
@@ -163,4 +160,3 @@ async fn api_user_logout(cookies: CookieJar) -> Result<impl IntoResponse> {
 
     Ok((cookies, Json(serde_json::json!({"success": true}))))
 }
-

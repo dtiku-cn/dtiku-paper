@@ -9,7 +9,7 @@ use spring_web::{
     axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
-    get,
+    get_api,
 };
 
 #[derive(Debug, Deserialize)]
@@ -41,7 +41,7 @@ pub struct PaginatedResponse<T> {
 }
 
 /// GET /api/idiom/list
-#[get("/api/idiom/list")]
+#[get_api("/api/idiom/list")]
 async fn api_idiom_list(
     Component(is): Component<IdiomService>,
     Query(q): Query<IdiomListQuery>,
@@ -90,7 +90,7 @@ async fn api_idiom_list(
 }
 
 /// GET /api/idiom/{id}
-#[get("/api/idiom/{id}")]
+#[get_api("/api/idiom/{id}")]
 async fn api_idiom_detail(
     Path(_id): Path<i32>,
 ) -> Result<Json<IdiomResponse>> {

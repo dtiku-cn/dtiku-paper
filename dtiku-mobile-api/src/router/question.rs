@@ -8,7 +8,7 @@ use spring_web::{
     axum::{response::IntoResponse, Json},
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
-    get,
+    get_api,
 };
 
 #[derive(Debug, Deserialize)]
@@ -73,7 +73,7 @@ impl From<QuestionWithPaper> for QuestionResponse {
 }
 
 /// GET /api/question/search
-#[get("/api/question/search")]
+#[get_api("/api/question/search")]
 async fn api_question_search(
     Component(qs): Component<QuestionService>,
     Query(q): Query<QuestionSearchQuery>,
@@ -113,7 +113,7 @@ async fn api_question_search(
 }
 
 /// GET /api/question/{id}
-#[get("/api/question/{id}")]
+#[get_api("/api/question/{id}")]
 async fn api_question_detail(
     Path(id): Path<i32>,
     Component(qs): Component<QuestionService>,
@@ -127,7 +127,7 @@ async fn api_question_detail(
 }
 
 /// GET /api/question/recommend
-#[get("/api/question/recommend")]
+#[get_api("/api/question/recommend")]
 async fn api_question_recommend(
     Query(q): Query<QuestionRecommendQuery>,
     Component(qs): Component<QuestionService>,
@@ -148,7 +148,7 @@ async fn api_question_recommend(
 }
 
 /// GET /api/question/section
-#[get("/api/question/section")]
+#[get_api("/api/question/section")]
 async fn api_question_section(
     Query(q): Query<QuestionSectionQuery>,
 ) -> Result<impl IntoResponse> {

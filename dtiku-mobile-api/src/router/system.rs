@@ -4,7 +4,7 @@ use spring_web::{
     axum::{response::IntoResponse, Json},
     error::Result,
     extractor::Component,
-    get,
+    get_api,
 };
 
 #[derive(Debug, Serialize)]
@@ -15,7 +15,7 @@ pub struct SystemConfigResponse {
 }
 
 /// GET /api/system/config
-#[get("/api/system/config")]
+#[get_api("/api/system/config")]
 async fn api_system_config(
     Component(sc): Component<SystemConfigService>,
 ) -> Result<impl IntoResponse> {

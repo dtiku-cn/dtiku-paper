@@ -10,7 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 spring = { workspace = true }
-spring-web = { workspace = true }
+spring-web = { workspace = true, features = ["openapi", "openapi-scalar"] }
 spring-stream = { workspace = true, features = ["redis"] }
 spring-sea-orm = { workspace = true, features = ["postgres", "with-web"] }
 spring-redis = { workspace = true }
@@ -40,4 +40,3 @@ derive_more = { workspace = true, features = ["deref", "deref_mut"] }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 cookie = { workspace = true }
 rustls = { workspace = true }
-
