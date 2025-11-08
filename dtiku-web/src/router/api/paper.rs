@@ -1,0 +1,146 @@
+use crate::views::GlobalVariables;
+use dtiku_paper::{
+    domain::paper::PaperMode,
+    model::paper,
+    query::paper::ListPaperQuery,
+    service::paper::PaperService,
+};
+use serde::{Deserialize, Serialize};
+use spring_sea_orm::pagination::Pagination;
+use spring_web::{
+    axum::{response::IntoResponse, Extension, Json},
+    error::{KnownWebError, Result},
+    extractor::{Component, Path, Query},
+    get,
+};
+
+#[derive(Debug, Deserialize)]
+pub struct PaperListQuery {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub exam_category_id: Option<i16>,
+    pub year: Option<i32>,
+    pub province: Option<String>,
+    pub keyword: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaperResponse {
+    pub id: i32,
+    pub title: String,
+    pub year: i16,
+    pub province: Option<String>,
+    pub paper_type: i16,
+    pub label_id: i32,
+    pub mode: i16,
+    pub created_at: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginatedResponse<T> {
+    pub data: Vec<T>,
+    pub total: u64,
+    pub page: u64,
+    pub page_size: u64,
+}
+
+impl From<paper::Model> for PaperResponse {
+    fn from(p: paper::Model) -> Self {
+        Self {
+            id: p.id,
+            title: p.title,
+            year: p.year,
+            province: None, // paper 模型没有 province 字段
+            paper_type: p.paper_type,
+            label_id: p.label_id,
+            mode: 0, // paper 模型没有 mode 字段
+            created_at: chrono::Local::now().naive_local(), // paper 模型没有 created_at 字段
+        }
+    }
+}
+
+/// GET /api/paper/list
+#[get("/api/paper/list")]
+async fn api_paper_list(
+    Component(ps): Component<PaperService>,
+    Extension(global): Extension<GlobalVariables>,
+    Query(q): Query<PaperListQuery>,
+) -> Result<impl IntoResponse> {
+    let page = q.page.unwrap_or(1);
+    let page_size = q.page_size.unwrap_or(20);
+    
+    let pagination = Pagination {
+        page,
+        size: page_size,
+    };
+
+    // 如果指定了 exam_category_id，使用它；否则使用默认的试卷类型
+    let paper_type = if let Some(exam_id) = q.exam_category_id {
+        exam_id
+    } else {
+        // 使用行测试卷类型作为默认值
+        global
+            .get_paper_type_by_prefix("xingce")
+            .map(|pt| pt.id)
+            .unwrap_or(0)
+    };
+
+    let label_id = 0; // 使用默认标签
+
+    let query = ListPaperQuery {
+        paper_type,
+        label_id,
+        page: pagination,
+    };
+
+    let page = ps.find_paper_by_query(&query).await?;
+
+    Ok(Json(PaginatedResponse {
+        data: page.content.into_iter().map(PaperResponse::from).collect(),
+        total: page.total_elements,
+        page: page.page,
+        page_size: page.size,
+    }))
+}
+
+/// GET /api/paper/{id}
+#[get("/api/paper/{id}")]
+async fn api_paper_detail(
+    Path(id): Path<i32>,
+    Component(ps): Component<PaperService>,
+) -> Result<impl IntoResponse> {
+    let paper = ps
+        .find_paper_by_id(id, PaperMode::default())
+        .await?
+        .ok_or_else(|| KnownWebError::not_found("试卷不存在"))?;
+
+    Ok(Json(PaperResponse::from(paper.p)))
+}
+
+/// GET /api/paper/cluster
+#[get("/api/paper/cluster")]
+async fn api_paper_cluster(
+    Extension(global): Extension<GlobalVariables>,
+    Query(q): Query<PaperListQuery>,
+) -> Result<impl IntoResponse> {
+    // 简化实现：返回按年份的统计数据
+    // 实际项目中应该使用更复杂的聚类算法
+    
+    let paper_type = if let Some(exam_id) = q.exam_category_id {
+        exam_id
+    } else {
+        global
+            .get_paper_type_by_prefix("xingce")
+            .map(|pt| pt.id)
+            .unwrap_or(0)
+    };
+
+    // 返回简单的聚类结构
+    let cluster_data = serde_json::json!({
+        "paper_type": paper_type,
+        "cluster": {}
+    });
+
+    Ok(Json(cluster_data))
+}
+

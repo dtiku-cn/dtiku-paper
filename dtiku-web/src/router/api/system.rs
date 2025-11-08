@@ -1,0 +1,30 @@
+use dtiku_base::service::system_config::SystemConfigService;
+use serde::Serialize;
+use spring_web::{
+    axum::{response::IntoResponse, Json},
+    error::Result,
+    extractor::Component,
+    get,
+};
+
+#[derive(Debug, Serialize)]
+pub struct SystemConfigResponse {
+    pub site_name: String,
+    pub site_description: String,
+    pub version: String,
+}
+
+/// GET /api/system/config
+#[get("/api/system/config")]
+async fn api_system_config(
+    Component(sc): Component<SystemConfigService>,
+) -> Result<impl IntoResponse> {
+    let _config = sc.load_config().await?;
+
+    Ok(Json(SystemConfigResponse {
+        site_name: "滴题库".to_string(),
+        site_description: "公务员考试题库".to_string(),
+        version: env!("CARGO_PKG_VERSION").to_string(),
+    }))
+}
+
