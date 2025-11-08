@@ -2,16 +2,15 @@ mod router;
 mod service;
 
 use dtiku_pay::PayPlugin;
-use spring::{auto_config, App};
+use spring::App;
 use spring_opentelemetry::{
     KeyValue, OpenTelemetryPlugin, ResourceConfigurator, SERVICE_NAME, SERVICE_VERSION,
 };
 use spring_redis::RedisPlugin;
 use spring_sea_orm::SeaOrmPlugin;
-use spring_stream::{StreamConfigurator, StreamPlugin};
+use spring_stream::StreamPlugin;
 use spring_web::{WebConfigurator, WebPlugin};
 
-#[auto_config(WebConfigurator, StreamConfigurator)]
 #[tokio::main]
 async fn main() {
     rustls::crypto::aws_lc_rs::default_provider()
@@ -32,4 +31,3 @@ async fn main() {
         .run()
         .await
 }
-

@@ -1,7 +1,14 @@
-pub mod api;
+mod idiom;
+mod issue;
+mod paper;
+mod pay;
+mod question;
+mod system;
+mod user;
 
-use axum_extra::TypedHeader;
+use axum_client_ip::ClientIpSource;
 use axum_extra::headers::Cookie;
+use axum_extra::TypedHeader;
 use derive_more::derive::Deref;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use lazy_static::lazy_static;
@@ -10,7 +17,11 @@ use spring::tracing::{self, Level};
 use spring_opentelemetry::trace;
 use spring_web::axum::http::{request::Parts, StatusCode};
 use spring_web::axum::response::{IntoResponse, Response};
-use spring_web::axum::{body, middleware::{self, Next}, RequestPartsExt};
+use spring_web::axum::{
+    body,
+    middleware::{self, Next},
+    RequestPartsExt,
+};
 use spring_web::error::{KnownWebError, WebError};
 use spring_web::extractor::FromRequestParts;
 use spring_web::{
@@ -27,7 +38,6 @@ use std::time::Duration;
 use tower_governor::governor::GovernorConfigBuilder;
 use tower_governor::key_extractor::SmartIpKeyExtractor;
 use tower_governor::GovernorLayer;
-use axum_client_ip::ClientIpSource;
 
 pub fn routers() -> Router {
     let trace_layer = TraceLayer::new_for_http()
@@ -65,26 +75,23 @@ pub fn routers() -> Router {
         .fallback(not_found_handler)
 }
 
-async fn error_handler(
-    req: Request,
-    next: Next,
-) -> Response {
+async fn error_handler(req: Request, next: Next) -> Response {
     let resp = next.run(req).await;
     let status = resp.status();
-    
+
     if status.is_client_error() || status.is_server_error() {
         let msg = resp.into_body();
         let msg = body::to_bytes(msg, usize::MAX)
             .await
             .expect("server body read failed");
         let msg = String::from_utf8(msg.to_vec()).expect("read body to string failed");
-        
+
         let error_json = serde_json::json!({
             "error": true,
             "status": status.as_u16(),
             "message": msg,
         });
-        
+
         (status, axum::Json(error_json)).into_response()
     } else {
         resp
@@ -98,8 +105,9 @@ async fn not_found_handler() -> Response {
             "error": true,
             "status": 404,
             "message": "API endpoint not found"
-        }))
-    ).into_response()
+        })),
+    )
+        .into_response()
 }
 
 lazy_static! {
@@ -197,4 +205,3 @@ pub fn decode(token: &str) -> anyhow::Result<Claims> {
         })?;
     Ok(token_data.claims)
 }
-
