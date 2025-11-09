@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 lazy_static! {
-    static ref YEAR_REG: Regex = Regex::new(r"\b(19[0-9]{2}|20[0-9]{2})\b").unwrap();
+    static ref YEAR_REG: Regex = Regex::new(r"(?:^|\D)(19[0-9]{2}|20[0-9]{2})(?:\D|$)").unwrap();
     static ref PROVINCE_REG: Regex = Regex::new(
         r"(北京|天津|上海|重庆|河北|山西|辽宁|吉林|黑龙江|江苏|浙江|安徽|福建|江西|山东|河南|湖北|湖南|广东|海南|四川|贵州|云南|陕西|甘肃|青海|台湾|内蒙古|广西|西藏|宁夏|新疆|香港|澳门)(省|市|自治区|特别行政区)?"
     ).unwrap();
