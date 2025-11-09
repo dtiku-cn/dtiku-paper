@@ -15,6 +15,7 @@ spring-stream = { workspace = true, features = ["redis"] }
 spring-sea-orm = { workspace = true, features = ["postgres", "with-web"] }
 spring-redis = { workspace = true }
 spring-opentelemetry = { workspace = true }
+schemars = { workspace = true, features = ["chrono"] }
 tokio = { workspace = true, features = ["full"] }
 dtiku-base = { path = "../dtiku-base", version = "0.0.1" }
 dtiku-paper = { path = "../dtiku-paper", version = "0.0.1" }

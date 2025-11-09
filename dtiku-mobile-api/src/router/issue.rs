@@ -2,19 +2,18 @@ use crate::router::Claims;
 use crate::service::issue::IssueService;
 use anyhow::Context;
 use dtiku_bbs::model::{issue, IssueQuery, TopicType};
-use sea_orm::{
-    ActiveModelTrait, ActiveValue::Set, ActiveValue::Unchanged, DbConn, EntityTrait,
-};
+use schemars::JsonSchema;
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, ActiveValue::Unchanged, DbConn, EntityTrait};
 use serde::{Deserialize, Serialize};
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
-    axum::{response::IntoResponse, Json},
+    axum::Json,
+    delete_api,
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
-    delete_api, get_api, post_api, put_api,
+    get_api, post_api, put_api,
 };
-
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[allow(dead_code)]
 pub struct IssueListQuery {
     pub page: Option<u64>,
@@ -23,7 +22,7 @@ pub struct IssueListQuery {
     pub sort: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[allow(dead_code)]
 pub struct IssueCreateRequest {
     pub title: String,
@@ -32,7 +31,7 @@ pub struct IssueCreateRequest {
     pub tags: Option<Vec<String>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[allow(dead_code)]
 pub struct IssueUpdateRequest {
     pub title: Option<String>,
@@ -41,7 +40,7 @@ pub struct IssueUpdateRequest {
     pub tags: Option<Vec<String>>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct IssueResponse {
     pub id: i32,
     pub title: String,
@@ -51,7 +50,7 @@ pub struct IssueResponse {
     pub modified: chrono::NaiveDateTime,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct PaginatedResponse<T> {
     pub data: Vec<T>,
     pub total: u64,
@@ -77,11 +76,14 @@ impl From<issue::Model> for IssueResponse {
 async fn api_issue_list(
     Component(is): Component<IssueService>,
     Query(q): Query<IssueListQuery>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<PaginatedResponse<IssueResponse>>> {
     let page = q.page.unwrap_or(1);
     let page_size = q.page_size.unwrap_or(20);
 
-    let pagination = Pagination { page, size: page_size };
+    let pagination = Pagination {
+        page,
+        size: page_size,
+    };
 
     let query = IssueQuery {
         title: None,
@@ -90,7 +92,11 @@ async fn api_issue_list(
     let page_result = is.search(&query, &pagination).await?;
 
     Ok(Json(PaginatedResponse {
-        data: page_result.content.into_iter().map(IssueResponse::from).collect(),
+        data: page_result
+            .content
+            .into_iter()
+            .map(IssueResponse::from)
+            .collect(),
         total: page_result.total_elements,
         page: page_result.page,
         page_size: page_result.size,
@@ -102,7 +108,7 @@ async fn api_issue_list(
 async fn api_issue_detail(
     Path(id): Path<i32>,
     Component(db): Component<DbConn>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<IssueResponse>> {
     let issue = issue::Entity::find_by_id(id)
         .one(&db)
         .await
@@ -118,7 +124,7 @@ async fn api_issue_create(
     claims: Claims,
     Component(db): Component<DbConn>,
     Json(req): Json<IssueCreateRequest>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<IssueResponse>> {
     let html = req.content.clone();
 
     let new_issue = issue::ActiveModel {
@@ -142,7 +148,7 @@ async fn api_issue_update(
     Path(id): Path<i32>,
     Component(db): Component<DbConn>,
     Json(req): Json<IssueUpdateRequest>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<IssueResponse>> {
     let existing = issue::Entity::find_by_id(id)
         .one(&db)
         .await
@@ -180,7 +186,7 @@ async fn api_issue_delete(
     claims: Claims,
     Path(id): Path<i32>,
     Component(db): Component<DbConn>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<serde_json::Value>> {
     let existing = issue::Entity::find_by_id(id)
         .one(&db)
         .await
@@ -198,4 +204,3 @@ async fn api_issue_delete(
 
     Ok(Json(serde_json::json!({"success": true})))
 }
-

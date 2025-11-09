@@ -3,6 +3,7 @@ use dtiku_stats::{
     query::{IdiomQuery, IdiomSearch},
     service::idiom::IdiomService,
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
@@ -12,7 +13,7 @@ use spring_web::{
     get_api,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[allow(dead_code)]
 pub struct IdiomListQuery {
     pub page: Option<u64>,
@@ -22,7 +23,7 @@ pub struct IdiomListQuery {
     pub paper_type: Option<i16>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct IdiomResponse {
     pub id: i32,
     pub text: String,
@@ -32,7 +33,7 @@ pub struct IdiomResponse {
     pub example: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct PaginatedResponse<T> {
     pub data: Vec<T>,
     pub total: u64,
@@ -45,11 +46,14 @@ pub struct PaginatedResponse<T> {
 async fn api_idiom_list(
     Component(is): Component<IdiomService>,
     Query(q): Query<IdiomListQuery>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<PaginatedResponse<IdiomResponse>>> {
     let page = q.page.unwrap_or(1);
     let page_size = q.page_size.unwrap_or(20);
 
-    let pagination = Pagination { page, size: page_size };
+    let pagination = Pagination {
+        page,
+        size: page_size,
+    };
     let paper_type = q.paper_type.unwrap_or(0);
 
     let page_result = if let Some(keyword) = q.keyword {
@@ -91,9 +95,6 @@ async fn api_idiom_list(
 
 /// GET /api/idiom/{id}
 #[get_api("/api/idiom/{id}")]
-async fn api_idiom_detail(
-    Path(_id): Path<i32>,
-) -> Result<Json<IdiomResponse>> {
+async fn api_idiom_detail(Path(_id): Path<i32>) -> Result<Json<IdiomResponse>> {
     Err(KnownWebError::not_found("成语查询暂不支持 ID，请使用 text 参数").into())
 }
-

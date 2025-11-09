@@ -9,8 +9,8 @@ use spring_web::{
     get_api, post_api,
 };
 use sea_orm::DbConn;
-
-#[derive(Debug, Deserialize)]
+use schemars::JsonSchema;
+#[derive(Debug, Deserialize, JsonSchema)]
 #[allow(dead_code)]
 pub struct PayCreateRequest {
     pub product_name: String,
@@ -19,7 +19,7 @@ pub struct PayCreateRequest {
     pub payment_method: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct PayOrderResponse {
     pub order_id: String,
     pub product_name: String,
@@ -35,7 +35,7 @@ async fn api_pay_create(
     claims: Claims,
     Component(ps): Component<PayOrderService>,
     Json(req): Json<PayCreateRequest>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<PayOrderResponse>> {
     let level = OrderLevel::Monthly;
     let pay_from = PayFrom::Wechat;
 
@@ -57,7 +57,7 @@ async fn api_pay_query(
     claims: Claims,
     Path(order_id): Path<String>,
     Component(db): Component<DbConn>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<OrderStatus>> {
     let order_id: i32 = order_id
         .parse()
         .map_err(|_| KnownWebError::bad_request("无效的订单 ID"))?;

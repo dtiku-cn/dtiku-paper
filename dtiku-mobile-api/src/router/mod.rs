@@ -15,6 +15,7 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use spring::tracing::{self, Level};
 use spring_opentelemetry::trace;
+use spring_web::aide::OperationInput;
 use spring_web::axum::http::{request::Parts, StatusCode};
 use spring_web::axum::response::{IntoResponse, Response};
 use spring_web::axum::{
@@ -146,6 +147,8 @@ where
     }
 }
 
+impl OperationInput for Claims {}
+
 #[derive(Debug, Deref)]
 pub struct OptionalClaims(Option<Claims>);
 
@@ -155,6 +158,8 @@ impl OptionalClaims {
         self.0.is_none()
     }
 }
+
+impl OperationInput for OptionalClaims {}
 
 impl<S> FromRequestParts<S> for OptionalClaims
 where

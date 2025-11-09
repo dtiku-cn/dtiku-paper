@@ -5,13 +5,13 @@ use dtiku_paper::{
 };
 use serde::{Deserialize, Serialize};
 use spring_web::{
-    axum::{response::IntoResponse, Json},
+    axum::Json,
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
     get_api,
 };
-
-#[derive(Debug, Deserialize)]
+use schemars::JsonSchema;
+#[derive(Debug, Deserialize, JsonSchema)]
 #[allow(dead_code)]
 pub struct QuestionSearchQuery {
     pub keyword: Option<String>,
@@ -22,18 +22,18 @@ pub struct QuestionSearchQuery {
     pub exam_id: Option<i16>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct QuestionRecommendQuery {
     pub limit: Option<usize>,
     pub exclude_ids: Option<Vec<i32>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct QuestionSectionQuery {
     pub section_id: Option<i32>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct QuestionResponse {
     pub id: i32,
     pub content: String,
@@ -41,7 +41,7 @@ pub struct QuestionResponse {
     pub paper_type: i16,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct PaginatedResponse<T> {
     pub data: Vec<T>,
     pub total: u64,
@@ -77,7 +77,7 @@ impl From<QuestionWithPaper> for QuestionResponse {
 async fn api_question_search(
     Component(qs): Component<QuestionService>,
     Query(q): Query<QuestionSearchQuery>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<PaginatedResponse<QuestionResponse>>> {
     let keyword = q.keyword.unwrap_or_default();
     
     if keyword.is_empty() {
@@ -117,7 +117,7 @@ async fn api_question_search(
 async fn api_question_detail(
     Path(id): Path<i32>,
     Component(qs): Component<QuestionService>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<QuestionResponse>> {
     let question = qs
         .full_question_by_id(id)
         .await?
@@ -131,7 +131,7 @@ async fn api_question_detail(
 async fn api_question_recommend(
     Query(q): Query<QuestionRecommendQuery>,
     Component(qs): Component<QuestionService>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<Vec<QuestionResponse>>> {
     let base_id = q.exclude_ids.as_ref().and_then(|ids| ids.first().copied()).unwrap_or(1);
     
     let mut questions = qs.recommend_question(base_id).await?;
@@ -151,7 +151,7 @@ async fn api_question_recommend(
 #[get_api("/api/question/section")]
 async fn api_question_section(
     Query(q): Query<QuestionSectionQuery>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<serde_json::Value>> {
     Ok(Json(serde_json::json!({
         "questions": [],
         "section_id": q.section_id,

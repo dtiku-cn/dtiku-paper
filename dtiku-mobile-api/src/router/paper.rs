@@ -1,19 +1,18 @@
 use dtiku_paper::{
-    domain::paper::PaperMode,
-    model::paper,
-    query::paper::ListPaperQuery,
+    domain::paper::PaperMode, model::paper, query::paper::ListPaperQuery,
     service::paper::PaperService,
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
-    axum::{response::IntoResponse, Json},
+    axum::Json,
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
     get_api,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[allow(dead_code)]
 pub struct PaperListQuery {
     pub page: Option<u64>,
@@ -24,7 +23,7 @@ pub struct PaperListQuery {
     pub keyword: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct PaperResponse {
     pub id: i32,
     pub title: String,
@@ -36,7 +35,7 @@ pub struct PaperResponse {
     pub created_at: chrono::NaiveDateTime,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct PaginatedResponse<T> {
     pub data: Vec<T>,
     pub total: u64,
@@ -64,10 +63,10 @@ impl From<paper::Model> for PaperResponse {
 async fn api_paper_list(
     Component(ps): Component<PaperService>,
     Query(q): Query<PaperListQuery>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<PaginatedResponse<PaperResponse>>> {
     let page = q.page.unwrap_or(1);
     let page_size = q.page_size.unwrap_or(20);
-    
+
     let pagination = Pagination {
         page,
         size: page_size,
@@ -97,7 +96,7 @@ async fn api_paper_list(
 async fn api_paper_detail(
     Path(id): Path<i32>,
     Component(ps): Component<PaperService>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<PaperResponse>> {
     let paper = ps
         .find_paper_by_id(id, PaperMode::default())
         .await?
@@ -108,9 +107,7 @@ async fn api_paper_detail(
 
 /// GET /api/paper/cluster
 #[get_api("/api/paper/cluster")]
-async fn api_paper_cluster(
-    Query(q): Query<PaperListQuery>,
-) -> Result<impl IntoResponse> {
+async fn api_paper_cluster(Query(q): Query<PaperListQuery>) -> Result<Json<serde_json::Value>> {
     let paper_type = q.exam_category_id.unwrap_or(0);
 
     let cluster_data = serde_json::json!({
@@ -120,4 +117,3 @@ async fn api_paper_cluster(
 
     Ok(Json(cluster_data))
 }
-

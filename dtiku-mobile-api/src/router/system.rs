@@ -1,13 +1,13 @@
 use dtiku_base::service::system_config::SystemConfigService;
 use serde::Serialize;
 use spring_web::{
-    axum::{response::IntoResponse, Json},
+    axum::Json,
     error::Result,
     extractor::Component,
     get_api,
 };
-
-#[derive(Debug, Serialize)]
+use schemars::JsonSchema;
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct SystemConfigResponse {
     pub site_name: String,
     pub site_description: String,
@@ -18,7 +18,7 @@ pub struct SystemConfigResponse {
 #[get_api("/api/system/config")]
 async fn api_system_config(
     Component(sc): Component<SystemConfigService>,
-) -> Result<impl IntoResponse> {
+) -> Result<Json<SystemConfigResponse>> {
     let _config = sc.load_config().await?;
 
     Ok(Json(SystemConfigResponse {
