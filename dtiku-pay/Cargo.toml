@@ -8,6 +8,7 @@ publish = ["crates-io"]
 spring = { workspace = true }
 spring-redis = { workspace = true }
 spring-stream = { workspace = true, features = ["json"] }
+schemars = { workspace = true }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

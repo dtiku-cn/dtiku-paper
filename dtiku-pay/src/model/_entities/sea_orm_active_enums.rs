@@ -17,6 +17,7 @@ use strum::{EnumMessage, EnumProperty};
     strum :: EnumString,
     strum :: Display,
     strum :: EnumProperty,
+    schemars::JsonSchema,
 )]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "order_status")]
 #[serde(rename_all = "snake_case")]

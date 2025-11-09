@@ -15,7 +15,7 @@ lazy_static! {
 
 pub fn pick_year(string: &str) -> Option<i16> {
     if let Some(cap) = YEAR_REG.captures(string) {
-        let year = &cap[0];
+        let year = &cap[1];
         year.parse().ok()
     } else {
         None
@@ -63,4 +63,15 @@ pub fn split_sentences(text: &str) -> Vec<&str> {
     }
 
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pick_year() {
+        assert_eq!(pick_year("2025年真题"), Some(2025));
+        assert_eq!(pick_year("2025年真题"), Some(2025));
+    }
 }

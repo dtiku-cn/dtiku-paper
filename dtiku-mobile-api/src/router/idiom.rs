@@ -7,7 +7,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
-    axum::{response::IntoResponse, Json},
+    axum::Json,
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
     get_api,

@@ -1,15 +1,18 @@
 use crate::router::Claims;
 use anyhow::Context;
-use dtiku_pay::{model::{PayOrder, OrderLevel, PayFrom}, service::pay_order::PayOrderService};
+use dtiku_pay::{
+    model::{OrderLevel, OrderStatus, PayFrom, PayOrder},
+    service::pay_order::PayOrderService,
+};
+use schemars::JsonSchema;
+use sea_orm::DbConn;
 use serde::{Deserialize, Serialize};
 use spring_web::{
-    axum::{response::IntoResponse, Json},
+    axum::Json,
     error::{KnownWebError, Result},
     extractor::{Component, Path},
     get_api, post_api,
 };
-use sea_orm::DbConn;
-use schemars::JsonSchema;
 #[derive(Debug, Deserialize, JsonSchema)]
 #[allow(dead_code)]
 pub struct PayCreateRequest {
@@ -69,4 +72,3 @@ async fn api_pay_query(
 
     Ok(Json(order))
 }
-
