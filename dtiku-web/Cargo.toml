@@ -61,6 +61,6 @@ pulldown-cmark = { workspace = true }
 ipnet = { workspace = true }
 
 [build-dependencies]
-minify-html = "0.16"
+minify-html = "0.18"
 walkdir = "2"
 tonic-build = "0.13"
