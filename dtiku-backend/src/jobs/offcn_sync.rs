@@ -506,13 +506,14 @@ impl OriginPaper {
                 target_exam_id
             ));
         if let Some(area) = regex_util::pick_area(&self.title) {
+            let area = if area == "国家" { "国考" } else { &area };
             let label =
-                Label::find_by_exam_id_and_paper_type_and_name(db, exam.id, paper_type, &area)
+                Label::find_by_exam_id_and_paper_type_and_name(db, exam.id, paper_type, area)
                     .await?;
             let label = match label {
                 Some(l) => l,
                 None => label::ActiveModel {
-                    name: Set(area),
+                    name: Set(area.to_string()),
                     pid: Set(0),
                     exam_id: Set(exam.id),
                     paper_type: Set(paper_type),
