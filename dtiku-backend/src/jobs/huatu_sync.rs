@@ -230,7 +230,7 @@ impl HuatuSyncService {
                         .bind(source_id)
                         .execute(&self.source_db)
                         .await
-                        .context("update source db label target_id failed")?;
+                        .context("update source db paper target_id failed")?;
 
                         progress.current = source_id.max(progress.current);
                         self.task = self
