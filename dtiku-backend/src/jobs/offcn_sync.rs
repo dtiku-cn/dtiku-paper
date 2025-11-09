@@ -268,7 +268,7 @@ impl OffcnSyncService {
             select
                 id,
                 target_id,
-                extra->>'type' as ty,
+                (extra->>'type')::smallint as ty,
                 extra->>'form' AS form,
                 extra->>'stem' as content,
                 extra->>'choices' as choices,
@@ -575,7 +575,7 @@ struct OriginQuestion {
     explain: Option<String>,
     explain_file: Option<Json<Vec<ExplainFile>>>,
     analysis: Option<String>,
-    // step_explanation: Option<Json<Vec<String>>>,
+    step_explanation: Option<Json<Vec<String>>>,
     multi_material_id: Option<String>,
 }
 
