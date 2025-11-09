@@ -22,3 +22,4 @@ target/
 .idea/
 **/.DS_Store
 docker/postgresql
+dtiku-mobile/
