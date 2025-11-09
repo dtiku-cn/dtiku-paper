@@ -155,7 +155,7 @@ impl OffcnSyncService {
                         jsonb_extract_path(extra,'list') as list,
                         jsonb_extract_path_text(extra,'title') as title,
                         jsonb_extract_path_text(extra,'content') as content,
-                        jsonb_extract_path(extra,'paper_pattern') as paper_pattern
+                        jsonb_extract_path(extra,'paper_pattern')::int as paper_pattern
                     from paper p
                     where from_ty ='offcn' and target_id is null and id > $1
                     order by id
