@@ -269,7 +269,7 @@ impl OffcnSyncService {
                 id,
                 target_id,
                 (extra->>'type')::smallint as ty,
-                extra->>'form' AS form,
+                (extra->>'form')::smallint AS form,
                 extra->>'stem' as content,
                 extra->>'choices' as choices,
                 extra->>'answer' as answer,
