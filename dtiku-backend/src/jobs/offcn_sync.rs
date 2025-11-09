@@ -271,12 +271,12 @@ impl OffcnSyncService {
                 (extra->>'type')::smallint as ty,
                 (extra->>'form')::smallint AS form,
                 extra->>'stem' as content,
-                extra->>'choices' as choices,
-                extra->>'answer' as answer,
+                (extra->>'choices')::jsonb as choices,
+                (extra->>'answer')::jsonb as answer,
                 extra->>'explain_a' as explain,
-                extra->>'explain_a_file' as explain_file,
+                (extra->>'explain_a_file')::jsonb as explain_file,
                 extra->>'analysis' as analysis,
-                extra->>'step_explanation' as step_explanation,
+                (extra->>'step_explanation')::jsonb as step_explanation,
                 extra->>'multi_material_id' as multi_material_id
             from question
             where from_ty='offcn'
