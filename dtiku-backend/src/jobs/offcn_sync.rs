@@ -171,12 +171,14 @@ impl OffcnSyncService {
                         let source_id = row.id;
                         let paper = self.save_paper(row).await?;
 
-                        sqlx::query("update paper set target_id=$1 where id=$2 and from_ty='offcn'")
-                            .bind(paper.id)
-                            .bind(source_id)
-                            .execute(&self.source_db)
-                            .await
-                            .context("update source db paper target_id failed")?;
+                        sqlx::query(
+                            "update paper set target_id=$1 where id=$2 and from_ty='offcn'",
+                        )
+                        .bind(paper.id)
+                        .bind(source_id)
+                        .execute(&self.source_db)
+                        .await
+                        .context("update source db paper target_id failed")?;
 
                         progress.current = source_id.max(progress.current);
                         self.task = self
@@ -535,7 +537,7 @@ impl OriginPaper {
             .await
             .context("paper insert failed")
         } else {
-            todo!()
+            todo!("paper#{}", self.id)
         }
     }
 }
