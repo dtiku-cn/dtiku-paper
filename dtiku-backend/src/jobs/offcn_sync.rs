@@ -108,8 +108,8 @@ impl OffcnSyncService {
             select 
                 id,
                 jsonb_extract_path_text(extra,'name') as name,
-                jsonb_extract_path(extra,'type') as ty,
-                jsonb_extract_path(extra,'parent_id') as parent_id,
+                jsonb_extract_path(extra,'type')::int as ty,
+                jsonb_extract_path(extra,'parent_id')::int as parent_id,
                 jsonb_extract_path_text(extra,'parent_name') as parent_name
             from "label" l 
             where from_ty ='offcn'
@@ -398,7 +398,7 @@ impl OffcnSyncService {
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct OriginLabel {
-    id: Option<i32>,
+    id: i64,
     name: Option<String>,
     ty: Option<i32>,
     parent_id: Option<i32>,
