@@ -117,6 +117,8 @@ pub enum ScheduleTaskType {
     HuatuSync,
     #[strum(message = "同步中公数据")]
     OffcnSync,
+    #[strum(message = "同步ChinaGWY数据")]
+    ChinaGwySync,
     #[strum(message = "成语统计")]
     IdiomStats,
     #[strum(message = "Web答案采集")]

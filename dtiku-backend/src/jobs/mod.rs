@@ -1,4 +1,5 @@
 mod assets_saver;
+mod chinagwy_sync;
 mod fenbi_sync;
 mod huatu_sync;
 mod idiom_fetch;
@@ -7,6 +8,7 @@ mod pay_trade_fetcher;
 mod web_solution_collect;
 
 use crate::jobs::assets_saver::AssetsSaveService;
+use crate::jobs::chinagwy_sync::ChinaGwySyncService;
 use crate::jobs::huatu_sync::HuatuSyncService;
 use crate::jobs::idiom_fetch::IdiomStatsService;
 use crate::jobs::offcn_sync::OffcnSyncService;
@@ -54,6 +56,12 @@ async fn task_schedule(
         ScheduleTaskType::OffcnSync => {
             OffcnSyncService::build(task, instance)
                 .expect("build offcn sync service failed")
+                .start()
+                .await
+        }
+        ScheduleTaskType::ChinaGwySync => {
+            ChinaGwySyncService::build(task, instance)
+                .expect("build chinagwy sync service failed")
                 .start()
                 .await
         }
