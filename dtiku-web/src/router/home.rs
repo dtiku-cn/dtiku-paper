@@ -1,6 +1,9 @@
 use crate::{
     router::EXAM_ID,
-    views::{home::HomeTemplate, GlobalVariables},
+    views::{
+        home::{HomePapers, HomeTemplate},
+        GlobalVariables,
+    },
 };
 use dtiku_paper::{model::paper, service::paper::PaperService};
 use dtiku_stats::{
@@ -25,14 +28,19 @@ async fn home(
         label_id: vec![],
         page: Pagination { page: 0, size: 10 },
     };
-    let xingce = get_papers(&ps, &global, "xingce").await?;
-    let shenlun = get_papers(&ps, &global, "shenlun").await?;
+    let home_papers = vec![
+        get_papers(&ps, &global, "xingce").await?,
+        get_papers(&ps, &global, "shenlun").await?,
+        get_papers(&ps, &global, "gwyms").await?,
+    ]
+    .into_iter()
+    .filter_map(|o| o)
+    .collect();
     let idioms = get_idioms(&is, &global, "xingce", IdiomType::Idiom, query).await?;
     let words = get_idioms(&is, &global, "xingce", IdiomType::Word, query).await?;
     Ok(HomeTemplate {
         global,
-        xingce,
-        shenlun,
+        home_papers,
         idioms: idioms.content,
         words: words.content,
     })
@@ -42,14 +50,17 @@ async fn get_papers(
     ps: &PaperService,
     global: &GlobalVariables,
     prefix: &str,
-) -> anyhow::Result<Vec<paper::Model>> {
+) -> anyhow::Result<Option<HomePapers>> {
     let exam_id = EXAM_ID.get();
-    let papers = if let Some(paper_type) = global.get_paper_type_by_prefix(prefix) {
-        ps.find_paper_by_type(exam_id, paper_type.id).await?
+    if let Some(paper_type) = global.get_paper_type_by_prefix(prefix) {
+        let papers = ps.find_paper_by_type(exam_id, paper_type.id).await?;
+        Ok(Some(HomePapers {
+            ty: paper_type,
+            papers,
+        }))
     } else {
-        vec![]
-    };
-    Ok(papers)
+        Ok(None)
+    }
 }
 
 async fn get_idioms(

@@ -1,3 +1,5 @@
+use crate::views::paper::PaperType;
+
 use super::GlobalVariables;
 use askama::Template;
 use askama_web::WebTemplate;
@@ -8,8 +10,12 @@ use dtiku_stats::domain::IdiomStats;
 #[template(path = "home.html.min.jinja")]
 pub struct HomeTemplate {
     pub global: GlobalVariables,
-    pub xingce: Vec<paper::Model>,
-    pub shenlun: Vec<paper::Model>,
+    pub home_papers: Vec<HomePapers>,
     pub idioms: Vec<IdiomStats>,
     pub words: Vec<IdiomStats>,
+}
+
+pub struct HomePapers {
+    pub ty: PaperType,
+    pub papers: Vec<paper::Model>,
 }

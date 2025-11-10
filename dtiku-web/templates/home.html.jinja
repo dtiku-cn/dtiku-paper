@@ -50,44 +50,27 @@
 
     <div class="row">
         <div class="col-sm-12 col-lg-9 col-xl-9">
+            {%for hp in home_papers%}
             <div class="card mb-3">
                 <header class="d-flex card-header align-items-center p-1 pl-3">
                     <svg class="icon-svg icon-svg-sm mr-2">
                         <use xlink:href="#ic-list"></use>
                     </svg>
-                    <strong>最新行测真题</strong>
+                    <strong>最新{{hp.ty.name}}真题</strong>
                     <div class="flex-grow-1"></div>
-                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper?ty=xingce">
+                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper?ty={{hp.ty.prefix}}">
                         <svg class="icon-svg icon-svg-sm mr-2">
                             <use xlink:href="#ic-more"></use>
                         </svg>
                         <em>查看更多</em>
                     </a>
                 </header>
-                {%call paper::paper_table(xingce)%}
+                {%call paper::paper_table(&hp.papers)%}
                 <footer class="card-footer">
-                    <a class="card-link" href="/paper?ty=xingce">查看更多</a>
+                    <a class="card-link" href="/paper?ty={{hp.ty.prefix}}">查看更多</a>
                 </footer>
             </div>
-            <div class="card mb-3">
-                <header class="d-flex card-header align-items-center p-1 pl-3">
-                    <svg class="icon-svg icon-svg-sm mr-2">
-                        <use xlink:href="#ic-list"></use>
-                    </svg>
-                    <strong>最新申论真题</strong>
-                    <div class="flex-grow-1"></div>
-                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper?ty=shenlun">
-                        <svg class="icon-svg icon-svg-sm mr-2">
-                            <use xlink:href="#ic-more"></use>
-                        </svg>
-                        <em>查看更多</em>
-                    </a>
-                </header>
-                {%call paper::paper_table(shenlun)%}
-                <footer class="card-footer">
-                    <a class="card-link" href="/paper?ty=shenlun">查看更多</a>
-                </footer>
-            </div>
+            {%endfor%}
         </div>
         <div class="col-sm-12 col-lg-3 col-xl-3">
             {%if !global.config.home_sidebar.is_empty()%}
