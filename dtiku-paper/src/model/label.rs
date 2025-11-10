@@ -66,6 +66,25 @@ impl Entity {
             })
     }
 
+    pub async fn find_by_exam_id_and_paper_type<C: ConnectionTrait>(
+        db: &C,
+        exam_id: i16,
+        paper_type: i16,
+    ) -> anyhow::Result<Option<Model>> {
+        Entity::find()
+            .filter(
+                Column::ExamId
+                    .eq(exam_id)
+                    .and(Column::PaperType.eq(paper_type)),
+            )
+            .limit(1)
+            .one(db)
+            .await
+            .with_context(|| {
+                format!("find_by_exam_id_and_paper_type({exam_id},{paper_type}) failed")
+            })
+    }
+
     #[cache("label:hidden:{paper_type}", expire = 86400)]
     pub async fn find_hidden_label_id_by_paper_type<C: ConnectionTrait>(
         db: &C,

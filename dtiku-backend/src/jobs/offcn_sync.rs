@@ -505,6 +505,7 @@ impl OriginPaper {
                 "paper_type#{} exam root_id not found",
                 target_exam_id
             ));
+        let year = regex_util::pick_year(&self.title);
         if let Some(area) = regex_util::pick_area(&self.title) {
             let area = if area == "国家" { "国考" } else { &area };
             let label =
@@ -524,7 +525,6 @@ impl OriginPaper {
                 .await
                 .context("label insert failed")?,
             };
-            let year = regex_util::pick_year(&self.title);
             paper::ActiveModel {
                 year: Set(year.expect(&format!("paper#{} year 不存在", self.id)) as i16),
                 title: Set(self.title),
@@ -538,7 +538,34 @@ impl OriginPaper {
             .await
             .context("paper insert failed")
         } else {
-            todo!("paper#{}", self.id)
+            tracing::warn!("paper#{} don't have area", self.id);
+            let label = Label::find_by_exam_id_and_paper_type(db, exam.id, paper_type).await?;
+            let label = match label {
+                Some(l) => l,
+                None => label::ActiveModel {
+                    name: Set("真题".to_string()),
+                    pid: Set(0),
+                    exam_id: Set(exam.id),
+                    paper_type: Set(paper_type),
+                    hidden: Set(false),
+                    ..Default::default()
+                }
+                .insert_on_conflict(db)
+                .await
+                .context("label insert failed")?,
+            };
+            paper::ActiveModel {
+                year: Set(year.expect(&format!("paper#{} year 不存在", self.id)) as i16),
+                title: Set(self.title),
+                exam_id: Set(exam.id),
+                paper_type: Set(paper_type),
+                label_id: Set(label.id),
+                extra: Set(extra),
+                ..Default::default()
+            }
+            .insert_on_conflict(db)
+            .await
+            .context("paper insert failed")
         }
     }
 }
