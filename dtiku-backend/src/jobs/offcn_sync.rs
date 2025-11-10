@@ -708,7 +708,7 @@ impl OriginQuestion {
                 },
             }),
             4 => SolutionExtra::OpenEndedQA(StepByStepAnswer {
-                solution: Some(answer.clone().unwrap().0.join("\n")),
+                solution: Some(answer.clone().unwrap_or_default().0.join("\n")),
                 analysis: vec![],
             }),
             5 => SolutionExtra::MultiChoice(MultiChoice {
