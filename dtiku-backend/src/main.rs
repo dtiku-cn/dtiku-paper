@@ -6,6 +6,7 @@ mod service;
 mod utils;
 mod views;
 
+use dtiku_pay::PayPlugin;
 use plugins::{embedding::EmbeddingPlugin, jobs::RunningJobsPlugin};
 use spring::{auto_config, App};
 use spring_opendal::OpenDALPlugin;
@@ -37,6 +38,7 @@ async fn main() {
         .add_plugin(OpenTelemetryPlugin)
         .add_plugin(OpenDALPlugin)
         .add_plugin(EmbeddingPlugin)
+        .add_plugin(PayPlugin)
         .run()
         .await
 }
