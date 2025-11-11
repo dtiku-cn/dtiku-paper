@@ -2,8 +2,8 @@ pub use super::_entities::exam_category::*;
 use crate::model::FromType;
 use anyhow::Context;
 use sea_orm::{
-    sea_query::OnConflict, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, QueryFilter,
-    QueryOrder,
+    sea_query::OnConflict, ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, DbErr,
+    EntityTrait, QueryFilter, QueryOrder,
 };
 use spring_redis::cache;
 
@@ -149,6 +149,37 @@ impl Entity {
         }
 
         Ok(leaf_nodes)
+    }
+
+    pub async fn find_or_create<C: ConnectionTrait>(
+        db: &C,
+        from_ty: FromType,
+        name: &str,
+        prefix: &str,
+    ) -> anyhow::Result<Model> {
+        let model = Entity::find()
+            .filter(Column::FromTy.eq(from_ty).and(Column::Prefix.eq(prefix)))
+            .one(db)
+            .await
+            .with_context(|| format!("find_or_create.find({from_ty},{prefix}) failed"))?;
+        match model {
+            Some(m) => Ok(m),
+            None => {
+                let m = ActiveModel {
+                    from_ty: Set(from_ty),
+                    name: Set(name.to_string()),
+                    prefix: Set(prefix.to_string()),
+                    pid: Set(0),
+                    ..Default::default()
+                }
+                .insert(db)
+                .await
+                .with_context(|| {
+                    format!("find_or_create.insert({from_ty},{prefix},{name}) failed")
+                })?;
+                Ok(m)
+            }
+        }
     }
 }
 

@@ -87,10 +87,7 @@ impl ChinaGwySyncService {
                     select
                         id,
                         label_id,
-                        jsonb_extract_path(extra,'list') as list,
-                        jsonb_extract_path_text(extra,'title') as title,
-                        jsonb_extract_path_text(extra,'content') as content,
-                        jsonb_extract_path(extra,'paper_pattern')::int as paper_pattern
+                        extra->>'title' as title
                     from paper p
                     where from_ty ='chinagwy' and target_id is null and id > $1
                     order by id
@@ -130,20 +127,7 @@ impl ChinaGwySyncService {
 
     async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
         let source_paper_id = paper.id;
-        let target_exam_id: i32 =
-            sqlx::query("select target_id from label where id = $1 and from_ty='chinagwy'")
-                .bind(paper.label_id)
-                .fetch_one(&self.source_db)
-                .await
-                .with_context(|| {
-                    format!(
-                        "find target_id for label#{} paper+{}",
-                        paper.label_id, paper.id
-                    )
-                })?
-                .try_get("target_id")
-                .context("get target_id failed")?;
-        let paper = paper.save_paper(&self.target_db, target_exam_id).await?;
+        let paper = paper.save_paper(&self.target_db).await?;
 
         self.sync_questions_and_materials(source_paper_id, &paper)
             .await?;
@@ -335,10 +319,8 @@ impl ChinaGwySyncService {
 
 #[derive(Debug, sqlx::FromRow)]
 struct OriginPaper {
-    list: Option<Json<Vec<ChapterItem>>>,
     title: String,
-    content: Option<String>,
-    paper_pattern: Option<i32>,
+    chapters: Option<Json<Vec<ChapterItem>>>,
     id: i64,
     label_id: i64,
 }
@@ -346,44 +328,40 @@ struct OriginPaper {
 #[derive(Default, Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChapterItem {
+    pub desc: String,
     pub name: String,
-    pub block_id: i64,
-    pub done_count: i64,
-    pub total_count: i64,
+    pub time: i64,
+    pub index: i64,
+    pub timu_ids: Vec<i64>,
+    pub total_num: i64,
+    pub preset_score: f64,
 }
 
 impl Into<PaperChapter> for &ChapterItem {
     fn into(self) -> PaperChapter {
         PaperChapter {
             name: self.name.clone(),
-            desc: "".to_string(),
-            count: self.total_count as i16,
+            desc: self.desc.to_string(),
+            count: self.total_num as i16,
         }
     }
 }
 
 impl OriginPaper {
-    async fn save_paper<C: ConnectionTrait>(
-        self,
-        db: &C,
-        target_exam_id: i32,
-    ) -> anyhow::Result<paper::Model> {
-        let extra = if self.paper_pattern.unwrap_or_default() <= 1 {
-            let chapters = self
-                .list
-                .expect(&format!("paper#{} modules 不存在", self.id));
+    async fn save_paper<C: ConnectionTrait>(self, db: &C) -> anyhow::Result<paper::Model> {
+        let (paper_type_prefix, paper_type_name, extra) = if let Some(chapters) = self.chapters {
             let cs = Chapters {
                 desc: None,
                 chapters: chapters.iter().map(|m: &ChapterItem| m.into()).collect(),
             };
-            PaperExtra::Chapters(cs)
+            ("xingce", "行测", PaperExtra::Chapters(cs))
         } else {
             let ec = EssayCluster {
                 topic: None,
                 blocks: vec![
                     PaperBlock {
                         name: "注意事项".to_string(),
-                        desc: self.content.clone().unwrap_or_default(),
+                        desc: "".to_string(),
                     },
                     PaperBlock {
                         name: "给定材料".to_string(),
@@ -395,15 +373,16 @@ impl OriginPaper {
                     },
                 ],
             };
-            PaperExtra::EssayCluster(ec)
+            ("shenlun", "申论", PaperExtra::EssayCluster(ec))
         };
-        let paper_type = target_exam_id as i16;
-        let exam = ExamCategory::find_root_by_id(db, paper_type)
-            .await?
-            .expect(&format!(
-                "paper_type#{} exam root_id not found",
-                target_exam_id
-            ));
+        let exam = ExamCategory::find_or_create(
+            db,
+            FromType::Chinagwy,
+            paper_type_name,
+            paper_type_prefix,
+        )
+        .await?;
+        let paper_type = exam.id;
         let year = regex_util::pick_year(&self.title);
         if let Some(area) = regex_util::pick_area(&self.title) {
             let area = if area == "国家" { "国考" } else { &area };

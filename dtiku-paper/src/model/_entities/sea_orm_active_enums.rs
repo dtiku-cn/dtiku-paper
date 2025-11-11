@@ -32,6 +32,7 @@ pub enum SrcType {
 #[derive(
     Debug,
     Clone,
+    Copy,
     PartialEq,
     Eq,
     EnumIter,
