@@ -23,9 +23,9 @@ pub struct PayOrderService {
     #[inject(component)]
     db: DbConn,
     #[inject(component)]
-    alipay: Option<Alipay>,
+    alipay: Alipay,
     #[inject(component)]
-    wechat: Option<WechatPayClient>,
+    wechat: WechatPayClient,
     #[inject(config)]
     config: PayConfig,
 }
@@ -70,7 +70,6 @@ impl PayOrderService {
         let out_trade_no = format!("{:06}", order_id); // 微信“商户订单号”字符串规则校验最少6字节
         let wechat = self.wechat.clone();
         let resp = wechat
-            .ok_or_else(|| anyhow!("暂不支持微信支付"))?
             .native_pay(NativeParams::new(subject, out_trade_no, amount.into()))
             .await
             .context("微信订单创建失败")?;
@@ -123,7 +122,6 @@ impl PayOrderService {
         biz_content.set_out_trade_no(order_id.into());
 
         let resp = alipay
-            .ok_or_else(|| anyhow!("暂不支持支付宝"))?
             .trade_query(&biz_content)
             .context("支付宝订单查询失败")?;
 
@@ -151,59 +149,50 @@ impl PayOrderService {
     }
 
     pub async fn query_wechat_order(&self, model: pay_order::Model) -> anyhow::Result<()> {
-        match self.wechat.clone() {
-            Some(wechat) => {
-                let order_id = model.id;
-                let mchid = &wechat.mch_id;
-                let resp = wechat
-                    .get_pay::<WechatPayOrderResp>(&format!(
-                        "/v3/pay/transactions/out-trade-no/{order_id:06}?mchid={mchid}"
-                    ))
-                    .await
-                    .context("微信订单查询失败")?;
+        let wechat = self.wechat.clone();
+        let order_id = model.id;
+        let mchid = &wechat.mch_id;
+        let resp = wechat
+            .get_pay::<WechatPayOrderResp>(&format!(
+                "/v3/pay/transactions/out-trade-no/{order_id:06}?mchid={mchid}"
+            ))
+            .await
+            .context("微信订单查询失败")?;
 
-                tracing::info!(
-                    "微信订单#{order_id}状态: {}({})",
-                    resp.trade_state,
-                    resp.trade_state_desc
-                );
+        tracing::info!(
+            "微信订单#{order_id}状态: {}({})",
+            resp.trade_state,
+            resp.trade_state_desc
+        );
 
-                let status = OrderStatus::from_wechat(&resp.trade_state);
-                let now = Local::now().naive_local();
+        let status = OrderStatus::from_wechat(&resp.trade_state);
+        let now = Local::now().naive_local();
 
-                pay_order::ActiveModel {
-                    id: Set(order_id),
-                    confirm: Set(Some(now)),
-                    status: Set(status),
-                    resp: Set(Some(
-                        serde_json::to_value(resp).context("resp to json failed")?,
-                    )),
-                    ..Default::default()
-                }
-                .update(&self.db)
-                .await
-                .with_context(|| format!("update_pay_order({order_id}) failed"))?;
-
-                Ok(())
-            }
-            None => Err(anyhow!("暂不支持微信支付")),
+        pay_order::ActiveModel {
+            id: Set(order_id),
+            confirm: Set(Some(now)),
+            status: Set(status),
+            resp: Set(Some(
+                serde_json::to_value(resp).context("resp to json failed")?,
+            )),
+            ..Default::default()
         }
+        .update(&self.db)
+        .await
+        .with_context(|| format!("update_pay_order({order_id}) failed"))?;
+
+        Ok(())
     }
 
     pub async fn alipay_verify_sign(&self, raw_body: &[u8]) -> anyhow::Result<()> {
         let alipay = self.alipay.clone();
-        match alipay {
-            Some(alipay) => {
-                let r = alipay
-                    .async_verify_sign(raw_body)
-                    .context("支付宝验签失败")?;
-                if r {
-                    Ok(())
-                } else {
-                    Err(anyhow!("支付宝验签失败"))
-                }
-            }
-            None => Err(anyhow!("暂不支持支付宝")),
+        let r = alipay
+            .async_verify_sign(raw_body)
+            .context("支付宝验签失败")?;
+        if r {
+            Ok(())
+        } else {
+            Err(anyhow!("支付宝验签失败"))
         }
     }
 
@@ -215,18 +204,14 @@ impl PayOrderService {
         signature: &str,
         body: &str,
     ) -> anyhow::Result<WechatPayNotify> {
-        match self.wechat.clone() {
-            Some(wechat) => {
-                let pub_key = self.get_wechat_pub_key(serial).await?;
+        let wechat = self.wechat.clone();
+        let pub_key = self.get_wechat_pub_key(serial).await?;
 
-                wechat
-                    .verify_signature(&pub_key, timestamp, nonce, signature, body)
-                    .context("微信验签失败，非法数据")?;
+        wechat
+            .verify_signature(&pub_key, timestamp, nonce, signature, body)
+            .context("微信验签失败，非法数据")?;
 
-                serde_json::from_str::<WechatPayNotify>(body).context("微信回调数据解析失败")
-            }
-            None => Err(anyhow!("暂不支持微信支付")),
-        }
+        serde_json::from_str::<WechatPayNotify>(body).context("微信回调数据解析失败")
     }
 
     pub async fn get_wechat_pub_key(&self, serial: &str) -> anyhow::Result<String> {
@@ -245,95 +230,86 @@ impl PayOrderService {
             return Ok(pub_key);
         }
 
-        match self.wechat.clone() {
-            Some(wechat) => {
-                tracing::info!("fetch wechat pay certificates from wechat server");
+        let wechat = self.wechat.clone();
+        tracing::info!("fetch wechat pay certificates from wechat server");
 
-                let resp = wechat
-                    .certificates()
-                    .await
-                    .context("获取微信平台证书失败")?;
+        let resp = wechat
+            .certificates()
+            .await
+            .context("获取微信平台证书失败")?;
 
-                let certs = resp.data.ok_or_else(|| anyhow!("微信平台证书为空"))?;
+        let certs = resp.data.ok_or_else(|| anyhow!("微信平台证书为空"))?;
 
-                for cert in certs {
-                    let serial_no = cert.serial_no;
-                    let ciphertext = cert.encrypt_certificate.ciphertext;
-                    let nonce = cert.encrypt_certificate.nonce;
-                    let associated_data = cert.encrypt_certificate.associated_data;
-                    let data = wechat
-                        .decrypt_bytes(ciphertext, nonce, associated_data)
-                        .context("微信平台证书解密失败")?;
-                    let pub_key = wechat_pay_rust_sdk::util::x509_to_pem(data.as_slice())
-                        .map_err(|e| anyhow!("微信平台证书转换PEM失败:{e}"))?;
-                    let cert_path = format!("{pub_key_dir}/{serial_no}/pubkey.pem");
-                    let mut pub_key_file =
-                        File::create(cert_path).context("create pub key file failed")?;
-                    pub_key_file
-                        .write_all(pub_key.as_bytes())
-                        .context("write pub key file failed")?;
+        for cert in certs {
+            let serial_no = cert.serial_no;
+            let ciphertext = cert.encrypt_certificate.ciphertext;
+            let nonce = cert.encrypt_certificate.nonce;
+            let associated_data = cert.encrypt_certificate.associated_data;
+            let data = wechat
+                .decrypt_bytes(ciphertext, nonce, associated_data)
+                .context("微信平台证书解密失败")?;
+            let pub_key = wechat_pay_rust_sdk::util::x509_to_pem(data.as_slice())
+                .map_err(|e| anyhow!("微信平台证书转换PEM失败:{e}"))?;
+            let cert_path = format!("{pub_key_dir}/{serial_no}/pubkey.pem");
+            let mut pub_key_file = File::create(cert_path).context("create pub key file failed")?;
+            pub_key_file
+                .write_all(pub_key.as_bytes())
+                .context("write pub key file failed")?;
 
-                    let (pub_key_valid, expire_timestamp) =
-                        wechat_pay_rust_sdk::util::x509_is_valid(data.as_slice())
-                            .map_err(|e| anyhow!("公钥验证失败:{e}"))?;
-                    tracing::debug!(
-                        "pub key valid:{} expire_timestamp:{}",
-                        pub_key_valid,
-                        expire_timestamp
-                    ); //检测证书是否可用,打印过期时间
-                }
+            let (pub_key_valid, expire_timestamp) =
+                wechat_pay_rust_sdk::util::x509_is_valid(data.as_slice())
+                    .map_err(|e| anyhow!("公钥验证失败:{e}"))?;
+            tracing::debug!(
+                "pub key valid:{} expire_timestamp:{}",
+                pub_key_valid,
+                expire_timestamp
+            ); //检测证书是否可用,打印过期时间
+        }
 
-                let cert_path = format!("{pub_key_dir}/{serial}/pubkey.pem");
-                let cert_path = Path::new(&cert_path);
-                if cert_path.exists() {
-                    let pub_key = std::fs::read_to_string(cert_path)
-                        .with_context(|| format!("read pub key from {cert_path:?} failed"))?;
-                    return Ok(pub_key);
-                } else {
-                    return Err(anyhow!("微信公钥不存在"));
-                }
-            }
-            None => Err(anyhow!("暂不支持微信支付")),
+        let cert_path = format!("{pub_key_dir}/{serial}/pubkey.pem");
+        let cert_path = Path::new(&cert_path);
+        if cert_path.exists() {
+            let pub_key = std::fs::read_to_string(cert_path)
+                .with_context(|| format!("read pub key from {cert_path:?} failed"))?;
+            return Ok(pub_key);
+        } else {
+            return Err(anyhow!("微信公钥不存在"));
         }
     }
 
     pub async fn notify_wechat_pay(&self, notify: &WechatPayNotify) -> anyhow::Result<()> {
-        match self.wechat.clone() {
-            Some(wechat) => {
-                let resource = notify.resource.clone();
-                let nonce = resource.nonce;
-                let ciphertext = resource.ciphertext;
-                let associated_data = resource.associated_data.unwrap_or_default();
-                let data: WechatPayDecodeData = wechat
-                    .decrypt_paydata(
-                        ciphertext,      //加密数据
-                        nonce,           //随机串
-                        associated_data, //关联数据
-                    )
-                    .context("解析关联数据失败")?;
+        let wechat = self.wechat.clone();
+        let resource = notify.resource.clone();
+        let nonce = resource.nonce;
+        let ciphertext = resource.ciphertext;
+        let associated_data = resource.associated_data.unwrap_or_default();
+        let data: WechatPayDecodeData = wechat
+            .decrypt_paydata(
+                ciphertext,      //加密数据
+                nonce,           //随机串
+                associated_data, //关联数据
+            )
+            .context("解析关联数据失败")?;
 
-                tracing::info!("接收到微信订单状态: {}", data.trade_state);
+        tracing::info!("接收到微信订单状态: {}", data.trade_state);
 
-                let status = OrderStatus::from_wechat(&data.trade_state);
-                let out_trade_no = data.out_trade_no.parse::<i32>().context("解析订单号失败")?;
-                let now = Local::now().naive_local();
+        let status = OrderStatus::from_wechat(&data.trade_state);
+        let out_trade_no = data.out_trade_no.parse::<i32>().context("解析订单号失败")?;
+        let now = Local::now().naive_local();
 
-                pay_order::ActiveModel {
-                    id: Set(out_trade_no),
-                    confirm: Set(Some(now)),
-                    status: Set(status),
-                    resp: Set(Some(
-                        serde_json::to_value(notify).context("resp to json failed")?,
-                    )),
-                    ..Default::default()
-                }
-                .update(&self.db)
-                .await
-                .with_context(|| format!("update_pay_order({out_trade_no}) failed"))?;
-                Ok(())
-            }
-            None => Err(anyhow!("暂不支持微信支付")),
+        pay_order::ActiveModel {
+            id: Set(out_trade_no),
+            confirm: Set(Some(now)),
+            status: Set(status),
+            resp: Set(Some(
+                serde_json::to_value(notify).context("resp to json failed")?,
+            )),
+            ..Default::default()
         }
+        .update(&self.db)
+        .await
+        .with_context(|| format!("update_pay_order({out_trade_no}) failed"))?;
+        Ok(())
     }
 
     pub async fn notify_alipay(&self, raw_body: &[u8]) -> anyhow::Result<()> {
