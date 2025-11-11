@@ -94,7 +94,6 @@ impl PayOrderService {
         biz_content.set_out_trade_no(out_trade_no.into());
         biz_content.set_total_amount((amount as f64 / 100.0).into());
         let resp = alipay
-            .ok_or_else(|| anyhow!("暂不支持支付宝"))?
             .trade_precreate(&biz_content)
             .context("支付宝订单创建失败")?;
         let resp_json = serde_json::to_value(&resp).context("支付宝响应出错")?;
