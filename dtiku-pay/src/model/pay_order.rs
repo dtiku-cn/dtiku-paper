@@ -90,9 +90,9 @@ impl Entity {
                     COUNT(*) as paid_count,
                     SUM(CASE 
                         WHEN level = 'monthly' THEN 1000
-                        WHEN level = 'quarterly' THEN 2900
-                        WHEN level = 'half_year' THEN 5500
-                        WHEN level = 'annual' THEN 10000
+                        WHEN level = 'quarterly' THEN 2500
+                        WHEN level = 'half_year' THEN 4000
+                        WHEN level = 'annual' THEN 6000
                         ELSE 0
                     END) as paid_amount
                 FROM pay_order
