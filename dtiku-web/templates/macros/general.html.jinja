@@ -221,7 +221,6 @@
 </div>
 {% endwhen %}
 {% when Some with (u) %}
-{% if u.is_expired() %}
 <div class="modal fade" id="payModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -233,7 +232,6 @@
         </div>
     </div>
 </div>
-{% endif %}
 {% endwhen %}
 {% endmatch %}
 <div class="fixed-top d-flex justify-content-center align-items-center">
