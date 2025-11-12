@@ -182,17 +182,19 @@
     {% else %}
     {% endmatch %}
 </div>
-{% if let Some(answer) = q.get_answer()%}
+{%if user_answer.is_some()%}
+{%if let Some(answer) = q.get_answer()%}
 <div class="d-print-none">
     <a class="btn btn-link" role="button" data-toggle="collapse" href="#answer-{{q.id}}">查看解析</a>
     <div class="collapse" id="answer-{{q.id}}">
-        {% if let Some(answer) = q.get_answer()%}
+        {%if let Some(answer) = q.get_answer()%}
         <div>参考答案：<b class="-answer-">{{answer | safe}}</b></div>
-        {% endif %}
+        {%endif%}
         {%call question_solution(q)%}
     </div>
 </div>
-{% endif %}
+{%endif%}
+{%endif%}
 {% endmacro xingce_exercise_question %}
 
 {# 行测 #}
