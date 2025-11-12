@@ -112,11 +112,12 @@
 {% endmacro answer_collapse_action %}
 
 {# 行测答题模式 #}
-{% macro xingce_exercise_question(q) %}
+{% macro xingce_exercise_question(q, user_answer) %}
 <div id="question-{{q.id}}" class="question">
     <div class="question-content">{{q.content | safe}}</div>
     {% match q.extra %}
-    {% when QuestionExtra::SingleChoice with { options } | QuestionExtra::BlankChoice with { options } | QuestionExtra::WordSelection with { options } %}
+    {% when QuestionExtra::SingleChoice with { options } | QuestionExtra::BlankChoice with { options } |
+    QuestionExtra::WordSelection with { options } %}
     <div class="option-group ml-4 d-flex flex-wrap">
         {% for o in options %}
         <div class="custom-control custom-radio pl-0 {%if q.is_answer(loop.index0)%}-answer-{%endif%}"
@@ -124,7 +125,8 @@
             style='width:{% if q.option_len()<20&&global.screen_width()>768 %}25%{% else if q.option_len()<30 %}50%{%else%}100%{% endif %}'>
             <input class="custom-control-input d-print-none" type="radio" id="{{q.id}}-option-{{loop.index}}"
                 name="{{q.id}}" value="{{loop.index0}}"
-                th:attr="checked=(${userAnswer!=null && @thymeleafUtils.matchAnswer(userAnswer,q.id,o.caption)}),disabled=(${userAnswer!=null})">
+                checked="${userAnswer!=null && @thymeleafUtils.matchAnswer(userAnswer,q.id,o.caption)})"
+                disabled="{{user_answer.is_some()}}">
             <label class="d-flex custom-control-label" for="{{q.id}}-option-{{loop.index}}">
                 <b>{{global.chars[loop.index0]}}</b> &nbsp;
                 <span class="flex-grow-1">{{o | safe}}</span>
@@ -141,7 +143,8 @@
             style='width:{% if q.option_len()<20&&global.screen_width()>768 %}25%{% else if q.option_len()<30 %}50%{%else%}100%{% endif %}'>
             <input class="custom-control-input d-print-none" type="checkbox" id="{{q.id}}-option-{{loop.index}}"
                 name="{{q.id}}" value="{{loop.index0}}"
-                th:attr="checked=(${userAnswer!=null && @thymeleafUtils.matchAnswer(userAnswer,q.id,o.caption)}),disabled=(${userAnswer!=null})">
+                checked="(${userAnswer!=null && @thymeleafUtils.matchAnswer(userAnswer,q.id,o.caption)})"
+                disabled="{{user_answer.is_some()}}">
             <label class="d-flex custom-control-label" for="{{q.id}}-option-{{loop.index}}">
                 <b>{{global.chars[loop.index0]}}</b> &nbsp;
                 <span class="flex-grow-1">{{o | safe}}</span>
@@ -165,22 +168,17 @@
     {% else %}
     {% endmatch %}
 </div>
-{%if let Some(s) = q.solutions%}
+{% if let Some(answer) = q.get_answer()%}
 <div class="d-print-none">
-    <a class="btn btn-link mt-2" role="button" data-toggle="collapse" href="#answer-{{q.id}}">查看解析</a>
-    <div class="collapse" id="answer-{{q.id}}" classappend="${userAnswer!=null?'show':''}">
-        <div class="d-flex">
-            <div class="mr-4" th:if="${q.answer!=null}">
-                参考答案：<b class="-answer-" th:text="${q.answer.answer}"></b>
-            </div>
-            <div th:if="${timeMap!=null}">
-                耗时：<b class="text-info" th:text="${@thymeleafUtils.formatSecond(timeMap.getOrDefault(q.id,0))}"></b>
-            </div>
-        </div>
+    <a class="btn btn-link" role="button" data-toggle="collapse" href="#answer-{{q.id}}">查看解析</a>
+    <div class="collapse" id="answer-{{q.id}}">
+        {% if let Some(answer) = q.get_answer()%}
+        <div>参考答案：<b class="-answer-">{{answer | safe}}</b></div>
+        {% endif %}
         {%call question_solution(q)%}
     </div>
 </div>
-{%endif%}
+{% endif %}
 {% endmacro xingce_exercise_question %}
 
 {# 行测 #}

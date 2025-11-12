@@ -69,7 +69,7 @@
     {% call general::header() %}
     <div id="printcontent">
         <h1 class="text-center">{{paper.title}}</h1>
-        <p class="text-center d-print-none user-select-none">{% call paper::paper_meta(paper) %}</p>
+        <p class="text-center d-print-none user-select-none">{% call paper::paper_meta(paper, mode) %}</p>
 
         <button id="collapse" class="btn btn-link btn-block d-print-none" data-toggle="true">展开试卷</button>
         {% if paper.extra.block_count() == 3 %}

@@ -87,7 +87,7 @@
     {% call general::header() %}
     <div id="printcontent" class="{% if global.user.is_none() %}d-print-none{% endif %}">
         <h1 class="text-center">{{paper.title}}</h1>
-        <p class="text-center d-print-none">{% call paper::paper_meta(paper) %}</p>
+        <p class="text-center d-print-none">{% call paper::paper_meta(paper, mode) %}</p>
         {% if mode == "show_answer" %}
         <div id="answer-list" class="show-answer row">
             {%for q in questions %}
@@ -99,7 +99,8 @@
             {%endfor%}
         </div>
         {% elif mode == "exercise" %}
-        <table id="xc-report" class="mx-auto text-center d-print-none" style="width: 20em" th:if="${report!=null}">
+        {% if let Some(r) = report%}
+        <table id="xc-report" class="mx-auto text-center d-print-none" style="width: 20em">
             <caption>测验报告</caption>
             <tr>
                 <th>题型</th>
@@ -109,15 +110,16 @@
                 <th>耗时</th>
                 <th>正确率</th>
             </tr>
-            <tr th:each="c : ${report}">
+            <tr th:each="c : ${r}">
                 <td th:text="${c.chapter.title()}"></td>
-                <td class="text-success" th:text="${c.correct}"></td>
-                <td class="text-warning" th:text="${c.error}"></td>
-                <td class="text-info" th:text="${c.chapter.questionCount}"></td>
-                <td class="text-info" th:text="${@thymeleafUtils.formatSecond(c.time)}"></td>
-                <td class="text-info" th:text="${numbers.formatPercent(c.correctRatio,1,2)}"></td>
+                <td class="text-success">${c.correct}</td>
+                <td class="text-warning">${c.error}</td>
+                <td class="text-info">${c.chapter.questionCount}</td>
+                <td class="text-info">${thymeleafUtils.formatSecond(c.time)}</td>
+                <td class="text-info">${numbers.formatPercent(c.correctRatio,1,2)}</td>
             </tr>
         </table>
+        {% endif %}
         {% endif %}
         <div class="paper paper-xingce" class="{{mode}}">
             {% if mode == "show_answer" %}
@@ -157,7 +159,7 @@
                 <div class="d-flex mt-2">
                     <div id="q-{{qvo.num}}" class="q-number flex-shrink-0"><b>{{qvo.num}}</b>.</div>
                     <div class="flex-grow-1 question-wrapper show-answer">
-                        {% call question::xingce_exercise_question(qvo) %}
+                        {% call question::xingce_exercise_question(qvo, user_answer) %}
                     </div>
                 </div>
                 {% endfor %}
