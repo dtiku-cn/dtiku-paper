@@ -37,6 +37,7 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y libxml2 openssl libssl3 ca-certificates && apt-get clean
 
 ENV RUST_LOG=info
+ENV TZ=Asia/Shanghai
 
 WORKDIR /runner
 
