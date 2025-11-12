@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     query::paper::{ListPaperQuery, PaperQuery, PaperTitleLikeQuery},
     views::{
@@ -8,7 +10,7 @@ use crate::{
 use anyhow::Context;
 use askama::Template;
 use dtiku_paper::{
-    domain::paper::PaperMode,
+    domain::paper::{self, PaperMode},
     model::paper::PaperExtra,
     query::paper::ListPaperQuery as PaperListQuery,
     service::{label::LabelService, paper::PaperService},
@@ -17,7 +19,7 @@ use spring_sea_orm::pagination::Pagination;
 use spring_web::{
     axum::{
         response::{Html, IntoResponse},
-        Extension, Json,
+        Extension, Form, Json,
     },
     error::{KnownWebError, Result},
     extractor::{Component, Path, Query},
@@ -89,12 +91,36 @@ async fn paper_exercise(
     Path(id): Path<i32>,
     Component(ps): Component<PaperService>,
     Extension(global): Extension<GlobalVariables>,
+    Form(params): Form<HashMap<String, String>>,
 ) -> Result<impl IntoResponse> {
     let paper = ps
         .find_paper_by_id(id, PaperMode::Exercise)
         .await?
         .ok_or_else(|| KnownWebError::not_found("试卷未找到"))?;
-    let t: ChapterPaperTemplate = paper.to_template(global);
+
+    let mut user_answer = HashMap::new();
+    let mut answer_q_time = HashMap::new();
+
+    for (k, v) in params {
+        if let Some(rest_qid) = k.strip_prefix("qt.") {
+            if let Ok(qid) = rest_qid.parse::<i32>() {
+                if let Ok(time) = v.parse::<u64>() {
+                    answer_q_time.insert(qid, time);
+                }
+            }
+        } else if let Ok(qid) = k.parse::<i32>() {
+            user_answer.insert(qid, v);
+        }
+    }
+    let paper_model = paper.p.clone();
+    let mut t: ChapterPaperTemplate = paper.to_template(global);
+    t.report = Some(paper::compute_report(
+        &paper_model,
+        &t.questions,
+        &user_answer,
+        &answer_q_time,
+    ));
+    t.user_answer = Some(user_answer);
     Ok(Html(t.render().context("render failed")?))
 }
 

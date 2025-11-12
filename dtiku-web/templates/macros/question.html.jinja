@@ -45,7 +45,7 @@
     <li role="presentation" class="nav-item">
         <a class="nav-link {%if loop.index==1%}active{%endif%}" role="tab" data-toggle="tab"
             href="#solution-{{q.id}}-{{s.id}}">
-            {%if global.config.show_vendor%}{{s.from_ty}}{%else%}参考解析{{global.chinese_num(loop.index)}}{%endif%}
+            {%if global.config.show_vendor%}{{s.from_ty}}{%else%}参考解析{{loop.index | chinese_num}}{%endif%}
         </a>
     </li>
     {%endfor%}
@@ -111,6 +111,26 @@
 </script>
 {% endmacro answer_collapse_action %}
 
+{% macro xingce_exercise_input(qid, user_answer, index0, input_type) %}
+{%if global.match_answer(user_answer,qid,index0)%}
+{%if user_answer.is_some()%}
+<input checked disabled type="{{input_type}}" class="custom-control-input d-print-none" id="{{qid}}-option-{{index0+1}}"
+    name="{{qid}}" value="{{index0}}">
+{%else%}
+<input checked type="{{input_type}}" class="custom-control-input d-print-none" id="{{qid}}-option-{{index0+1}}"
+    name="{{qid}}" value="{{index0}}">
+{%endif%}
+{%else%}
+{%if user_answer.is_some()%}
+<input disabled type="{{input_type}}" class="custom-control-input d-print-none" id="{{qid}}-option-{{index0+1}}"
+    name="{{qid}}" value="{{index0}}">
+{% else %}
+<input type="{{input_type}}" class="custom-control-input d-print-none" id="{{qid}}-option-{{index0+1}}" name="{{qid}}"
+    value="{{index0}}">
+{%endif%}
+{%endif%}
+{% endmacro xingce_exercise_input %}
+
 {# 行测答题模式 #}
 {% macro xingce_exercise_question(q, user_answer) %}
 <div id="question-{{q.id}}" class="question">
@@ -120,13 +140,10 @@
     QuestionExtra::WordSelection with { options } %}
     <div class="option-group ml-4 d-flex flex-wrap">
         {% for o in options %}
-        <div class="custom-control custom-radio pl-0 {%if q.is_answer(loop.index0)%}-answer-{%endif%}"
+        <div class="custom-control custom-radio pl-0 {%if q.is_answer(loop.index0) && user_answer.is_some()%}-answer-{%endif%}"
             id="option-{{q.id}}-{{loop.index}}"
-            style='width:{% if q.option_len()<20&&global.screen_width()>768 %}25%{% else if q.option_len()<30 %}50%{%else%}100%{% endif %}'>
-            <input class="custom-control-input d-print-none" type="radio" id="{{q.id}}-option-{{loop.index}}"
-                name="{{q.id}}" value="{{loop.index0}}"
-                checked="${userAnswer!=null && @thymeleafUtils.matchAnswer(userAnswer,q.id,o.caption)})"
-                disabled="{{user_answer.is_some()}}">
+            style='width:{%if q.option_len()<20&&global.screen_width()>768%}25%{%elif q.option_len()<30%}50%{%else%}100%{%endif%}'>
+            {%call xingce_exercise_input(q.id, user_answer, loop.index0, "radio")%}
             <label class="d-flex custom-control-label" for="{{q.id}}-option-{{loop.index}}">
                 <b>{{global.chars[loop.index0]}}</b> &nbsp;
                 <span class="flex-grow-1">{{o | safe}}</span>
@@ -138,13 +155,10 @@
     {% when QuestionExtra::MultiChoice with { options } | QuestionExtra::IndefiniteChoice with { options } %}
     <div class="option-group ml-4 d-flex flex-wrap">
         {% for o in options %}
-        <div class="custom-control custom-checkbox pl-0 {%if q.is_answer(loop.index0)%}-answer-{%endif%}"
+        <div class="custom-control custom-checkbox pl-0 {%if q.is_answer(loop.index0) && user_answer.is_some()%}-answer-{%endif%}"
             id="option-{{q.id}}-{{loop.index}}"
-            style='width:{% if q.option_len()<20&&global.screen_width()>768 %}25%{% else if q.option_len()<30 %}50%{%else%}100%{% endif %}'>
-            <input class="custom-control-input d-print-none" type="checkbox" id="{{q.id}}-option-{{loop.index}}"
-                name="{{q.id}}" value="{{loop.index0}}"
-                checked="(${userAnswer!=null && @thymeleafUtils.matchAnswer(userAnswer,q.id,o.caption)})"
-                disabled="{{user_answer.is_some()}}">
+            style='width:{%if q.option_len()<20&&global.screen_width()>768%}25%{%elif q.option_len()<30%}50%{%else%}100%{%endif%}'>
+            {%call xingce_exercise_input(q.id, user_answer, loop.index0, "checkbox")%}
             <label class="d-flex custom-control-label" for="{{q.id}}-option-{{loop.index}}">
                 <b>{{global.chars[loop.index0]}}</b> &nbsp;
                 <span class="flex-grow-1">{{o | safe}}</span>
@@ -155,11 +169,11 @@
     {% endwhen %}
     {% when QuestionExtra::TrueFalse %}
     <div class="option-group d-flex flex-wrap">
-        <div class="d-flex {%if q.is_answer(&0)%}-answer-{%endif%}" id="{{q.id}}-option-1" style='width:50%'>
+        <div class="d-flex {%if q.is_answer(&0) && user_answer.is_some() %}-answer-{%endif%}" id="{{q.id}}-option-1" style='width:50%'>
             <b>T </b>. &nbsp;
             <div class="flex-grow-1">正确</div>
         </div>
-        <div class="d-flex {%if q.is_answer(&1)%}-answer-{%endif%}" id="{{q.id}}-option-2" style='width:50%'>
+        <div class="d-flex {%if q.is_answer(&1) && user_answer.is_some() %}-answer-{%endif%}" id="{{q.id}}-option-2" style='width:50%'>
             <b>F </b>. &nbsp;
             <div class="flex-grow-1">错误</div>
         </div>
@@ -233,7 +247,7 @@
 {% macro shenlun_question(q) %}
 <div id="question-{{q.id}}" class="clearfix question mt-3">
     <div id="q-{{q.num}}" class="q-number float-left">
-        <b>{{global.chinese_num(q.num)}}</b>、
+        <b>{{q.num | chinese_num}}</b>、
     </div>
     <div class="question-content">{{q.content|safe}}</div>
 </div>

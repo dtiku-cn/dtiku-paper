@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 use askama::Template;
 use axum_extra::extract::CookieJar;
-use chinese_number::{ChineseCase, ChineseCountMethod, ChineseVariant, NumberToChinese};
-use chrono::{Datelike, NaiveDateTime};
+use chrono::Datelike;
 use dtiku_base::{model::user_info, service};
 use dtiku_paper::domain::exam_category::ExamPaperType;
 use paper::PaperType;
@@ -50,32 +51,8 @@ pub struct GlobalVariables {
 
 #[allow(dead_code)]
 impl GlobalVariables {
-    pub fn append_params(&self, url: &str, query_str: &str) -> String {
-        let mut url = String::from(url);
-        if url.contains("?") {
-            if !url.ends_with("?") {
-                url.push('&');
-            }
-            url.push_str(query_str)
-        } else {
-            url.push('?');
-            url.push_str(query_str);
-        }
-        url
-    }
-
     pub fn range(&self, range_end: &u64) -> std::ops::RangeInclusive<u64> {
         (1..=*range_end).into_iter()
-    }
-
-    pub fn chinese_num(&self, num: &usize) -> String {
-        (*num as i32)
-            .to_chinese(
-                ChineseVariant::Traditional,
-                ChineseCase::Lower,
-                ChineseCountMethod::TenThousand,
-            )
-            .unwrap()
     }
 
     pub fn now_year(&self) -> i16 {
@@ -86,47 +63,6 @@ impl GlobalVariables {
     pub fn date_now(&self) -> String {
         let now = chrono::Local::now();
         now.format("%Y-%m-%d").to_string()
-    }
-
-    pub fn format(&self, date: &NaiveDateTime, fmt: &str) -> String {
-        date.format(fmt).to_string()
-    }
-
-    pub fn format_with_now(&self, date_time: &NaiveDateTime) -> String {
-        let end_time = chrono::Local::now().naive_local();
-
-        let start_date = date_time.date();
-        let end_date = end_time.date();
-        let period = end_date.signed_duration_since(start_date);
-        let days = period.num_days();
-
-        // 如果超过一个月（按30天近似）或一年
-        if days >= 30 {
-            return date_time.format("%Y-%-m-%-d").to_string();
-        }
-
-        if days < 1 {
-            let duration = end_time - *date_time;
-            let seconds = duration.num_seconds();
-            let minutes = seconds / 60;
-
-            if minutes > 60 {
-                let hours = minutes / 60;
-                return format!("{}小时前", hours);
-            } else if minutes > 3 {
-                return format!("{}分钟前", minutes);
-            } else if minutes > 1 {
-                return format!("{}分{}前", minutes, seconds % 60);
-            } else {
-                return format!("{}秒前", seconds);
-            }
-        }
-
-        if days < 7 {
-            return format!("{}天前", days);
-        }
-
-        date_time.format("%Y-%-m-%-d").to_string()
     }
 
     pub fn uri_starts_with(&self, prefix: &str) -> bool {
@@ -158,6 +94,26 @@ impl GlobalVariables {
     pub fn screen_width(&self) -> usize {
         let sw = self.cookie("sw");
         sw.parse().unwrap_or(900)
+    }
+
+    pub fn match_answer(
+        &self,
+        user_answer: &Option<HashMap<i32, String>>,
+        qid: &i32,
+        index0: &usize,
+    ) -> bool {
+        let user_answer = match user_answer {
+            Some(ua) => ua,
+            None => return false,
+        };
+        let answer = match user_answer.get(qid) {
+            Some(a) => a,
+            None => return false,
+        };
+
+        let option_num = index0.to_string();
+
+        answer.contains(&option_num)
     }
 
     pub fn get_paper_type_by_prefix(&self, prefix: &str) -> Option<PaperType> {

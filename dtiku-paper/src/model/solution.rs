@@ -74,6 +74,26 @@ impl SolutionExtra {
         }
     }
 
+    pub fn get_raw_answer(&self) -> Option<String> {
+        match self {
+            Self::SingleChoice(SingleChoice { answer, .. })
+            | Self::BlankChoice(SingleChoice { answer, .. }) => Some(answer.to_string()),
+            Self::MultiChoice(MultiChoice { answer, .. })
+            | Self::IndefiniteChoice(MultiChoice { answer, .. }) => Some(answer.iter().join(", ")),
+            Self::TrueFalse(TrueFalseChoice { answer, .. }) => {
+                if *answer {
+                    Some("0".to_string())
+                } else {
+                    Some("1".to_string())
+                }
+            }
+            Self::BlankAnswer(BlankAnswer { answer, .. }) => Some(answer.clone()),
+            Self::FillBlank(FillBlank { blanks, .. }) => Some(blanks.join(" ")),
+            Self::OtherQA(OtherAnswer { answer, .. }) => answer.clone(),
+            _ => None,
+        }
+    }
+
     pub fn get_answer(&self) -> Option<String> {
         match self {
             Self::SingleChoice(SingleChoice { answer, .. })

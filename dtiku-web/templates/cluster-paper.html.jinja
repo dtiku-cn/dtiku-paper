@@ -93,7 +93,7 @@
                     <li class="nav-item" role="presentation">
                         <a class="nav-link {%if loop.index==1%}active{%endif%}" data-toggle="tab" role="tab"
                             href="#material-tab-{{m.id}}">
-                            材料{{global.chinese_num(m.num)}}
+                            材料{{m.num | chinese_num}}
                         </a>
                     </li>
                     {%endfor%}
@@ -102,7 +102,7 @@
                     {%for m in materials %}
                     <div class="my-2 tab-pane d-print-block {%if loop.index==1%}active{%endif%}" role="tabpanel"
                         id="material-tab-{{m.id}}">
-                        <h3 class="material-number text-center d-none d-print-block">材料{{global.chinese_num(m.num)}}</h3>
+                        <h3 class="material-number text-center d-none d-print-block">材料{{m.num | chinese_num}}</h3>
                         <div id="m-{{loop.index}}" class="material-content">{{m.content | safe}}</div>
                     </div>
                     {%endfor%}
@@ -137,7 +137,7 @@
                     {%for q in questions %}
                     <li class="nav-item" role="presentation">
                         <a class="nav-link {%if loop.index==1%}active{%endif%}" data-toggle="tab" role="tab"
-                            href="#question-tab-{{q.id}}">问题{{global.chinese_num(q.num)}}</a>
+                            href="#question-tab-{{q.id}}">问题{{q.num | chinese_num}}</a>
                     </li>
                     {%endfor%}
                 </ul>

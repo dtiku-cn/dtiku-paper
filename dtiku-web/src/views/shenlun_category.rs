@@ -1,3 +1,4 @@
+use super::filters;
 use super::GlobalVariables;
 use askama::Template;
 use askama_web::WebTemplate;

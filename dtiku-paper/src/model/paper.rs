@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 pub use super::_entities::paper::*;
 use crate::query::paper::ListPaperQuery;
 use anyhow::Context;
@@ -97,9 +99,20 @@ impl Chapters {
         }
         None
     }
+
+    pub fn compute_paper_chapter_range(&self) -> Vec<(RangeInclusive<usize>, PaperChapter)> {
+        let mut num_adder = 0;
+        let mut result = vec![];
+        for c in &self.chapters {
+            let prev_num_adder = num_adder;
+            num_adder += c.count as usize;
+            result.push((prev_num_adder + 1..=num_adder, c.clone()));
+        }
+        result
+    }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct PaperChapter {
     pub name: String,
     pub desc: String,

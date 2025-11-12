@@ -59,6 +59,13 @@ impl FullQuestion {
         self.extra.option_len()
     }
 
+    pub fn get_raw_answer(&self) -> Option<String> {
+        match &self.solutions {
+            None => None,
+            Some(ss) => ss.first().and_then(|s| s.extra.get_raw_answer()),
+        }
+    }
+
     pub fn get_answer(&self) -> Option<String> {
         match &self.solutions {
             None => None,

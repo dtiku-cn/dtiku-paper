@@ -87,7 +87,7 @@
                     <h5 class="card-text">{{ps.title}}</h5>
                 </div>
                 <div class="card-footer bg-transparent p-1 pl-4">
-                    <small class="text-muted">发布于{{global.format_with_now(ps.created)}}</small>
+                    <small class="text-muted">发布于{{ps.created | format_with_now}}</small>
                 </div>
             </div>
         </a>
@@ -139,8 +139,8 @@
                             <b>{{u.name}}</b>
                             {%endif%}
                         </p>
-                        <b class="mb-1" data-toggle="tooltip" title='{{global.format(i.created, "%Y-%m-%d %H:%M")}}'>
-                            {{global.format_with_now(i.created)}}
+                        <b class="mb-1" data-toggle="tooltip" title='{{i.created | datetime_fmt("%Y-%m-%d %H:%M")}}'>
+                            {{i.created | format_with_now}}
                         </b>
                     </td>
                     <td>

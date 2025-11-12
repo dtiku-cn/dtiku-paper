@@ -35,7 +35,7 @@
         {% if let Some(material) = question.materials %}
         {%for m in material%}
         <div class="material">
-            <h3 class="text-center mt-2">材料{{global.chinese_num(loop.index)}}</h3>
+            <h3 class="text-center mt-2">材料{{loop.index | chinese_num}}</h3>
             <div>{{m.content | safe}}</div>
         </div>
         {%endfor%}

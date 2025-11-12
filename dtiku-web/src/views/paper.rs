@@ -1,10 +1,10 @@
+use super::filters;
 use super::PageExt;
 use super::{GlobalVariables, IntoTemplate};
 use askama::Template;
 use askama_web::WebTemplate;
-use dtiku_paper::domain::paper::PaperMode;
+use dtiku_paper::domain::paper::{ChapterReport, PaperMode};
 use dtiku_paper::domain::question::FullQuestion;
-use dtiku_paper::model::paper::PaperChapter;
 use dtiku_paper::model::question::QuestionExtra;
 use dtiku_paper::{
     domain::{
@@ -73,16 +73,6 @@ pub struct ChapterPaperTemplate {
     pub questions: Vec<FullQuestion>,
     pub report: Option<Vec<ChapterReport>>,
     pub user_answer: Option<HashMap<i32, String>>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ChapterReport {
-    pub chapter: PaperChapter,
-    pub correct: i32,
-    pub error: i32,
-    pub question_count: i32,
-    pub time: i32,
-    pub correct_ratio: f64,
 }
 
 #[derive(Template, WebTemplate)]

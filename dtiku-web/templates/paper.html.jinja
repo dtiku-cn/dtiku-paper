@@ -110,14 +110,16 @@
                 <th>耗时</th>
                 <th>正确率</th>
             </tr>
-            <tr th:each="c : ${r}">
-                <td th:text="${c.chapter.title()}"></td>
-                <td class="text-success">${c.correct}</td>
-                <td class="text-warning">${c.error}</td>
-                <td class="text-info">${c.chapter.questionCount}</td>
-                <td class="text-info">${thymeleafUtils.formatSecond(c.time)}</td>
-                <td class="text-info">${numbers.formatPercent(c.correctRatio,1,2)}</td>
+            {%for c in r%}
+            <tr>
+                <td>{{c.chapter.name}}</td>
+                <td class="text-success">{{c.correct}}</td>
+                <td class="text-warning">{{c.error}}</td>
+                <td class="text-info">{{c.chapter.count}}</td>
+                <td class="text-info">{{c.time | hms}}</td>
+                <td class="text-info">{{c.correct_ratio() | fmt("{:.2}") }}</td>
             </tr>
+            {%endfor%}
         </table>
         {% endif %}
         {% endif %}
@@ -132,7 +134,7 @@
             {% endif %}
             {% if let Some(materials) = qvo.materials %}
             {% for m in materials %}
-            <h3 class="text-center mt-2">{{global.chinese_num(m.num)}}</h3>
+            <h3 class="text-center mt-2">{{m.num | chinese_num}}</h3>
             <div class="material">{{m.content | safe}}</div>
             {% endfor %}
             {% endif %}
@@ -152,7 +154,7 @@
                 {% endif %}
                 {% if let Some(materials) = qvo.materials %}
                 {% for m in materials %}
-                <h3 class="text-center mt-2">{{global.chinese_num(m.num)}}</h3>
+                <h3 class="text-center mt-2">{{m.num | chinese_num}}</h3>
                 <div class="material">{{m.content | safe}}</div>
                 {% endfor %}
                 {% endif %}
@@ -171,13 +173,15 @@
                             </svg>
                             <b>答题卡</b>
                         </a>
-                        <button th:if="${answer==null}" class="btn btn-link" type="submit"><b>交卷</b></button>
+                        {%if user_answer.is_none()%}
+                        <button class="btn btn-link" type="submit"><b>交卷</b></button>
+                        {%endif%}
                     </div>
                     <div id="answer-paper" class="collapse">
                         <div class="d-flex flex-wrap justify-content-center">
                             {% for qvo in questions %}
-                            <a class="answer-block" id="answer-for-{{qvo.id}}" href="#q-{{qvo.num}}"
-                                classappend="${answer==null?'text-muted':(@thymeleafUtils.matchAnswer(answer,qvo.id,qvo.answer.answer)?'text-white bg-success':'text-white bg-danger')}">{{qvo.num}}</a>
+                            <a class="answer-block {%if user_answer.is_none()%}text-muted{%elif global.match_answer(user_answer,qvo.id,loop.index0)%}text-white bg-success{%else%}text-white bg-danger{%endif%}"
+                                id="answer-for-{{qvo.id}}" href="#q-{{qvo.num}}">{{qvo.num}}</a>
                             {% endfor %}
                         </div>
                     </div>

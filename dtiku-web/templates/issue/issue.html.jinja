@@ -168,11 +168,11 @@
                 {% endif %}
                 <b class="d-none d-md-block">{{issue.author_name()}}</b>
                 <span data-toggle="tooltip"
-                    title='{{global.format(issue.created, "%Y-%m-%d %H:%M")}}'>发布于{{global.format_with_now(issue.created)}}</span>
+                    title='{{issue.created | datetime_fmt("%Y-%m-%d %H:%M")}}'>发布于{{issue.created | format_with_now}}</span>
                 {% if issue.created != issue.modified %}
                 <span class="d-none d-sm-block">&nbsp; | &nbsp;</span>
                 <span class="d-none d-sm-block" data-toggle="tooltip"
-                    title='{{global.format(issue.modified, "%Y-%m-%d %H:%M")}}'>更新于{{global.format_with_now(issue.modified)}}</span>
+                    title='{{issue.modified | datetime_fmt("%Y-%m-%d %H:%M")}}'>更新于{{issue.modified | format_with_now}}</span>
                 {% endif %}
             </div>
             <div class="artalk-page-vote d-flex">
