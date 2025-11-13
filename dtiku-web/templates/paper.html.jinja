@@ -117,7 +117,7 @@
                 <td class="text-warning">{{c.error}}</td>
                 <td class="text-info">{{c.chapter.count}}</td>
                 <td class="text-info">{{c.time | hms}}</td>
-                <td class="text-info">{{c.correct_ratio() | fmt("{:.2}") }}</td>
+                <td class="text-info">{{c.correct_ratio()}}</td>
             </tr>
             {%endfor%}
         </table>

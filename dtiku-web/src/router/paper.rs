@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     query::paper::{ListPaperQuery, PaperQuery, PaperTitleLikeQuery},
     views::{
@@ -25,6 +23,7 @@ use spring_web::{
     extractor::{Component, Path, Query},
     get, post,
 };
+use std::collections::HashMap;
 
 #[get("/paper")]
 async fn list_paper(

@@ -43,11 +43,14 @@ pub struct ChapterReport {
 }
 
 impl ChapterReport {
-    pub fn correct_ratio(&self) -> f64 {
+    pub fn correct_ratio(&self) -> String {
         if self.chapter.count == 0 {
-            0.0
+            "0%".to_string()
         } else {
-            (self.correct as f64) / (self.chapter.count as f64)
+            format!(
+                "{:.1}%",
+                100.0 * (self.correct as f64) / (self.chapter.count as f64)
+            )
         }
     }
 }

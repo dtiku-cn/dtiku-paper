@@ -68,6 +68,7 @@ impl PaperService {
         }
         Paper::find()
             .filter(filter)
+            .order_by_desc(paper::Column::Year)
             .limit(100)
             .all(&self.db)
             .await
