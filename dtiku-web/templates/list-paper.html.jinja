@@ -25,14 +25,19 @@
                     </svg>
                     <strong>{{paper_type.name}}</strong>
                 </a>
-                <div class="dropdown-menu shadow-sm" aria-labelledby="clsDropdown">
+                <div class="dropdown-menu shadow-sm">
                     {% for p in global.paper_types %}
-                    {% if let Some(paper_types) = p.children %}
-                    {% for sub_type in paper_types %}
-                    <a class="dropdown-item" href="?ty={{sub_type.prefix}}">{{p.name ~ " / " ~ sub_type.name}}</a>
-                    {% endfor %}
+                    {% if let Some(children) = p.children %}
+                    <div class="dropdown-submenu">
+                        <a class="dropdown-item dropdown-toggle" href="#">{{ p.name }}</a>
+                        <div class="dropdown-menu">
+                            {% for sub_type in children %}
+                            <a class="dropdown-item" href="/paper?ty={{ sub_type.prefix }}">{{ sub_type.name }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
                     {% else %}
-                    <a class="dropdown-item" href="?ty={{p.prefix}}">{{p.name}}</a>
+                    <a class="dropdown-item" href="/paper?ty={{ p.prefix }}">{{ p.name }}</a>
                     {% endif %}
                     {% endfor %}
                 </div>
