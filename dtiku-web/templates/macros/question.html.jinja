@@ -112,7 +112,7 @@
 {% endmacro answer_collapse_action %}
 
 {% macro xingce_exercise_input(qid, user_answer, index0, input_type) %}
-{%if global.match_answer(user_answer,qid,index0)%}
+{%if global.match_answer_option(user_answer,qid,index0)%}
 {%if user_answer.is_some()%}
 <input checked disabled type="{{input_type}}" class="custom-control-input d-print-none" id="{{qid}}-option-{{index0+1}}"
     name="{{qid}}" value="{{index0}}">

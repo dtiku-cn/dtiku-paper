@@ -4,7 +4,7 @@ use askama::Template;
 use axum_extra::extract::CookieJar;
 use chrono::Datelike;
 use dtiku_base::{model::user_info, service};
-use dtiku_paper::domain::exam_category::ExamPaperType;
+use dtiku_paper::domain::{exam_category::ExamPaperType, question::FullQuestion};
 use paper::PaperType;
 use spring_sea_orm::pagination::Page;
 use spring_web::axum::http::{StatusCode, Uri};
@@ -99,8 +99,24 @@ impl GlobalVariables {
     pub fn match_answer(
         &self,
         user_answer: &Option<HashMap<i32, String>>,
+        q: &FullQuestion,
+    ) -> bool {
+        let user_answer = match user_answer {
+            Some(ua) => ua,
+            None => return false,
+        };
+
+        if let (Some(db), Some(user)) = (q.get_raw_answer(), user_answer.get(&q.id)) {
+            return db.eq_ignore_ascii_case(user);
+        }
+        return false;
+    }
+
+    pub fn match_answer_option(
+        &self,
+        user_answer: &Option<HashMap<i32, String>>,
         qid: &i32,
-        index0: &usize,
+        opt_index0: &usize,
     ) -> bool {
         let user_answer = match user_answer {
             Some(ua) => ua,
@@ -111,7 +127,7 @@ impl GlobalVariables {
             None => return false,
         };
 
-        let option_num = index0.to_string();
+        let option_num = opt_index0.to_string();
 
         answer.contains(&option_num)
     }
