@@ -2,6 +2,7 @@ use crate::{
     router::EXAM_ID,
     views::{
         home::{HomePapers, HomeTemplate},
+        paper::PaperType,
         GlobalVariables,
     },
 };
@@ -28,14 +29,20 @@ async fn home(
         label_id: vec![],
         page: Pagination { page: 0, size: 10 },
     };
-    let home_papers = vec![
-        get_papers(&ps, &global, "xingce").await?,
-        get_papers(&ps, &global, "shenlun").await?,
-        get_papers(&ps, &global, "gwyms").await?,
-    ]
-    .into_iter()
-    .filter_map(|o| o)
-    .collect();
+    let exam_id = EXAM_ID.get();
+
+    let mut home_papers = vec![];
+    for paper_type in &global.paper_types {
+        let papers = ps.find_paper_by_type(exam_id, paper_type.id).await?;
+        if papers.is_empty() {
+            continue;
+        }
+        home_papers.push(HomePapers {
+            ty: paper_type.into(),
+            papers,
+        });
+    }
+
     let idioms = get_idioms(&is, &global, "xingce", IdiomType::Idiom, query).await?;
     let words = get_idioms(&is, &global, "xingce", IdiomType::Word, query).await?;
     Ok(HomeTemplate {
@@ -44,23 +51,6 @@ async fn home(
         idioms: idioms.content,
         words: words.content,
     })
-}
-
-async fn get_papers(
-    ps: &PaperService,
-    global: &GlobalVariables,
-    prefix: &str,
-) -> anyhow::Result<Option<HomePapers>> {
-    let exam_id = EXAM_ID.get();
-    if let Some(paper_type) = global.get_paper_type_by_prefix(prefix) {
-        let papers = ps.find_paper_by_type(exam_id, paper_type.id).await?;
-        Ok(Some(HomePapers {
-            ty: paper_type,
-            papers,
-        }))
-    } else {
-        Ok(None)
-    }
 }
 
 async fn get_idioms(

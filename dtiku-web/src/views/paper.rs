@@ -3,6 +3,7 @@ use super::PageExt;
 use super::{GlobalVariables, IntoTemplate};
 use askama::Template;
 use askama_web::WebTemplate;
+use dtiku_paper::domain::exam_category::ExamPaperType;
 use dtiku_paper::domain::paper::{ChapterReport, PaperMode};
 use dtiku_paper::domain::question::FullQuestion;
 use dtiku_paper::model::question::QuestionExtra;
@@ -25,6 +26,18 @@ pub struct PaperType {
     pub prefix: String,
     pub pid: i16,
     pub from_ty: FromType,
+}
+
+impl Into<PaperType> for &ExamPaperType {
+    fn into(self) -> PaperType {
+        PaperType {
+            id: self.id,
+            name: self.name.clone(),
+            prefix: self.prefix.clone(),
+            pid: self.pid,
+            from_ty: self.from_ty,
+        }
+    }
 }
 
 impl PaperType {

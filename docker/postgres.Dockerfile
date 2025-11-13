@@ -11,4 +11,5 @@ RUN pig repo add pigsty pgdg -u && \
     pig ext install pgvector -v 15 && \
     pig ext install pg_mooncake -v 15 && \
     pig ext install pg_partman -v 15 && \
-    pig ext install pg_repack -v 15
+    pig ext install pg_repack -v 15 && \
+    pig ext install pg_partman -v 15
