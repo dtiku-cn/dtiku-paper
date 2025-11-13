@@ -57,12 +57,12 @@
                     <a class="dropdown-item dropdown-toggle" href="#">{{ p.name }}</a>
                     <div class="dropdown-menu">
                         {% for sub_type in children %}
-                        <a class="dropdown-item" href="/paper?ty={{ sub_type.prefix }}">{{ sub_type.name }}</a>
+                        <a class="dropdown-item" href="#" value="{{sub_type.id}}">{{ sub_type.name }}</a>
                         {% endfor %}
                     </div>
                 </div>
                 {% else %}
-                <a class="dropdown-item" href="/paper?ty={{ p.prefix }}">{{ p.name }}</a>
+                <a class="dropdown-item" href="#" value="{{p.id}}">{{ p.name }}</a>
                 {% endif %}
                 {% endfor %}
             </div>
