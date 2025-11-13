@@ -9,6 +9,7 @@ mod shenlun_category;
 mod traffic;
 mod user;
 
+use crate::plugins::DtikuConfig;
 use crate::service::user::UserService;
 use crate::views::{AntiBotTemplate, ErrorTemplate, GlobalVariables};
 use askama::Template;
@@ -32,7 +33,7 @@ use spring_web::axum::http::{request::Parts, StatusCode};
 use spring_web::axum::response::{Html, IntoResponse};
 use spring_web::axum::{body, RequestPartsExt};
 use spring_web::error::{KnownWebError, WebError};
-use spring_web::extractor::FromRequestParts;
+use spring_web::extractor::{Config, FromRequestParts};
 use spring_web::{
     axum::{
         middleware::{self, Next},
@@ -110,6 +111,7 @@ async fn global_error_page(
     ec_service: Component<ExamCategoryService>,
     sc_service: Component<SystemConfigService>,
     us_service: Component<UserService>,
+    dtiku_config: Config<DtikuConfig>,
     ClientIp(client_ip): ClientIp,
     TypedHeader(user_agent): TypedHeader<UserAgent>,
     claims: OptionalClaims,
@@ -136,6 +138,7 @@ async fn global_error_page(
         &ec_service,
         &sc_service,
         &us_service,
+        &dtiku_config,
         &claims,
         host,
         cookies,
@@ -314,6 +317,7 @@ async fn with_context(
     Component(ec_service): &Component<ExamCategoryService>,
     Component(sc_service): &Component<SystemConfigService>,
     Component(us_service): &Component<UserService>,
+    Config(config): &Config<DtikuConfig>,
     OptionalClaims(claims): &OptionalClaims,
     Host(original_host): Host,
     cookies: CookieJar,
@@ -322,6 +326,12 @@ async fn with_context(
 ) -> Result<Response, WebError> {
     let prefix = if let Some(pos) = original_host.find(".dtiku.cn") {
         let prefix = &original_host[..pos]; // "gwy"
+        let prefix = if let Some(strip_prefix) = prefix.strip_prefix(&config.strip_prefix) {
+            strip_prefix
+        } else {
+            prefix
+        };
+        let prefix = prefix.trim_start_matches('.');
         if prefix == "www" {
             "gwy"
         } else {
