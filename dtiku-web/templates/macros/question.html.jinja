@@ -169,13 +169,21 @@
     {% endwhen %}
     {% when QuestionExtra::TrueFalse %}
     <div class="option-group d-flex flex-wrap">
-        <div class="d-flex {%if q.is_answer(&0) && user_answer.is_some() %}-answer-{%endif%}" id="{{q.id}}-option-1" style='width:50%'>
-            <b>T </b>. &nbsp;
-            <div class="flex-grow-1">正确</div>
+        <div class="custom-control custom-radio pl-0 {%if q.is_answer(&0) && user_answer.is_some()%}-answer-{%endif%}"
+            id="option-{{q.id}}-1" style='width:50%'>
+            {%call xingce_exercise_input(q.id, user_answer, &0, "radio")%}
+            <label class="d-flex custom-control-label" for="{{q.id}}-option-1">
+                <b>T </b>. &nbsp;
+                <div class="flex-grow-1">正确</div>
+            </label>
         </div>
-        <div class="d-flex {%if q.is_answer(&1) && user_answer.is_some() %}-answer-{%endif%}" id="{{q.id}}-option-2" style='width:50%'>
-            <b>F </b>. &nbsp;
-            <div class="flex-grow-1">错误</div>
+        <div class="custom-control custom-radio pl-0 {%if q.is_answer(&1) && user_answer.is_some()%}-answer-{%endif%}"
+            id="option-{{q.id}}-2" style='width:50%'>
+            {%call xingce_exercise_input(q.id, user_answer, &1, "radio")%}
+            <label class="d-flex custom-control-label" for="{{q.id}}-option-2">
+                <b>F </b>. &nbsp;
+                <div class="flex-grow-1">错误</div>
+            </label>
         </div>
     </div>
     {% endwhen %}
