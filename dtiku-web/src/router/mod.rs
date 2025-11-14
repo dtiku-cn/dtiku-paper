@@ -6,7 +6,6 @@ mod paper;
 mod pay;
 mod question;
 mod shenlun_category;
-mod traffic;
 mod user;
 
 use crate::plugins::DtikuConfig;
