@@ -6,8 +6,8 @@ use anyhow::Context;
 use chrono::{Duration, Local};
 use dtiku_base::model::{user_info, UserInfo};
 use dtiku_pay::model::OrderLevel;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
 use sea_orm::ActiveValue::Set;
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
 use spring::plugin::service::Service;
 use spring_sea_orm::DbConn;
 use spring_web::axum::http;
@@ -85,11 +85,11 @@ impl UserService {
         let cutoff_date = chrono::NaiveDate::from_ymd_opt(2025, 11, 7)
             .and_then(|date| date.and_hms_opt(0, 0, 0))
             .expect("invalid cutoff date");
-        
+
         if u.created < cutoff_date && u.expired < cutoff_date {
             let now = Local::now().naive_local();
             let new_expired = now + Duration::days(7);
-            
+
             let updated_user = user_info::ActiveModel {
                 id: Set(user_id),
                 expired: Set(new_expired),
@@ -98,7 +98,7 @@ impl UserService {
             .update(&self.db)
             .await
             .context("update user expired date failed")?;
-            
+
             u = updated_user;
         }
 

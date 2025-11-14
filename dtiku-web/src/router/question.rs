@@ -87,9 +87,9 @@ async fn question_section(
         .validate()
         .map_err(|e| KnownWebError::bad_request(e.to_string()))?;
     if query.paper_type == 0 {
-        let paper_type = global
-            .get_paper_type_by_prefix("xingce")
-            .ok_or_else(|| KnownWebError::bad_request(error_messages::QUESTION_PAPER_TYPE_REQUIRED))?;
+        let paper_type = global.get_paper_type_by_prefix("xingce").ok_or_else(|| {
+            KnownWebError::bad_request(error_messages::QUESTION_PAPER_TYPE_REQUIRED)
+        })?;
         query.paper_type = paper_type.id;
     }
     let kp_paths = ks

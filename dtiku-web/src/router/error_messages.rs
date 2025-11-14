@@ -32,4 +32,3 @@ pub const TOKEN_CREATION_ERROR: &str = "Token created error";
 pub fn invalid_token_msg(token: &str) -> String {
     format!("invalid token:{token}")
 }
-

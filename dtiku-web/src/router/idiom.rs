@@ -120,7 +120,9 @@ async fn idiom_detail(
 
             Ok(IdiomDetailTemplate { global, idiom })
         }
-        None => Err(KnownWebError::bad_request(error_messages::INVALID_PAPER_TYPE))?,
+        None => Err(KnownWebError::bad_request(
+            error_messages::INVALID_PAPER_TYPE,
+        ))?,
     }
 }
 

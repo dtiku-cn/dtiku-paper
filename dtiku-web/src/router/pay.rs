@@ -41,8 +41,9 @@ async fn create_trade(
     let (order_id, qrcode_url) = ps
         .create_order(claims.user_id, trade.level, trade.pay_from)
         .await?;
-    let qrcode_url =
-        qrcode_url.ok_or_else(|| KnownWebError::internal_server_error(error_messages::QRCODE_GENERATION_FAILED))?;
+    let qrcode_url = qrcode_url.ok_or_else(|| {
+        KnownWebError::internal_server_error(error_messages::QRCODE_GENERATION_FAILED)
+    })?;
     Ok(PayRedirectTemplate {
         global,
         order_id,
