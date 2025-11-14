@@ -1,6 +1,7 @@
 use super::Claims;
 use crate::{
     query::pay::TradeCreateQuery,
+    router::error_messages,
     views::{
         pay::{PayRedirectTemplate, PayTradeCreateTemplate},
         GlobalVariables,
@@ -41,7 +42,7 @@ async fn create_trade(
         .create_order(claims.user_id, trade.level, trade.pay_from)
         .await?;
     let qrcode_url =
-        qrcode_url.ok_or_else(|| KnownWebError::internal_server_error("支付码生成失败"))?;
+        qrcode_url.ok_or_else(|| KnownWebError::internal_server_error(error_messages::QRCODE_GENERATION_FAILED))?;
     Ok(PayRedirectTemplate {
         global,
         order_id,
@@ -60,7 +61,7 @@ async fn pay_status(
         PayOrder::find_order_status(&db, order_id, claims.user_id)
             .await
             .context("查询订单失败")?
-            .ok_or_else(|| KnownWebError::not_found("订单不存在"))?,
+            .ok_or_else(|| KnownWebError::not_found(error_messages::ORDER_NOT_FOUND))?,
     ))
 }
 

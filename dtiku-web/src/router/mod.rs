@@ -1,4 +1,5 @@
 mod bbs;
+mod error_messages;
 mod home;
 mod idiom;
 mod key_point;
@@ -400,11 +401,11 @@ where
         let TypedHeader(cookie) = parts
             .extract::<TypedHeader<Cookie>>()
             .await
-            .map_err(|_| KnownWebError::unauthorized("invalid cookie"))?;
+            .map_err(|_| KnownWebError::unauthorized(error_messages::INVALID_COOKIE))?;
 
         let token = cookie
             .get("token")
-            .ok_or_else(|| KnownWebError::unauthorized("Missing token"))?;
+            .ok_or_else(|| KnownWebError::unauthorized(error_messages::MISSING_TOKEN))?;
 
         // Decode the user data
         let claims = decode(token)?;
@@ -433,7 +434,7 @@ where
         let TypedHeader(cookie) = parts
             .extract::<TypedHeader<Cookie>>()
             .await
-            .map_err(|_| KnownWebError::unauthorized("invalid cookie"))?;
+            .map_err(|_| KnownWebError::unauthorized(error_messages::INVALID_COOKIE))?;
 
         // Decode the user data
         let claims = match cookie.get("token") {
@@ -457,7 +458,7 @@ pub fn encode(claims: Claims) -> anyhow::Result<String> {
     let header = Header::new(Algorithm::HS256);
     let encode_key = EncodingKey::from_secret(JWT_SECRET.as_bytes());
     let token = jsonwebtoken::encode::<Claims>(&header, &claims, &encode_key)
-        .map_err(|_| KnownWebError::internal_server_error("Token created error"))?;
+        .map_err(|_| KnownWebError::internal_server_error(error_messages::TOKEN_CREATION_ERROR))?;
 
     Ok(token)
 }
@@ -469,7 +470,7 @@ pub fn decode(token: &str) -> anyhow::Result<Claims> {
     let token_data =
         jsonwebtoken::decode::<Claims>(&token, &decode_key, &validation).map_err(|e| {
             tracing::error!("{:?}", e);
-            KnownWebError::unauthorized(format!("invalid token:{token}"))
+            KnownWebError::unauthorized(error_messages::invalid_token_msg(token))
         })?;
     Ok(token_data.claims)
 }

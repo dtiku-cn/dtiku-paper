@@ -1,5 +1,5 @@
 use crate::{
-    router::decode,
+    router::{decode, error_messages},
     service::user::UserService,
     views::user::{ArtalkUser, UserLoginRefreshTemplate},
 };
@@ -61,6 +61,6 @@ async fn user_comment_avatar(
     let avatar_url = us
         .get_comment_user_avatar(comment_id)
         .await?
-        .ok_or_else(|| KnownWebError::not_found("用户头像不存在"))?;
+        .ok_or_else(|| KnownWebError::not_found(error_messages::USER_AVATAR_NOT_FOUND))?;
     Ok(Redirect::permanent(&avatar_url))
 }

@@ -1,6 +1,6 @@
 use crate::{
     query::question::DetailQuery,
-    router::EXAM_ID,
+    router::{error_messages, EXAM_ID},
     views::{
         question::{
             OnlyCommentTemplate, QuestionDetailTemplate, QuestionRecommendTemplate,
@@ -89,7 +89,7 @@ async fn question_section(
     if query.paper_type == 0 {
         let paper_type = global
             .get_paper_type_by_prefix("xingce")
-            .ok_or_else(|| KnownWebError::bad_request("请指定试卷类型"))?;
+            .ok_or_else(|| KnownWebError::bad_request(error_messages::QUESTION_PAPER_TYPE_REQUIRED))?;
         query.paper_type = paper_type.id;
     }
     let kp_paths = ks
@@ -131,7 +131,7 @@ async fn question_detail(
         let question = qs
             .full_question_by_id(id)
             .await?
-            .ok_or_else(|| KnownWebError::not_found("题目不存在"))?;
+            .ok_or_else(|| KnownWebError::not_found(error_messages::QUESTION_NOT_FOUND))?;
         let recommends = qs.recommend_question(id).await?;
         let t = QuestionDetailTemplate {
             global,

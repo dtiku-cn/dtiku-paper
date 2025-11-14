@@ -1,5 +1,6 @@
 use crate::{
     query::paper::{ListPaperQuery, PaperQuery, PaperTitleLikeQuery},
+    router::error_messages,
     views::{
         paper::{ChapterPaperTemplate, ClusterPaperTemplate, ListPaperTemplate},
         GlobalVariables, IntoTemplate,
@@ -37,7 +38,7 @@ async fn list_paper(
 
     let paper_type = global
         .get_paper_type_by_prefix(&paper_type_prefix)
-        .ok_or_else(|| KnownWebError::bad_request("试卷类型不存在"))?;
+        .ok_or_else(|| KnownWebError::bad_request(error_messages::PAPER_TYPE_NOT_FOUND))?;
 
     let label_tree = ls.find_all_label_by_paper_type(paper_type.id).await?;
 
@@ -71,7 +72,7 @@ async fn paper_by_id(
     let paper = ps
         .find_paper_by_id(id, query.mode.unwrap_or_default())
         .await?
-        .ok_or_else(|| KnownWebError::not_found("试卷未找到"))?;
+        .ok_or_else(|| KnownWebError::not_found(error_messages::PAPER_NOT_FOUND))?;
     let html = match paper.p.extra {
         PaperExtra::Chapters(_) => {
             let t: ChapterPaperTemplate = paper.to_template(global);
@@ -95,7 +96,7 @@ async fn paper_exercise(
     let paper = ps
         .find_paper_by_id(id, PaperMode::Exercise)
         .await?
-        .ok_or_else(|| KnownWebError::not_found("试卷未找到"))?;
+        .ok_or_else(|| KnownWebError::not_found(error_messages::PAPER_NOT_FOUND))?;
 
     let mut user_answer = HashMap::new();
     let mut answer_q_time = HashMap::new();
@@ -132,7 +133,7 @@ async fn paper_title_like(
 ) -> Result<impl IntoResponse> {
     let paper_type = global
         .get_paper_type_by_prefix(&prefix)
-        .ok_or_else(|| KnownWebError::bad_request("试卷类型不存在"))?;
+        .ok_or_else(|| KnownWebError::bad_request(error_messages::PAPER_TYPE_NOT_FOUND))?;
     let ps = ps.search_by_name(paper_type.id, &query.title).await?;
     Ok(Json(ps))
 }

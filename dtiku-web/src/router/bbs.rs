@@ -1,6 +1,7 @@
 use super::Claims;
 use crate::{
     query::bbs::{IssueDetailReq, IssueReq},
+    router::error_messages,
     service::issue::IssueService,
     views::{
         bbs::{IssueEditorTemplate, IssueTemplate, ListIssueTemplate},
@@ -58,7 +59,7 @@ async fn edit_issue(
     let issue = is
         .find_issue_by_id(id)
         .await?
-        .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?;
+        .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
     Ok(IssueEditorTemplate {
         global,
         issue: Some(issue),
@@ -95,12 +96,12 @@ async fn issue_detail(
     let html = if req.html {
         is.find_issue_html_by_id(id)
             .await?
-            .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?
+            .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?
     } else {
         let issue = is
             .find_issue_by_id(id)
             .await?
-            .ok_or_else(|| KnownWebError::not_found("没找到帖子"))?;
+            .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
         let temp = IssueTemplate { global, issue };
         temp.render().context("render failed")?
     };

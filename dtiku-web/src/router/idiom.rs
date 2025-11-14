@@ -1,6 +1,6 @@
 use crate::{
     query::idiom::IdiomReq,
-    router::EXAM_ID,
+    router::{error_messages, EXAM_ID},
     views::{
         idiom::{IdiomDetailTemplate, IdiomPrintTemplate, ListIdiomTemplate},
         GlobalVariables,
@@ -116,11 +116,11 @@ async fn idiom_detail(
             let idiom = is
                 .get_idiom_detail(&text, exam_id, paper_type, req.labels)
                 .await?
-                .ok_or_else(|| KnownWebError::not_found("成语未找到"))?;
+                .ok_or_else(|| KnownWebError::not_found(error_messages::IDIOM_NOT_FOUND))?;
 
             Ok(IdiomDetailTemplate { global, idiom })
         }
-        None => Err(KnownWebError::bad_request("错误的试卷类型"))?,
+        None => Err(KnownWebError::bad_request(error_messages::INVALID_PAPER_TYPE))?,
     }
 }
 
