@@ -180,10 +180,13 @@ async fn global_error_page(
     }
 }
 
-const GOOGLE_DOMAINS: [&str; 2] = ["googlebot.com", "google.com"];
-const BING_DOMAINS: [&str; 1] = ["search.msn.com"];
-const BAIDU_DOMAINS: [&str; 1] = ["baidu.com"];
-const SOGOU_DOMAINS: [&str; 1] = ["sogou.com"];
+/// 爬虫域名配置：(爬虫名称, 域名列表)
+static CRAWLER_CONFIGS: &[(&str, &[&str])] = &[
+    ("Googlebot", &["googlebot.com", "google.com"]),
+    ("Bingbot", &["search.msn.com"]),
+    ("Baiduspider", &["baidu.com"]),
+    ("SogouSpider", &["sogou.com"]),
+];
 
 fn domain_matches(domain: &str, allowed_suffixes: &[&str]) -> bool {
     allowed_suffixes
@@ -273,17 +276,10 @@ async fn validate_seo_ip(client_ip: IpAddr) -> anyhow::Result<Option<&'static st
     };
 
     // Step 2: 检查域名后缀
-    let crawler_type = if domain_matches(&hostname, &GOOGLE_DOMAINS) {
-        Some("Googlebot")
-    } else if domain_matches(&hostname, &BING_DOMAINS) {
-        Some("Bingbot")
-    } else if domain_matches(&hostname, &BAIDU_DOMAINS) {
-        Some("Baiduspider")
-    } else if domain_matches(&hostname, &SOGOU_DOMAINS) {
-        Some("SogouSpider")
-    } else {
-        None
-    };
+    let crawler_type = CRAWLER_CONFIGS
+        .iter()
+        .find(|(_, domains)| domain_matches(&hostname, domains))
+        .map(|(name, _)| *name);
 
     if let Some(bot) = crawler_type {
         // Step 3: 正查 域名 -> IP

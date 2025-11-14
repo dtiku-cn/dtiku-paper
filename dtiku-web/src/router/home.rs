@@ -30,36 +30,52 @@ async fn home(
     };
     let exam_id = EXAM_ID.get();
 
-    let mut home_papers = vec![];
+    // 收集所有需要查询的 paper_type_id
+    let mut type_ids = Vec::new();
     for paper_type in &global.paper_types {
         if let Some(children) = &paper_type.children {
-            let mut sub_papers = vec![];
-            for p in children {
-                let papers = ps.find_paper_by_type(exam_id, p.id).await?;
-                if papers.is_empty() {
-                    continue;
+            for child in children {
+                type_ids.push(child.id);
+            }
+        } else {
+            type_ids.push(paper_type.id);
+        }
+    }
+
+    // 批量查询所有paper（避免N+1问题）
+    let all_papers = ps.find_papers_by_types(exam_id, &type_ids).await?;
+
+    // 在内存中组装数据结构
+    let mut home_papers = Vec::new();
+    for paper_type in &global.paper_types {
+        if let Some(children) = &paper_type.children {
+            let mut sub_papers = Vec::new();
+            for child in children {
+                if let Some(papers) = all_papers.get(&child.id) {
+                    if !papers.is_empty() {
+                        sub_papers.push(HomePapers {
+                            ty: child.into(),
+                            papers: papers.clone(),
+                            sub_papers: vec![],
+                        });
+                    }
                 }
-                sub_papers.push(HomePapers {
+            }
+            if !sub_papers.is_empty() {
+                home_papers.push(HomePapers {
                     ty: paper_type.into(),
-                    papers,
+                    papers: vec![],
+                    sub_papers,
+                });
+            }
+        } else if let Some(papers) = all_papers.get(&paper_type.id) {
+            if !papers.is_empty() {
+                home_papers.push(HomePapers {
+                    ty: paper_type.into(),
+                    papers: papers.clone(),
                     sub_papers: vec![],
                 });
             }
-            home_papers.push(HomePapers {
-                ty: paper_type.into(),
-                papers: vec![],
-                sub_papers,
-            });
-        } else {
-            let papers = ps.find_paper_by_type(exam_id, paper_type.id).await?;
-            if papers.is_empty() {
-                continue;
-            }
-            home_papers.push(HomePapers {
-                ty: paper_type.into(),
-                papers,
-                sub_papers: vec![],
-            });
         }
     }
 

@@ -104,6 +104,38 @@ impl Entity {
             .with_context(|| format!("find_hidden_label_id_by_paper_type({paper_type}) failed"))
     }
 
+    /// 批量查询多个 paper_type 的隐藏标签
+    pub async fn find_hidden_label_ids_by_paper_types<C: ConnectionTrait>(
+        db: &C,
+        paper_types: &[i16],
+    ) -> anyhow::Result<std::collections::HashMap<i16, Vec<i32>>> {
+        use itertools::Itertools;
+        
+        let labels: Vec<(i32, i16)> = Entity::find()
+            .select_only()
+            .column(Column::Id)
+            .column(Column::PaperType)
+            .filter(
+                Column::PaperType
+                    .is_in(paper_types.iter().copied())
+                    .and(Column::Hidden.eq(true)),
+            )
+            .into_tuple()
+            .all(db)
+            .await
+            .with_context(|| format!("find_hidden_label_ids_by_paper_types failed"))?;
+        
+        Ok(labels
+            .into_iter()
+            .into_group_map_by(|(_, paper_type)| *paper_type)
+            .into_iter()
+            .map(|(paper_type, labels)| {
+                let label_ids = labels.into_iter().map(|(id, _)| id).collect();
+                (paper_type, label_ids)
+            })
+            .collect())
+    }
+
     pub async fn find_by_paper_type_and_pids<C: ConnectionTrait>(
         db: &C,
         paper_type: i16,
