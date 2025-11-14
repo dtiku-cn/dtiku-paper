@@ -58,17 +58,48 @@
                     </svg>
                     <strong>最新{{hp.ty.name}}真题</strong>
                     <div class="flex-grow-1"></div>
+                    {%if hp.sub_papers.is_empty()%}
                     <a class="btn btn-link d-flex align-items-center text-reset" href="/paper?ty={{hp.ty.prefix}}">
                         <svg class="icon-svg icon-svg-sm mr-2">
                             <use xlink:href="#ic-more"></use>
                         </svg>
                         <em>查看更多</em>
                     </a>
+                    {%else%}
+                    <div class="dropdown">
+                        <a class="btn btn-link dropdown-toggle d-flex align-items-center" href="#"
+                            data-toggle="dropdown" role="button" aria-expanded="false">
+                            <svg class="icon-svg icon-svg-sm mr-2">
+                                <use xlink:href="#ic-library"></use>
+                            </svg>
+                            <strong>{{hp.ty.name}}</strong>
+                        </a>
+                        <div class="dropdown-menu shadow-sm">
+                            {%for sp in hp.sub_papers%}
+                            <a class="dropdown-item" data-toggle="tab" href="#dropdown-content-{{ sp.ty.prefix }}">{{
+                                sp.ty.name }}</a>
+                            {%endfor%}
+                        </div>
+                    </div>
+                    {%endif%}
                 </header>
+                {%if hp.sub_papers.is_empty()%}
                 {%call paper::paper_table(&hp.papers)%}
                 <footer class="card-footer">
                     <a class="card-link" href="/paper?ty={{hp.ty.prefix}}">查看更多</a>
                 </footer>
+                {%else%}
+                <div class="tab-content">
+                    {% for sp in hp.sub_papers %}
+                    <div role="tabpanel" id="dropdown-content-{{ sp.ty.prefix }}">
+                        {%call paper::paper_table(&sp.papers)%}
+                        <footer class="card-footer">
+                            <a class="card-link" href="/paper?ty={{sp.ty.prefix}}">查看更多</a>
+                        </footer>
+                    </div>
+                    {% endfor %}
+                </div>
+                {%endif%}
             </div>
             {%endfor%}
         </div>

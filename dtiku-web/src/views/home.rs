@@ -1,6 +1,5 @@
-use crate::views::paper::PaperType;
-
 use super::GlobalVariables;
+use crate::views::paper::PaperType;
 use askama::Template;
 use askama_web::WebTemplate;
 use dtiku_paper::model::paper;
@@ -18,4 +17,5 @@ pub struct HomeTemplate {
 pub struct HomePapers {
     pub ty: PaperType,
     pub papers: Vec<paper::Model>,
+    pub sub_papers: Vec<HomePapers>,
 }

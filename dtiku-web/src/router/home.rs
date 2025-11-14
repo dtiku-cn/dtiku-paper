@@ -2,11 +2,10 @@ use crate::{
     router::EXAM_ID,
     views::{
         home::{HomePapers, HomeTemplate},
-        paper::PaperType,
         GlobalVariables,
     },
 };
-use dtiku_paper::{model::paper, service::paper::PaperService};
+use dtiku_paper::service::paper::PaperService;
 use dtiku_stats::{
     domain::IdiomStats, model::sea_orm_active_enums::IdiomType, query::IdiomQuery,
     service::idiom::IdiomService,
@@ -33,14 +32,35 @@ async fn home(
 
     let mut home_papers = vec![];
     for paper_type in &global.paper_types {
-        let papers = ps.find_paper_by_type(exam_id, paper_type.id).await?;
-        if papers.is_empty() {
-            continue;
+        if let Some(children) = &paper_type.children {
+            let mut sub_papers = vec![];
+            for p in children {
+                let papers = ps.find_paper_by_type(exam_id, p.id).await?;
+                if papers.is_empty() {
+                    continue;
+                }
+                sub_papers.push(HomePapers {
+                    ty: paper_type.into(),
+                    papers,
+                    sub_papers: vec![],
+                });
+            }
+            home_papers.push(HomePapers {
+                ty: paper_type.into(),
+                papers: vec![],
+                sub_papers,
+            });
+        } else {
+            let papers = ps.find_paper_by_type(exam_id, paper_type.id).await?;
+            if papers.is_empty() {
+                continue;
+            }
+            home_papers.push(HomePapers {
+                ty: paper_type.into(),
+                papers,
+                sub_papers: vec![],
+            });
         }
-        home_papers.push(HomePapers {
-            ty: paper_type.into(),
-            papers,
-        });
     }
 
     let idioms = get_idioms(&is, &global, "xingce", IdiomType::Idiom, query).await?;
