@@ -1,4 +1,5 @@
 use anyhow::Context;
+use chrono::NaiveDate;
 use dtiku_base::model::UserInfo;
 use dtiku_pay::model::pay_order::{Column, Entity as PayOrder};
 use sea_orm::{ColumnTrait, DbConn, EntityTrait, Order, QueryFilter, QueryOrder};
@@ -105,6 +106,12 @@ async fn list_pay_orders(
     Ok(Json(result))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct StatsQuery {
+    pub start_date: Option<NaiveDate>,
+    pub end_date: Option<NaiveDate>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct PayStats {
     pub stats: Vec<dtiku_pay::model::PayStatsByDay>,
@@ -112,8 +119,11 @@ pub struct PayStats {
 }
 
 #[get("/api/pay/stats")]
-async fn pay_stats(Component(db): Component<DbConn>) -> Result<impl IntoResponse> {
-    let stats = PayOrder::stats_by_day(&db).await?;
+async fn pay_stats(
+    Component(db): Component<DbConn>,
+    Query(query): Query<StatsQuery>,
+) -> Result<impl IntoResponse> {
+    let stats = PayOrder::stats_by_day(&db, query.start_date, query.end_date).await?;
     let total_unpaid_user_count = PayOrder::total_unpaid_user_count(&db).await?;
     
     Ok(Json(PayStats {

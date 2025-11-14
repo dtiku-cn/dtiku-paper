@@ -1,7 +1,8 @@
 use anyhow::Context;
+use chrono::NaiveDate;
 use dtiku_base::{model::UserInfo, query::UserQuery};
 use sea_orm::DbConn;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use spring_redis::Redis;
 use spring_sea_orm::pagination::Pagination;
 use spring_web::{
@@ -35,9 +36,18 @@ async fn list_users(
     Ok(Json(users))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct StatsQuery {
+    pub start_date: Option<NaiveDate>,
+    pub end_date: Option<NaiveDate>,
+}
+
 #[get("/api/user_stats")]
-async fn user_stats(Component(db): Component<DbConn>) -> Result<impl IntoResponse> {
-    let stats = UserInfo::stats_by_day(&db).await?;
+async fn user_stats(
+    Component(db): Component<DbConn>,
+    Query(query): Query<StatsQuery>,
+) -> Result<impl IntoResponse> {
+    let stats = UserInfo::stats_by_day(&db, query.start_date, query.end_date).await?;
     Ok(Json(stats))
 }
 

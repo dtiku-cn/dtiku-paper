@@ -1,7 +1,7 @@
 pub use super::_entities::user_info::*;
 use crate::query::UserQuery;
 use anyhow::Context;
-use chrono::Days;
+use chrono::{Days, NaiveDate};
 use sea_orm::entity::prelude::*;
 use sea_orm::QueryOrder;
 use sea_orm::{
@@ -105,28 +105,32 @@ impl Entity {
             .context("UserInfo::find_page_by_query() failed")
     }
 
-    pub async fn stats_by_day<C: ConnectionTrait>(db: &C) -> anyhow::Result<Vec<UserStatsByDay>> {
+    pub async fn stats_by_day<C: ConnectionTrait>(
+        db: &C,
+        start_date: Option<NaiveDate>,
+        end_date: Option<NaiveDate>,
+    ) -> anyhow::Result<Vec<UserStatsByDay>> {
         let db_backend = db.get_database_backend();
+        
+        // 默认最近30天
+        let end = end_date.unwrap_or_else(|| Local::now().date_naive());
+        let start = start_date.unwrap_or_else(|| end - chrono::Duration::days(30));
 
         let stmt = Statement::from_sql_and_values(
             db_backend,
             r#"
-            WITH date_range AS (
-                SELECT 
-                    COALESCE(MIN(date_trunc('day', created)), CURRENT_DATE - INTERVAL '30 days') as min_date,
-                    CURRENT_DATE as max_date
-                FROM user_info
-            ),
-            date_series AS (
+            WITH date_series AS (
                 SELECT generate_series(
-                    (SELECT min_date FROM date_range),
-                    (SELECT max_date FROM date_range),
+                    $1::date,
+                    $2::date,
                     '1 day'::interval
                 )::timestamp as day
             ),
             user_stats AS (
                 SELECT date_trunc('day', created) as day, COUNT(*) as count
                 FROM user_info
+                WHERE date_trunc('day', created) >= $1::date 
+                  AND date_trunc('day', created) <= $2::date
                 GROUP BY day
             )
             SELECT 
@@ -137,7 +141,7 @@ impl Entity {
             ORDER BY date_series.day
             "#
             .to_owned(),
-            vec![],
+            vec![start.into(), end.into()],
         );
 
         UserStatsByDay::find_by_statement(stmt)

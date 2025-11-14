@@ -1,6 +1,7 @@
 use super::OrderStatus;
 pub use super::_entities::pay_order::*;
 use anyhow::Context;
+use chrono::{Days, NaiveDate};
 use sea_orm::{
     prelude::DateTime, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
     ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromQueryResult, QueryFilter, QuerySelect, Statement,
@@ -78,28 +79,27 @@ impl Entity {
             .with_context(|| format!("find_order_status({order_id},{user_id}) failed"))
     }
 
-    pub async fn stats_by_day<C: ConnectionTrait>(db: &C) -> anyhow::Result<Vec<PayStatsByDay>> {
+    pub async fn stats_by_day<C: ConnectionTrait>(
+        db: &C,
+        start_date: Option<NaiveDate>,
+        end_date: Option<NaiveDate>,
+    ) -> anyhow::Result<Vec<PayStatsByDay>> {
         let db_backend = db.get_database_backend();
+        
+        // 默认最近30天
+        let end = end_date.unwrap_or_else(|| Local::now().date_naive());
+        let start = start_date.unwrap_or_else(|| {
+            end.checked_sub_days(Days::new(30))
+                .expect("date subtract overflow")
+        });
 
         let stmt = Statement::from_sql_and_values(
             db_backend,
             r#"
-            WITH date_range AS (
-                SELECT 
-                    COALESCE(
-                        LEAST(
-                            MIN(date_trunc('day', confirm)),
-                            MIN(date_trunc('day', created))
-                        ),
-                        CURRENT_DATE - INTERVAL '30 days'
-                    ) as min_date,
-                    CURRENT_DATE as max_date
-                FROM pay_order
-            ),
-            date_series AS (
+            WITH date_series AS (
                 SELECT generate_series(
-                    (SELECT min_date FROM date_range),
-                    (SELECT max_date FROM date_range),
+                    $1::date,
+                    $2::date,
                     '1 day'::interval
                 )::timestamp as day
             ),
@@ -116,6 +116,8 @@ impl Entity {
                     END) as paid_amount
                 FROM pay_order
                 WHERE status = 'paid' AND confirm IS NOT NULL
+                  AND date_trunc('day', confirm) >= $1::date 
+                  AND date_trunc('day', confirm) <= $2::date
                 GROUP BY day
             ),
             unpaid_stats AS (
@@ -124,6 +126,8 @@ impl Entity {
                     COUNT(DISTINCT user_id) as unpaid_user_count
                 FROM pay_order
                 WHERE status = 'created'
+                  AND date_trunc('day', created) >= $1::date 
+                  AND date_trunc('day', created) <= $2::date
                 GROUP BY day
             )
             SELECT 
@@ -137,7 +141,7 @@ impl Entity {
             ORDER BY date_series.day
             "#
             .to_owned(),
-            vec![],
+            vec![start.into(), end.into()],
         );
 
         PayStatsByDay::find_by_statement(stmt)

@@ -10,6 +10,7 @@ spring-redis = { workspace = true }
 spring-stream = { workspace = true, features = ["json"] }
 schemars = { workspace = true }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
+chrono = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_urlencoded = { workspace = true }
