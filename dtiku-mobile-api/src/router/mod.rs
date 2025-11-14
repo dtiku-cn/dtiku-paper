@@ -11,7 +11,6 @@ use axum_extra::headers::Cookie;
 use axum_extra::TypedHeader;
 use derive_more::derive::Deref;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use spring::tracing::{self, Level};
 use spring_opentelemetry::trace;
@@ -34,7 +33,7 @@ use spring_web::{
     Router,
 };
 use std::env;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tower_governor::governor::GovernorConfigBuilder;
 use tower_governor::key_extractor::SmartIpKeyExtractor;
@@ -111,9 +110,13 @@ async fn not_found_handler() -> Response {
         .into_response()
 }
 
-lazy_static! {
-    static ref JWT_SECRET: String =
-        env::var("JWT_SECRET").expect("JWT_SECRET not set in environment");
+static JWT_SECRET: OnceLock<String> = OnceLock::new();
+
+/// 获取 JWT 密钥
+fn get_jwt_secret() -> &'static str {
+    JWT_SECRET.get_or_init(|| {
+        env::var("JWT_SECRET").expect("JWT_SECRET not set in environment")
+    })
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -192,7 +195,7 @@ where
 #[allow(unused)]
 pub fn encode(claims: Claims) -> anyhow::Result<String> {
     let header = Header::new(Algorithm::HS256);
-    let encode_key = EncodingKey::from_secret(JWT_SECRET.as_bytes());
+    let encode_key = EncodingKey::from_secret(get_jwt_secret().as_bytes());
     let token = jsonwebtoken::encode::<Claims>(&header, &claims, &encode_key)
         .map_err(|_| KnownWebError::internal_server_error("Token created error"))?;
 
@@ -202,7 +205,7 @@ pub fn encode(claims: Claims) -> anyhow::Result<String> {
 /// JWT decode
 pub fn decode(token: &str) -> anyhow::Result<Claims> {
     let validation = Validation::new(Algorithm::HS256);
-    let decode_key = DecodingKey::from_secret(JWT_SECRET.as_bytes());
+    let decode_key = DecodingKey::from_secret(get_jwt_secret().as_bytes());
     let token_data =
         jsonwebtoken::decode::<Claims>(&token, &decode_key, &validation).map_err(|e| {
             tracing::error!("{:?}", e);

@@ -31,7 +31,6 @@ reqwest = { workspace = true }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }
 uuid = { workspace = true, features = ["v4"] }
 axum-extra = { workspace = true, features = ["multipart"] }
-lazy_static = { workspace = true }
 futures = { workspace = true }
 
 [build-dependencies]

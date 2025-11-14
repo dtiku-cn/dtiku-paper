@@ -1,16 +1,26 @@
 use crate::plugins::OpenListConfig;
 use anyhow::Context;
 use feignhttp::post;
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use spring_redis::cache;
 use std::env;
+use std::sync::OnceLock;
 
-lazy_static! {
-    static ref ALIST_URL: String =
-        env::var("ALIST_URL").unwrap_or_else(|_| "https://alist.dtiku.cn".to_string());
-    static ref STATIC_URL: String =
-        env::var("STATIC_URL").unwrap_or_else(|_| "https://s.dtiku.cn".to_string());
+static ALIST_URL: OnceLock<String> = OnceLock::new();
+static STATIC_URL: OnceLock<String> = OnceLock::new();
+
+/// 获取 Alist API URL
+fn get_alist_url() -> &'static str {
+    ALIST_URL.get_or_init(|| {
+        env::var("ALIST_URL").unwrap_or_else(|_| "https://alist.dtiku.cn".to_string())
+    })
+}
+
+/// 获取静态资源 URL
+fn get_static_url() -> &'static str {
+    STATIC_URL.get_or_init(|| {
+        env::var("STATIC_URL").unwrap_or_else(|_| "https://s.dtiku.cn".to_string())
+    })
 }
 
 pub async fn get_file_path(raw_path: &str, config: &OpenListConfig) -> anyhow::Result<String> {
@@ -31,7 +41,7 @@ pub async fn get_file_path(raw_path: &str, config: &OpenListConfig) -> anyhow::R
     )
     .await?;
 
-    let static_url = STATIC_URL.as_str();
+    let static_url = get_static_url();
     Ok(format!("{static_url}/d{path}?sign={}", resp.data.sign))
 }
 
@@ -43,7 +53,7 @@ async fn get_token(username: &str, password: &str) -> anyhow::Result<Option<Stri
     r.map(|r| Some(r.data.token))
 }
 
-#[post(ALIST_URL, path = "/api/auth/login")]
+#[post("https://alist.dtiku.cn", path = "/api/auth/login")]
 async fn login<'a>(#[body] req: LoginReq<'a>) -> feignhttp::Result<ArtalkResult<LoginResp>> {}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -57,7 +67,7 @@ pub struct LoginResp {
     pub token: String,
 }
 
-#[post(ALIST_URL, path = "/api/fs/get")]
+#[post("https://alist.dtiku.cn", path = "/api/fs/get")]
 async fn get_file_info(
     #[header] authorization: &str,
     #[body] req: FileReq,

@@ -1,13 +1,16 @@
 use anyhow::Context;
 use feignhttp::get;
-use lazy_static::lazy_static;
 use reqwest::header::HeaderMap;
 use serde::Deserialize;
-use std::{collections::HashMap, env};
+use std::{collections::HashMap, env, sync::OnceLock};
 
-lazy_static! {
-    static ref ARTALK_URL: String =
-        env::var("ARTALK_URL").unwrap_or_else(|_| "https://artalk.dtiku.cn/api/v2".to_string());
+static ARTALK_URL: OnceLock<String> = OnceLock::new();
+
+/// 获取 Artalk API URL
+fn get_artalk_url() -> &'static str {
+    ARTALK_URL.get_or_init(|| {
+        env::var("ARTALK_URL").unwrap_or_else(|_| "https://artalk.dtiku.cn/api/v2".to_string())
+    })
 }
 
 /// https://docs.rs/feignhttp
@@ -16,7 +19,7 @@ pub async fn auth_callback(
     provider: &str,
     raw_query: &str,
 ) -> anyhow::Result<String> {
-    let base_url = ARTALK_URL.as_str();
+    let base_url = get_artalk_url();
     let client = reqwest::Client::new();
 
     let mut req = client.get(format!("{base_url}/auth/{provider}/callback?{raw_query}"));
@@ -41,10 +44,10 @@ pub struct StatsResult {
     pub data: HashMap<String, i32>,
 }
 
-#[get(ARTALK_URL, path = "/stats/page_comment")]
+#[get("https://artalk.dtiku.cn/api/v2", path = "/stats/page_comment")]
 async fn page_comment_req(page_keys: String) -> feignhttp::Result<StatsResult> {}
 
-#[get(ARTALK_URL, path = "/stats/page_pv")]
+#[get("https://artalk.dtiku.cn/api/v2", path = "/stats/page_pv")]
 async fn page_pv_req(page_keys: String) -> feignhttp::Result<StatsResult> {}
 
 pub async fn page_comment(page_keys: &Vec<String>) -> HashMap<String, i32> {

@@ -1,13 +1,18 @@
 use crate::model::paper_question;
 use derive_more::Display;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use sea_orm::{prelude::Expr, sea_query::IntoCondition, ColumnTrait};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::sync::OnceLock;
 use strum::{EnumIter, EnumMessage};
 use validator::Validate;
 
-static KEY_POINT_PATH: Lazy<Regex> = Lazy::new(|| Regex::new(r"\d+(.\d+)?").unwrap());
+static KEY_POINT_PATH: OnceLock<Regex> = OnceLock::new();
+
+/// 获取关键点路径正则
+fn get_key_point_path() -> &'static Regex {
+    KEY_POINT_PATH.get_or_init(|| Regex::new(r"\d+(.\d+)?").unwrap())
+}
 
 #[derive(
     Debug,
@@ -47,7 +52,7 @@ pub struct PaperQuestionQuery {
     #[validate(length(min = 1, max = 20))]
     #[serde(default, rename = "pid")]
     pub paper_ids: Vec<i32>,
-    #[validate(regex(path = *KEY_POINT_PATH))]
+    #[validate(regex(path = "get_key_point_path()"))]
     #[serde(default, rename = "kp_path")]
     pub keypoint_path: String,
     #[serde(default, rename = "correct_ratio")]

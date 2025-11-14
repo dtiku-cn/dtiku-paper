@@ -34,8 +34,8 @@ use spring_web::{
 #[post("/api/text_similarity")]
 async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoResponse> {
     let TextCompare { source, target } = q;
-    let source = question::RE_PUNCT.replace_all(&source, "").into_owned();
-    let target = question::RE_PUNCT.replace_all(&target, "").into_owned();
+    let source = question::get_re_punct().replace_all(&source, "").into_owned();
+    let target = question::get_re_punct().replace_all(&target, "").into_owned();
     let bag = textdistance::str::bag(&source, &target);
     let cosine = textdistance::str::cosine(&source, &target);
     let damerau_levenshtein = textdistance::str::damerau_levenshtein(&source, &target);

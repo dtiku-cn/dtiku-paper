@@ -7,7 +7,6 @@ use crate::{
 };
 use anyhow::Context;
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use regex::Regex;
 use scraper::Html;
 use sea_orm::{
@@ -18,6 +17,7 @@ use sea_orm::{
 use serde::{Deserialize, Serialize};
 use spring::tracing;
 use std::collections::HashMap;
+use std::sync::OnceLock;
 use strum::Display;
 
 macro_rules! question_methods {
@@ -638,10 +638,19 @@ impl Entity {
 }
 
 //// 用于内容相似度对比的正则，去掉标点符号等，防止标点差异影响相似度
-lazy_static! {
-    pub static ref RE_PUNCT: Regex =
-        Regex::new(r###"[，,:：；;。\.？?！!、‘’“”\"\'（）()【】\[\]]"###).unwrap();
-    pub static ref RE_WHITESPACE: Regex = Regex::new(r"\s+").unwrap();
+static RE_PUNCT: OnceLock<Regex> = OnceLock::new();
+static RE_WHITESPACE: OnceLock<Regex> = OnceLock::new();
+
+/// 获取标点符号正则
+pub fn get_re_punct() -> &'static Regex {
+    RE_PUNCT.get_or_init(|| {
+        Regex::new(r###"[，,:：；;。\.？?！!、''""\"\'（）()【】\[\]]"###).unwrap()
+    })
+}
+
+/// 获取空白字符正则
+pub fn get_re_whitespace() -> &'static Regex {
+    RE_WHITESPACE.get_or_init(|| Regex::new(r"\s+").unwrap())
 }
 
 impl ActiveModel {
@@ -666,10 +675,10 @@ impl ActiveModel {
                     .root_element()
                     .text()
                     .join("");
-                let s1 = RE_PUNCT
+                let s1 = get_re_punct()
                     .replace_all(&format!("{text_content}\n{q_extra_content}"), "")
                     .into_owned();
-                RE_WHITESPACE.replace_all(&s1, " ").into_owned()
+                get_re_whitespace().replace_all(&s1, " ").into_owned()
             };
             let qs_and_distance = Entity::find_by_embedding(db, embedding_vec).await?;
             for (q, semantic_distance) in qs_and_distance {
@@ -698,10 +707,10 @@ impl ActiveModel {
                         .root_element()
                         .text()
                         .join("");
-                    let s1 = RE_PUNCT
+                    let s1 = get_re_punct()
                         .replace_all(&format!("{content}\n{extra_content}"), "")
                         .into_owned();
-                    RE_WHITESPACE.replace_all(&s1, " ").into_owned()
+                    get_re_whitespace().replace_all(&s1, " ").into_owned()
                 };
                 let q_text_content_length = q_text_content.chars().count();
                 let origin_text_content_length = origin_text_content.chars().count();

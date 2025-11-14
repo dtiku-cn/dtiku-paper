@@ -20,14 +20,12 @@ anyhow = { workspace = true }
 validator = { workspace = true, features = ["derive"] }
 regex = { workspace = true }
 fancy-regex = { workspace = true }
-once_cell = { workspace = true }
 scraper = { workspace = true }
 textdistance = { workspace = true }
 md5 = { workspace = true }
 gaoya = { workspace = true }
 pgvector = { workspace = true }
 sqlx = { workspace = true }
-lazy_static = { workspace = true }
 phf = { workspace = true, features = ["macros"] }
 
 [dev-dependencies]

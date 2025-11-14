@@ -35,7 +35,6 @@ axum-extra = { workspace = true, features = [
 ] }
 axum-client-ip = { workspace = true }
 tower_governor = { workspace = true, features = ["tracing"] }
-lazy_static = { workspace = true }
 jsonwebtoken = { workspace = true }
 derive_more = { workspace = true, features = ["deref", "deref_mut"] }
 sea-orm = { workspace = true, features = ["sqlx-postgres"] }

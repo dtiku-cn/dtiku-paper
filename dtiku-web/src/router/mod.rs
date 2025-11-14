@@ -23,7 +23,6 @@ use dtiku_base::service::system_config::SystemConfigService;
 use dtiku_paper::service::exam_category::ExamCategoryService;
 use http::HeaderValue;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use spring::config::env::Env;
@@ -48,7 +47,7 @@ use spring_web::{
 };
 use std::env;
 use std::net::IpAddr;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tokio::task_local;
 use tower_governor::governor::GovernorConfigBuilder;
@@ -378,9 +377,13 @@ async fn with_context(
     Ok(EXAM_ID.scope(exam_id, next.run(req)).await)
 }
 
-lazy_static! {
-    static ref JWT_SECRET: String =
-        env::var("JWT_SECRET").expect("JWT_SECRET not set in environment");
+static JWT_SECRET: OnceLock<String> = OnceLock::new();
+
+/// 获取 JWT 密钥
+fn get_jwt_secret() -> &'static str {
+    JWT_SECRET.get_or_init(|| {
+        env::var("JWT_SECRET").expect("JWT_SECRET not set in environment")
+    })
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -456,7 +459,7 @@ where
 #[allow(unused)]
 pub fn encode(claims: Claims) -> anyhow::Result<String> {
     let header = Header::new(Algorithm::HS256);
-    let encode_key = EncodingKey::from_secret(JWT_SECRET.as_bytes());
+    let encode_key = EncodingKey::from_secret(get_jwt_secret().as_bytes());
     let token = jsonwebtoken::encode::<Claims>(&header, &claims, &encode_key)
         .map_err(|_| KnownWebError::internal_server_error(error_messages::TOKEN_CREATION_ERROR))?;
 
@@ -466,7 +469,7 @@ pub fn encode(claims: Claims) -> anyhow::Result<String> {
 /// JWT decode
 pub fn decode(token: &str) -> anyhow::Result<Claims> {
     let validation = Validation::new(Algorithm::HS256);
-    let decode_key = DecodingKey::from_secret(JWT_SECRET.as_bytes());
+    let decode_key = DecodingKey::from_secret(get_jwt_secret().as_bytes());
     let token_data =
         jsonwebtoken::decode::<Claims>(&token, &decode_key, &validation).map_err(|e| {
             tracing::error!("{:?}", e);
