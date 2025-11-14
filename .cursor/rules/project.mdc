@@ -18,7 +18,7 @@ alwaysApply: true
 - `dtiku-backend`：后台管理 API，包含 React 管理端源码（`frontend/`）。
 - `dtiku-alist`｜`dtiku-artalk`：对接外部存储与评论系统的网关/适配服务。
 - `proto/`：gRPC 协议定义；需通过 `tonic-build` 生成代码。
-- `sql/`：数据库初始化及重建脚本。
+- `sql/`：数据库初始化及重建脚本。`arroyo`子目录是基于流处理引擎的实时统计SQL
 - 根目录 Dockerfile、`docker-compose.yaml`、`Justfile`：本地开发、打包、模型下载等辅助脚本。
 
 ## 构建与运行
