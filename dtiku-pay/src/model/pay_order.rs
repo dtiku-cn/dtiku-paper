@@ -84,7 +84,26 @@ impl Entity {
         let stmt = Statement::from_sql_and_values(
             db_backend,
             r#"
-            WITH paid_stats AS (
+            WITH date_range AS (
+                SELECT 
+                    COALESCE(
+                        LEAST(
+                            MIN(date_trunc('day', confirm)),
+                            MIN(date_trunc('day', created))
+                        ),
+                        CURRENT_DATE - INTERVAL '30 days'
+                    ) as min_date,
+                    CURRENT_DATE as max_date
+                FROM pay_order
+            ),
+            date_series AS (
+                SELECT generate_series(
+                    (SELECT min_date FROM date_range),
+                    (SELECT max_date FROM date_range),
+                    '1 day'::interval
+                )::timestamp as day
+            ),
+            paid_stats AS (
                 SELECT 
                     date_trunc('day', confirm) as day,
                     COUNT(*) as paid_count,
@@ -106,21 +125,16 @@ impl Entity {
                 FROM pay_order
                 WHERE status = 'created'
                 GROUP BY day
-            ),
-            all_days AS (
-                SELECT day FROM paid_stats
-                UNION
-                SELECT day FROM unpaid_stats
             )
             SELECT 
-                all_days.day,
+                date_series.day,
                 COALESCE(paid_stats.paid_count, 0) as paid_count,
                 COALESCE(paid_stats.paid_amount, 0) as paid_amount,
                 COALESCE(unpaid_stats.unpaid_user_count, 0) as unpaid_user_count
-            FROM all_days
-            LEFT JOIN paid_stats ON all_days.day = paid_stats.day
-            LEFT JOIN unpaid_stats ON all_days.day = unpaid_stats.day
-            ORDER BY all_days.day
+            FROM date_series
+            LEFT JOIN paid_stats ON date_series.day = paid_stats.day
+            LEFT JOIN unpaid_stats ON date_series.day = unpaid_stats.day
+            ORDER BY date_series.day
             "#
             .to_owned(),
             vec![],

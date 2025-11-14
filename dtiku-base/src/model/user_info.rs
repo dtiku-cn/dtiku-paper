@@ -111,10 +111,30 @@ impl Entity {
         let stmt = Statement::from_sql_and_values(
             db_backend,
             r#"
-            SELECT date_trunc('day', created) as day, COUNT(*) as count
-            FROM user_info
-            GROUP BY day
-            ORDER BY day
+            WITH date_range AS (
+                SELECT 
+                    COALESCE(MIN(date_trunc('day', created)), CURRENT_DATE - INTERVAL '30 days') as min_date,
+                    CURRENT_DATE as max_date
+                FROM user_info
+            ),
+            date_series AS (
+                SELECT generate_series(
+                    (SELECT min_date FROM date_range),
+                    (SELECT max_date FROM date_range),
+                    '1 day'::interval
+                )::timestamp as day
+            ),
+            user_stats AS (
+                SELECT date_trunc('day', created) as day, COUNT(*) as count
+                FROM user_info
+                GROUP BY day
+            )
+            SELECT 
+                date_series.day,
+                COALESCE(user_stats.count, 0) as count
+            FROM date_series
+            LEFT JOIN user_stats ON date_series.day = user_stats.day
+            ORDER BY date_series.day
             "#
             .to_owned(),
             vec![],
