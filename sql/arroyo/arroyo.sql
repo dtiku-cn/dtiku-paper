@@ -43,7 +43,7 @@ CREATE TABLE users (
 -- ============ 输出表（Sink） ============
 -- 1. DDoS防护：封禁IP黑名单
 CREATE TABLE redis_block_ip_list (
-    ip TEXT,
+    ip TEXT NOT NULL,
     request_count BIGINT,
     first_seen TIMESTAMP,
     last_seen TIMESTAMP,
@@ -56,13 +56,12 @@ CREATE TABLE redis_block_ip_list (
     target = 'hash',
     'target.key_prefix' = 'block_ip:',
     'target.field_column' = 'ip',
-    'target.ttl' = '3600',  -- 封禁1小时
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 2. 账户安全：异常用户列表
 CREATE TABLE redis_suspicious_users (
-    user_id TEXT,
+    user_id TEXT NOT NULL,
     user_name TEXT,
     request_count BIGINT,
     error_rate DOUBLE,
@@ -77,14 +76,13 @@ CREATE TABLE redis_suspicious_users (
     target = 'hash',
     'target.key_prefix' = 'suspicious_user:',
     'target.field_column' = 'user_id',
-    'target.ttl' = '1800',  -- 保留30分钟
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 3. 流量分析：实时访问统计（每分钟）
 CREATE TABLE redis_traffic_stats (
     metric_type TEXT,  -- 'total', 'by_status', 'by_path'
-    metric_key TEXT,
+    metric_key TEXT NOT NULL,
     value BIGINT,
     window_start TIMESTAMP,
     window_end TIMESTAMP
@@ -96,13 +94,12 @@ CREATE TABLE redis_traffic_stats (
     target = 'hash',
     'target.key_prefix' = 'traffic:stats:',
     'target.field_column' = 'metric_key',
-    'target.ttl' = '300',  -- 保留5分钟
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 4. 智能限流：实时限流配置
 CREATE TABLE redis_rate_limit_config (
-    endpoint TEXT,
+    endpoint TEXT NOT NULL,
     current_qps BIGINT,
     avg_response_time DOUBLE,
     error_rate DOUBLE,
@@ -116,13 +113,12 @@ CREATE TABLE redis_rate_limit_config (
     target = 'hash',
     'target.key_prefix' = 'rate_limit:',
     'target.field_column' = 'endpoint',
-    'target.ttl' = '60',  -- 每分钟更新
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 5. URL热点分析
 CREATE TABLE redis_hot_urls (
-    url_path TEXT,
+    url_path TEXT NOT NULL,
     request_count BIGINT,
     avg_response_size DOUBLE,
     status_4xx_count BIGINT,
@@ -134,10 +130,9 @@ CREATE TABLE redis_hot_urls (
     address = 'redis://redis:6379/0',
     format = 'json',
     type = 'sink',
-    target = 'sorted_set',
-    'target.key' = 'hot_urls',
-    'target.score_field' = 'request_count',
-    'target.ttl' = '600',  -- 保留10分钟
+    target = 'hash',
+    'target.key_prefix' = 'hot_url:',
+    'target.field_column' = 'url_path',
     'json.timestamp_format' = 'RFC3339'
 );
 
