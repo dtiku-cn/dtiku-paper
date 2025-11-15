@@ -179,8 +179,8 @@ FROM (
         REPLACE(remote_user, 'u:', 'user:') as user_key,
         COUNT(*) as request_count,
         SUM(CASE WHEN status >= 400 THEN 1 ELSE 0 END)::DOUBLE / COUNT(*)::DOUBLE as error_rate,
-        HOP_START(INTERVAL '30 seconds', INTERVAL '2 minutes') as window_start,
-        HOP_END(INTERVAL '30 seconds', INTERVAL '2 minutes') as window_end
+        MIN(timestamp) as window_start,
+        MAX(timestamp) as window_end
     FROM nginx_access_log
     WHERE remote_user LIKE 'u:%'  -- 只统计已登录用户
     GROUP BY 
@@ -198,8 +198,8 @@ SELECT
     'total_requests' as metric_type,
     'all' as metric_key,
     COUNT(*) as value,
-    TUMBLE_START(INTERVAL '1 minute') as window_start,
-    TUMBLE_END(INTERVAL '1 minute') as window_end
+    MIN(timestamp) as window_start,
+    MAX(timestamp) as window_end
 FROM nginx_access_log
 GROUP BY TUMBLE(INTERVAL '1 minute');
 
@@ -214,8 +214,8 @@ SELECT
         ELSE '5xx'
     END as metric_key,
     COUNT(*) as value,
-    TUMBLE_START(INTERVAL '1 minute') as window_start,
-    TUMBLE_END(INTERVAL '1 minute') as window_end
+    MIN(timestamp) as window_start,
+    MAX(timestamp) as window_end
 FROM nginx_access_log
 GROUP BY 
     CASE
@@ -232,8 +232,8 @@ SELECT
     'by_host' as metric_type,
     host as metric_key,
     COUNT(*) as value,
-    TUMBLE_START(INTERVAL '1 minute') as window_start,
-    TUMBLE_END(INTERVAL '1 minute') as window_end
+    MIN(timestamp) as window_start,
+    MAX(timestamp) as window_end
 FROM nginx_access_log
 GROUP BY 
     host,
@@ -255,7 +255,7 @@ SELECT
             THEN (COUNT(*) / 60) * 0.7  -- 错误率>5%，限流降至70%
         ELSE (COUNT(*) / 60) * 1.5  -- 正常情况，允许150%的QPS
     END::BIGINT as suggested_limit,
-    TUMBLE_END(INTERVAL '1 minute') as window_time
+    MAX(log_timestamp) as window_time
 FROM (
     SELECT
         -- 提取URL路径（去除query参数）
@@ -265,7 +265,8 @@ FROM (
             ELSE SPLIT_PART(request, ' ', 2)
         END as url_path,
         body_bytes_sent,
-        status
+        status,
+        timestamp as log_timestamp
     FROM nginx_access_log
 ) subquery
 WHERE url_path NOT LIKE '%/static/%'  -- 排除静态资源
@@ -282,8 +283,8 @@ SELECT
     AVG(body_bytes_sent)::DOUBLE as avg_response_size,
     SUM(CASE WHEN status >= 400 AND status < 500 THEN 1 ELSE 0 END) as status_4xx_count,
     SUM(CASE WHEN status >= 500 THEN 1 ELSE 0 END) as status_5xx_count,
-    TUMBLE_START(INTERVAL '5 minutes') as window_start,
-    TUMBLE_END(INTERVAL '5 minutes') as window_end
+    MIN(log_timestamp) as window_start,
+    MAX(log_timestamp) as window_end
 FROM (
     SELECT
         -- 规范化URL路径（聚合相似路径）
@@ -295,7 +296,8 @@ FROM (
             ELSE SPLIT_PART(request, ' ', 2)
         END as url_path,
         body_bytes_sent,
-        status
+        status,
+        timestamp as log_timestamp
     FROM nginx_access_log
 ) parsed_logs
 GROUP BY 
@@ -323,6 +325,8 @@ WHERE
      OR http_user_agent = '')
     AND http_user_agent NOT LIKE '%Googlebot%'  -- 排除合法搜索引擎
     AND http_user_agent NOT LIKE '%Bingbot%'
+    AND http_user_agent NOT LIKE '%Baidu%'
+    AND http_user_agent NOT LIKE '%Sogou%'
     AND http_referer IN ('-', '')  -- 无来源页面
 GROUP BY 
     remote_addr,
