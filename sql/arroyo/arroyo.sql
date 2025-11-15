@@ -25,7 +25,7 @@ CREATE TABLE nginx_access_log (
 
 -- ============ 维度表（Lookup） ============
 -- Redis中的活跃用户信息
-CREATE TABLE users (
+CREATE TEMPORARY TABLE users (
     record_key TEXT METADATA FROM 'key' PRIMARY KEY,
     id INT,
     name TEXT,
@@ -43,6 +43,7 @@ CREATE TABLE users (
 -- ============ 输出表（Sink） ============
 -- 1. DDoS防护：封禁IP黑名单
 CREATE TABLE redis_block_ip_list (
+    host TEXT NOT NULL,
     ip TEXT NOT NULL,
     request_count BIGINT,
     first_seen TIMESTAMP,
@@ -54,13 +55,15 @@ CREATE TABLE redis_block_ip_list (
     format = 'json',
     type = 'sink',
     target = 'hash',
-    'target.key_prefix' = 'block_ip:',
+    'target.key_prefix' = 'traffic:block_ip:',
     'target.field_column' = 'ip',
+    'target.key_column' = 'host',
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 2. 账户安全：异常用户列表
 CREATE TABLE redis_suspicious_users (
+    host TEXT NOT NULL,
     user_id TEXT NOT NULL,
     user_name TEXT,
     request_count BIGINT,
@@ -74,13 +77,15 @@ CREATE TABLE redis_suspicious_users (
     format = 'json',
     type = 'sink',
     target = 'hash',
-    'target.key_prefix' = 'suspicious_user:',
+    'target.key_prefix' = 'traffic:suspicious_user:',
     'target.field_column' = 'user_id',
+    'target.key_column' = 'host',
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 3. 流量分析：实时访问统计（每分钟）
 CREATE TABLE redis_traffic_stats (
+    host TEXT NOT NULL,
     metric_type TEXT,  -- 'total', 'by_status', 'by_path'
     metric_key TEXT NOT NULL,
     value BIGINT,
@@ -94,11 +99,13 @@ CREATE TABLE redis_traffic_stats (
     target = 'hash',
     'target.key_prefix' = 'traffic:stats:',
     'target.field_column' = 'metric_key',
+    'target.key_column' = 'host',
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 4. 智能限流：实时限流配置
 CREATE TABLE redis_rate_limit_config (
+    host TEXT NOT NULL,
     endpoint TEXT NOT NULL,
     current_qps BIGINT,
     avg_response_time DOUBLE,
@@ -111,13 +118,15 @@ CREATE TABLE redis_rate_limit_config (
     format = 'json',
     type = 'sink',
     target = 'hash',
-    'target.key_prefix' = 'rate_limit:',
+    'target.key_prefix' = 'traffic:rate_limit:',
     'target.field_column' = 'endpoint',
+    'target.key_column' = 'host',
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 5. URL热点分析
 CREATE TABLE redis_hot_urls (
+    host TEXT NOT NULL,
     url_path TEXT NOT NULL,
     request_count BIGINT,
     avg_response_size DOUBLE,
@@ -131,8 +140,9 @@ CREATE TABLE redis_hot_urls (
     format = 'json',
     type = 'sink',
     target = 'hash',
-    'target.key_prefix' = 'hot_url:',
+    'target.key_prefix' = 'traffic:hot_url:',
     'target.field_column' = 'url_path',
+    'target.key_column' = 'host',
     'json.timestamp_format' = 'RFC3339'
 );
 
@@ -142,6 +152,7 @@ CREATE TABLE redis_hot_urls (
 -- 检测规则：1分钟内请求超过100次的IP，或10秒内超过30次的IP
 INSERT INTO redis_block_ip_list
 SELECT 
+    host,
     remote_addr as ip,
     COUNT(*) as request_count,
     MIN(timestamp) as first_seen,
@@ -149,6 +160,7 @@ SELECT
     MAX(timestamp) + INTERVAL '1 hour' as block_until
 FROM nginx_access_log
 GROUP BY 
+    host,
     remote_addr,
     HOP(INTERVAL '10 seconds', INTERVAL '1 minute')  -- 滑动窗口：每10秒滑动，窗口1分钟
 HAVING COUNT(*) > 100  -- 1分钟内超过100次请求
@@ -158,6 +170,7 @@ HAVING COUNT(*) > 100  -- 1分钟内超过100次请求
 -- 监控指标：高频请求、高错误率、异常访问模式
 INSERT INTO redis_suspicious_users
 SELECT
+    t.host,
     COALESCE(u.id::TEXT, t.user_key) as user_id,
     COALESCE(u.name, 'Unknown') as user_name,
     t.request_count,
@@ -171,6 +184,7 @@ SELECT
     END as risk_level
 FROM (
     SELECT
+        host,
         REPLACE(remote_user, 'u:', 'user:') as user_key,
         COUNT(*) as request_count,
         SUM(CASE WHEN status >= 400 THEN 1 ELSE 0 END)::DOUBLE / COUNT(*)::DOUBLE as error_rate,
@@ -179,6 +193,7 @@ FROM (
     FROM nginx_access_log
     WHERE remote_user LIKE 'u:%'  -- 只统计已登录用户
     GROUP BY 
+        host,
         remote_user,
         HOP(INTERVAL '30 seconds', INTERVAL '2 minutes')
     HAVING COUNT(*) > 100  -- 2分钟内超过100次请求
@@ -190,17 +205,21 @@ LEFT JOIN users u ON t.user_key = u.record_key;
 -- 3.1 总请求数和流量
 INSERT INTO redis_traffic_stats
 SELECT
+    host,
     'total_requests' as metric_type,
     'all' as metric_key,
     COUNT(*) as value,
     MIN(timestamp) as window_start,
     MAX(timestamp) as window_end
 FROM nginx_access_log
-GROUP BY TUMBLE(INTERVAL '1 minute');
+GROUP BY 
+    host,
+    TUMBLE(INTERVAL '1 minute');
 
 -- 3.2 按状态码分组统计
 INSERT INTO redis_traffic_stats
 SELECT
+    host,
     'by_status' as metric_type,
     CASE
         WHEN status < 300 THEN '2xx'
@@ -213,6 +232,7 @@ SELECT
     MAX(timestamp) as window_end
 FROM nginx_access_log
 GROUP BY 
+    host,
     CASE
         WHEN status < 300 THEN '2xx'
         WHEN status < 400 THEN '3xx'
@@ -224,6 +244,7 @@ GROUP BY
 -- 3.3 按Host分组统计（多租户场景）
 INSERT INTO redis_traffic_stats
 SELECT
+    host,
     'by_host' as metric_type,
     host as metric_key,
     COUNT(*) as value,
@@ -238,6 +259,7 @@ GROUP BY
 -- 根据实时QPS、错误率动态调整限流阈值
 INSERT INTO redis_rate_limit_config
 SELECT
+    host,
     url_path as endpoint,
     COUNT(*) / 60 as current_qps,  -- 每秒请求数（1分钟窗口）
     AVG(body_bytes_sent)::DOUBLE as avg_response_time,  -- 使用响应大小作为性能代理指标
@@ -253,6 +275,7 @@ SELECT
     MAX(log_timestamp) as window_time
 FROM (
     SELECT
+        host,
         -- 提取URL路径（去除query参数）
         CASE
             WHEN POSITION('?' IN SPLIT_PART(request, ' ', 2)) > 0 
@@ -266,6 +289,7 @@ FROM (
 ) subquery
 WHERE url_path NOT LIKE '%/static/%'  -- 排除静态资源
 GROUP BY 
+    host,
     url_path,
     TUMBLE(INTERVAL '1 minute')
 HAVING COUNT(*) > 10;  -- 只统计有一定流量的端点
@@ -273,6 +297,7 @@ HAVING COUNT(*) > 10;  -- 只统计有一定流量的端点
 -- ======== 任务5：URL热点分析 - Top热门访问路径 ========
 INSERT INTO redis_hot_urls
 SELECT
+    host,
     url_path,
     COUNT(*) as request_count,
     AVG(body_bytes_sent)::DOUBLE as avg_response_size,
@@ -282,6 +307,7 @@ SELECT
     MAX(log_timestamp) as window_end
 FROM (
     SELECT
+        host,
         -- 规范化URL路径（聚合相似路径）
         CASE
             WHEN SPLIT_PART(request, ' ', 2) ~ '/paper/[0-9]+' THEN REGEXP_REPLACE(SPLIT_PART(request, ' ', 2), '/[0-9]+', '/:id')
@@ -296,6 +322,7 @@ FROM (
     FROM nginx_access_log
 ) parsed_logs
 GROUP BY 
+    host,
     url_path,
     TUMBLE(INTERVAL '5 minutes')
 HAVING COUNT(*) > 5;  -- 过滤掉冷门URL
@@ -304,6 +331,7 @@ HAVING COUNT(*) > 5;  -- 过滤掉冷门URL
 -- 检测规则：User-Agent特征 + 访问频率 + 无Referer
 INSERT INTO redis_block_ip_list
 SELECT
+    host,
     remote_addr as ip,
     COUNT(*) as request_count,
     MIN(timestamp) as first_seen,
@@ -324,6 +352,7 @@ WHERE
     AND http_user_agent NOT LIKE '%Sogou%'
     AND http_referer IN ('-', '')  -- 无来源页面
 GROUP BY 
+    host,
     remote_addr,
     TUMBLE(INTERVAL '5 minutes')
 HAVING COUNT(*) > 50;  -- 5分钟内超过50次请求的可疑爬虫
