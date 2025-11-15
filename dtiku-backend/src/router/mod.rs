@@ -3,6 +3,7 @@ mod exam;
 mod keypoint;
 mod matviews;
 mod pay;
+mod stats;
 mod task;
 mod test;
 mod user;
