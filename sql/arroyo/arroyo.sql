@@ -55,6 +55,7 @@ CREATE TABLE redis_block_ip_list (
     type = 'sink',
     target = 'hash',
     'target.key_prefix' = 'block_ip:',
+    'target.field_column' = 'ip',
     'target.ttl' = '3600',  -- 封禁1小时
     'json.timestamp_format' = 'RFC3339'
 );
@@ -75,6 +76,7 @@ CREATE TABLE redis_suspicious_users (
     type = 'sink',
     target = 'hash',
     'target.key_prefix' = 'suspicious_user:',
+    'target.field_column' = 'user_id',
     'target.ttl' = '1800',  -- 保留30分钟
     'json.timestamp_format' = 'RFC3339'
 );
@@ -93,6 +95,7 @@ CREATE TABLE redis_traffic_stats (
     type = 'sink',
     target = 'hash',
     'target.key_prefix' = 'traffic:stats:',
+    'target.field_column' = 'metric_key',
     'target.ttl' = '300',  -- 保留5分钟
     'json.timestamp_format' = 'RFC3339'
 );
@@ -112,6 +115,7 @@ CREATE TABLE redis_rate_limit_config (
     type = 'sink',
     target = 'hash',
     'target.key_prefix' = 'rate_limit:',
+    'target.field_column' = 'endpoint',
     'target.ttl' = '60',  -- 每分钟更新
     'json.timestamp_format' = 'RFC3339'
 );
