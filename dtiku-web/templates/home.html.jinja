@@ -58,8 +58,9 @@
                     </svg>
                     <strong>最新{{hp.ty.name}}真题</strong>
                     <div class="flex-grow-1"></div>
-                    {%if hp.sub_papers.is_empty()%}
-                    <a class="btn btn-link d-flex align-items-center text-reset" href="/paper?ty={{hp.ty.prefix}}">
+                    {%if hp.sub_papers.len() <= 1%}
+                    <a class="btn btn-link d-flex align-items-center text-reset" 
+                        href="/paper?ty={%if hp.sub_papers.is_empty()%}{{hp.ty.prefix}}{%else%}{{hp.sub_papers[0].ty.prefix}}{%endif%}">
                         <svg class="icon-svg icon-svg-sm mr-2">
                             <use xlink:href="#ic-more"></use>
                         </svg>
@@ -85,10 +86,14 @@
                     </div>
                     {%endif%}
                 </header>
+                {%if hp.sub_papers.len() <= 1%}
                 {%if hp.sub_papers.is_empty()%}
                 {%call paper::paper_table(&hp.papers)%}
+                {%else%}
+                {%call paper::paper_table(&hp.sub_papers[0].papers)%}
+                {%endif%}
                 <footer class="card-footer">
-                    <a class="card-link" href="/paper?ty={{hp.ty.prefix}}">查看更多</a>
+                    <a class="card-link" href="/paper?ty={%if hp.sub_papers.is_empty()%}{{hp.ty.prefix}}{%else%}{{hp.sub_papers[0].ty.prefix}}{%endif%}">查看更多</a>
                 </footer>
                 {%else%}
                 <div class="tab-content">
@@ -179,6 +184,23 @@
 
     {% call artalk::comment(true,true,true,"来这里吐槽一下试卷😁")%}
     {% call general::footer() %}
+    <script>
+        $(function () {
+            // 处理 dropdown-item 的 active 状态
+            $('.dropdown-menu .dropdown-item[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                // 移除同一 dropdown-menu 中所有 dropdown-item 的 active 类
+                $(e.target).closest('.dropdown-menu').find('.dropdown-item').removeClass('active');
+                // 给当前点击的 dropdown-item 添加 active 类
+                $(e.target).addClass('active');
+            });
+
+            // 初始化时为第一个 tab 对应的 dropdown-item 添加 active 类
+            $('.dropdown-menu').each(function() {
+                var $firstItem = $(this).find('.dropdown-item[data-toggle="tab"]').first();
+                $firstItem.addClass('active');
+            });
+        });
+    </script>
 </body>
 
 </html>
