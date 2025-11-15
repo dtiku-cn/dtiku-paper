@@ -124,13 +124,13 @@ fn domain_matches(domain: &str, allowed_suffixes: &[&str]) -> bool {
 }
 
 /**
- * js反爬虫：
+ * js反爬虫防无JS的直接请求：
  * 1. 浏览器第一次访问，基于当前周(now_week)生成当前server端的dynamic_secret
  * 2. 浏览器通过js脚本生成visitorId，后端基于visitorId做一次校验
  *
- * arroyo流量实时监测，超过阈值加入redis block_ip列表
- * cap验证成功，从列表中移除ip
- * cap验证失败，加入数据库ip黑名单
+ * captcha反爬虫防无头浏览器：
+ * arroyo流量实时监测nginx访问日志，超过阈值加入redis block_ip列表
+ * - cap验证成功，从列表中移除ip
  */
 async fn anti_bot(
     Component(traffic_service): &mut Component<TrafficService>,
@@ -167,33 +167,46 @@ async fn anti_bot(
         return Some(StatusCode::FORBIDDEN.into_response());
     }
 
-    if traffic_service.is_block_ip(original_host, client_ip).await {
-        if let Some(cap_token) = cookies.get("cap-token") {
-            if traffic_service
-                .verify_token(cap_token.value())
-                .await
-                .ok()
-                .unwrap_or(false)
-            {
-                // cap验证成功，从列表中移除ip
-                traffic_service.unblock_ip(original_host, client_ip).await;
-                return None;
-            }
-        }
-
-        tracing::warn!("realtime blocked ip address: {}", client_ip);
-        let html = traffic_service.gen_cap_template().ok()?;
-        return Some((StatusCode::ACCEPTED, Html(html)).into_response());
+    if let Some(resp) = js_anti_bot(cookies, client_ip) {
+        Some(resp)
+    } else {
+        captcha_ant_bot(traffic_service, cookies, client_ip, original_host).await
     }
+}
 
+async fn captcha_ant_bot(
+    traffic_service: &mut TrafficService,
+    cookies: &CookieJar,
+    client_ip: IpAddr,
+    original_host: &str,
+) -> Option<Response> {
+    if !traffic_service.is_block_ip(original_host, client_ip).await {
+        return None;
+    }
+    if let Some(cap_token) = cookies.get("cap-token") {
+        if traffic_service
+            .verify_token(cap_token.value())
+            .await
+            .ok()
+            .unwrap_or(false)
+        {
+            // cap验证成功，从列表中移除ip
+            traffic_service.unblock_ip(original_host, client_ip).await;
+            return None;
+        }
+    }
+    tracing::warn!("realtime blocked ip address: {}", client_ip);
+    let html = traffic_service.gen_cap_template().ok()?;
+    return Some((StatusCode::ACCEPTED, Html(html)).into_response());
+}
+
+fn js_anti_bot(cookies: &CookieJar, client_ip: IpAddr) -> Option<Response> {
     let server_secret = "server-secret";
     let client_ip = client_ip.to_string();
-    let now_week = Utc::now().timestamp() / 60 / 60 / 24 / 7; // 当前周时间戳
-
+    let now_week = Utc::now().timestamp() / 60 / 60 / 24 / 7;
     let mut hasher = Sha256::new();
     hasher.update(format!("{now_week}{client_ip}{server_secret}").as_bytes());
     let dynamic_secret = hex::encode(hasher.finalize());
-
     if let (Some(token), Some(fp)) = (cookies.get("x-anti-token"), cookies.get("x-fp")) {
         // 用 visitorId + dynamic_secret 生成期望 token
         let visitor_id = fp.value();
@@ -206,11 +219,9 @@ async fn anti_bot(
             return None;
         }
     }
-
     let template = AntiBotTemplate {
         server_secret_key: dynamic_secret.as_str(),
     };
-
     let html = template.render().ok()?;
     return Some((StatusCode::ACCEPTED, Html(html)).into_response());
 }
