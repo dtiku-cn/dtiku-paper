@@ -76,7 +76,8 @@
                         </a>
                         <div class="dropdown-menu shadow-sm">
                             {%for sp in hp.sub_papers%}
-                            <a class="dropdown-item" data-toggle="tab" href="#dropdown-content-{{ sp.ty.prefix }}">
+                            <a class="dropdown-item" data-toggle="tab"
+                                href="#dropdown-content-{{ hp.ty.prefix }}-{{ sp.ty.prefix }}">
                                 {{sp.ty.name}}
                             </a>
                             {%endfor%}
@@ -92,7 +93,8 @@
                 {%else%}
                 <div class="tab-content">
                     {% for sp in hp.sub_papers %}
-                    <div role="tabpanel" id="dropdown-content-{{ sp.ty.prefix }}">
+                    <div role="tabpanel" class="tab-pane {% if loop.first %}active{% endif %}"
+                        id="dropdown-content-{{ hp.ty.prefix }}-{{ sp.ty.prefix }}">
                         {%call paper::paper_table(&sp.papers)%}
                         <footer class="card-footer">
                             <a class="card-link" href="/paper?ty={{sp.ty.prefix}}">查看更多</a>
