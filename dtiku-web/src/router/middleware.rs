@@ -48,7 +48,7 @@ pub async fn global_error_page(
             &mut tf_service,
             &sc_service,
             &cookies,
-            user_agent,
+            &user_agent,
             client_ip,
             &original_host,
         )
@@ -136,7 +136,7 @@ async fn anti_bot(
     Component(traffic_service): &mut Component<TrafficService>,
     Component(sc_service): &Component<SystemConfigService>,
     cookies: &CookieJar,
-    user_agent: UserAgent,
+    user_agent: &UserAgent,
     client_ip: IpAddr,
     original_host: &str,
 ) -> Option<Response> {
