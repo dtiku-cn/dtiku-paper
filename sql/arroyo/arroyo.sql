@@ -241,20 +241,6 @@ GROUP BY
     END,
     TUMBLE(INTERVAL '1 minute');
 
--- 3.3 按Host分组统计（多租户场景）
-INSERT INTO redis_traffic_stats
-SELECT
-    host,
-    'by_host' as metric_type,
-    host as metric_key,
-    COUNT(*) as value,
-    MIN(timestamp) as window_start,
-    MAX(timestamp) as window_end
-FROM nginx_access_log
-GROUP BY 
-    host,
-    TUMBLE(INTERVAL '1 minute');
-
 -- ======== 任务4：智能限流 - 实时计算API端点限流配置 ========
 -- 根据实时QPS、错误率动态调整限流阈值
 INSERT INTO redis_rate_limit_config
