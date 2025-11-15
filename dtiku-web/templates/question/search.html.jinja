@@ -54,15 +54,16 @@
                 {% for p in global.paper_types %}
                 {% if let Some(children) = p.children %}
                 <div class="dropdown-submenu">
-                    <a class="dropdown-item dropdown-toggle" href="#">{{ p.name }}</a>
+                    <a class="dropdown-item dropdown-toggle" href="#" title="{{p.name}}">{{ p.name }}</a>
                     <div class="dropdown-menu">
                         {% for sub_type in children %}
-                        <a class="dropdown-item" href="#" value="{{sub_type.id}}">{{ sub_type.name }}</a>
+                        <a class="dropdown-item" href="#" value="{{sub_type.id}}"
+                            title="{{p.name ~ '/' ~ sub_type.name}}">{{ sub_type.name }}</a>
                         {% endfor %}
                     </div>
                 </div>
                 {% else %}
-                <a class="dropdown-item" href="#" value="{{p.id}}">{{ p.name }}</a>
+                <a class="dropdown-item" href="#" value="{{p.id}}" title="{{p.name}}">{{ p.name }}</a>
                 {% endif %}
                 {% endfor %}
             </div>
@@ -108,7 +109,7 @@
         function changeType(e) {
             const $target = $(e.target);
             const value = $target.attr('value');
-            const text = $target.text();
+            const text = $target.attr('title');
             $("#question-type button").attr('value', value).text(text);
         }
 
