@@ -18,9 +18,8 @@ fn get_alist_url() -> &'static str {
 
 /// 获取静态资源 URL
 fn get_static_url() -> &'static str {
-    STATIC_URL.get_or_init(|| {
-        env::var("STATIC_URL").unwrap_or_else(|_| "https://s.dtiku.cn".to_string())
-    })
+    STATIC_URL
+        .get_or_init(|| env::var("STATIC_URL").unwrap_or_else(|_| "https://s.dtiku.cn".to_string()))
 }
 
 pub async fn get_file_path(raw_path: &str, config: &OpenListConfig) -> anyhow::Result<String> {
@@ -53,7 +52,7 @@ async fn get_token(username: &str, password: &str) -> anyhow::Result<Option<Stri
     r.map(|r| Some(r.data.token))
 }
 
-#[post("https://alist.dtiku.cn", path = "/api/auth/login")]
+#[post(url = get_alist_url(), path = "/api/auth/login")]
 async fn login<'a>(#[body] req: LoginReq<'a>) -> feignhttp::Result<ArtalkResult<LoginResp>> {}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -67,7 +66,7 @@ pub struct LoginResp {
     pub token: String,
 }
 
-#[post("https://alist.dtiku.cn", path = "/api/fs/get")]
+#[post(url = get_alist_url(), path = "/api/fs/get")]
 async fn get_file_info(
     #[header] authorization: &str,
     #[body] req: FileReq,

@@ -6,8 +6,8 @@ use anyhow::Context;
 use chrono::{Duration, Local};
 use dtiku_base::model::{user_info, UserInfo};
 use dtiku_pay::model::OrderLevel;
+use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
 use spring::plugin::service::Service;
 use spring_sea_orm::DbConn;
 use spring_web::axum::http;
@@ -21,14 +21,6 @@ pub struct UserService {
 }
 
 impl UserService {
-    pub async fn find_user_by_name(&self, name: &str) -> anyhow::Result<Option<user_info::Model>> {
-        user_info::Entity::find()
-            .filter(user_info::Column::Name.eq(name))
-            .one(&self.db)
-            .await
-            .context("find user by name failed")
-    }
-
     pub async fn auth_callback(
         &self,
         headers: http::HeaderMap,
