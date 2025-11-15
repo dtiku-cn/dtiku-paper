@@ -109,7 +109,7 @@
         function changeType(e) {
             const $target = $(e.target);
             const value = $target.attr('value');
-            const text = $target.attr('title');
+            const text = $target.text();
             $("#question-type button").attr('value', value).text(text);
         }
 
