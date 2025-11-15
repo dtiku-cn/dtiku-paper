@@ -16,7 +16,7 @@
 - **GET `/api/stats/rate-limits`** - 获取智能限流配置
 - **GET `/api/stats/hot-urls`** - 获取热门 URL 访问排行
 
-所有 API 使用 Redis SCAN 命令进行安全的键遍历，避免阻塞 Redis。
+所有 API 使用 Redis HGETALL 命令从固定的 Hash key 中读取数据，高效且不阻塞。
 
 ### 2. 前端监控页面 (`dtiku-backend/frontend/src/pages/RealtimeStats.tsx`)
 
@@ -100,15 +100,35 @@ Nginx 访问日志
 
 ## 数据说明
 
-### Redis 键命名规则
+### Redis 数据结构
 
-根据 `sql/arroyo/arroyo.sql` 中的定义：
+根据 `sql/arroyo/arroyo.sql` 中的定义，所有数据都存储在 Redis Hash 结构中：
 
-- `block_ip:{ip}` - 封禁 IP 哈希表
-- `suspicious_user:{user_id}` - 异常用户哈希表
-- `traffic:stats:{metric_key}` - 流量统计哈希表
-- `rate_limit:{endpoint}` - 限流配置哈希表
-- `hot_url:{url_path}` - 热门 URL 哈希表
+- **Key**: `block_ip:` (固定)
+  - **Hash Field**: IP 地址 (如 `192.168.1.100`)
+  - **Hash Value**: JSON 格式的统计数据 `{"request_count":150,"first_seen":"...","last_seen":"...","block_until":"..."}`
+
+- **Key**: `suspicious_user:` (固定)
+  - **Hash Field**: 用户 ID (如 `user:12345`)
+  - **Hash Value**: JSON 格式的用户行为数据 `{"user_name":"...","request_count":300,"error_rate":0.25,...}`
+
+- **Key**: `traffic:stats:` (固定)
+  - **Hash Field**: 指标键 (如 `2xx`, `3xx`, `4xx`, `5xx`, 或主机名)
+  - **Hash Value**: JSON 格式的流量统计 `{"metric_type":"by_status","value":1234,...}`
+
+- **Key**: `rate_limit:` (固定)
+  - **Hash Field**: API 端点路径 (如 `/api/users`)
+  - **Hash Value**: JSON 格式的限流配置 `{"current_qps":50,"error_rate":0.02,"suggested_limit":75,...}`
+
+- **Key**: `hot_url:` (固定)
+  - **Hash Field**: URL 路径 (如 `/paper/:id`)
+  - **Hash Value**: JSON 格式的访问统计 `{"request_count":5000,"avg_response_size":2048,...}`
+
+这种设计的优势：
+- ✅ 高效：单次 HGETALL 即可获取所有数据
+- ✅ 原子性：Hash 操作保证数据一致性
+- ✅ 节省内存：相比多个独立 key 更节省空间
+- ✅ 易管理：固定 key 便于监控和清理
 
 ### 数据过期策略
 

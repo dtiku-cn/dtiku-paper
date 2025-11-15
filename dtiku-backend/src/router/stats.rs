@@ -70,60 +70,21 @@ pub struct HotUrl {
 /// 获取封禁 IP 列表
 #[get("/api/stats/blocked-ips")]
 async fn get_blocked_ips(Component(mut redis): Component<Redis>) -> Result<impl IntoResponse> {
+    // 直接从固定的 hash key 获取所有数据
+    let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
+        .arg("block_ip:")
+        .query_async(&mut redis)
+        .await
+        .context("Redis HGETALL block_ip failed")?;
+
     let mut blocked_ips = Vec::new();
-    let mut cursor = 0u64;
-
-    // 使用 SCAN 遍历所有 block_ip:* 的 hash key
-    loop {
-        let (new_cursor, keys): (u64, Vec<String>) = spring_redis::redis::cmd("SCAN")
-            .arg(cursor)
-            .arg("MATCH")
-            .arg("block_ip:*")
-            .arg("COUNT")
-            .arg(100)
-            .query_async(&mut redis)
-            .await
-            .context("Redis SCAN block_ip failed")?;
-
-        for key in keys {
-            // 获取 hash 的所有字段
-            let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
-                .arg(&key)
-                .query_async(&mut redis)
-                .await
-                .context("Redis HGETALL failed")?;
-
-            if !data.is_empty() {
-                let mut ip = String::new();
-                let mut request_count = 0i64;
-                let mut first_seen = String::new();
-                let mut last_seen = String::new();
-                let mut block_until = String::new();
-
-                for (field, value) in data {
-                    match field.as_str() {
-                        "ip" => ip = value,
-                        "request_count" => request_count = value.parse().unwrap_or(0),
-                        "first_seen" => first_seen = value,
-                        "last_seen" => last_seen = value,
-                        "block_until" => block_until = value,
-                        _ => {}
-                    }
-                }
-
-                blocked_ips.push(BlockedIp {
-                    ip,
-                    request_count,
-                    first_seen,
-                    last_seen,
-                    block_until,
-                });
-            }
-        }
-
-        cursor = new_cursor;
-        if cursor == 0 {
-            break;
+    
+    // 将扁平的 (field, value) 转换为结构体
+    // 每个 IP 是一个 hash field，value 是 JSON 字符串
+    for (ip, json_str) in data {
+        if let Ok(mut item) = serde_json::from_str::<BlockedIp>(&json_str) {
+            item.ip = ip; // 确保 IP 字段正确
+            blocked_ips.push(item);
         }
     }
 
@@ -138,64 +99,18 @@ async fn get_blocked_ips(Component(mut redis): Component<Redis>) -> Result<impl 
 async fn get_suspicious_users(
     Component(mut redis): Component<Redis>,
 ) -> Result<impl IntoResponse> {
+    let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
+        .arg("suspicious_user:")
+        .query_async(&mut redis)
+        .await
+        .context("Redis HGETALL suspicious_user failed")?;
+
     let mut users = Vec::new();
-    let mut cursor = 0u64;
-
-    loop {
-        let (new_cursor, keys): (u64, Vec<String>) = spring_redis::redis::cmd("SCAN")
-            .arg(cursor)
-            .arg("MATCH")
-            .arg("suspicious_user:*")
-            .arg("COUNT")
-            .arg(100)
-            .query_async(&mut redis)
-            .await
-            .context("Redis SCAN suspicious_user failed")?;
-
-        for key in keys {
-            let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
-                .arg(&key)
-                .query_async(&mut redis)
-                .await
-                .context("Redis HGETALL failed")?;
-
-            if !data.is_empty() {
-                let mut user_id = String::new();
-                let mut user_name = String::new();
-                let mut request_count = 0i64;
-                let mut error_rate = 0.0f64;
-                let mut window_start = String::new();
-                let mut window_end = String::new();
-                let mut risk_level = String::from("low");
-
-                for (field, value) in data {
-                    match field.as_str() {
-                        "user_id" => user_id = value,
-                        "user_name" => user_name = value,
-                        "request_count" => request_count = value.parse().unwrap_or(0),
-                        "error_rate" => error_rate = value.parse().unwrap_or(0.0),
-                        "window_start" => window_start = value,
-                        "window_end" => window_end = value,
-                        "risk_level" => risk_level = value,
-                        _ => {}
-                    }
-                }
-
-                users.push(SuspiciousUser {
-                    user_id,
-                    user_name,
-                    request_count,
-                    error_rate,
-                    window_start,
-                    window_end,
-                    risk_level,
-                });
-            }
-        }
-
-        cursor = new_cursor;
-        if cursor == 0 {
-            break;
+    
+    for (user_id, json_str) in data {
+        if let Ok(mut user) = serde_json::from_str::<SuspiciousUser>(&json_str) {
+            user.user_id = user_id;
+            users.push(user);
         }
     }
 
@@ -217,58 +132,18 @@ async fn get_suspicious_users(
 /// 获取流量统计
 #[get("/api/stats/traffic")]
 async fn get_traffic_stats(Component(mut redis): Component<Redis>) -> Result<impl IntoResponse> {
+    let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
+        .arg("traffic:stats:")
+        .query_async(&mut redis)
+        .await
+        .context("Redis HGETALL traffic failed")?;
+
     let mut stats = Vec::new();
-    let mut cursor = 0u64;
-
-    loop {
-        let (new_cursor, keys): (u64, Vec<String>) = spring_redis::redis::cmd("SCAN")
-            .arg(cursor)
-            .arg("MATCH")
-            .arg("traffic:stats:*")
-            .arg("COUNT")
-            .arg(100)
-            .query_async(&mut redis)
-            .await
-            .context("Redis SCAN traffic failed")?;
-
-        for key in keys {
-            let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
-                .arg(&key)
-                .query_async(&mut redis)
-                .await
-                .context("Redis HGETALL failed")?;
-
-            if !data.is_empty() {
-                let mut metric_type = String::new();
-                let mut metric_key = String::new();
-                let mut value = 0i64;
-                let mut window_start = String::new();
-                let mut window_end = String::new();
-
-                for (field, val) in data {
-                    match field.as_str() {
-                        "metric_type" => metric_type = val,
-                        "metric_key" => metric_key = val,
-                        "value" => value = val.parse().unwrap_or(0),
-                        "window_start" => window_start = val,
-                        "window_end" => window_end = val,
-                        _ => {}
-                    }
-                }
-
-                stats.push(TrafficStats {
-                    metric_type,
-                    metric_key,
-                    value,
-                    window_start,
-                    window_end,
-                });
-            }
-        }
-
-        cursor = new_cursor;
-        if cursor == 0 {
-            break;
+    
+    for (metric_key, json_str) in data {
+        if let Ok(mut stat) = serde_json::from_str::<TrafficStats>(&json_str) {
+            stat.metric_key = metric_key;
+            stats.push(stat);
         }
     }
 
@@ -278,61 +153,18 @@ async fn get_traffic_stats(Component(mut redis): Component<Redis>) -> Result<imp
 /// 获取限流配置
 #[get("/api/stats/rate-limits")]
 async fn get_rate_limits(Component(mut redis): Component<Redis>) -> Result<impl IntoResponse> {
+    let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
+        .arg("rate_limit:")
+        .query_async(&mut redis)
+        .await
+        .context("Redis HGETALL rate_limit failed")?;
+
     let mut configs = Vec::new();
-    let mut cursor = 0u64;
-
-    loop {
-        let (new_cursor, keys): (u64, Vec<String>) = spring_redis::redis::cmd("SCAN")
-            .arg(cursor)
-            .arg("MATCH")
-            .arg("rate_limit:*")
-            .arg("COUNT")
-            .arg(100)
-            .query_async(&mut redis)
-            .await
-            .context("Redis SCAN rate_limit failed")?;
-
-        for key in keys {
-            let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
-                .arg(&key)
-                .query_async(&mut redis)
-                .await
-                .context("Redis HGETALL failed")?;
-
-            if !data.is_empty() {
-                let mut endpoint = String::new();
-                let mut current_qps = 0i64;
-                let mut avg_response_time = 0.0f64;
-                let mut error_rate = 0.0f64;
-                let mut suggested_limit = 0i64;
-                let mut window_time = String::new();
-
-                for (field, val) in data {
-                    match field.as_str() {
-                        "endpoint" => endpoint = val,
-                        "current_qps" => current_qps = val.parse().unwrap_or(0),
-                        "avg_response_time" => avg_response_time = val.parse().unwrap_or(0.0),
-                        "error_rate" => error_rate = val.parse().unwrap_or(0.0),
-                        "suggested_limit" => suggested_limit = val.parse().unwrap_or(0),
-                        "window_time" => window_time = val,
-                        _ => {}
-                    }
-                }
-
-                configs.push(RateLimitConfig {
-                    endpoint,
-                    current_qps,
-                    avg_response_time,
-                    error_rate,
-                    suggested_limit,
-                    window_time,
-                });
-            }
-        }
-
-        cursor = new_cursor;
-        if cursor == 0 {
-            break;
+    
+    for (endpoint, json_str) in data {
+        if let Ok(mut config) = serde_json::from_str::<RateLimitConfig>(&json_str) {
+            config.endpoint = endpoint;
+            configs.push(config);
         }
     }
 
@@ -345,64 +177,18 @@ async fn get_rate_limits(Component(mut redis): Component<Redis>) -> Result<impl 
 /// 获取热门 URL
 #[get("/api/stats/hot-urls")]
 async fn get_hot_urls(Component(mut redis): Component<Redis>) -> Result<impl IntoResponse> {
+    let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
+        .arg("hot_url:")
+        .query_async(&mut redis)
+        .await
+        .context("Redis HGETALL hot_url failed")?;
+
     let mut urls = Vec::new();
-    let mut cursor = 0u64;
-
-    loop {
-        let (new_cursor, keys): (u64, Vec<String>) = spring_redis::redis::cmd("SCAN")
-            .arg(cursor)
-            .arg("MATCH")
-            .arg("hot_url:*")
-            .arg("COUNT")
-            .arg(100)
-            .query_async(&mut redis)
-            .await
-            .context("Redis SCAN hot_url failed")?;
-
-        for key in keys {
-            let data: Vec<(String, String)> = spring_redis::redis::cmd("HGETALL")
-                .arg(&key)
-                .query_async(&mut redis)
-                .await
-                .context("Redis HGETALL failed")?;
-
-            if !data.is_empty() {
-                let mut url_path = String::new();
-                let mut request_count = 0i64;
-                let mut avg_response_size = 0.0f64;
-                let mut status_4xx_count = 0i64;
-                let mut status_5xx_count = 0i64;
-                let mut window_start = String::new();
-                let mut window_end = String::new();
-
-                for (field, val) in data {
-                    match field.as_str() {
-                        "url_path" => url_path = val,
-                        "request_count" => request_count = val.parse().unwrap_or(0),
-                        "avg_response_size" => avg_response_size = val.parse().unwrap_or(0.0),
-                        "status_4xx_count" => status_4xx_count = val.parse().unwrap_or(0),
-                        "status_5xx_count" => status_5xx_count = val.parse().unwrap_or(0),
-                        "window_start" => window_start = val,
-                        "window_end" => window_end = val,
-                        _ => {}
-                    }
-                }
-
-                urls.push(HotUrl {
-                    url_path,
-                    request_count,
-                    avg_response_size,
-                    status_4xx_count,
-                    status_5xx_count,
-                    window_start,
-                    window_end,
-                });
-            }
-        }
-
-        cursor = new_cursor;
-        if cursor == 0 {
-            break;
+    
+    for (url_path, json_str) in data {
+        if let Ok(mut url) = serde_json::from_str::<HotUrl>(&json_str) {
+            url.url_path = url_path;
+            urls.push(url);
         }
     }
 
