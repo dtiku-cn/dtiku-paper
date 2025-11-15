@@ -202,3 +202,9 @@ pub struct ErrorTemplate<'a> {
 pub struct AntiBotTemplate<'a> {
     pub server_secret_key: &'a str,
 }
+
+#[derive(Template)]
+#[template(path = "anti-bot-cap.html.min.jinja")]
+pub struct AntiBotCapTemplate<'a> {
+    pub cap_site_key: &'a str,
+}

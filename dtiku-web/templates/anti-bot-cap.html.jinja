@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>页面加载中...</title>
+    <script src="https://unpkg.com/@cap.js/widget"></script>
+</head>
+
+<body>
+    <cap-widget id="cap" data-cap-api-endpoint="https://cap.dtiku.cn/{{cap_site_key}}/"></cap-widget>
+
+    <script>
+        const widget = document.querySelector("#cap");
+
+        widget.addEventListener("solve", function (e) {
+            const token = e.detail.token;
+            cookies.set("cap-token", token, { path: "/" });
+            window.location.reload();
+        });
+    </script>
+</body>
+
+</html>

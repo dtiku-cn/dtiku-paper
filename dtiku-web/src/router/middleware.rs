@@ -1,5 +1,6 @@
 use crate::plugins::DtikuConfig;
 use crate::router::jwt::OptionalClaims;
+use crate::service::traffic::TrafficService;
 use crate::service::user::UserService;
 use crate::views::{AntiBotTemplate, ErrorTemplate, GlobalVariables};
 use askama::Template;
@@ -25,6 +26,7 @@ use tokio::task_local;
 pub static IGNORE_PREFIX: [&str; 3] = ["/api", "/pay", "/assets"];
 
 pub async fn global_error_page(
+    mut tf_service: Component<TrafficService>,
     ec_service: Component<ExamCategoryService>,
     sc_service: Component<SystemConfigService>,
     us_service: Component<UserService>,
@@ -37,11 +39,21 @@ pub async fn global_error_page(
     req: Request,
     next: Next,
 ) -> Response {
+    let original_host = host.0.clone();
     if !IGNORE_PREFIX
         .iter()
         .any(|prefix| req.uri().path().starts_with(prefix))
     {
-        if let Some(resp) = anti_bot(&sc_service, &cookies, user_agent, client_ip).await {
+        if let Some(resp) = anti_bot(
+            &mut tf_service,
+            &sc_service,
+            &cookies,
+            user_agent,
+            client_ip,
+            &original_host,
+        )
+        .await
+        {
             return resp;
         }
     }
@@ -50,7 +62,6 @@ pub async fn global_error_page(
         .map(|x_fp_id| x_fp_id.value())
         .map(|x_fp_id| format!("fp:{x_fp_id}"))
         .unwrap_or("".to_string());
-    let original_host = host.0.clone();
     let resp = match with_context(
         &ec_service,
         &sc_service,
@@ -116,12 +127,18 @@ fn domain_matches(domain: &str, allowed_suffixes: &[&str]) -> bool {
  * js反爬虫：
  * 1. 浏览器第一次访问，基于当前周(now_week)生成当前server端的dynamic_secret
  * 2. 浏览器通过js脚本生成visitorId，后端基于visitorId做一次校验
+ *
+ * arroyo流量实时监测，超过阈值加入redis block_ip列表
+ * cap验证成功，从列表中移除ip
+ * cap验证失败，加入数据库ip黑名单
  */
 async fn anti_bot(
+    Component(traffic_service): &mut Component<TrafficService>,
     Component(sc_service): &Component<SystemConfigService>,
     cookies: &CookieJar,
     user_agent: UserAgent,
     client_ip: IpAddr,
+    original_host: &str,
 ) -> Option<Response> {
     let seo_user_agents = sc_service.parsed_seo_user_agents().await;
     if seo_user_agents
@@ -148,6 +165,25 @@ async fn anti_bot(
     if ip_blacklist.iter().any(|net| net.contains(&client_ip)) {
         tracing::warn!("blocked ip address: {}", client_ip);
         return Some(StatusCode::FORBIDDEN.into_response());
+    }
+
+    if traffic_service.is_block_ip(original_host, client_ip).await {
+        if let Some(cap_token) = cookies.get("cap-token") {
+            if traffic_service
+                .verify_token(cap_token.value())
+                .await
+                .ok()
+                .unwrap_or(false)
+            {
+                // cap验证成功，从列表中移除ip
+                traffic_service.unblock_ip(original_host, client_ip).await;
+                return None;
+            }
+        }
+
+        tracing::warn!("realtime blocked ip address: {}", client_ip);
+        let html = traffic_service.gen_cap_template().ok()?;
+        return Some((StatusCode::ACCEPTED, Html(html)).into_response());
     }
 
     let server_secret = "server-secret";

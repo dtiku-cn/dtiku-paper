@@ -44,10 +44,10 @@ pub struct StatsResult {
     pub data: HashMap<String, i32>,
 }
 
-#[get("https://artalk.dtiku.cn/api/v2", path = "/stats/page_comment")]
+#[get(url = get_artalk_url(), path = "/stats/page_comment")]
 async fn page_comment_req(page_keys: String) -> feignhttp::Result<StatsResult> {}
 
-#[get("https://artalk.dtiku.cn/api/v2", path = "/stats/page_pv")]
+#[get(url = get_artalk_url(), path = "/stats/page_pv")]
 async fn page_pv_req(page_keys: String) -> feignhttp::Result<StatsResult> {}
 
 pub async fn page_comment(page_keys: &Vec<String>) -> HashMap<String, i32> {

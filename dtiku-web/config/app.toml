@@ -73,3 +73,5 @@ alipay_callback_url = "${ALIPAY_CALLBACK_URL:https://p.dtiku.cn/pay/alipay/callb
 
 [dtiku]
 strip_prefix = "${DTIKU_STRIP_PREFIX}"
+cap_site_key = "${CAP_SITE_KEY:322cf31509}"
+cap_secret_key = "${CAP_SECRET_KEY:cLZdestGUplG8VRaj7xKALsNAiIhSDTtEq34uVx9IsgIxuzXPDYig}"
