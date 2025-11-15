@@ -58,7 +58,7 @@
                     </svg>
                     <strong>最新{{hp.ty.name}}真题</strong>
                     <div class="flex-grow-1"></div>
-                    {%if 1 >= hp.sub_papers.len()%}
+                    {%if 2 > hp.sub_papers.len()%}
                     <a class="btn btn-link d-flex align-items-center text-reset" 
                         href="/paper?ty={%if hp.sub_papers.is_empty()%}{{hp.ty.prefix}}{%else%}{{hp.sub_papers[0].ty.prefix}}{%endif%}">
                         <svg class="icon-svg icon-svg-sm mr-2">
@@ -86,7 +86,7 @@
                     </div>
                     {%endif%}
                 </header>
-                {%if hp.sub_papers.len() <= 1%}
+                {%if 2 > hp.sub_papers.len()%}
                 {%if hp.sub_papers.is_empty()%}
                 {%call paper::paper_table(&hp.papers)%}
                 {%else%}
