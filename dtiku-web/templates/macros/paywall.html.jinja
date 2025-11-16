@@ -16,3 +16,22 @@
 </div>
 {% endmacro paywall_content %}
 
+{# 新版本的 macro，直接在模板中截断 HTML #}
+{% macro paywall_with_truncate(content, is_logged_in, max_chars=300) %}
+<div class="position-relative pb-4 paywall-preview">
+    {{content|truncate_html(max_chars)|safe}}
+</div>
+<div class="card mt-3 paywall-card">
+    <div class="card-body text-center py-4">
+        <svg class="icon-svg mb-3" style="width: 3rem; height: 3rem; opacity: 0.7;">
+            <use xlink:href="{%if is_logged_in%}#ic-diamond{%else%}#ic-user{%endif%}"></use>
+        </svg>
+        <h4 class="card-title h5 mb-3">{%if is_logged_in%}成为赞助会员查看完整内容{%else%}登录后查看完整内容{%endif%}</h4>
+        <p class="card-text text-muted mb-4">这是一篇优质内容，需要{%if is_logged_in%}赞助会员{%else%}登录{%endif%}才能查看完整版本</p>
+        <a class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm" href="#{%if is_logged_in%}payModal{%else%}loginModal{%endif%}" data-toggle="modal">
+            {%if is_logged_in%}立即赞助{%else%}立即登录{%endif%}
+        </a>
+    </div>
+</div>
+{% endmacro paywall_with_truncate %}
+

@@ -4,7 +4,7 @@ use crate::{
     router::error_messages,
     service::issue::IssueService,
     views::{
-        bbs::{FullIssue, IssueEditorTemplate, IssueTemplate, ListIssueTemplate, PaywallContentTemplate},
+        bbs::{IssueContentTemplate, IssueEditorTemplate, IssueTemplate, ListIssueTemplate},
         GlobalVariables,
     },
 };
@@ -94,25 +94,18 @@ async fn issue_detail(
     Extension(global): Extension<GlobalVariables>,
     Query(req): Query<IssueDetailReq>,
 ) -> Result<impl IntoResponse> {
+    let issue = is
+        .find_issue_by_id(id)
+        .await?
+        .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
+    
     let html = if req.html {
-        // AJAX请求：返回HTML片段
-        let (html, author_id, is_paid) = is
-            .find_issue_html_with_author(id)
-            .await?
-            .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
-        
-        let access_control = AccessControl::from_global(&global, author_id, is_paid);
-        access_control.apply_paywall_to_html(&html)?
+        // AJAX请求：返回HTML片段，使用简单模板渲染付费墙逻辑
+        IssueContentTemplate { global, issue }
+            .render()
+            .context("render issue content failed")?
     } else {
-        // 完整页面请求
-        let mut issue = is
-            .find_issue_by_id(id)
-            .await?
-            .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
-        
-        let access_control = AccessControl::from_global(&global, issue.user_id, issue.paid);
-        access_control.apply_paywall_to_issue(&mut issue);
-        
+        // 完整页面请求，让模板控制付费墙逻辑
         IssueTemplate { global, issue }
             .render()
             .context("render failed")?
@@ -121,82 +114,6 @@ async fn issue_detail(
     Ok(Html(html))
 }
 
-/// 访问控制辅助结构
-struct AccessControl {
-    has_access: bool,
-    is_logged_in: bool,
-    is_paid_content: bool,
-}
-
-impl AccessControl {
-    /// 从全局变量创建访问控制
-    /// author_id: 帖子作者的用户ID
-    /// is_paid: 是否为付费内容
-    fn from_global(global: &GlobalVariables, author_id: i32, is_paid: bool) -> Self {
-        let is_logged_in = global.user.is_some();
-        
-        // 检查用户是否有访问权限：
-        // 1. 用户已付费（未过期）
-        // 2. 或者当前用户就是帖子作者
-        let has_access = global.user.as_ref()
-            .map(|u| !u.is_expired() || u.id == author_id)
-            .unwrap_or(false);
-        
-        Self { 
-            has_access, 
-            is_logged_in,
-            is_paid_content: is_paid,
-        }
-    }
-    
-    /// 对HTML内容应用付费墙（用于AJAX请求）
-    fn apply_paywall_to_html(&self, html: &str) -> Result<String> {
-        // 只有付费内容才需要检查付费墙
-        if !self.is_paid_content {
-            return Ok(html.to_string());
-        }
-        
-        if self.has_access {
-            return Ok(html.to_string());
-        }
-        
-        apply_html_paywall(html, self.is_logged_in)
-    }
-    
-    /// 对Issue对象应用付费墙（用于完整页面）
-    fn apply_paywall_to_issue(&self, issue: &mut FullIssue) {
-        // 只有付费内容才需要应用付费墙
-        if self.is_paid_content && !self.has_access {
-            issue.truncate_html();
-        }
-    }
-}
-
-/// 对HTML应用付费墙：截断内容并添加付费墙UI
-fn apply_html_paywall(html: &str, is_logged_in: bool) -> Result<String> {
-    use crate::views::bbs::truncate_html_by_text_length;
-    use scraper::Html;
-    
-    const PREVIEW_TEXT_LENGTH: usize = 300;
-    
-    // 检查是否需要截断
-    let fragment = Html::parse_fragment(html);
-    let full_text: String = fragment.root_element().text().collect();
-    
-    if full_text.chars().count() <= PREVIEW_TEXT_LENGTH {
-        return Ok(html.to_string());
-    }
-    
-    // 截断并渲染付费墙UI
-    let truncated = truncate_html_by_text_length(html, PREVIEW_TEXT_LENGTH);
-    
-    Ok(PaywallContentTemplate {
-        content: truncated,
-        is_logged_in,
-    }
-    .render()
-    .context("render paywall template failed")?)
-}
 
 #[post("/bbs/issue/{id}")]
 async fn update_issue(
