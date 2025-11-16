@@ -356,45 +356,6 @@ ${text}
         $(function () {
             rerender_collect_toc();
             
-            // 记住折叠状态
-            const STORAGE_KEY = 'toc_collapsed_state_' + window.location.pathname;
-            
-            function saveCollapsedState() {
-                const collapsed = {};
-                $('#collect-toc .collapse').each(function() {
-                    const id = $(this).attr('id');
-                    collapsed[id] = $(this).hasClass('show');
-                });
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(collapsed));
-                } catch (e) {
-                    console.warn('无法保存目录状态:', e);
-                }
-            }
-            
-            function restoreCollapsedState() {
-                try {
-                    const stored = localStorage.getItem(STORAGE_KEY);
-                    if (stored) {
-                        const collapsed = JSON.parse(stored);
-                        Object.keys(collapsed).forEach(id => {
-                            if (collapsed[id]) {
-                                $('#' + id).addClass('show');
-                                $(`a[aria-controls="${id}"]`).attr('aria-expanded', 'true');
-                            }
-                        });
-                    }
-                } catch (e) {
-                    console.warn('无法恢复目录状态:', e);
-                }
-            }
-            
-            // 恢复折叠状态
-            restoreCollapsedState();
-            
-            // 监听折叠状态变化
-            $('#collect-toc .collapse').on('shown.bs.collapse hidden.bs.collapse', saveCollapsedState);
-            
             // 高亮当前激活项（使用 Bootstrap active 类）
             function highlightActiveItem(href) {
                 $('#collect-toc .nav-link').removeClass('active');
