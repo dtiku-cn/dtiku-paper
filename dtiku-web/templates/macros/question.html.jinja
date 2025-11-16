@@ -36,11 +36,7 @@
 
 {% macro question_solution(q) %}
 <ul class="nav nav-tabs mt-2" role="tablist">
-    {% if !global.config.show_solution || global.user.is_none() || global.user_is_expired() %}
-    <li role="presentation" class="nav-item">
-        <a class="nav-link active" role="tab" data-toggle="tab" href="#solution-{{q.id}}-login">参考答案</a>
-    </li>
-    {%else if let Some(solutions) = q.solutions %}
+    {%if let Some(solutions) = q.solutions%}
     {%for s in solutions%}
     <li role="presentation" class="nav-item">
         <a class="nav-link {%if loop.index==1%}active{%endif%}" role="tab" data-toggle="tab"
@@ -62,18 +58,18 @@
     {%endif%}
 </ul>
 <div class="tab-content card">
-    {% if !global.config.show_solution || global.user.is_none() || global.user_is_expired() %}
-    <div id="solution-{{q.id}}-login" class="solution tab-pane card-body bg-light active" role="tabpanel">
+    {%if let Some(solutions) = q.solutions %}
+    {%for s in solutions%}
+    <div role="tabpanel" id="solution-{{q.id}}-{{s.id}}"
+        class="{{s.from_ty}}-solution solution tab-pane card-body bg-light {%if loop.index==1%}active{%else%}fade{%endif%}">
+        {% if !global.config.show_solution || global.user.is_none() || global.user_is_expired() %}
         <a class="btn btn-link btn-block" href="#{%if global.user.is_none()%}loginModal{%else%}payModal{%endif%}"
             data-toggle="modal">
             {%if global.user.is_none()%}请先登录{%else%}网站赞助{%endif%}
         </a>
-    </div>
-    {%else if let Some(solutions) = q.solutions %}
-    {%for s in solutions%}
-    <div role="tabpanel" id="solution-{{q.id}}-{{s.id}}"
-        class="{{s.from_ty}}-solution solution tab-pane card-body bg-light {%if loop.index==1%}active{%else%}fade{%endif%}">
+        {%else%}
         {{s.extra.get_full_html() | safe}}
+        {%endif%}
     </div>
     {%endfor%}
     {%endif%}
