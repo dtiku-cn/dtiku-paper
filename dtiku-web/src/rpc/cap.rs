@@ -1,5 +1,5 @@
 use anyhow::Context;
-use feignhttp::get;
+use feignhttp::post;
 use serde::{Deserialize, Serialize};
 use std::{env, sync::OnceLock};
 
@@ -24,7 +24,7 @@ pub struct VerifyResult {
     pub success: bool,
 }
 
-#[get(url = get_captcha_url(), path = "/{site_key}/siteverify")]
+#[post(url = get_captcha_url(), path = "/{site_key}/siteverify")]
 async fn site_verify_req(
     site_key: String,
     #[body] req: VerifyReq,

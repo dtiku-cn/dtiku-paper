@@ -190,6 +190,7 @@ async fn captcha_ant_bot(
             .ok()
             .unwrap_or(false)
         {
+            tracing::info!("verify cap-token successful: {}", cap_token.value());
             // cap验证成功，从列表中移除ip
             traffic_service.unblock_ip(original_host, client_ip).await;
             return None;
