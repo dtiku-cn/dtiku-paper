@@ -17,6 +17,7 @@ create table if not exists issue(
     user_id int not null,
     pin bool not null default false,
     collect bool not null default false,
+    paid bool not null default false,
     created timestamp not null,
     modified timestamp not null
 );

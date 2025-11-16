@@ -78,6 +78,7 @@ async fn submit_issue(
         markdown: Set(req.markdown),
         html: Set(req.html),
         user_id: Set(claims.user_id),
+        paid: Set(req.paid),
         ..Default::default()
     }
     .insert(&db)
@@ -95,12 +96,12 @@ async fn issue_detail(
 ) -> Result<impl IntoResponse> {
     let html = if req.html {
         // AJAX请求：返回HTML片段
-        let (html, author_id) = is
+        let (html, author_id, is_paid) = is
             .find_issue_html_with_author(id)
             .await?
             .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
         
-        let access_control = AccessControl::from_global(&global, author_id);
+        let access_control = AccessControl::from_global(&global, author_id, is_paid);
         access_control.apply_paywall_to_html(&html)?
     } else {
         // 完整页面请求
@@ -109,7 +110,7 @@ async fn issue_detail(
             .await?
             .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
         
-        let access_control = AccessControl::from_global(&global, issue.user_id);
+        let access_control = AccessControl::from_global(&global, issue.user_id, issue.paid);
         access_control.apply_paywall_to_issue(&mut issue);
         
         IssueTemplate { global, issue }
@@ -124,12 +125,14 @@ async fn issue_detail(
 struct AccessControl {
     has_access: bool,
     is_logged_in: bool,
+    is_paid_content: bool,
 }
 
 impl AccessControl {
     /// 从全局变量创建访问控制
     /// author_id: 帖子作者的用户ID
-    fn from_global(global: &GlobalVariables, author_id: i32) -> Self {
+    /// is_paid: 是否为付费内容
+    fn from_global(global: &GlobalVariables, author_id: i32, is_paid: bool) -> Self {
         let is_logged_in = global.user.is_some();
         
         // 检查用户是否有访问权限：
@@ -139,11 +142,20 @@ impl AccessControl {
             .map(|u| !u.is_expired() || u.id == author_id)
             .unwrap_or(false);
         
-        Self { has_access, is_logged_in }
+        Self { 
+            has_access, 
+            is_logged_in,
+            is_paid_content: is_paid,
+        }
     }
     
     /// 对HTML内容应用付费墙（用于AJAX请求）
     fn apply_paywall_to_html(&self, html: &str) -> Result<String> {
+        // 只有付费内容才需要检查付费墙
+        if !self.is_paid_content {
+            return Ok(html.to_string());
+        }
+        
         if self.has_access {
             return Ok(html.to_string());
         }
@@ -153,7 +165,8 @@ impl AccessControl {
     
     /// 对Issue对象应用付费墙（用于完整页面）
     fn apply_paywall_to_issue(&self, issue: &mut FullIssue) {
-        if !self.has_access {
+        // 只有付费内容才需要应用付费墙
+        if self.is_paid_content && !self.has_access {
             issue.truncate_html();
         }
     }
@@ -199,6 +212,7 @@ async fn update_issue(
         markdown: Set(req.markdown),
         html: Set(req.html),
         user_id: Unchanged(claims.user_id),
+        paid: Set(req.paid),
         ..Default::default()
     }
     .update(&db)

@@ -26,6 +26,8 @@ pub struct ListIssue {
     pub pin: bool,
     #[sea_orm(from_col = "collect")]
     pub collect: bool,
+    #[sea_orm(from_col = "paid")]
+    pub paid: bool,
     #[sea_orm(from_col = "created")]
     pub created: DateTime,
     #[sea_orm(from_col = "modified")]

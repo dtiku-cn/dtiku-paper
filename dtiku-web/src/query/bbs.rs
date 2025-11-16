@@ -7,6 +7,8 @@ pub struct IssueReq {
     pub title: String,
     pub markdown: String,
     pub html: String,
+    #[serde(default)]
+    pub paid: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -14,6 +14,7 @@ pub struct Model {
     pub topic: TopicType,
     pub pin: bool,
     pub collect: bool,
+    pub paid: bool,
 
     // --- 大字段放后面，连续排布 ---
     pub created: DateTime,

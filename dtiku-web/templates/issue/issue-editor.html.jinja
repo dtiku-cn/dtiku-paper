@@ -52,6 +52,17 @@
                     value="{%if let Some(i)=issue%}{{i.title}}{%endif%}" required>
                 <div class='tooltip-title invalid-tooltip'>不能为空</div>
                 <div class="input-group-append">
+                    <div class="input-group-text">
+                        {% if let Some(i)=issue %}{% if i.paid %}
+                        <input type="checkbox" name="paid" value="true" checked />
+                        {% else %}
+                        <input type="checkbox" name="paid" value="true" />
+                        {% endif %}
+                        {% else %}
+                        <input type="checkbox" name="paid" value="true" />
+                        {% endif %}
+                        <label class="ml-1 mb-0" style="cursor: pointer;">付费</label>
+                    </div>
                     <input id="preview" type="button" class="btn btn-success" value="预览" />
                     <input id="submit" type="submit" class="btn btn-primary d-none" value="提交" />
                 </div>
