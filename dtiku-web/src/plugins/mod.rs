@@ -19,4 +19,6 @@ pub struct DtikuConfig {
     pub(crate) cap_site_key: String,
     #[serde(default)]
     pub(crate) cap_secret_key: String,
+    #[serde(default)]
+    pub(crate) cap_custom_wasm_url: Option<String>,
 }

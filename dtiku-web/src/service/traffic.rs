@@ -27,6 +27,7 @@ impl TrafficService {
     pub fn gen_cap_template(&self) -> anyhow::Result<String> {
         let template = AntiBotCapTemplate {
             cap_site_key: self.config.cap_site_key.as_str(),
+            cap_custom_wasm_url: &self.config.cap_custom_wasm_url,
         };
         template.render().context("generate cap template failed")
     }

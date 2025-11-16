@@ -6,6 +6,11 @@
     <title>页面加载中...</title>
     <script src="https://unpkg.com/@cap.js/widget"></script>
     <script src="/static/vendor/js-cookie-3.0.5/js.cookie.min.js"></script>
+    {%if let Some(cap_custom_wasm_url) = cap_custom_wasm_url %}
+    <script>
+        window.CAP_CUSTOM_WASM_URL = "{{cap_custom_wasm_url}}";
+    </script>
+    {% endif %}
     <style>
         body {
             margin: 0;

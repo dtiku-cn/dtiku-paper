@@ -27,6 +27,7 @@ impl IssueService {
                 user_id: list_issue.user_id,
                 topic: list_issue.topic,
                 pin: list_issue.pin,
+                paid: list_issue.paid,
                 collect: list_issue.collect,
                 created: list_issue.created,
                 modified: list_issue.modified,

@@ -207,4 +207,5 @@ pub struct AntiBotTemplate<'a> {
 #[template(path = "anti-bot-cap.html.min.jinja")]
 pub struct AntiBotCapTemplate<'a> {
     pub cap_site_key: &'a str,
+    pub cap_custom_wasm_url: &'a Option<String>,
 }
