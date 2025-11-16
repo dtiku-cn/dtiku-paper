@@ -2003,6 +2003,7 @@ dependencies = [
  "pulldown-cmark",
  "reqwest 0.12.24",
  "rustls",
+ "scraper",
  "sea-orm",
  "serde",
  "serde_html_form",

@@ -2,6 +2,7 @@
 {%- import "macros/artalk.html.min.jinja" as artalk -%}
 {%- import "macros/painter.html.min.jinja" as painter -%}
 {%- import "macros/issue.html.min.jinja" as issue -%}
+{%- import "macros/paywall.html.jinja" as paywall -%}
 <!doctype html>
 <html lang="zh">
 
@@ -117,6 +118,73 @@
             justify-content: center;
             z-index: 4;
         }
+
+        /* 付费墙样式 */
+        .paywall-preview {
+            position: relative;
+            padding-bottom: 2rem;
+        }
+
+        .paywall-preview::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.95) 40%, rgba(255, 255, 255, 1) 70%);
+            pointer-events: none;
+        }
+
+        .paywall-overlay {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+        }
+
+        .paywall-content {
+            text-align: center;
+            padding: 1.5rem 2rem;
+        }
+
+        .paywall-content .icon-svg-lg {
+            width: 3rem;
+            height: 3rem;
+            opacity: 0.6;
+        }
+
+        .paywall-content h4 {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .paywall-content p {
+            font-size: 0.9rem;
+            margin-bottom: 1rem !important;
+            color: #6c757d;
+        }
+
+        .paywall-content .btn {
+            padding: 0.6rem 2rem;
+            font-size: 1rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .paywall-content .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        @media print {
+            .paywall-overlay, .paywall-preview::after {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 
@@ -155,10 +223,22 @@
                 <div id="collect-toc">{{issue.toc | markdown | safe}}</div>
             </aside>
             <button id="toggle-side" class="sidebar-handle d-none d-sm-block d-print-none" title="收起/展开侧边栏">⟨</button>
-            <div id="toc" class="card-body vditor-reset">{{issue.html|safe}}</div>
+            <div id="toc" class="card-body vditor-reset">
+                {% if global.user.is_none() || global.user_is_expired() %}
+                {% call paywall::paywall_content(issue.html, global.user.is_some()) %}
+                {%else%}
+                {{issue.html|safe}}
+                {%endif%}
+            </div>
         </div>
         {%else%}
-        <div id="toc" class="card-body vditor-reset">{{issue.html|safe}}</div>
+        <div id="toc" class="card-body vditor-reset">
+            {% if global.user.is_none() || global.user_is_expired() %}
+            {% call paywall::paywall_content(issue.html, global.user.is_some()) %}
+            {%else%}
+            {{issue.html|safe}}
+            {%endif%}
+        </div>
         {%endif%}
         <footer class="card-footer d-flex align-items-center d-print-none">
             <div class="d-flex align-items-center mr-auto">

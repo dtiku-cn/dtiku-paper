@@ -1,0 +1,18 @@
+{% macro paywall_content(content, is_logged_in) %}
+<div class="paywall-preview">
+    {{content|safe}}
+</div>
+<div class="paywall-overlay">
+    <div class="paywall-content">
+        <svg class="icon-svg icon-svg-lg">
+            <use xlink:href="{%if is_logged_in%}#ic-diamond{%else%}#ic-user{%endif%}"></use>
+        </svg>
+        <h4>{%if is_logged_in%}成为赞助会员查看完整内容{%else%}登录后查看完整内容{%endif%}</h4>
+        <p>这是一篇优质内容，需要{%if is_logged_in%}赞助会员{%else%}登录{%endif%}才能查看完整版本</p>
+        <a class="btn btn-primary" href="#{%if is_logged_in%}payModal{%else%}loginModal{%endif%}" data-toggle="modal">
+            {%if is_logged_in%}立即赞助{%else%}立即登录{%endif%}
+        </a>
+    </div>
+</div>
+{% endmacro paywall_content %}
+
