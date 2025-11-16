@@ -210,39 +210,12 @@
             <button id="toggle-side" class="sidebar-handle border-left d-none d-sm-block d-print-none" title="收起/展开侧边栏"
                 aria-label="切换侧边栏">⟨</button>
             <div id="toc" class="card-body vditor-reset">
-                {# 不需要付费的帖子直接显示 #}
-                {%if !issue.paid%}
-                {{issue.html|safe}}
-                {# 已登录用户 #}
-                {%elif let Some(u)=global.user%}
-                    {# 会员过期且不是作者自己：显示付费墙 #}
-                    {%if u.is_expired() && issue.user_id != u.id %}
-                    {%call paywall::paywall_with_truncate(issue.html, false, 300) %}
-                    {# 会员未过期或作者自己：显示完整内容 #}
-                    {%else%}
-                    {{issue.html|safe}}
-                    {%endif%}
-                {# 未登录用户：显示付费墙 #}
-                {%else%}
-                {%call paywall::paywall_with_truncate(issue.html, true, 300) %}
-                {%endif%}
+                {%call paywall::render_paid_content(issue, global, 300) %}
             </div>
         </div>
         {%else%}
         <div id="toc" class="card-body vditor-reset">
-            {# 不需要付费的帖子直接显示 #}
-            {%if !issue.paid%}
-            {{issue.html|safe}}
-            {# 已登录但会员过期：显示付费墙 #}
-            {%elif global.user.is_some() && global.user_is_expired()%}
-            {%call paywall::paywall_with_truncate(issue.html, false, 300) %}
-            {# 未登录：显示未登录用户付费墙 #}
-            {%elif global.user.is_none()%}
-            {%call paywall::paywall_with_truncate(issue.html, true, 300) %}
-            {# 会员未过期：显示完整内容 #}
-            {%else%}
-            {{issue.html|safe}}
-            {%endif%}
+            {%call paywall::render_paid_content(issue, global, 300) %}
         </div>
         {%endif%}
         <footer class="card-footer d-flex align-items-center d-print-none">
