@@ -42,7 +42,6 @@
 
         #collect-container.collapsed #collect-side {
             margin-left: -280px;
-            height: 100%;
         }
 
         #collect-container.collapsed #toggle-side {
@@ -88,9 +87,8 @@
 
         #collect-toc .nav-link.active {
             color: var(--primary);
-            background: var(--light);
             font-weight: 600;
-            border-left: 3px solid var(--primary);
+            box-shadow: inset 3px 0px 0px var(--primary);
         }
 
         /* 隐藏 Bootstrap dropdown-toggle 默认的右侧箭头 */
@@ -120,6 +118,20 @@
         /* 子级添加缩进 */
         #collect-toc .collapse {
             margin-left: 1rem;
+        }
+
+        #collect-toc .ml-3:before {
+            content: '';
+            display: block;
+            border-left: 1px solid #dee2e6;
+            position: absolute;
+            left: -7px;
+            top: 0;
+            bottom: 0;
+        }
+
+        #collect-toc .ml-3 {
+            position: relative;
         }
 
         /* 加载蒙层 */
