@@ -6,13 +6,49 @@
     <title>页面加载中...</title>
     <script src="https://unpkg.com/@cap.js/widget"></script>
     <script src="/static/vendor/js-cookie-3.0.5/js.cookie.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+    </style>
 </head>
 
 <body>
-    <cap-widget id="cap" data-cap-api-endpoint="https://cap.dtiku.cn/{{cap_site_key}}/"></cap-widget>
+    <cap-widget id="cap" data-cap-api-endpoint="https://cap.dtiku.cn/{{cap_site_key}}/"
+        data-cap-i18n-verifying-label="认证中..." data-cap-i18n-initial-state="正在认证..." data-cap-i18n-solved-label="认证成功"
+        data-cap-i18n-error-label="认证失败"></cap-widget>
 
     <script>
         const widget = document.querySelector("#cap");
+
+        // 隐藏 Shadow Root 中的 credits 元素
+        function hideCredits() {
+            if (widget.shadowRoot) {
+                const style = document.createElement('style');
+                style.textContent = '.captcha .credits { display: none !important; }';
+                widget.shadowRoot.appendChild(style);
+            }
+        }
+
+        // 等待 Shadow DOM 加载完成后隐藏
+        if (widget.shadowRoot) {
+            hideCredits();
+        } else {
+            // 如果 Shadow Root 还未创建，使用 MutationObserver 监听
+            const observer = new MutationObserver(() => {
+                if (widget.shadowRoot) {
+                    hideCredits();
+                    observer.disconnect();
+                }
+            });
+            observer.observe(widget, { childList: true, subtree: true });
+        }
 
         widget.addEventListener("solve", function (e) {
             const token = e.detail.token;
