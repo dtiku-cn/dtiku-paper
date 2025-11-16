@@ -63,13 +63,44 @@
                         {% endif %}
                         <label class="ml-1 mb-0" style="cursor: pointer;">付费</label>
                     </div>
+                    <div class="input-group-text">
+                        {% if let Some(i)=issue %}
+                        {% if i.collect %}
+                        <input id="collect-checkbox" type="checkbox" name="collect" value="true" checked />
+                        {% else %}
+                        <input id="collect-checkbox" type="checkbox" name="collect" value="true" />
+                        {% endif %}
+                        {% else %}
+                        <input id="collect-checkbox" type="checkbox" name="collect" value="true" />
+                        {% endif %}
+                        <label class="ml-1 mb-0" style="cursor: pointer;">合集</label>
+                    </div>
                     <input id="preview" type="button" class="btn btn-success" value="预览" />
                     <input id="submit" type="submit" class="btn btn-primary d-none" value="提交" />
                 </div>
             </div>
         </header>
         <div class="card-body p-0">
-            <div id="editor" style="height: 100vh" data-toggle="tooltip"></div>
+            <!-- 合集模式的目录编辑器 -->
+            <div id="collect-toc-container" style="display: none;">
+                <div class="p-3 border-bottom bg-light">
+                    <h6 class="mb-1"><strong>📑 目录 (TOC)</strong></h6>
+                    <small class="text-muted">
+                        使用 Markdown 格式编写目录，支持链接格式如：- [标题](/bbs/issue/id)
+                    </small>
+                </div>
+                <div id="toc-editor" style="height: 30vh"></div>
+                
+                <div class="p-3 border-bottom border-top bg-light">
+                    <h6 class="mb-1"><strong>🎨 封面内容 (Content)</strong></h6>
+                    <small class="text-muted">
+                        使用 Markdown 格式编写封面内容，支持 PlantUML 等扩展语法
+                    </small>
+                </div>
+            </div>
+            
+            <!-- 共用的内容编辑器 -->
+            <div id="editor" data-toggle="tooltip"></div>
         </div>
     </form>
     {% call general::footer() %}
@@ -77,89 +108,218 @@
     <script type="module" defer src="/static/vendor/venny/venny.esm.js"></script>
     <script>
         $(function () {
+            var isCollect = {%if let Some(i)=issue%}{{i.collect | json | safe}}{%else%}false{%endif%};
             var eEditor = document.querySelector('#editor');
-            eEditor.style.background = 'url("' + window.loadingGif + '") center center no-repeat';
-            var initValue = {%if let Some(i) = issue %}{{ i.markdown | json | safe }}{%else%}''{% endif %};
-        window.vEditor = new Vditor(eEditor, {
-            width: '100%',
-            height: '100vh',
-            placeholder: '在这里输入文章内容',
-            mode: 'wysiwyg',
-            value: initValue || '',
-            cdn: 'https://{{global.original_host}}/static/vendor/vditor/3.10.4',
-            counter: {
-                enable: true,
-                type: 'markdown'
-            },
-            toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike',
-                '|', 'line', 'quote', 'list', 'ordered-list', 'check', 'outdent', 'indent', 'code', 'inline-code', 'table',
-                '|', 'undo', 'redo', 'upload', 'edit-mode', 'fullscreen', 'preview'
-            ],
-            toolbarConfig: {
-                pin: true
-            },
-            theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
-            preview: {
-                theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
-                list: { dark: "Dark", light: "Light" },
-                path: '/static/vendor/vditor/3.10.4/dist/content-theme',
-                math: { engine: 'MathJax', inlineDigit: true },
-                actions: []
-            },
-            cache: {
-                enable: true,
-                id: '{%if let Some(i)=issue%}issue-{{i.id}}{%else%}new-issue{%endif%}'
-            },
-            focus() {
-                $("#editor").tooltip('toggle').attr("data-original-title", "").tooltip("hide");
-            },
-            after() {
-                $('button[data-type="preview"]').click(function () {
-                    $("#submit").toggleClass('d-none');
-                    $("#preview").toggleClass('d-none');
+            var eTocContainer = document.querySelector('#collect-toc-container');
+            var eTocEditor = document.querySelector('#toc-editor');
+            
+            // VEditor 实例
+            window.tocEditor = null;
+            
+            /**
+             * 创建 Vditor 编辑器实例的通用方法
+             * @param {HTMLElement} element - 编辑器容器元素
+             * @param {Object} options - 编辑器配置选项
+             * @returns {Vditor} Vditor 实例
+             */
+            function createVditor(element, options) {
+                var defaultConfig = {
+                    width: '100%',
+                    cdn: 'https://{{global.original_host}}/static/vendor/vditor/3.10.4',
+                    theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
+                    preview: {
+                        theme: window.themeSwitcher.getTheme() ? 'dark' : 'light',
+                        path: '/static/vendor/vditor/3.10.4/dist/content-theme',
+                        math: { engine: 'MathJax', inlineDigit: true },
+                        actions: []
+                    },
+                    upload: {
+                        url: "https://s.dtiku.cn/dtiku-alist-api/upload",
+                        fieldName: 'file',
+                        multiple: false,
+                        format: (f, respTxt) => `{"msg":"","code":0,"data":{"errFiles":[],"succMap":{"${f[0].name}":"${respTxt}"}}}`,
+                        linkToImgUrl: "https://s.dtiku.cn/dtiku-alist-api/upload-by-link"
+                    }
+                };
+                
+                // 合并配置
+                var config = Object.assign({}, defaultConfig, options);
+                return new Vditor(element, config);
+            }
+            
+            // 切换编辑器显示
+            function toggleEditor() {
+                if (!window.vEditor) {
+                    console.warn('vEditor not ready yet');
+                    return;
+                }
+                
+                var collectChecked = $('#collect-checkbox').is(':checked');
+                if (collectChecked) {
+                    // 显示 TOC 容器，调整主编辑器高度
+                    $('#collect-toc-container').show();
+                    // 找到 vditor 实际容器并调整高度
+                    $('#editor').find('.vditor').css('height', '70vh');
+                    
+                    // 延迟初始化 TOC 编辑器
+                    if (!window.tocEditor) {
+                        initTocEditor();
+                    }
+                } else {
+                    // 隐藏 TOC 容器，恢复主编辑器高度
+                    $('#collect-toc-container').hide();
+                    $('#editor').find('.vditor').css('height', '100vh');
+                }
+            }
+            
+            // 初始化 TOC 编辑器
+            function initTocEditor() {
+                var tocInitValue = {%if let Some(i) = issue %}{%if i.collect%}{{ i.toc | json | safe }}{%else%}''{%endif%}{%else%}''{% endif %};
+                
+                window.tocEditor = createVditor(eTocEditor, {
+                    height: '30vh',
+                    placeholder: '在这里输入目录内容...\n例如：\n- [什么是申论](/bbs/issue/83)\n- [申论材料阅读技巧](/bbs/issue/84)\n- 申论题型\n  - [归纳概括](/bbs/issue/85)',
+                    mode: 'ir',
+                    value: tocInitValue,
+                    toolbar: ['list', 'ordered-list', '|', 'link', '|', 'undo', 'redo'],
+                    cache: {
+                        enable: true,
+                        id: '{%if let Some(i)=issue%}issue-{{i.id}}-toc{%else%}new-issue-toc{%endif%}'
+                    }
                 });
-            },
-            upload: {
-                url: "https://s.dtiku.cn/dtiku-alist-api/upload",
-                fieldName: 'file',
-                multiple: false,
-                format: (f, respTxt) => `{"msg":"","code":0,"data":{"errFiles":[],"succMap":{"${f[0].name}":"${respTxt}"}}}`,
-                linkToImgUrl: "https://s.dtiku.cn/dtiku-alist-api/upload-by-link"
+                
+                // 主题切换支持
+                window.themeSwitcher.listener.push(function (dark) {
+                    if (window.tocEditor) tocEditor.setTheme(dark ? 'dark' : 'light');
+                });
             }
-        });
-        window.themeSwitcher.listener.push(function (dark) {
-            vEditor.setTheme(dark ? 'dark' : 'light');
-        });
-        $("#preview").click(function () {
-            $('button[data-type="preview"]').click();
-        });
-        $("#form").submit(function (e) {
-            if (!this.topic.value) {
-                e.preventDefault();
-                return false;
-            }
-            if (!this.title.value) {
-                e.preventDefault();
-                return false;
-            }
-            var md = vEditor.getValue();
-            if (!md || !md.trim()) {
-                $("#editor").tooltip('hide').attr("data-original-title", "必填内容").tooltip("show");
-                e.preventDefault();
-                return false;
-            } else {
-                $("<input />").attr("type", "hidden")
-                    .attr("name", "markdown")
-                    .attr("value", md)
-                    .appendTo("#form");
-                $("<input />").attr("type", "hidden")
-                    .attr("name", "html")
-                    .attr("value", $(".vditor-preview .vditor-reset").html())
-                    .appendTo("#form");
-                vEditor.clearCache();
-                return true;
-            }
-        });
+            
+            // 初始化共用的内容编辑器
+            eEditor.style.background = 'url("' + window.loadingGif + '") center center no-repeat';
+            
+            // 根据是否为合集选择初始值
+            var initValue = {%if let Some(i) = issue %}{%if i.collect%}{{ i.markdown | json | safe }}{%else%}{{ i.markdown | json | safe }}{%endif%}{%else%}''{% endif %};
+            var initHeight = isCollect ? '70vh' : '100vh';
+            
+            window.vEditor = createVditor(eEditor, {
+                height: initHeight,
+                placeholder: '在这里输入文章内容',
+                mode: 'wysiwyg',
+                value: initValue || '',
+                counter: {
+                    enable: true,
+                    type: 'markdown'
+                },
+                toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike',
+                    '|', 'line', 'quote', 'list', 'ordered-list', 'check', 'outdent', 'indent', 'code', 'inline-code', 'table',
+                    '|', 'undo', 'redo', 'upload', 'edit-mode', 'fullscreen', 'preview'
+                ],
+                toolbarConfig: {
+                    pin: true
+                },
+                cache: {
+                    enable: true,
+                    id: '{%if let Some(i)=issue%}issue-{{i.id}}{%else%}new-issue{%endif%}'
+                },
+                focus() {
+                    $("#editor").tooltip('toggle').attr("data-original-title", "").tooltip("hide");
+                },
+                after() {
+                    $('button[data-type="preview"]').click(function () {
+                        $("#submit").toggleClass('d-none');
+                        $("#preview").toggleClass('d-none');
+                    });
+                    
+                    // 初始化显示状态
+                    if (isCollect) {
+                        $('#collect-toc-container').show();
+                        initTocEditor();
+                    }
+                    
+                    // vEditor 初始化完成后再绑定复选框事件
+                    $('#collect-checkbox').change(toggleEditor);
+                }
+            });
+            
+            window.themeSwitcher.listener.push(function (dark) {
+                vEditor.setTheme(dark ? 'dark' : 'light');
+            });
+            $("#preview").click(function () {
+                $('button[data-type="preview"]').click();
+            });
+            $("#form").submit(function (e) {
+                if (!this.topic.value) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (!this.title.value) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                var isCollectMode = $('#collect-checkbox').is(':checked');
+                
+                if (isCollectMode) {
+                    // 合集模式：从 TOC 编辑器和共用编辑器获取内容
+                    var toc = window.tocEditor ? window.tocEditor.getValue() : '';
+                    var content = window.vEditor.getValue();
+                    
+                    if (!toc || !toc.trim()) {
+                        alert("合集目录 (TOC) 不能为空");
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    if (!content || !content.trim()) {
+                        alert("合集封面内容 (Content) 不能为空");
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // 组装 markdown 为 JSON（包含 toc 和 content）
+                    var collectJson = JSON.stringify({
+                        toc: toc,
+                        content: content
+                    });
+                    
+                    // 获取 content 的 HTML 版本保存到 html 字段
+                    var contentHtml = window.vEditor.getHTML();
+                    
+                    $("<input />").attr("type", "hidden")
+                        .attr("name", "markdown")
+                        .attr("value", collectJson)
+                        .appendTo("#form");
+                    $("<input />").attr("type", "hidden")
+                        .attr("name", "html")
+                        .attr("value", contentHtml)
+                        .appendTo("#form");
+                    
+                    // 清除缓存
+                    if (window.tocEditor) window.tocEditor.clearCache();
+                    window.vEditor.clearCache();
+                    
+                    return true;
+                } else {
+                    // 普通模式：使用 vEditor 的内容
+                    var md = vEditor.getValue();
+                    if (!md || !md.trim()) {
+                        $("#editor").tooltip('hide').attr("data-original-title", "必填内容").tooltip("show");
+                        e.preventDefault();
+                        return false;
+                    } else {
+                        $("<input />").attr("type", "hidden")
+                            .attr("name", "markdown")
+                            .attr("value", md)
+                            .appendTo("#form");
+                        $("<input />").attr("type", "hidden")
+                            .attr("name", "html")
+                            .attr("value", $(".vditor-preview .vditor-reset").html())
+                            .appendTo("#form");
+                        vEditor.clearCache();
+                        return true;
+                    }
+                }
+            });
         })
     </script>
 </body>

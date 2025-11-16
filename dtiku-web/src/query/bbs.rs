@@ -9,6 +9,8 @@ pub struct IssueReq {
     pub html: String,
     #[serde(default)]
     pub paid: bool,
+    #[serde(default)]
+    pub collect: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

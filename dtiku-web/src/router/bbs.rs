@@ -79,6 +79,7 @@ async fn submit_issue(
         html: Set(req.html),
         user_id: Set(claims.user_id),
         paid: Set(req.paid),
+        collect: Set(req.collect),
         ..Default::default()
     }
     .insert(&db)
@@ -130,6 +131,7 @@ async fn update_issue(
         html: Set(req.html),
         user_id: Unchanged(claims.user_id),
         paid: Set(req.paid),
+        collect: Set(req.collect),
         ..Default::default()
     }
     .update(&db)
