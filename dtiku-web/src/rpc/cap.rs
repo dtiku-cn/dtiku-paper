@@ -13,33 +13,27 @@ fn get_captcha_url() -> &'static str {
 }
 
 #[derive(Debug, Serialize)]
-pub struct VerifyReq {
-    pub secret: String,
+struct VerifyReq<'a> {
+    secret: &'a str,
     #[serde(rename = "response")]
-    pub token: String,
+    token: &'a str,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct VerifyResult {
-    pub success: bool,
+struct VerifyResult {
+    success: bool,
 }
 
 #[post(url = get_captcha_url(), path = "/{site_key}/siteverify")]
-async fn site_verify_req(
-    site_key: String,
-    #[body] req: VerifyReq,
+async fn site_verify_req<'a>(
+    #[path("site_key")] site_key: &str,
+    #[body] req: VerifyReq<'a>,
 ) -> feignhttp::Result<VerifyResult> {
 }
 
-pub async fn site_verify(site_key: &str, site_secret: &str, token: &str) -> anyhow::Result<bool> {
-    let result = site_verify_req(
-        site_key.to_string(),
-        VerifyReq {
-            secret: site_secret.to_string(),
-            token: token.to_string(),
-        },
-    )
-    .await
-    .context("site verify request failed")?;
+pub async fn site_verify(site_key: &str, secret: &str, token: &str) -> anyhow::Result<bool> {
+    let result = site_verify_req(site_key, VerifyReq { secret, token })
+        .await
+        .context("site verify request failed")?;
     Ok(result.success)
 }
