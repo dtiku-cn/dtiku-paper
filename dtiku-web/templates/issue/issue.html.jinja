@@ -45,6 +45,11 @@
             height: 100%;
         }
 
+        #collect-container.collapsed #toggle-side {
+            height: 100%;
+            position: absolute;
+        }
+
         .sidebar-handle {
             flex: 0 0 12px;
             border: 0;
@@ -144,7 +149,9 @@
         }
 
         @media print {
-            .paywall-card, .paywall-preview::after {
+
+            .paywall-card,
+            .paywall-preview::after {
                 display: none !important;
             }
         }
@@ -188,7 +195,8 @@
                 </div>
                 <nav id="collect-toc" class="p-2">{{issue.toc | markdown | safe}}</nav>
             </aside>
-            <button id="toggle-side" class="sidebar-handle border-left d-none d-sm-block d-print-none" title="收起/展开侧边栏" aria-label="切换侧边栏">⟨</button>
+            <button id="toggle-side" class="sidebar-handle border-left d-none d-sm-block d-print-none" title="收起/展开侧边栏"
+                aria-label="切换侧边栏">⟨</button>
             <div id="toc" class="card-body vditor-reset">
                 {% if global.user.is_none() || global.user_is_expired() %}
                 {% call paywall::paywall_content(issue.html, global.user.is_some()) %}
@@ -214,11 +222,13 @@
                 {% endif %}
                 <b class="d-none d-md-block">{{issue.author_name()}}</b>
                 <span data-toggle="tooltip"
-                    title='{{issue.created | datetime_fmt("%Y-%m-%d %H:%M")}}'>发布于{{issue.created | format_with_now}}</span>
+                    title='{{issue.created | datetime_fmt("%Y-%m-%d %H:%M")}}'>发布于{{issue.created |
+                    format_with_now}}</span>
                 {% if issue.created != issue.modified %}
                 <span class="d-none d-sm-block">&nbsp; | &nbsp;</span>
                 <span class="d-none d-sm-block" data-toggle="tooltip"
-                    title='{{issue.modified | datetime_fmt("%Y-%m-%d %H:%M")}}'>更新于{{issue.modified | format_with_now}}</span>
+                    title='{{issue.modified | datetime_fmt("%Y-%m-%d %H:%M")}}'>更新于{{issue.modified |
+                    format_with_now}}</span>
                 {% endif %}
             </div>
             <div class="artalk-page-vote d-flex">
@@ -291,7 +301,7 @@
 
             // 为所有 ul 添加 Bootstrap nav 类
             $('#collect-toc ul').addClass('nav flex-column');
-            
+
             // 为所有 li 添加 Bootstrap nav-item 类
             $('#collect-toc li').addClass('nav-item');
 
@@ -304,7 +314,7 @@
                 // 为所有链接添加 Bootstrap nav-link 类
                 if ($a.length) {
                     $a.addClass('nav-link py-1 px-2 text-truncate');
-                    
+
                     // 添加 title 属性显示完整文本
                     const fullText = $a.text().trim();
                     if (fullText) {
@@ -322,7 +332,7 @@
                     if ($a.length) {
                         // 使用 Bootstrap 的 dropdown-toggle 类
                         $a.addClass('dropdown-toggle');
-                        
+
                         // 保存原始 href
                         const href = $a.attr('href');
                         $a.attr('data-href', href);
@@ -355,19 +365,19 @@ ${text}
         }
         $(function () {
             rerender_collect_toc();
-            
+
             // 高亮当前激活项（使用 Bootstrap active 类）
             function highlightActiveItem(href) {
                 $('#collect-toc .nav-link').removeClass('active');
                 const $activeLink = $('#collect-toc a[data-href="' + href + '"], #collect-toc a[href="' + href + '"]');
                 $activeLink.addClass('active');
-                
+
                 // 确保激活项的父级折叠面板展开
-                $activeLink.parents('.collapse').addClass('show').each(function() {
+                $activeLink.parents('.collapse').addClass('show').each(function () {
                     const id = $(this).attr('id');
                     $(`a[aria-controls="${id}"]`).attr('aria-expanded', 'true');
                 });
-                
+
                 // 滚动到可见区域
                 if ($activeLink.length) {
                     const sidebar = document.getElementById('collect-side');
@@ -375,14 +385,14 @@ ${text}
                         const linkElement = $activeLink[0];
                         const sidebarRect = sidebar.getBoundingClientRect();
                         const linkRect = linkElement.getBoundingClientRect();
-                        
+
                         if (linkRect.top < sidebarRect.top || linkRect.bottom > sidebarRect.bottom) {
                             linkElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
                     }
                 }
             }
-            
+
             // 点击 TOC 链接触发 AJAX
             $('#collect-toc').on('click', 'a', function (e) {
                 e.preventDefault(); // 阻止跳转
@@ -412,26 +422,26 @@ ${text}
 </div>
 `);
                 $('#toc').append($mask);
-                
+
                 // 发起 AJAX 请求
                 $.get(`${data_href}?html=true`, function (data) {
                     $('#toc').html(data); // 将请求的 HTML 渲染到 toc 元素下
                     tocbot.refresh();
                     $("#toc").data("current-href", data_href);
-                    
+
                     // 高亮当前项
                     highlightActiveItem(data_href);
-                    
+
                     const toc_size = $("#toc-table .toc-list-item").size();
                     if (toc_size && toc_size > 1) {
                         $("#toc-table").show()
                     } else {
                         $("#toc-table").hide()
                     }
-                    
+
                     // 平滑滚动到顶部
                     $('#toc').get(0).scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }).fail(function(xhr, status, error) {
+                }).fail(function (xhr, status, error) {
                     console.error('加载失败:', error);
                     // 可以在这里显示错误提示
                 }).always(function () {
@@ -482,9 +492,9 @@ ${text}
             // 恢复侧边栏状态
             restoreSidebarState();
             updateBtn();
-            
+
             // 键盘快捷键：Ctrl/Cmd + B 切换侧边栏
-            $(document).on('keydown', function(e) {
+            $(document).on('keydown', function (e) {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                     e.preventDefault();
                     $btn.click();
