@@ -4,7 +4,7 @@ use crate::{
     router::error_messages,
     service::issue::IssueService,
     views::{
-        bbs::{IssueEditorTemplate, IssueTemplate, ListIssueTemplate, PaywallContentTemplate},
+        bbs::{FullIssue, IssueEditorTemplate, IssueTemplate, ListIssueTemplate, PaywallContentTemplate},
         GlobalVariables,
     },
 };
@@ -93,48 +93,75 @@ async fn issue_detail(
     Extension(global): Extension<GlobalVariables>,
     Query(req): Query<IssueDetailReq>,
 ) -> Result<impl IntoResponse> {
-    // 判断用户是否有权限查看完整内容
-    let has_access = global.user.as_ref()
-        .map(|u| !u.is_expired())
-        .unwrap_or(false);
+    let access_control = AccessControl::from_global(&global);
     
     let html = if req.html {
-        // 对于AJAX请求返回的HTML片段，也需要检查权限
-        let mut html = is.find_issue_html_by_id(id)
+        // AJAX请求：返回HTML片段
+        let html = is
+            .find_issue_html_by_id(id)
             .await?
             .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
         
-        // 如果没有访问权限，截断HTML内容
-        if !has_access {
-            let is_logged_in = global.user.is_some();
-            html = truncate_html_content(&html, is_logged_in)?;
-        }
-        
-        html
+        access_control.apply_paywall_to_html(&html)?
     } else {
+        // 完整页面请求
         let mut issue = is
             .find_issue_by_id(id)
             .await?
             .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
         
-        // 如果没有访问权限，截断HTML内容
-        if !has_access {
-            issue.truncate_html();
-        }
+        access_control.apply_paywall_to_issue(&mut issue);
         
-        let temp = IssueTemplate { global, issue };
-        temp.render().context("render failed")?
+        IssueTemplate { global, issue }
+            .render()
+            .context("render failed")?
     };
+    
     Ok(Html(html))
 }
 
-/// 截断HTML内容的辅助函数，并添加付费墙UI
-fn truncate_html_content(html: &str, is_logged_in: bool) -> Result<String> {
+/// 访问控制辅助结构
+struct AccessControl {
+    has_access: bool,
+    is_logged_in: bool,
+}
+
+impl AccessControl {
+    /// 从全局变量创建访问控制
+    fn from_global(global: &GlobalVariables) -> Self {
+        let is_logged_in = global.user.is_some();
+        let has_access = global.user.as_ref()
+            .map(|u| !u.is_expired())
+            .unwrap_or(false);
+        
+        Self { has_access, is_logged_in }
+    }
+    
+    /// 对HTML内容应用付费墙（用于AJAX请求）
+    fn apply_paywall_to_html(&self, html: &str) -> Result<String> {
+        if self.has_access {
+            return Ok(html.to_string());
+        }
+        
+        apply_html_paywall(html, self.is_logged_in)
+    }
+    
+    /// 对Issue对象应用付费墙（用于完整页面）
+    fn apply_paywall_to_issue(&self, issue: &mut FullIssue) {
+        if !self.has_access {
+            issue.truncate_html();
+        }
+    }
+}
+
+/// 对HTML应用付费墙：截断内容并添加付费墙UI
+fn apply_html_paywall(html: &str, is_logged_in: bool) -> Result<String> {
     use crate::views::bbs::truncate_html_by_text_length;
+    use scraper::Html;
+    
     const PREVIEW_TEXT_LENGTH: usize = 300;
     
-    // 先检查文本长度是否需要截断
-    use scraper::Html;
+    // 检查是否需要截断
     let fragment = Html::parse_fragment(html);
     let full_text: String = fragment.root_element().text().collect();
     
@@ -142,15 +169,15 @@ fn truncate_html_content(html: &str, is_logged_in: bool) -> Result<String> {
         return Ok(html.to_string());
     }
     
+    // 截断并渲染付费墙UI
     let truncated = truncate_html_by_text_length(html, PREVIEW_TEXT_LENGTH);
     
-    // 使用模板渲染付费墙内容
-    let template = PaywallContentTemplate {
+    Ok(PaywallContentTemplate {
         content: truncated,
         is_logged_in,
-    };
-    
-    Ok(template.render().context("render paywall template failed")?)
+    }
+    .render()
+    .context("render paywall template failed")?)
 }
 
 #[post("/bbs/issue/{id}")]
