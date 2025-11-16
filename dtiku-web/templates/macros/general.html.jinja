@@ -45,6 +45,12 @@
         });
     }
 </script>
+{% if let Some(u) = global.user %}
+<script>
+    _hmt.push(['_setUserId', 'u:{{u.id}}']);
+    clarity("identify", "u:{{u.id}}");
+</script>
+{% endif %}
 <style rel="stylesheet">
     .dark-theme .material *,
     .dark-theme .question *,
