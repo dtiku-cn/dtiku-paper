@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <title>页面加载中...</title>
     <script src="https://unpkg.com/@cap.js/widget"></script>
+    <script src="/static/vendor/js-cookie-3.0.5/js.cookie.min.js"></script>
 </head>
 
 <body>
@@ -15,7 +16,7 @@
 
         widget.addEventListener("solve", function (e) {
             const token = e.detail.token;
-            cookies.set("cap-token", token, { path: "/" });
+            Cookies.set("cap-token", token, { path: "/" });
             window.location.reload();
         });
     </script>
