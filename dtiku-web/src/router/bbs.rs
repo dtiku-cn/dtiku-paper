@@ -93,15 +93,14 @@ async fn issue_detail(
     Extension(global): Extension<GlobalVariables>,
     Query(req): Query<IssueDetailReq>,
 ) -> Result<impl IntoResponse> {
-    let access_control = AccessControl::from_global(&global);
-    
     let html = if req.html {
         // AJAX请求：返回HTML片段
-        let html = is
-            .find_issue_html_by_id(id)
+        let (html, author_id) = is
+            .find_issue_html_with_author(id)
             .await?
             .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
         
+        let access_control = AccessControl::from_global(&global, author_id);
         access_control.apply_paywall_to_html(&html)?
     } else {
         // 完整页面请求
@@ -110,6 +109,7 @@ async fn issue_detail(
             .await?
             .ok_or_else(|| KnownWebError::not_found(error_messages::ISSUE_NOT_FOUND))?;
         
+        let access_control = AccessControl::from_global(&global, issue.user_id);
         access_control.apply_paywall_to_issue(&mut issue);
         
         IssueTemplate { global, issue }
@@ -128,10 +128,15 @@ struct AccessControl {
 
 impl AccessControl {
     /// 从全局变量创建访问控制
-    fn from_global(global: &GlobalVariables) -> Self {
+    /// author_id: 帖子作者的用户ID
+    fn from_global(global: &GlobalVariables, author_id: i32) -> Self {
         let is_logged_in = global.user.is_some();
+        
+        // 检查用户是否有访问权限：
+        // 1. 用户已付费（未过期）
+        // 2. 或者当前用户就是帖子作者
         let has_access = global.user.as_ref()
-            .map(|u| !u.is_expired())
+            .map(|u| !u.is_expired() || u.id == author_id)
             .unwrap_or(false);
         
         Self { has_access, is_logged_in }

@@ -32,6 +32,19 @@ impl IssueService {
             .with_context(|| format!("find_issue_html_by_id({id}) failed"))
     }
 
+    /// 查找帖子的HTML内容和作者ID
+    pub async fn find_issue_html_with_author(&self, id: i32) -> anyhow::Result<Option<(String, i32)>> {
+        Issue::find()
+            .select_only()
+            .column(issue::Column::Html)
+            .column(issue::Column::UserId)
+            .filter(issue::Column::Id.eq(id))
+            .into_tuple()
+            .one(&self.db)
+            .await
+            .with_context(|| format!("find_issue_html_with_author({id}) failed"))
+    }
+
     pub async fn find_issue_by_id(&self, id: i32) -> anyhow::Result<Option<FullIssue>> {
         let issue = Issue::find_issue_by_id(&self.db, id).await?;
         match issue {
