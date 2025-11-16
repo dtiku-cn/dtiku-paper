@@ -184,6 +184,7 @@ async fn captcha_ant_bot(
         return None;
     }
     if let Some(cap_token) = cookies.get("cap-token") {
+        tracing::info!("verify cap-token: {}", cap_token.value());
         if traffic_service
             .verify_token(cap_token.value())
             .await

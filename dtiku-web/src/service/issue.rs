@@ -2,11 +2,9 @@ use crate::plugins::grpc_client::artalk::VoteStats;
 use crate::plugins::grpc_client::Artalk;
 use crate::rpc::artalk::{page_comment, page_pv};
 use crate::views::bbs::FullIssue;
-use anyhow::Context as _;
 use dtiku_base::model::{user_info, UserInfo};
-use dtiku_bbs::model::{issue, Issue, IssueQuery};
+use dtiku_bbs::model::{Issue, IssueQuery};
 use itertools::Itertools;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QuerySelect};
 use spring::plugin::service::Service;
 use spring_sea_orm::pagination::{Page, Pagination};
 use spring_sea_orm::DbConn;
@@ -21,17 +19,6 @@ pub struct IssueService {
 }
 
 impl IssueService {
-    pub async fn find_issue_html_by_id(&self, id: i32) -> anyhow::Result<Option<String>> {
-        Issue::find()
-            .select_only()
-            .column(issue::Column::Html)
-            .filter(issue::Column::Id.eq(id))
-            .into_tuple()
-            .one(&self.db)
-            .await
-            .with_context(|| format!("find_issue_html_by_id({id}) failed"))
-    }
-
     pub async fn find_issue_by_id(&self, id: i32) -> anyhow::Result<Option<FullIssue>> {
         let issue = Issue::find_issue_by_id(&self.db, id).await?;
         match issue {
