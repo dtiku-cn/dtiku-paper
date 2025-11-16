@@ -14,112 +14,124 @@
     <style>
         #collect-container {
             min-height: 100vh;
-            --handle: 12px;
             position: relative;
-        }
-
-        #collect-side {
-            min-width: 260px;
-            height: 100vh;
-            border-right: 1px solid var(--light);
-            transition: margin-left 0.25s ease;
-            position: sticky;
-            top: 0;
-            overflow-y: auto;
         }
 
         #collect-container.collapsed {
             overflow: hidden;
         }
 
-        #collect-container.collapsed #collect-side {
-            margin-left: -260px;
+        #collect-side {
+            min-width: 280px;
+            height: 100vh;
+            transition: margin-left 0.3s ease-in-out;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
-        #collect-container.collapsed .sidebar-handle {
+        #collect-side::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #collect-side::-webkit-scrollbar-thumb {
+            background: var(--secondary);
+            border-radius: 3px;
+        }
+
+        #collect-container.collapsed #collect-side {
+            margin-left: -280px;
             height: 100%;
-            position: absolute;
-            width: 12px;
-            bottom: 0;
         }
 
         .sidebar-handle {
-            flex: 0 0 var(--handle);
+            flex: 0 0 12px;
             border: 0;
             background: transparent;
             cursor: pointer;
-            position: relative;
-            padding: 0;
             position: sticky;
             top: 0;
             height: 100vh;
-        }
-
-        .sidebar-handle::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-left: 1px solid var(--light);
-            z-index: 1;
+            transition: background 0.15s ease-in-out;
         }
 
         .sidebar-handle:hover {
-            background: rgba(120, 120, 120, 0.2);
+            background: var(--light);
         }
 
-
-        /* 去掉默认 ul/li 样式 */
-        #collect-toc ul {
-            list-style: none;
-            padding-left: 0;
-            margin-left: 0;
+        /* 使用 Bootstrap Nav 样式 */
+        #collect-toc .nav {
+            flex-direction: column;
         }
 
-        #collect-toc li {
-            margin: 0.25em 0;
-            line-height: 1.5;
-        }
-
-        /* 折叠触发器样式 */
-        .toc-toggle {
-            display: inline-block;
-            cursor: pointer;
-            text-decoration: none;
-            color: #007bff;
-            border-radius: 4px;
-            transition: background 0.2s;
-        }
-
-        .toc-toggle:hover {
-            background: #e9ecef;
-            text-decoration: none;
-        }
-
-        /* 子级缩进 */
-        #collect-toc .ms-3 {
-            padding-left: 1.2em;
-            border-left: 1px solid #dee2e6;
-            /* 轻微竖线分层 */
-        }
-
-        #toc {
+        #collect-toc .nav-link {
             position: relative;
+            color: var(--dark);
+            border-radius: 0.25rem;
+            transition: all 0.15s ease-in-out;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-left: 1.5rem !important;
         }
 
+        #collect-toc .nav-link:hover {
+            color: var(--primary);
+            background: var(--light);
+        }
+
+        #collect-toc .nav-link.active {
+            color: var(--primary);
+            background: var(--light);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+        }
+
+        /* 隐藏 Bootstrap dropdown-toggle 默认的右侧箭头 */
+        #collect-toc .nav-link.dropdown-toggle::after {
+            display: none;
+        }
+
+        /* 在左侧添加箭头（参考 Bootstrap dropdown-toggle 样式） */
+        #collect-toc .nav-link.dropdown-toggle::before {
+            position: absolute;
+            left: 0.5rem;
+            top: 50%;
+            margin-top: -0.3em;
+            display: inline-block;
+            content: "";
+            border-top: 0.3em solid transparent;
+            border-right: 0;
+            border-bottom: 0.3em solid transparent;
+            border-left: 0.3em solid;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        #collect-toc .nav-link.dropdown-toggle[aria-expanded="true"]::before {
+            transform: rotate(90deg);
+        }
+
+        /* 子级添加缩进 */
+        #collect-toc .collapse {
+            margin-left: 1rem;
+        }
+
+        /* 加载蒙层 */
         #toc .loading-mask {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 4;
         }
 
-        /* 付费墙样式 - 仅保留渐变遮罩效果 */
+        /* 付费墙样式 */
         .paywall-preview::after {
             content: '';
             position: absolute;
@@ -129,14 +141,6 @@
             height: 150px;
             background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.95) 40%, rgba(255, 255, 255, 1) 70%);
             pointer-events: none;
-        }
-
-        .paywall-card {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        }
-
-        .paywall-card .btn:hover {
-            transform: translateY(-2px);
         }
 
         @media print {
@@ -178,10 +182,13 @@
         </header>
         {%if issue.collect%}
         <div id="collect-container" class="d-flex">
-            <aside id="collect-side" class="card-header d-none d-sm-block d-print-none">
-                <div id="collect-toc">{{issue.toc | markdown | safe}}</div>
+            <aside id="collect-side" class="bg-light border-right d-none d-sm-block d-print-none">
+                <div class="p-3 border-bottom bg-white sticky-top">
+                    <h6 class="mb-0 text-muted">📚 目录</h6>
+                </div>
+                <nav id="collect-toc" class="p-2">{{issue.toc | markdown | safe}}</nav>
             </aside>
-            <button id="toggle-side" class="sidebar-handle d-none d-sm-block d-print-none" title="收起/展开侧边栏">⟨</button>
+            <button id="toggle-side" class="sidebar-handle border-left d-none d-sm-block d-print-none" title="收起/展开侧边栏" aria-label="切换侧边栏">⟨</button>
             <div id="toc" class="card-body vditor-reset">
                 {% if global.user.is_none() || global.user_is_expired() %}
                 {% call paywall::paywall_content(issue.html, global.user.is_some()) %}
@@ -282,20 +289,40 @@
         function rerender_collect_toc() {
             let counter = 0;
 
+            // 为所有 ul 添加 Bootstrap nav 类
+            $('#collect-toc ul').addClass('nav flex-column');
+            
+            // 为所有 li 添加 Bootstrap nav-item 类
+            $('#collect-toc li').addClass('nav-item');
+
             // 构建折叠 TOC
             $('#collect-toc li').each(function () {
                 const $li = $(this);
                 const $subUl = $li.children('ul');
+                const $a = $li.children('a').first();
+
+                // 为所有链接添加 Bootstrap nav-link 类
+                if ($a.length) {
+                    $a.addClass('nav-link py-1 px-2 text-truncate');
+                    
+                    // 添加 title 属性显示完整文本
+                    const fullText = $a.text().trim();
+                    if (fullText) {
+                        $a.attr('title', fullText);
+                    }
+                }
 
                 if ($subUl.length) {
                     counter++;
                     const collapseId = "toc-collapse-" + counter;
 
-                    $subUl.wrap(`<div class="collapse ms-3" id="${collapseId}"></div>`);
+                    // 使用 Bootstrap 的 collapse 和间距类
+                    $subUl.wrap(`<div class="collapse ml-3" id="${collapseId}"></div>`);
 
-                    // 找 li 下的第一个 a 链接
-                    const $a = $li.children('a').first();
                     if ($a.length) {
+                        // 使用 Bootstrap 的 dropdown-toggle 类
+                        $a.addClass('dropdown-toggle');
+                        
                         // 保存原始 href
                         const href = $a.attr('href');
                         $a.attr('data-href', href);
@@ -309,11 +336,11 @@
                             'aria-controls': collapseId
                         });
                     } else {
-                        // 如果没有 a，用原逻辑处理纯文本
+                        // 如果没有 a，创建一个带 Bootstrap 类的链接
                         let text = $li.clone().children().remove().end().text().trim();
                         if (text) {
                             const $toggle = $(`
-<a href="#${collapseId}" class="toc-toggle" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="${collapseId}">
+<a href="#${collapseId}" class="nav-link py-1 px-2 dropdown-toggle" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="${collapseId}" title="${text}">
 ${text}
 </a>
                 `);
@@ -328,6 +355,73 @@ ${text}
         }
         $(function () {
             rerender_collect_toc();
+            
+            // 记住折叠状态
+            const STORAGE_KEY = 'toc_collapsed_state_' + window.location.pathname;
+            
+            function saveCollapsedState() {
+                const collapsed = {};
+                $('#collect-toc .collapse').each(function() {
+                    const id = $(this).attr('id');
+                    collapsed[id] = $(this).hasClass('show');
+                });
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(collapsed));
+                } catch (e) {
+                    console.warn('无法保存目录状态:', e);
+                }
+            }
+            
+            function restoreCollapsedState() {
+                try {
+                    const stored = localStorage.getItem(STORAGE_KEY);
+                    if (stored) {
+                        const collapsed = JSON.parse(stored);
+                        Object.keys(collapsed).forEach(id => {
+                            if (collapsed[id]) {
+                                $('#' + id).addClass('show');
+                                $(`a[aria-controls="${id}"]`).attr('aria-expanded', 'true');
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn('无法恢复目录状态:', e);
+                }
+            }
+            
+            // 恢复折叠状态
+            restoreCollapsedState();
+            
+            // 监听折叠状态变化
+            $('#collect-toc .collapse').on('shown.bs.collapse hidden.bs.collapse', saveCollapsedState);
+            
+            // 高亮当前激活项（使用 Bootstrap active 类）
+            function highlightActiveItem(href) {
+                $('#collect-toc .nav-link').removeClass('active');
+                const $activeLink = $('#collect-toc a[data-href="' + href + '"], #collect-toc a[href="' + href + '"]');
+                $activeLink.addClass('active');
+                
+                // 确保激活项的父级折叠面板展开
+                $activeLink.parents('.collapse').addClass('show').each(function() {
+                    const id = $(this).attr('id');
+                    $(`a[aria-controls="${id}"]`).attr('aria-expanded', 'true');
+                });
+                
+                // 滚动到可见区域
+                if ($activeLink.length) {
+                    const sidebar = document.getElementById('collect-side');
+                    if (sidebar) {
+                        const linkElement = $activeLink[0];
+                        const sidebarRect = sidebar.getBoundingClientRect();
+                        const linkRect = linkElement.getBoundingClientRect();
+                        
+                        if (linkRect.top < sidebarRect.top || linkRect.bottom > sidebarRect.bottom) {
+                            linkElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                }
+            }
+            
             // 点击 TOC 链接触发 AJAX
             $('#collect-toc').on('click', 'a', function (e) {
                 e.preventDefault(); // 阻止跳转
@@ -352,22 +446,33 @@ ${text}
                 var $mask = $(`
 <div class="loading-mask">
     <div class="spinner-border text-primary" role="status">
-    <span class="sr-only">Loading...</span>
+        <span class="sr-only">加载中...</span>
     </div>
 </div>
 `);
                 $('#toc').append($mask);
+                
                 // 发起 AJAX 请求
                 $.get(`${data_href}?html=true`, function (data) {
                     $('#toc').html(data); // 将请求的 HTML 渲染到 toc 元素下
                     tocbot.refresh();
                     $("#toc").data("current-href", data_href);
+                    
+                    // 高亮当前项
+                    highlightActiveItem(data_href);
+                    
                     const toc_size = $("#toc-table .toc-list-item").size();
                     if (toc_size && toc_size > 1) {
                         $("#toc-table").show()
                     } else {
                         $("#toc-table").hide()
                     }
+                    
+                    // 平滑滚动到顶部
+                    $('#toc').get(0).scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }).fail(function(xhr, status, error) {
+                    console.error('加载失败:', error);
+                    // 可以在这里显示错误提示
                 }).always(function () {
                     // 移除遮罩
                     $mask.remove();
@@ -376,21 +481,54 @@ ${text}
 
             const $layout = $('#collect-container');
             const $btn = $('#toggle-side');
+            const SIDEBAR_STORAGE_KEY = 'sidebar_collapsed_state';
 
             function updateBtn() {
                 if ($layout.hasClass('collapsed')) {
                     $btn.text('⟩'); // 展开箭头
+                    $btn.attr('title', '展开侧边栏');
                 } else {
                     $btn.text('⟨'); // 收起箭头
+                    $btn.attr('title', '收起侧边栏');
+                }
+            }
+
+            function saveSidebarState() {
+                try {
+                    localStorage.setItem(SIDEBAR_STORAGE_KEY, $layout.hasClass('collapsed') ? 'true' : 'false');
+                } catch (e) {
+                    console.warn('无法保存侧边栏状态:', e);
+                }
+            }
+
+            function restoreSidebarState() {
+                try {
+                    const collapsed = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+                    if (collapsed === 'true') {
+                        $layout.addClass('collapsed');
+                    }
+                } catch (e) {
+                    console.warn('无法恢复侧边栏状态:', e);
                 }
             }
 
             $btn.on('click', function () {
                 $layout.toggleClass('collapsed');
                 updateBtn();
+                saveSidebarState();
             });
 
+            // 恢复侧边栏状态
+            restoreSidebarState();
             updateBtn();
+            
+            // 键盘快捷键：Ctrl/Cmd + B 切换侧边栏
+            $(document).on('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                    e.preventDefault();
+                    $btn.click();
+                }
+            });
         });
     </script>
 
