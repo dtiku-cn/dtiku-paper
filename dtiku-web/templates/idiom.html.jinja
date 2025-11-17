@@ -191,7 +191,12 @@
                         href="#idiom-ref-{{r.id}}">{{r.paper.title}}</a>
                 </td>
                 <td class="text-center px-0 py-1">
-                    <a target="_blank" href="/paper/{{r.paper.id}}#q-{{r.sort}}">第{{r.sort}}题</a>
+                    <a target="_blank" href="/paper/{{r.paper.id}}#q-{{r.sort}}">
+                        第{{r.sort}}题
+                        <svg class="icon-svg icon-svg-sm">
+                            <use xlink:href="#ic-link"></use>
+                        </svg>
+                    </a>
                 </td>
             </tr>
             <tr class="well collapse bg-light" id="idiom-ref-{{r.id}}">
