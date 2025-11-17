@@ -21,7 +21,7 @@
             background: rgba(255, 255, 255, 0.3);
             -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
-            overflow-y: scroll;
+            overflow-y: auto;
             max-height: 90vh;
             border-radius: .5em .5em 0 0;
             box-shadow: 0 0 6px 0 rgba(0, 0, 0, .6);
@@ -166,7 +166,7 @@
                 </div>
                 {% endfor %}
                 <div class="fixed-bottom answer-paper-wrapper d-print-none">
-                    <div class="d-flex justify-content-center my-1">
+                    <div class="d-flex justify-content-center my-1 position-sticky" style="top:4px">
                         <a id="answer-paper-toggle" href="#answer-paper" data-toggle="collapse" class="btn btn-link">
                             <svg class="icon-svg icon-svg-sm icon-svg-arrow mr-2">
                                 <use xlink:href="#ic-arrow"></use>
