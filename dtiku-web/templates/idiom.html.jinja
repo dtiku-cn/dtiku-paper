@@ -131,7 +131,7 @@
                         {%endfor%}
                     </ul>
                     </p>
-                    <hr/>
+                    <hr />
                     {%endfor%}
                 </div>
                 <div class="tab-pane card-body fade" id="detailDefinitionContent" role="tabpanel">
@@ -154,7 +154,7 @@
                         </p>
                         {%endfor%}
                     </div>
-                    <hr/>
+                    <hr />
                     {%endfor%}
                 </div>
             </div>
@@ -187,11 +187,11 @@
                     <img class="vendor-icon" rel="external nofollow noreferrer" src="{r.refPaper.fromType.iconUrl()}"
                         alt="{r.refPaper.fromType.name()}" />
                     {%endif%}
-                    <a href="/paper/{{r.paper.id}}#q-{{r.sort}}" target="_blank">{{r.paper.title}}</a>
+                    <a class="btn btn-link dropdown-toggle" role="button" data-toggle="collapse"
+                        href="#idiom-ref-{{r.id}}">{{r.paper.title}}</a>
                 </td>
                 <td class="text-center px-0 py-1">
-                    <a class="btn btn-link dropdown-toggle" role="button" data-toggle="collapse"
-                        href="#idiom-ref-{{r.id}}">第{{r.sort}}题</a>
+                    <a target="_blank" href="/paper/{{r.paper.id}}#q-{{r.sort}}">第{{r.sort}}题</a>
                 </td>
             </tr>
             <tr class="well collapse bg-light" id="idiom-ref-{{r.id}}">
