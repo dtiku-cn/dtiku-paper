@@ -25,9 +25,16 @@
             var $target = $($(this).attr('href'));
             if (!$target.html().trim()) {
                 $target.css('background', "url('" + window.loadingGif + "') center center no-repeat");
-                $.get($target.data('href'), function (html) {
-                    $target.html(html);
-                })
+                $.ajax({
+                    url: $target.data('href'),
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/html+fragment'
+                    },
+                    success: function (html) {
+                        $target.html(html);
+                    }
+                });
             }
         });
     })

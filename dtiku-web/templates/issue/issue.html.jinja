@@ -427,29 +427,38 @@ ${text}
                 $("#printcontent").append($mask);
 
                 // 发起 AJAX 请求
-                $.get(`${data_href}?html=true`, function (data) {
-                    $("#printcontent").html(data); // 将请求的 HTML 渲染到 toc 元素下
-                    tocbot.refresh();
-                    $("#printcontent").data("current-href", data_href);
+                $.ajax({
+                    url: `${data_href}?html=true`,
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/html+fragment'
+                    },
+                    success: function (data) {
+                        $("#printcontent").html(data); // 将请求的 HTML 渲染到 toc 元素下
+                        tocbot.refresh();
+                        $("#printcontent").data("current-href", data_href);
 
-                    // 高亮当前项
-                    highlightActiveItem(data_href);
+                        // 高亮当前项
+                        highlightActiveItem(data_href);
 
-                    const toc_size = $("#toc-table .toc-list-item").size();
-                    if (toc_size && toc_size > 1) {
-                        $("#toc-table").show()
-                    } else {
-                        $("#toc-table").hide()
+                        const toc_size = $("#toc-table .toc-list-item").size();
+                        if (toc_size && toc_size > 1) {
+                            $("#toc-table").show()
+                        } else {
+                            $("#toc-table").hide()
+                        }
+
+                        // 平滑滚动到顶部
+                        $("#printcontent").get(0).scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('加载失败:', error);
+                        // 可以在这里显示错误提示
+                    },
+                    complete: function () {
+                        // 移除遮罩
+                        $mask.remove();
                     }
-
-                    // 平滑滚动到顶部
-                    $("#printcontent").get(0).scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }).fail(function (xhr, status, error) {
-                    console.error('加载失败:', error);
-                    // 可以在这里显示错误提示
-                }).always(function () {
-                    // 移除遮罩
-                    $mask.remove();
                 });
             });
 
