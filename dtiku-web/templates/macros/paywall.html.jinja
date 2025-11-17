@@ -26,14 +26,14 @@
 {%elif let Some(u)=global.user%}
     {# 会员过期且不是作者自己：显示付费墙 #}
     {%if u.is_expired() && issue.user_id != u.id %}
-    {%call paywall_with_truncate(issue.html, false, max_chars) %}
+    {%call paywall_with_truncate(issue.html, true, max_chars) %}
     {# 会员未过期或作者自己：显示完整内容 #}
     {%else%}
     {{issue.html|safe}}
     {%endif%}
 {# 未登录用户：显示付费墙 #}
 {%else%}
-{%call paywall_with_truncate(issue.html, true, max_chars) %}
+{%call paywall_with_truncate(issue.html, false, max_chars) %}
 {%endif%}
 {% endmacro render_paid_content %}
 

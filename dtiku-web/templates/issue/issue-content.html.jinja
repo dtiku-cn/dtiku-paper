@@ -1,18 +1,2 @@
 {%- import "macros/paywall.html.jinja" as paywall -%}
-{# 不需要付费的帖子直接显示 #}
-{%if !issue.paid%}
-{{issue.html|safe}}
-{# 已登录用户 #}
-{%elif let Some(u)=global.user%}
-    {# 会员过期且不是作者自己：显示付费墙 #}
-    {%if u.is_expired() && issue.user_id != u.id %}
-    {%call paywall::paywall_with_truncate(issue.html, true, 300) %}
-    {# 会员未过期或作者自己：显示完整内容 #}
-    {%else%}
-    {{issue.html|safe}}
-    {%endif%}
-{# 未登录用户：显示付费墙 #}
-{%else%}
-{%call paywall::paywall_with_truncate(issue.html, false, 300) %}
-{%endif%}
-
+{%call paywall.render_paid_content(issue, global)%}
