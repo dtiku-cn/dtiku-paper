@@ -112,23 +112,12 @@ pub struct StatsQuery {
     pub end_date: Option<NaiveDate>,
 }
 
-#[derive(Debug, Serialize)]
-pub struct PayStats {
-    pub stats: Vec<dtiku_pay::model::PayStatsByDay>,
-    pub unpaid_user_count: i64,
-}
-
 #[get("/api/pay/stats")]
 async fn pay_stats(
     Component(db): Component<DbConn>,
     Query(query): Query<StatsQuery>,
 ) -> Result<impl IntoResponse> {
     let stats = PayOrder::stats_by_day(&db, query.start_date, query.end_date).await?;
-    let total_unpaid_user_count = PayOrder::total_unpaid_user_count(&db).await?;
-    
-    Ok(Json(PayStats {
-        stats,
-        unpaid_user_count: total_unpaid_user_count,
-    }))
+    Ok(Json(stats))
 }
 

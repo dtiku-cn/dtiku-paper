@@ -15,13 +15,10 @@ pub struct PayStatsByDay {
     pub day: DateTime,
     pub paid_count: i64,
     pub paid_amount: i64,
-    pub unpaid_user_count: i64,
+    pub pending_count: i64,
+    pub pending_amount: i64,
 }
 
-#[derive(Debug, FromQueryResult, Serialize)]
-pub struct UnpaidUserCount {
-    pub unpaid_user_count: i64,
-}
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -120,10 +117,17 @@ impl Entity {
                   AND date_trunc('day', confirm) <= $2::date
                 GROUP BY day
             ),
-            unpaid_stats AS (
+            pending_stats AS (
                 SELECT 
                     date_trunc('day', created) as day,
-                    COUNT(DISTINCT user_id) as unpaid_user_count
+                    COUNT(*) as pending_count,
+                    SUM(CASE 
+                        WHEN level = 'monthly' THEN 1000
+                        WHEN level = 'quarterly' THEN 2500
+                        WHEN level = 'half_year' THEN 4000
+                        WHEN level = 'annual' THEN 6000
+                        ELSE 0
+                    END) as pending_amount
                 FROM pay_order
                 WHERE status = 'created'
                   AND date_trunc('day', created) >= $1::date 
@@ -134,10 +138,11 @@ impl Entity {
                 date_series.day,
                 COALESCE(paid_stats.paid_count, 0) as paid_count,
                 COALESCE(paid_stats.paid_amount, 0) as paid_amount,
-                COALESCE(unpaid_stats.unpaid_user_count, 0) as unpaid_user_count
+                COALESCE(pending_stats.pending_count, 0) as pending_count,
+                COALESCE(pending_stats.pending_amount, 0) as pending_amount
             FROM date_series
             LEFT JOIN paid_stats ON date_series.day = paid_stats.day
-            LEFT JOIN unpaid_stats ON date_series.day = unpaid_stats.day
+            LEFT JOIN pending_stats ON date_series.day = pending_stats.day
             ORDER BY date_series.day
             "#
             .to_owned(),
@@ -150,25 +155,4 @@ impl Entity {
             .context("PayStatsByDay execute failed")
     }
 
-    pub async fn total_unpaid_user_count<C: ConnectionTrait>(db: &C) -> anyhow::Result<i64> {
-        let db_backend = db.get_database_backend();
-
-        let stmt = Statement::from_sql_and_values(
-            db_backend,
-            r#"
-            SELECT COUNT(DISTINCT user_id) as unpaid_user_count
-            FROM pay_order
-            WHERE status = 'created'
-            "#
-            .to_owned(),
-            vec![],
-        );
-
-        let result = UnpaidUserCount::find_by_statement(stmt)
-            .one(db)
-            .await
-            .context("UnpaidUserCount execute failed")?;
-
-        Ok(result.map(|r| r.unpaid_user_count).unwrap_or(0))
-    }
 }
