@@ -75,9 +75,7 @@
         {% if paper.extra.block_count() == 3 %}
         <div class="paper paper-shenlun">
             {% if let Some(b) = paper.extra.compute_block(0)%}
-            <div th:if="${!#strings.isEmpty(paper.chapters.get(0).desc)}">
-                <h2 class="subtitle">{{b.name}}</h2>{{b.desc | safe}}
-            </div>
+            <div><h2 class="subtitle">{{b.name}}</h2>{{b.desc | safe}}</div>
             {%endif%}
             <section id="material-section" class="card mt-4">
                 <h2 class="card-header user-select-none">
