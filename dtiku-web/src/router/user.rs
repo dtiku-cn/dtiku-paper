@@ -133,7 +133,7 @@ struct LoginStatusResponse {
 
 /// 查询登录状态
 /// GET /api/wechat/login/status/:scene_id
-#[get("/api/wechat/login/status/:scene_id")]
+#[get("/api/wechat/login/status/{scene_id}")]
 async fn wechat_login_status(
     Path(scene_id): Path<String>,
     Component(redis): Component<Redis>,
