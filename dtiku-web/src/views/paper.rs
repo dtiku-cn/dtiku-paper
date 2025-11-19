@@ -86,6 +86,7 @@ pub struct ChapterPaperTemplate {
     pub questions: Vec<FullQuestion>,
     pub report: Option<Vec<ChapterReport>>,
     pub user_answer: Option<HashMap<i32, String>>,
+    pub user_time: Option<HashMap<i32, u64>>,
 }
 
 #[derive(Template, WebTemplate)]
@@ -132,6 +133,7 @@ impl IntoTemplate<ChapterPaperTemplate> for FullPaper {
             questions,
             report: Default::default(),
             user_answer: Default::default(),
+            user_time: Default::default(),
         }
     }
 }

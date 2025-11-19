@@ -121,6 +121,7 @@ async fn paper_exercise(
         &answer_q_time,
     ));
     t.user_answer = Some(user_answer);
+    t.user_time = Some(answer_q_time);
     Ok(Html(t.render().context("render failed")?))
 }
 
