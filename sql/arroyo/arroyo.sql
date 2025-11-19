@@ -298,6 +298,8 @@ FROM (
         CASE
             WHEN SPLIT_PART(request, ' ', 2) ~ '/paper/[0-9]+' THEN REGEXP_REPLACE(SPLIT_PART(request, ' ', 2), '/[0-9]+', '/:id')
             WHEN SPLIT_PART(request, ' ', 2) ~ '/user/[0-9]+' THEN REGEXP_REPLACE(SPLIT_PART(request, ' ', 2), '/[0-9]+', '/:id')
+            WHEN SPLIT_PART(request, ' ', 2) ~ '/idiom/[^/]+$' THEN REGEXP_REPLACE(SPLIT_PART(request, ' ', 2), '/[^/]+$', '/:idiom')
+            WHEN SPLIT_PART(request, ' ', 2) ~ '/word/[^/]+$' THEN REGEXP_REPLACE(SPLIT_PART(request, ' ', 2), '/[^/]+$', '/:word')
             WHEN POSITION('?' IN SPLIT_PART(request, ' ', 2)) > 0 
                 THEN SUBSTRING(SPLIT_PART(request, ' ', 2), 1, POSITION('?' IN SPLIT_PART(request, ' ', 2)) - 1)
             ELSE SPLIT_PART(request, ' ', 2)
