@@ -54,7 +54,7 @@ pub fn routers() -> Router {
     let governor_conf = Arc::new(
         GovernorConfigBuilder::default()
             .per_second(1) // 允许的平均请求速率
-            .burst_size(10) // 允许突发的最大请求数
+            .burst_size(20) // 允许突发的最大请求数
             // 优先从请求头里取 X-Forwarded-For、Forwarded 等常见代理头，取不到再回退到对端 IP
             .key_extractor(SmartIpKeyExtractor)
             .finish()
