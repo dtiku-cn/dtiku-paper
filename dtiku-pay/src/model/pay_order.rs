@@ -4,7 +4,8 @@ use anyhow::Context;
 use chrono::{Days, NaiveDate};
 use sea_orm::{
     prelude::DateTime, sqlx::types::chrono::Local, ActiveModelBehavior, ActiveValue::Set,
-    ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromQueryResult, QueryFilter, QuerySelect, Statement,
+    ColumnTrait, ConnectionTrait, DbErr, EntityTrait, FromQueryResult, QueryFilter, QuerySelect,
+    Statement,
 };
 use serde::Serialize;
 use spring::{async_trait, plugin::ComponentRegistry, App};
@@ -18,7 +19,6 @@ pub struct PayStatsByDay {
     pub pending_count: i64,
     pub pending_amount: i64,
 }
-
 
 #[async_trait]
 impl ActiveModelBehavior for ActiveModel {
@@ -41,9 +41,6 @@ impl ActiveModelBehavior for ActiveModel {
         if insert {
             let producer = App::global().get_expect_component::<Producer>();
             let _ = producer.send_json("pay_order", &model).await;
-        } else if model.confirm.is_some() {
-            let producer = App::global().get_expect_component::<Producer>();
-            let _ = producer.send_json("pay_order.confirm", &model).await;
         }
         Ok(model)
     }
@@ -82,7 +79,7 @@ impl Entity {
         end_date: Option<NaiveDate>,
     ) -> anyhow::Result<Vec<PayStatsByDay>> {
         let db_backend = db.get_database_backend();
-        
+
         // 默认最近30天
         let end = end_date.unwrap_or_else(|| Local::now().date_naive());
         let start = start_date.unwrap_or_else(|| {
@@ -154,5 +151,4 @@ impl Entity {
             .await
             .context("PayStatsByDay execute failed")
     }
-
 }
