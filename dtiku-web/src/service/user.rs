@@ -10,8 +10,8 @@ use dtiku_pay::model::OrderLevel;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
 use spring::plugin::service::Service;
-use spring_sea_orm::DbConn;
 use spring_redis::Redis;
+use spring_sea_orm::DbConn;
 use spring_web::axum::http;
 
 #[derive(Clone, Service)]
@@ -68,12 +68,12 @@ impl UserService {
             let mut active_user: user_info::ActiveModel = user.into();
             active_user.name = Set(wechat_user.nickname.clone());
             active_user.avatar = Set(wechat_user.headimgurl.clone());
-            
+
             let updated_user = active_user
                 .update(&self.db)
                 .await
                 .context("更新用户信息失败")?;
-            
+
             Ok(updated_user)
         } else {
             // 创建新用户
@@ -84,10 +84,7 @@ impl UserService {
                 ..Default::default()
             };
 
-            let user = new_user
-                .insert(&self.db)
-                .await
-                .context("创建用户失败")?;
+            let user = new_user.insert(&self.db).await.context("创建用户失败")?;
 
             Ok(user)
         }
@@ -152,16 +149,8 @@ impl UserService {
         user_id: i32,
         order_level: OrderLevel,
     ) -> anyhow::Result<user_info::Model> {
-        let now = Local::now().naive_local();
-        let expires = now + Duration::days(order_level.days() as i64);
-        user_info::ActiveModel {
-            id: Set(user_id),
-            expired: Set(expires),
-            ..Default::default()
-        }
-        .update(&self.db)
-        .await
-        .with_context(|| format!("update user failed"))
+        user_info::ActiveModel::add_expiration_days(&self.db, user_id, order_level.days() as i64)
+            .await
     }
 
     /// 获取微信公众号 access_token（带缓存）
@@ -170,9 +159,14 @@ impl UserService {
 
         const CACHE_KEY: &str = "wechat:mp:access_token";
         const TOKEN_EXPIRE_MARGIN: i64 = 300; // 提前 5 分钟过期
-        
+
         // 先尝试从缓存获取
-        if let Some(token) = self.redis.clone().get::<_, Option<String>>(CACHE_KEY).await? {
+        if let Some(token) = self
+            .redis
+            .clone()
+            .get::<_, Option<String>>(CACHE_KEY)
+            .await?
+        {
             return Ok(token);
         }
 
@@ -191,7 +185,7 @@ impl UserService {
         let token = response
             .access_token
             .ok_or_else(|| anyhow::anyhow!("access_token 为空"))?;
-        
+
         // 缓存 token（提前 5 分钟过期以确保安全）
         let expires_in = (response.expires_in.unwrap_or(7200) - TOKEN_EXPIRE_MARGIN).max(60);
         self.redis
@@ -205,7 +199,7 @@ impl UserService {
     /// 创建微信登录二维码
     pub async fn create_wechat_login_qrcode(&self, scene_id: &str) -> anyhow::Result<String> {
         let access_token = self.get_wechat_access_token().await?;
-        
+
         // 使用字符串场景值创建临时二维码
         let request = rpc::wechat::CreateQrcodeRequest::new_temp_str(
             scene_id.to_string(),
@@ -225,9 +219,12 @@ impl UserService {
     }
 
     /// 获取微信用户信息
-    pub async fn get_wechat_user_info(&self, openid: &str) -> anyhow::Result<rpc::wechat::WechatMpUser> {
+    pub async fn get_wechat_user_info(
+        &self,
+        openid: &str,
+    ) -> anyhow::Result<rpc::wechat::WechatMpUser> {
         let access_token = self.get_wechat_access_token().await?;
-        
+
         let user_info = rpc::wechat::get_user_info(&access_token, openid, "zh_CN")
             .await
             .context("获取用户信息失败")?;
@@ -242,11 +239,7 @@ impl UserService {
     fn check_wechat_error(errcode: Option<i32>, errmsg: Option<&str>) -> anyhow::Result<()> {
         if let Some(code) = errcode {
             if code != 0 {
-                anyhow::bail!(
-                    "微信 API 错误 [{}]: {}",
-                    code,
-                    errmsg.unwrap_or("未知错误")
-                );
+                anyhow::bail!("微信 API 错误 [{}]: {}", code, errmsg.unwrap_or("未知错误"));
             }
         }
         Ok(())

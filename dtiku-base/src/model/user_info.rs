@@ -1,7 +1,7 @@
 pub use super::_entities::user_info::*;
 use crate::query::UserQuery;
 use anyhow::Context;
-use chrono::{Days, NaiveDate};
+use chrono::{Days, Duration, NaiveDate};
 use sea_orm::entity::prelude::*;
 use sea_orm::QueryOrder;
 use sea_orm::{
@@ -69,6 +69,25 @@ impl ActiveModelBehavior for ActiveModel {
     }
 }
 
+impl ActiveModel {
+    pub async fn add_expiration_days<C: ConnectionTrait>(
+        db: &C,
+        user_id: i32,
+        days: i64,
+    ) -> anyhow::Result<Model> {
+        let now = Local::now().naive_local();
+        let expires = now + Duration::days(days);
+        Self {
+            id: Set(user_id),
+            expired: Set(expires),
+            ..Default::default()
+        }
+        .update(db)
+        .await
+        .with_context(|| format!("update user failed"))
+    }
+}
+
 impl Entity {
     #[cache("user:{id}", expire = 86400, unless = result.is_none())]
     pub async fn find_user_by_id<C: ConnectionTrait>(
@@ -111,7 +130,7 @@ impl Entity {
         end_date: Option<NaiveDate>,
     ) -> anyhow::Result<Vec<UserStatsByDay>> {
         let db_backend = db.get_database_backend();
-        
+
         // 默认最近30天
         let end = end_date.unwrap_or_else(|| Local::now().date_naive());
         let start = start_date.unwrap_or_else(|| end - chrono::Duration::days(30));

@@ -18,13 +18,13 @@ use dtiku_paper::model::{
 use futures::StreamExt as _;
 use itertools::Itertools as _;
 use scraper::Html;
-use sea_orm::{prelude::PgVector, ActiveValue::Set, ConnectionTrait, Statement};
+use sea_orm::{prelude::PgVector, ActiveValue::Set, ConnectionTrait};
 use serde::Deserialize;
 use serde_json::Value;
 use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
-use sqlx::{types::Json, Row};
+use sqlx::types::Json;
 use std::{collections::HashMap, num::ParseIntError};
 
 #[derive(Clone, Service)]
