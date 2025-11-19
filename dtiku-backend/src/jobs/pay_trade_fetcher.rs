@@ -28,6 +28,10 @@ async fn find_wait_confirm_order(svc: &PayOrderService, after_time: NaiveDateTim
     let r = svc.find_wait_confirm_after(after_time).await;
     match r {
         Ok(orders) => {
+            tracing::info!(
+                "find {} wait confirm orders after {after_time:?}",
+                orders.len()
+            );
             for o in orders {
                 let order_id = o.id;
                 if let Err(e) = inner_fetch_trade(o, svc).await {

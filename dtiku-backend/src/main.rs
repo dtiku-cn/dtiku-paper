@@ -9,6 +9,7 @@ mod views;
 use dtiku_pay::PayPlugin;
 use plugins::{embedding::EmbeddingPlugin, jobs::RunningJobsPlugin};
 use spring::{auto_config, App};
+use spring_job::JobPlugin;
 use spring_opendal::OpenDALPlugin;
 use spring_opentelemetry::{
     KeyValue, OpenTelemetryPlugin, ResourceConfigurator, SERVICE_NAME, SERVICE_VERSION,
@@ -30,6 +31,7 @@ async fn main() {
         .add_router(router::routers())
         .add_consumer(jobs::consumer())
         .add_plugin(WebPlugin)
+        .add_plugin(JobPlugin)
         .add_plugin(SeaOrmPlugin)
         .add_plugin(SqlxPlugin)
         .add_plugin(StreamPlugin)
