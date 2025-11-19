@@ -21,7 +21,7 @@ use wechat_pay_rust_sdk::{
 #[derive(Clone, Service)]
 pub struct PayOrderService {
     #[inject(component)]
-    db: DbConn,
+    pub db: DbConn,
     #[inject(component)]
     alipay: Alipay,
     #[inject(component)]

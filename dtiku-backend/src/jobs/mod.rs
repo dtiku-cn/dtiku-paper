@@ -149,5 +149,7 @@ pub(crate) struct MaterialIdNumber {
 }
 
 pub(crate) fn consumer() -> Consumers {
-    Consumers::new().typed_consumer(task_schedule)
+    Consumers::new()
+        .typed_consumer(task_schedule)
+        .typed_consumer(pay_trade_fetcher::trade_fetch)
 }

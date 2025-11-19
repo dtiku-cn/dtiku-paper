@@ -159,6 +159,16 @@ SELECT
     MAX(timestamp) as last_seen,
     MAX(timestamp) + INTERVAL '1 hour' as block_until
 FROM nginx_access_log
+WHERE 
+    -- 排除轮询接口（健康检查、监控等）
+    SPLIT_PART(request, ' ', 2) NOT LIKE '%/health%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/ping%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/metrics%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/heartbeat%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/alive%'
+    -- 排除业务轮询接口
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/pay/%/status%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/api/wechat/login/status/%'
 GROUP BY 
     host,
     remote_addr,
@@ -339,6 +349,15 @@ WHERE
     AND http_user_agent NOT LIKE '%Baidu%'
     AND http_user_agent NOT LIKE '%Sogou%'
     AND http_referer IN ('-', '')  -- 无来源页面
+    -- 排除轮询接口（健康检查、监控等）
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/health%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/ping%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/metrics%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/heartbeat%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/alive%'
+    -- 排除业务轮询接口
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/pay/%/status%'
+    AND SPLIT_PART(request, ' ', 2) NOT LIKE '%/api/wechat/login/status/%'
 GROUP BY 
     host,
     remote_addr,

@@ -53,7 +53,18 @@ impl SogouIdiomExplain {
             .css_selector()
             .await?;
 
-        Ok(Self::from_html(html)?)
+        let result = Self::from_html(html)?;
+
+        // 验证返回的成语是否匹配
+        if result.idiom != "<undefined>" && result.idiom != idiom {
+            tracing::warn!(
+                "搜狗返回的成语【{}】与请求的成语【{}】不匹配",
+                result.idiom,
+                idiom
+            );
+        }
+
+        Ok(result)
     }
 }
 
@@ -79,10 +90,19 @@ pub struct BaiduApiResponse {
 
 impl BaiduApiResponse {
     pub async fn fetch(idiom: &str) -> anyhow::Result<Self> {
-        let term_detail = reqwest::get(format!("https://hanyuapp.baidu.com/dictapp/swan/termdetail?wd={idiom}&client=pc&source_tag=2&smp_names=termBrand2,poem1&lesson_from=xiaodu"))
+        let term_detail:Self = reqwest::get(format!("https://hanyuapp.baidu.com/dictapp/swan/termdetail?wd={idiom}&client=pc&source_tag=2&smp_names=termBrand2,poem1&lesson_from=xiaodu"))
             .await?
             .json()
             .await?;
+
+        // 检查API返回的错误码
+        if term_detail.errno != 0 {
+            anyhow::bail!(
+                "百度API返回错误: errno={}, errmsg={}",
+                term_detail.errno,
+                term_detail.errmsg
+            );
+        }
 
         Ok(term_detail)
     }
