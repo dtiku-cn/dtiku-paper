@@ -203,7 +203,7 @@
         <div>参考答案：<b class="-answer-">{{answer | safe}}</b></div>
         {%endif%}
         {%if let Some(ut) = user_time%}
-        <div>
+        <div class="ml-4">
             耗时：<b class="text-info">{{ut.get(q.id).unwrap_or(&0) | hms}}</b>
         </div>
         {%endif%}
