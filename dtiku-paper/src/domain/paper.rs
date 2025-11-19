@@ -12,9 +12,9 @@ use strum::{AsRefStr, Display, EnumIter, EnumMessage, EnumString};
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum PaperMode {
+    #[default]
     #[strum(message = "练习模式")]
     Exercise,
-    #[default]
     #[strum(message = "展示答案")]
     ShowAnswer,
 }
