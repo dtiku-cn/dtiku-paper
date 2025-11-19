@@ -40,13 +40,10 @@ const FRAGMENT_ACCEPT_HEADER: &str = "text/html+fragment";
 const FRAGMENT_RELOAD_SCRIPT: &str = r#"<script>window.location.reload();</script>"#;
 
 pub async fn global_error_page(
-    mut tf_service: Component<TrafficService>,
     ec_service: Component<ExamCategoryService>,
     sc_service: Component<SystemConfigService>,
     us_service: Component<UserService>,
     dtiku_config: Config<DtikuConfig>,
-    ClientIp(client_ip): ClientIp,
-    TypedHeader(user_agent): TypedHeader<UserAgent>,
     claims: OptionalClaims,
     host: Host,
     cookies: CookieJar,
@@ -54,68 +51,29 @@ pub async fn global_error_page(
     next: Next,
 ) -> Response {
     let original_host = host.0.clone();
-    let is_fragment = is_fragment_request(&req);
-    
-    // 对非忽略路径执行反爬虫检查
-    if !IGNORE_PREFIX
-        .iter()
-        .any(|prefix| req.uri().path().starts_with(prefix))
-    {
-        if let Some(resp) = anti_bot(
-            &mut tf_service,
-            &sc_service,
-            &cookies,
-            &user_agent,
-            client_ip,
-            &original_host,
-            is_fragment,
-        )
-        .await
-        {
-            return resp;
-        }
-    }
     let fp = cookies
         .get("x-fp")
         .map(|x_fp_id| x_fp_id.value())
         .map(|x_fp_id| format!("fp:{x_fp_id}"))
         .unwrap_or("".to_string());
-    let resp = match with_context(
-        &ec_service,
-        &sc_service,
-        &us_service,
-        &dtiku_config,
-        &claims,
-        host,
-        cookies,
-        req,
-        next,
-    )
-    .await
-    {
-        Ok(mut r) => {
-            let remote_user = match &*claims {
-                Some(c) => format!("u:{}", c.user_id),
-                None => fp,
-            };
-            if let Ok(remote_user) = HeaderValue::from_str(&remote_user) {
-                r.headers_mut().insert("X-Remote-User", remote_user);
-            }
-            r
-        }
-        Err(e) => {
-            tracing::error!("request error: {e:?}");
-            e.into_response()
-        }
+
+    let mut resp = next.run(req).await;
+    let remote_user = match &*claims {
+        Some(c) => format!("u:{}", c.user_id),
+        None => fp,
     };
-    
+    if let Ok(remote_user) = HeaderValue::from_str(&remote_user) {
+        resp.headers_mut().insert("X-Remote-User", remote_user);
+    }
+
     // 处理错误响应，渲染错误页面
     let status = resp.status();
     if status.is_client_error() || status.is_server_error() {
         let msg = resp.into_body();
         match body::to_bytes(msg, usize::MAX).await {
             Ok(bytes) => {
-                let msg = String::from_utf8(bytes.to_vec()).unwrap_or_else(|_| "Invalid UTF-8 in response body".to_string());
+                let msg = String::from_utf8(bytes.to_vec())
+                    .unwrap_or_else(|_| "Invalid UTF-8 in response body".to_string());
                 let t = ErrorTemplate {
                     status,
                     msg: msg.as_str(),
@@ -148,10 +106,13 @@ static CRAWLER_CONFIGS: &[(&str, &[&str])] = &[
 ];
 
 /// 全局 DNS Resolver 实例（延迟初始化）
-static DNS_RESOLVER: OnceLock<hickory_resolver::Resolver<hickory_resolver::name_server::TokioConnectionProvider>> = OnceLock::new();
+static DNS_RESOLVER: OnceLock<
+    hickory_resolver::Resolver<hickory_resolver::name_server::TokioConnectionProvider>,
+> = OnceLock::new();
 
 /// 获取或创建 DNS Resolver
-fn get_dns_resolver() -> &'static hickory_resolver::Resolver<hickory_resolver::name_server::TokioConnectionProvider> {
+fn get_dns_resolver(
+) -> &'static hickory_resolver::Resolver<hickory_resolver::name_server::TokioConnectionProvider> {
     DNS_RESOLVER.get_or_init(|| {
         hickory_resolver::Resolver::builder_with_config(
             hickory_resolver::config::ResolverConfig::default(),
@@ -171,7 +132,10 @@ fn is_fragment_request(req: &Request) -> bool {
 }
 
 /// 生成片段请求或完整页面的响应
-fn create_anti_bot_response(is_fragment: bool, full_html: impl FnOnce() -> Option<String>) -> Option<Response> {
+fn create_anti_bot_response(
+    is_fragment: bool,
+    full_html: impl FnOnce() -> Option<String>,
+) -> Option<Response> {
     let html = if is_fragment {
         FRAGMENT_RELOAD_SCRIPT.to_string()
     } else {
@@ -187,7 +151,7 @@ fn domain_matches(domain: &str, allowed_suffixes: &[&str]) -> bool {
 }
 
 /// 多层反爬虫机制
-/// 
+///
 /// ## 策略层级：
 /// 1. **SEO 爬虫白名单验证**：通过反向 DNS 验证合法爬虫（Google、Bing 等）
 /// 2. **User Agent 黑名单**：阻止已知恶意 UA
@@ -198,46 +162,71 @@ fn domain_matches(domain: &str, allowed_suffixes: &[&str]) -> bool {
 /// 5. **Captcha 反爬虫**：防无头浏览器（基于 Arroyo 实时流量监测）
 ///    - 超阈值的 IP 进入 Redis block_ip 列表
 ///    - 验证成功后从列表移除
-async fn anti_bot(
-    Component(traffic_service): &mut Component<TrafficService>,
-    Component(sc_service): &Component<SystemConfigService>,
-    cookies: &CookieJar,
-    user_agent: &UserAgent,
-    client_ip: IpAddr,
-    original_host: &str,
-    is_fragment: bool,
-) -> Option<Response> {
+pub async fn anti_bot(
+    Component(mut traffic_service): Component<TrafficService>,
+    Component(sc_service): Component<SystemConfigService>,
+    ClientIp(client_ip): ClientIp,
+    TypedHeader(user_agent): TypedHeader<UserAgent>,
+    Host(original_host): Host,
+    cookies: CookieJar,
+    req: Request,
+    next: Next,
+) -> Response {
+    let is_fragment = is_fragment_request(&req);
+
+    // 对非忽略路径执行反爬虫检查
+    if IGNORE_PREFIX
+        .iter()
+        .any(|prefix| req.uri().path().starts_with(prefix))
+    {
+        return next.run(req).await;
+    }
     // 1. SEO 爬虫白名单验证
-    if should_verify_as_seo_bot(sc_service, user_agent).await {
+    if should_verify_as_seo_bot(&sc_service, &user_agent).await {
         if let Some(bot_name) = validate_seo_ip(client_ip).await.ok().flatten() {
             tracing::trace!("confirmed to be from a legitimate crawler: {bot_name}");
-            return None;
+            return next.run(req).await;
         }
     }
-    
+
     // 2. User Agent 黑名单检查
-    if is_blocked_user_agent(sc_service, user_agent).await {
+    if is_blocked_user_agent(&sc_service, &user_agent).await {
         tracing::warn!("blocked user agent: {}", user_agent.as_str());
-        return Some(StatusCode::FORBIDDEN.into_response());
+        return StatusCode::FORBIDDEN.into_response();
     }
 
     // 3. IP 黑名单检查
-    if is_blocked_ip(sc_service, client_ip).await {
+    if is_blocked_ip(&sc_service, client_ip).await {
         tracing::warn!("blocked ip address: {}", client_ip);
-        return Some(StatusCode::FORBIDDEN.into_response());
+        return StatusCode::FORBIDDEN.into_response();
     }
 
     // 4. JS 反爬虫验证
-    if let Some(resp) = js_anti_bot(cookies, client_ip, is_fragment) {
-        return Some(resp);
+    if let Some(resp) = js_anti_bot(&cookies, client_ip, is_fragment) {
+        return resp;
     }
-    
+
     // 5. Captcha 反爬虫验证（实时流量监控）
-    captcha_anti_bot(traffic_service, cookies, client_ip, original_host, is_fragment).await
+    if let Some(resp) = captcha_anti_bot(
+        &mut traffic_service,
+        &cookies,
+        client_ip,
+        &original_host,
+        is_fragment,
+    )
+    .await
+    {
+        return resp;
+    }
+
+    next.run(req).await
 }
 
 /// 检查是否需要验证为 SEO 爬虫
-async fn should_verify_as_seo_bot(sc_service: &SystemConfigService, user_agent: &UserAgent) -> bool {
+async fn should_verify_as_seo_bot(
+    sc_service: &SystemConfigService,
+    user_agent: &UserAgent,
+) -> bool {
     let seo_user_agents = sc_service.parsed_seo_user_agents().await;
     seo_user_agents
         .iter()
@@ -270,7 +259,7 @@ async fn captcha_anti_bot(
     if !traffic_service.is_block_ip(original_host, client_ip).await {
         return None;
     }
-    
+
     // 验证 captcha token
     if let Some(cap_token) = cookies.get("cap-token") {
         tracing::info!("verify cap-token: {}", cap_token.value());
@@ -286,9 +275,9 @@ async fn captcha_anti_bot(
             return None;
         }
     }
-    
+
     tracing::warn!("realtime blocked ip address: {}", client_ip);
-    
+
     // 返回验证页面或刷新脚本
     create_anti_bot_response(is_fragment, || traffic_service.gen_cap_template().ok())
 }
@@ -296,10 +285,10 @@ async fn captcha_anti_bot(
 fn js_anti_bot(cookies: &CookieJar, client_ip: IpAddr, is_fragment: bool) -> Option<Response> {
     let client_ip_str = client_ip.to_string();
     let now_week = Utc::now().timestamp() / TIME_WINDOW_SECONDS;
-    
+
     // 生成动态密钥
     let dynamic_secret = generate_hash(&format!("{now_week}{client_ip_str}{SERVER_SECRET}"));
-    
+
     // 验证 token
     if let (Some(token), Some(fp)) = (cookies.get("x-anti-token"), cookies.get("x-fp")) {
         let visitor_id = fp.value();
@@ -310,7 +299,7 @@ fn js_anti_bot(cookies: &CookieJar, client_ip: IpAddr, is_fragment: bool) -> Opt
             return None;
         }
     }
-    
+
     // 返回反爬虫验证页面或刷新脚本
     create_anti_bot_response(is_fragment, || {
         let template = AntiBotTemplate {
@@ -328,7 +317,7 @@ fn generate_hash(data: &str) -> String {
 }
 
 /// 验证 SEO 爬虫 IP 的合法性
-/// 
+///
 /// 通过反向 DNS 查询和正向 DNS 查询来验证爬虫的真实性：
 /// 1. 反向解析 IP -> 域名
 /// 2. 检查域名是否匹配已知爬虫的域名后缀
@@ -381,7 +370,42 @@ task_local! {
     pub static EXAM_ID: i16;
 }
 
-async fn with_context(
+/// 为每个请求注入全局上下文变量
+pub async fn with_global_context(
+    ec_service: Component<ExamCategoryService>,
+    sc_service: Component<SystemConfigService>,
+    us_service: Component<UserService>,
+    config: Config<DtikuConfig>,
+    claims: OptionalClaims,
+    host: Host,
+    cookies: CookieJar,
+    req: Request,
+    next: Next,
+) -> Response {
+    match with_context_inner(
+        &ec_service,
+        &sc_service,
+        &us_service,
+        &config,
+        &claims,
+        host,
+        cookies,
+        req,
+        next,
+    )
+    .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::error!("request error: {e:?}");
+            e.into_response()
+        }
+    }
+}
+
+/// 为每个请求注入全局上下文变量
+#[inline]
+async fn with_context_inner(
     Component(ec_service): &Component<ExamCategoryService>,
     Component(sc_service): &Component<SystemConfigService>,
     Component(us_service): &Component<UserService>,

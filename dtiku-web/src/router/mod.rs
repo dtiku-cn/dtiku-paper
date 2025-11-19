@@ -71,7 +71,9 @@ pub fn routers() -> Router {
     });
 
     spring_web::handler::auto_router()
+        .route_layer(axum_middleware::from_fn(middleware::with_global_context))
         .route_layer(axum_middleware::from_fn(middleware::global_error_page))
+        .route_layer(axum_middleware::from_fn(middleware::anti_bot))
         .layer(trace_layer)
         .layer(http_tracing_layer)
         .layer(match env {
