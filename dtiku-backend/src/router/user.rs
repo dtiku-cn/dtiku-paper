@@ -8,8 +8,8 @@ use spring_sea_orm::pagination::Pagination;
 use spring_web::{
     axum::{response::IntoResponse, Json},
     error::Result,
-    extractor::{Component, Query},
-    get,
+    extractor::{Component, Path, Query},
+    get, post,
 };
 
 #[derive(Debug, Serialize)]
@@ -120,4 +120,18 @@ async fn online_users(
     };
 
     Ok(Json(stats))
+}
+
+#[post("/api/users/{user_id}/extend/{days}")]
+async fn extend_user_expiration(
+    Component(db): Component<DbConn>,
+    Path((user_id, days)): Path<(i32, i64)>,
+) -> Result<impl IntoResponse> {
+    use dtiku_base::model::user_info::ActiveModel;
+    
+    let user = ActiveModel::add_expiration_days(&db, user_id, days)
+        .await
+        .context("延长用户过期时间失败")?;
+    
+    Ok(Json(user))
 }

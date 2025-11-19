@@ -75,8 +75,22 @@ impl ActiveModel {
         user_id: i32,
         days: i64,
     ) -> anyhow::Result<Model> {
+        // 先查询用户当前的过期时间
+        let user = Entity::find_by_id(user_id)
+            .one(db)
+            .await
+            .with_context(|| format!("查询用户失败"))?
+            .with_context(|| format!("用户不存在"))?;
+        
         let now = Local::now().naive_local();
-        let expires = now + Duration::days(days);
+        // 如果用户已过期，从当前时间开始计算；否则在原过期时间基础上延长
+        let base_time = if user.expired < now {
+            now
+        } else {
+            user.expired
+        };
+        let expires = base_time + Duration::days(days);
+        
         Self {
             id: Set(user_id),
             expired: Set(expires),
