@@ -114,7 +114,7 @@ impl PayOrderService {
         Ok(response.qr_code)
     }
 
-    pub async fn query_alipay_order(&self, model: pay_order::Model) -> anyhow::Result<()> {
+    pub async fn query_alipay_order(&self, model: pay_order::Model) -> anyhow::Result<pay_order::Model> {
         let order_id = model.id;
         let alipay = self.alipay.clone();
         let mut biz_content = biz::TradeQueryBiz::new();
@@ -131,7 +131,7 @@ impl PayOrderService {
         let status = OrderStatus::from_alipay(&status_str);
         let now = Local::now().naive_local();
 
-        pay_order::ActiveModel {
+        let model = pay_order::ActiveModel {
             id: Set(order_id),
             confirm: Set(Some(now)),
             status: Set(status),
@@ -144,10 +144,10 @@ impl PayOrderService {
         .await
         .with_context(|| format!("update_pay_order({order_id}) failed"))?;
 
-        Ok(())
+        Ok(model)
     }
 
-    pub async fn query_wechat_order(&self, model: pay_order::Model) -> anyhow::Result<()> {
+    pub async fn query_wechat_order(&self, model: pay_order::Model) -> anyhow::Result<pay_order::Model> {
         let wechat = self.wechat.clone();
         let order_id = model.id;
         let mchid = &wechat.mch_id;
@@ -167,7 +167,7 @@ impl PayOrderService {
         let status = OrderStatus::from_wechat(&resp.trade_state);
         let now = Local::now().naive_local();
 
-        pay_order::ActiveModel {
+        let model = pay_order::ActiveModel {
             id: Set(order_id),
             confirm: Set(Some(now)),
             status: Set(status),
@@ -180,7 +180,7 @@ impl PayOrderService {
         .await
         .with_context(|| format!("update_pay_order({order_id}) failed"))?;
 
-        Ok(())
+        Ok(model)
     }
 
     pub async fn alipay_verify_sign(&self, raw_body: &[u8]) -> anyhow::Result<()> {
@@ -276,7 +276,10 @@ impl PayOrderService {
         }
     }
 
-    pub async fn notify_wechat_pay(&self, notify: &WechatPayNotify) -> anyhow::Result<()> {
+    pub async fn notify_wechat_pay(
+        &self,
+        notify: &WechatPayNotify,
+    ) -> anyhow::Result<pay_order::Model> {
         let wechat = self.wechat.clone();
         let resource = notify.resource.clone();
         let nonce = resource.nonce;
@@ -296,7 +299,7 @@ impl PayOrderService {
         let out_trade_no = data.out_trade_no.parse::<i32>().context("解析订单号失败")?;
         let now = Local::now().naive_local();
 
-        pay_order::ActiveModel {
+        let model = pay_order::ActiveModel {
             id: Set(out_trade_no),
             confirm: Set(Some(now)),
             status: Set(status),
@@ -308,10 +311,10 @@ impl PayOrderService {
         .update(&self.db)
         .await
         .with_context(|| format!("update_pay_order({out_trade_no}) failed"))?;
-        Ok(())
+        Ok(model)
     }
 
-    pub async fn notify_alipay(&self, raw_body: &[u8]) -> anyhow::Result<()> {
+    pub async fn notify_alipay(&self, raw_body: &[u8]) -> anyhow::Result<pay_order::Model> {
         let notify = serde_urlencoded::from_bytes::<AlipayNotify>(raw_body)
             .context("支付宝notify解析失败")?;
 
@@ -321,7 +324,7 @@ impl PayOrderService {
         let status = OrderStatus::from_alipay(&notify.trade_status);
         let now = Local::now().naive_local();
 
-        pay_order::ActiveModel {
+        let model = pay_order::ActiveModel {
             id: Set(out_trade_no),
             confirm: Set(Some(now)),
             status: Set(status),
@@ -334,7 +337,7 @@ impl PayOrderService {
         .await
         .with_context(|| format!("update_pay_order({out_trade_no}) failed"))?;
 
-        Ok(())
+        Ok(model)
     }
 
     pub async fn find_wait_confirm_after(

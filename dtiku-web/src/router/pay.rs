@@ -2,13 +2,17 @@ use super::Claims;
 use crate::{
     query::pay::TradeCreateQuery,
     router::error_messages,
+    service::user::UserService,
     views::{
         pay::{PayRedirectTemplate, PayTradeCreateTemplate},
         GlobalVariables,
     },
 };
 use anyhow::Context;
-use dtiku_pay::{model::PayOrder, service::pay_order::PayOrderService};
+use dtiku_pay::{
+    model::{pay_order, PayOrder},
+    service::pay_order::PayOrderService,
+};
 use http::StatusCode;
 use sea_orm::DbConn;
 use serde_json::json;
@@ -69,7 +73,8 @@ async fn pay_status(
 /// https://pay.weixin.qq.com/doc/v3/merchant/4012791882
 #[post("/pay/wechat/callback")]
 async fn wechat_pay_callback(
-    Component(p_service): Component<PayOrderService>,
+    Component(ps): Component<PayOrderService>,
+    Component(us): Component<UserService>,
     headers: HeaderMap,
     body: String,
 ) -> Result<impl IntoResponse> {
@@ -90,7 +95,7 @@ async fn wechat_pay_callback(
         .and_then(|v| v.to_str().ok())
         .unwrap_or_default();
 
-    let notify = match p_service
+    let notify = match ps
         .wechat_verify_signature(serial, timestamp, nonce, signature, &body)
         .await
         .context("verify_signature failed")
@@ -111,12 +116,25 @@ async fn wechat_pay_callback(
         Ok(notify) => notify,
     };
 
-    if let Err(e) = p_service.notify_wechat_pay(&notify).await {
-        tracing::error!("处理微信支付回调失败: {e:#}");
-        return Ok((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"code": "FAIL", "message": "处理失败"})),
-        ));
+    let model = match ps.notify_wechat_pay(&notify).await {
+        Err(e) => {
+            tracing::error!("处理微信支付回调失败: {e:#}");
+            return Ok((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"code": "FAIL", "message": "处理失败"})),
+            ));
+        }
+        Ok(model) => model,
+    };
+
+    let pay_order::Model { user_id, level, .. } = model;
+    match us.confirm_user(user_id, level).await {
+        Err(e) => {
+            tracing::error!("confirm_user({user_id},{level}) failed>>>{e:?}");
+        }
+        Ok(u) => {
+            tracing::info!("confirm_user({user_id},{level}) success>>>{u:?}");
+        }
     }
 
     Ok((StatusCode::OK, Json("".into())))
@@ -125,16 +143,30 @@ async fn wechat_pay_callback(
 /// https://opendocs.alipay.com/open/194/103296
 #[post("/pay/alipay/callback")]
 async fn alipay_callback(
-    Component(p_service): Component<PayOrderService>,
+    Component(ps): Component<PayOrderService>,
+    Component(us): Component<UserService>,
     body: Bytes,
 ) -> Result<impl IntoResponse> {
-    if let Err(e) = p_service.alipay_verify_sign(&body).await {
+    if let Err(e) = ps.alipay_verify_sign(&body).await {
         tracing::error!("支付宝验签失败:{e:#}");
         return Ok("fail");
     }
-    if let Err(e) = p_service.notify_alipay(&body).await {
-        tracing::error!("处理支付宝回调失败: {e:#}");
-        return Ok("fail");
+    let model = match ps.notify_alipay(&body).await {
+        Err(e) => {
+            tracing::error!("处理支付宝回调失败: {e:#}");
+            return Ok("fail");
+        }
+        Ok(model) => model,
+    };
+
+    let pay_order::Model { user_id, level, .. } = model;
+    match us.confirm_user(user_id, level).await {
+        Err(e) => {
+            tracing::error!("confirm_user({user_id},{level}) failed>>>{e:?}");
+        }
+        Ok(u) => {
+            tracing::info!("confirm_user({user_id},{level}) success>>>{u:?}");
+        }
     }
     Ok("success")
 }

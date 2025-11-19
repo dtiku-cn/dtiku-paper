@@ -1,8 +1,11 @@
+use anyhow::Context as _;
 use chrono::{Duration, Local, NaiveDateTime};
+use dtiku_base::model::user_info;
 use dtiku_pay::{
     model::{pay_order, PayFrom},
     service::pay_order::PayOrderService,
 };
+use sea_orm::DbConn;
 use spring::tracing;
 use spring_job::{extractor::Component as JobComponent, fix_delay};
 use spring_stream::{
@@ -48,17 +51,34 @@ async fn find_wait_confirm_order(svc: &PayOrderService, after_time: NaiveDateTim
 #[stream_listener("pay_order")]
 async fn trade_fetch(
     StreamComponent(svc): StreamComponent<PayOrderService>,
+    StreamComponent(db): StreamComponent<DbConn>,
     Json(model): Json<pay_order::Model>,
 ) {
     let order_id = model.id;
-    if let Err(e) = inner_fetch_trade(model, &svc).await {
-        tracing::error!("fetch_order({order_id}) failed>>>{e:?}")
+    let model = match inner_fetch_trade(model, &svc).await {
+        Err(e) => {
+            tracing::error!("fetch_order({order_id}) failed>>>{e:?}");
+            return;
+        }
+        Ok(model) => model,
+    };
+    if let Err(e) =
+        user_info::ActiveModel::add_expiration_days(&db, model.user_id, model.level.days() as i64)
+            .await
+    {
+        tracing::error!("add expiration days failed for order#{order_id}>>>{e:?}");
     }
 }
 
-async fn inner_fetch_trade(model: pay_order::Model, svc: &PayOrderService) -> anyhow::Result<()> {
-    match model.pay_from {
+async fn inner_fetch_trade(
+    model: pay_order::Model,
+    svc: &PayOrderService,
+) -> anyhow::Result<pay_order::Model> {
+    let order_id = model.id;
+    let pay_from = model.pay_from;
+    match pay_from {
         PayFrom::Alipay => svc.query_alipay_order(model).await,
         PayFrom::Wechat => svc.query_wechat_order(model).await,
     }
+    .with_context(|| format!("fetch trade failed for order#{order_id} from {pay_from}"))
 }

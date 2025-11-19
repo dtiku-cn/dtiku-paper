@@ -76,3 +76,9 @@ strip_prefix = "${DTIKU_STRIP_PREFIX}"
 cap_site_key = "${CAP_SITE_KEY:322cf31509}"
 cap_secret_key = "${CAP_SECRET_KEY:cLZdestGUplG8VRaj7xKALsNAiIhSDTtEq34uVx9IsgIxuzXPDYig}"
 cap_custom_wasm_url = "${CAP_CUSTOM_WASM_URL}"
+
+[auth]
+wechat_mp_app_id = "${WECHAT_MP_APP_ID}"
+wechat_mp_app_secret = "${WECHAT_MP_APP_SECRET}"
+wechat_mp_event_token = "${WECHAT_MP_EVENT_TOKEN}"
+wechat_mp_event_encoding_aes_key = "${WECHAT_MP_EVENT_ENCODING_AES_KEY}"
