@@ -24,26 +24,7 @@ use std::net::IpAddr;
 use std::sync::OnceLock;
 use tokio::task_local;
 
-/// 不需要反爬虫检查的路径前缀
-pub static IGNORE_PREFIX: [&str; 3] = ["/api", "/pay", "/assets"];
-
-/// JS 反爬虫的服务端密钥
-const SERVER_SECRET: &str = "server-secret";
-
-/// 时间窗口：周（秒）
-const TIME_WINDOW_SECONDS: i64 = 60 * 60 * 24 * 7;
-
-/// HTML 片段请求标识
-const FRAGMENT_ACCEPT_HEADER: &str = "text/html+fragment";
-
-/// 片段请求时的页面刷新脚本
-const FRAGMENT_RELOAD_SCRIPT: &str = r#"<script>window.location.reload();</script>"#;
-
 pub async fn global_error_page(
-    ec_service: Component<ExamCategoryService>,
-    sc_service: Component<SystemConfigService>,
-    us_service: Component<UserService>,
-    dtiku_config: Config<DtikuConfig>,
     claims: OptionalClaims,
     host: Host,
     cookies: CookieJar,
@@ -96,6 +77,21 @@ pub async fn global_error_page(
         resp
     }
 }
+
+/// 不需要反爬虫检查的路径前缀
+pub static IGNORE_PREFIX: [&str; 3] = ["/api", "/pay", "/assets"];
+
+/// JS 反爬虫的服务端密钥
+const SERVER_SECRET: &str = "server-secret";
+
+/// 时间窗口：周（秒）
+const TIME_WINDOW_SECONDS: i64 = 60 * 60 * 24 * 7;
+
+/// HTML 片段请求标识
+const FRAGMENT_ACCEPT_HEADER: &str = "text/html+fragment";
+
+/// 片段请求时的页面刷新脚本
+const FRAGMENT_RELOAD_SCRIPT: &str = r#"<script>window.location.reload();</script>"#;
 
 /// 爬虫域名配置：(爬虫名称, 域名列表)
 static CRAWLER_CONFIGS: &[(&str, &[&str])] = &[
