@@ -1,4 +1,4 @@
-use super::OrderStatus;
+use super::{OrderLevel, OrderStatus};
 pub use super::_entities::pay_order::*;
 use anyhow::Context;
 use chrono::{Days, NaiveDate};
@@ -87,8 +87,12 @@ impl Entity {
                 .expect("date subtract overflow")
         });
 
-        let stmt = Statement::from_sql_and_values(
-            db_backend,
+        let monthly_amount = OrderLevel::Monthly.amount();
+        let quarterly_amount = OrderLevel::Quarterly.amount();
+        let half_year_amount = OrderLevel::HalfYear.amount();
+        let annual_amount = OrderLevel::Annual.amount();
+
+        let sql = format!(
             r#"
             WITH date_series AS (
                 SELECT generate_series(
@@ -102,10 +106,10 @@ impl Entity {
                     date_trunc('day', confirm) as day,
                     COUNT(*) as paid_count,
                     SUM(CASE 
-                        WHEN level = 'monthly' THEN 1000
-                        WHEN level = 'quarterly' THEN 2500
-                        WHEN level = 'half_year' THEN 4000
-                        WHEN level = 'annual' THEN 6000
+                        WHEN level = 'monthly' THEN {monthly_amount}
+                        WHEN level = 'quarterly' THEN {quarterly_amount}
+                        WHEN level = 'half_year' THEN {half_year_amount}
+                        WHEN level = 'annual' THEN {annual_amount}
                         ELSE 0
                     END) as paid_amount
                 FROM pay_order
@@ -119,10 +123,10 @@ impl Entity {
                     date_trunc('day', created) as day,
                     COUNT(*) as pending_count,
                     SUM(CASE 
-                        WHEN level = 'monthly' THEN 1000
-                        WHEN level = 'quarterly' THEN 2500
-                        WHEN level = 'half_year' THEN 4000
-                        WHEN level = 'annual' THEN 6000
+                        WHEN level = 'monthly' THEN {monthly_amount}
+                        WHEN level = 'quarterly' THEN {quarterly_amount}
+                        WHEN level = 'half_year' THEN {half_year_amount}
+                        WHEN level = 'annual' THEN {annual_amount}
                         ELSE 0
                     END) as pending_amount
                 FROM pay_order
@@ -141,10 +145,11 @@ impl Entity {
             LEFT JOIN paid_stats ON date_series.day = paid_stats.day
             LEFT JOIN pending_stats ON date_series.day = pending_stats.day
             ORDER BY date_series.day
-            "#
-            .to_owned(),
-            vec![start.into(), end.into()],
+            "#,
         );
+
+        let stmt =
+            Statement::from_sql_and_values(db_backend, sql, vec![start.into(), end.into()]);
 
         PayStatsByDay::find_by_statement(stmt)
             .all(db)
