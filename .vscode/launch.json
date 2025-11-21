@@ -64,6 +64,24 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}/dtiku-web"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'alist'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=alist",
+                    "--package=dtiku-alist"
+                ],
+                "filter": {
+                    "name": "alist",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}/dtiku-alist"
         }
     ]
 }

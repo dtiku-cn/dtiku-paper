@@ -7,10 +7,10 @@ connect_info = true
 [web.middlewares]
 compression = { enable = true } # Enable compression middleware
 cors = { enable = true, allow_origins = [
-    "*.dtiku.cn",
+    "https://gwy.dtiku.cn",
+    "https://sydw.dtiku.cn",
 ], allow_methods = [
-    "GET",
-    "POST",
+    "*",
 ], max_age = 60 }
 
 [logger]
