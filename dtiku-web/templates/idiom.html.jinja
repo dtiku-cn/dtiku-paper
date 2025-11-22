@@ -172,14 +172,15 @@
             <div class="custom-control custom-switch">
                 <input type="checkbox" class="custom-control-input" id="unique-question">
                 <label class="custom-control-label" for="unique-question" data-toggle="tooltip"
-                    th:title="|${idiom.refs.size()}中有${idiom.duplicate.size()}题重复|">去除重复题目</label>
+                    title="x中有y题重复">去除重复题目</label>
             </div>
         </header>
-        <table class="table">
-            <tr>
-                <th>真题试卷</th>
-                <th class="text-center px-0" style="width:5em">题号</th>
-            </tr>
+        <div class="table-responsive">
+            <table class="table">
+                <tr>
+                    <th>真题试卷</th>
+                    <th class="text-center px-0" style="width:5em">题号</th>
+                </tr>
             {%for r in idiom.refs%}
             <tr id="q-{{r.question.id}}">
                 <td class="p-1">
@@ -187,11 +188,11 @@
                     <img class="vendor-icon" rel="external nofollow noreferrer" src="{r.refPaper.fromType.iconUrl()}"
                         alt="{r.refPaper.fromType.name()}" />
                     {%endif%}
-                    <a class="btn btn-link dropdown-toggle" role="button" data-toggle="collapse"
+                    <a class="btn btn-link dropdown-toggle text-left text-break" role="button" data-toggle="collapse"
                         href="#idiom-ref-{{r.id}}">{{r.paper.title}}</a>
                 </td>
-                <td class="text-center px-0 py-1">
-                    <a target="_blank" href="/paper/{{r.paper.id}}#q-{{r.sort}}">
+                <td class="text-center text-nowrap px-0 py-1">
+                    <a class="text-nowrap" target="_blank" href="/paper/{{r.paper.id}}#q-{{r.sort}}">
                         第{{r.sort}}题
                         <svg class="icon-svg icon-svg-sm">
                             <use xlink:href="#ic-link"></use>
@@ -203,7 +204,8 @@
                 <td colspan="2" class="question-wrapper">{%call question::xingce_question(r.question)%}</td>
             </tr>
             {%endfor%}
-        </table>
+            </table>
+        </div>
     </div>
     {% call artalk::comment(true,true,true,"来这里吐槽一下")%}
     {% call general::footer() %}
@@ -212,12 +214,80 @@
     {% call question::solution_comment_script() %}
     <script>
         $(function () {
-            var d = "";
+            // 计算总题目数和重复题目数
+            function calculateDuplicateStats() {
+                var questionIdCount = {};
+                var totalCount = 0;
+                var duplicateCount = 0;
+                
+                // 统计每个 question.id 出现的次数
+                $('tr[id^="q-"]').each(function() {
+                    var id = $(this).attr('id');
+                    var questionId = id.replace('q-', '');
+                    totalCount++;
+                    questionIdCount[questionId] = (questionIdCount[questionId] || 0) + 1;
+                });
+                
+                // 计算重复的题目数（出现次数大于1的题目）
+                for (var qid in questionIdCount) {
+                    if (questionIdCount[qid] > 1) {
+                        duplicateCount += questionIdCount[qid] - 1; // 每个重复题目减去第一个
+                    }
+                }
+                
+                return {
+                    total: totalCount,
+                    duplicate: duplicateCount
+                };
+            }
+            
+            // 更新 title
+            function updateTitle() {
+                var stats = calculateDuplicateStats();
+                var titleText = stats.total + '中有' + stats.duplicate + '题重复';
+                var $label = $('label[for="unique-question"]');
+                $label.attr('title', titleText);
+                
+                // 重新渲染 tooltip
+                try {
+                    $label.tooltip('dispose'); // 销毁现有的 tooltip（如果已初始化）
+                } catch (e) {
+                    // tooltip 可能还没有初始化，忽略错误
+                }
+                $label.tooltip(); // 重新初始化 tooltip
+            }
+            
+            // 页面加载时计算并更新 title
+            updateTitle();
+            
             $("#unique-question").click(function () {
                 var val = $(this).is(':checked');
-                for (var qid of d) {
-                    $("#q-" + qid).toggleClass('d-none', val).next().toggleClass('d-none', val);
-                }
+                var seenQuestionIds = new Set();
+                
+                // 遍历所有题目行
+                $('tr[id^="q-"]').each(function() {
+                    var $row = $(this);
+                    var id = $row.attr('id');
+                    var questionId = id.replace('q-', '');
+                    
+                    if (val) {
+                        // 如果启用去重，隐藏重复的题目
+                        if (seenQuestionIds.has(questionId)) {
+                            // 隐藏题目行和对应的详情行
+                            $row.addClass('d-none');
+                            $row.next('tr[id^="idiom-ref-"]').addClass('d-none');
+                        } else {
+                            // 保留第一个，移除可能的隐藏状态
+                            $row.removeClass('d-none');
+                            $row.next('tr[id^="idiom-ref-"]').removeClass('d-none');
+                            seenQuestionIds.add(questionId);
+                        }
+                    } else {
+                        // 如果禁用去重，显示所有题目
+                        $row.removeClass('d-none');
+                        $row.next('tr[id^="idiom-ref-"]').removeClass('d-none');
+                    }
+                });
             });
             $('a[data-toggle="collapse"]').click(function () {
                 $(this).closest('tr').toggleClass('dropup');
