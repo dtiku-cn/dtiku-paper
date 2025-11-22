@@ -196,7 +196,7 @@
     {% call question::solution_comment_script() %}
     {% call question::answer_collapse_action() %}
     <script src='/static/dist/js/speech.js'></script>
-    {% if mode == "exercise" && user_answer.is_empty() %}
+    {% if mode == "exercise" && user_answer.is_none() %}
     <script>
         window.floatButtonAddon = [{
             style: 'always',
