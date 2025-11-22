@@ -1,6 +1,7 @@
 {%- import "macros/general.html.min.jinja" as general -%}
 <!doctype html>
 <html lang="zh">
+
 <head>
     {% call general::meta() %}
     <title>个人中心 | {{global.config.site_title}}</title>
@@ -10,6 +11,7 @@
             max-width: 600px;
             margin: 2rem auto;
         }
+
         .avatar-preview {
             width: 120px;
             height: 120px;
@@ -19,14 +21,17 @@
             cursor: pointer;
             transition: all 0.3s;
         }
+
         .avatar-preview:hover {
             border-color: #007bff;
             opacity: 0.8;
         }
+
         .avatar-upload-btn {
             position: relative;
             display: inline-block;
         }
+
         .avatar-upload-btn input[type="file"] {
             position: absolute;
             opacity: 0;
@@ -34,94 +39,99 @@
             height: 100%;
             cursor: pointer;
         }
+
         .form-group {
             margin-bottom: 1.5rem;
         }
+
         .btn-save {
             min-width: 120px;
         }
     </style>
 </head>
+
 <body class="container">
     {% call general::header() %}
-    
-    <div class="profile-container">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">个人中心</h4>
-            </div>
-            <div class="card-body">
-                <form id="profileForm">
-                    <div class="form-group text-center">
-                        <label class="d-block mb-3">头像</label>
-                        <div class="avatar-upload-btn">
-                            <img id="avatarPreview" src="{{user.avatar}}" alt="头像预览" class="avatar-preview">
-                            <input type="file" id="avatarInput" accept="image/*" style="display: none;">
-                        </div>
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('avatarInput').click()">
-                                选择图片
-                            </button>
-                            <input type="text" id="avatarUrl" name="avatar" value="{{user.avatar}}" class="form-control form-control-sm mt-2" placeholder="或直接输入头像URL">
-                        </div>
+
+    <div class="card my-4">
+        <div class="card-header">
+            <h4 class="mb-0">个人中心</h4>
+        </div>
+        <div class="card-body">
+            <form id="profileForm">
+                <div class="form-group text-center">
+                    <label class="d-block mb-3">头像</label>
+                    <div class="avatar-upload-btn">
+                        <img id="avatarPreview" src="{{user.avatar}}" alt="头像预览" class="avatar-preview">
+                        <input type="file" id="avatarInput" accept="image/*" style="display: none;">
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="nameInput">昵称</label>
-                        <input type="text" class="form-control" id="nameInput" name="name" value="{{user.name}}" placeholder="请输入昵称" maxlength="64" required>
-                        <small class="form-text text-muted">昵称长度不能超过64个字符</small>
-                    </div>
-                    
-                    <div class="form-group text-center">
-                        <button type="submit" class="btn btn-primary btn-save">
-                            <span id="saveBtnText">保存</span>
-                            <span id="saveBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="document.getElementById('avatarInput').click()">
+                            选择图片
                         </button>
+                        <input type="text" id="avatarUrl" name="avatar" value="{{user.avatar}}"
+                            class="form-control form-control-sm mt-2" placeholder="或直接输入头像URL">
                     </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="nameInput">昵称</label>
+                    <input type="text" class="form-control" id="nameInput" name="name" value="{{user.name}}"
+                        placeholder="请输入昵称" maxlength="64" required>
+                    <small class="form-text text-muted">昵称长度不能超过64个字符</small>
+                </div>
+
+                <div class="form-group text-center">
+                    <button type="submit" class="btn btn-primary btn-save">
+                        <span id="saveBtnText">保存</span>
+                        <span id="saveBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status"
+                            aria-hidden="true"></span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-    
+
     {% call general::footer() %}
-    
+
     <script>
-        $(function() {
+        $(function () {
             // 头像预览
-            $('#avatarInput').on('change', function(e) {
+            $('#avatarInput').on('change', function (e) {
                 const file = e.target.files[0];
                 if (file) {
                     // 这里可以添加图片上传逻辑，或者直接使用文件
                     // 为了简化，这里只是预览本地文件
                     const reader = new FileReader();
-                    reader.onload = function(e) {
+                    reader.onload = function (e) {
                         $('#avatarPreview').attr('src', e.target.result);
                         $('#avatarUrl').val(e.target.result);
                     };
                     reader.readAsDataURL(file);
                 }
             });
-            
+
             // 头像URL输入框变化时更新预览
-            $('#avatarUrl').on('input', function() {
+            $('#avatarUrl').on('input', function () {
                 const url = $(this).val();
                 if (url) {
                     $('#avatarPreview').attr('src', url);
                 }
             });
-            
+
             // 表单提交
-            $('#profileForm').on('submit', function(e) {
+            $('#profileForm').on('submit', function (e) {
                 e.preventDefault();
-                
+
                 const name = $('#nameInput').val().trim();
                 const avatar = $('#avatarUrl').val().trim();
-                
+
                 if (!name) {
                     $('#toast').toast('show').find('.toast-body').text('昵称不能为空');
                     return;
                 }
-                
+
                 // 显示加载状态
                 const $btn = $('.btn-save');
                 const $btnText = $('#saveBtnText');
@@ -129,7 +139,7 @@
                 $btn.prop('disabled', true);
                 $btnText.text('保存中...');
                 $btnSpinner.removeClass('d-none');
-                
+
                 // 发送请求
                 $.ajax({
                     url: '/api/user/profile',
@@ -139,22 +149,22 @@
                         name: name,
                         avatar: avatar || undefined
                     }),
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             $('#toast').toast('show').find('.toast-body').text('保存成功');
                             // 可以刷新页面或更新显示
-                            setTimeout(function() {
+                            setTimeout(function () {
                                 location.reload();
                             }, 1000);
                         } else {
                             $('#toast').toast('show').find('.toast-body').text(response.message || '保存失败');
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         const message = xhr.responseJSON?.message || xhr.responseText || '保存失败';
                         $('#toast').toast('show').find('.toast-body').text(message);
                     },
-                    complete: function() {
+                    complete: function () {
                         $btn.prop('disabled', false);
                         $btnText.text('保存');
                         $btnSpinner.addClass('d-none');
@@ -164,4 +174,5 @@
         });
     </script>
 </body>
+
 </html>
