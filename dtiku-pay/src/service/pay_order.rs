@@ -352,12 +352,11 @@ impl PayOrderService {
 pub struct WechatPayOrderResp {
     pub appid: String,
     pub mchid: String,
+    pub out_trade_no: String,
     pub trade_state: String,
     pub trade_state_desc: String,
-    pub out_trade_no: String,
-    pub transaction_id: String,
-    pub trade_type: String,
-    pub success_time: String,
+    pub transaction_id: Option<String>,
+    pub trade_type: Option<String>,
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
