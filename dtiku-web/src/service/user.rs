@@ -235,6 +235,40 @@ impl UserService {
         Ok(user_info)
     }
 
+    /// 更新用户昵称和头像
+    pub async fn update_user_profile(
+        &self,
+        user_id: i32,
+        name: Option<String>,
+        avatar: Option<String>,
+    ) -> anyhow::Result<user_info::Model> {
+        let user = UserInfo::find_user_by_id(&self.db, user_id)
+            .await
+            .context("查询用户失败")?
+            .ok_or_else(|| anyhow::anyhow!("用户不存在"))?;
+
+        let mut active_user: user_info::ActiveModel = user.into();
+        
+        if let Some(new_name) = name {
+            if !new_name.trim().is_empty() {
+                active_user.name = Set(new_name);
+            }
+        }
+        
+        if let Some(new_avatar) = avatar {
+            if !new_avatar.trim().is_empty() {
+                active_user.avatar = Set(new_avatar);
+            }
+        }
+
+        let updated_user = active_user
+            .update(&self.db)
+            .await
+            .context("更新用户信息失败")?;
+
+        Ok(updated_user)
+    }
+
     /// 检查微信 API 错误响应
     fn check_wechat_error(errcode: Option<i32>, errmsg: Option<&str>) -> anyhow::Result<()> {
         if let Some(code) = errcode {

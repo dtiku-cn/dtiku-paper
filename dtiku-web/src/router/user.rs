@@ -1,8 +1,8 @@
 use crate::{
     plugins::AuthConfig,
-    router::{decode, error_messages, jwt},
+    router::{decode, error_messages, jwt, Claims},
     service::user::UserService,
-    views::user::{ArtalkUser, UserLoginRefreshTemplate},
+    views::{GlobalVariables, user::{ArtalkUser, UserLoginRefreshTemplate, UserProfileTemplate}},
 };
 use anyhow::Context;
 use askama::Template;
@@ -21,6 +21,7 @@ use spring_web::{
         body::Bytes,
         http::HeaderMap,
         response::{Html, IntoResponse, Redirect, Json},
+        Extension,
     },
     error::{KnownWebError, Result},
     extractor::{Component, Path, RawQuery},
@@ -71,6 +72,59 @@ async fn user_comment_avatar(
         .await?
         .ok_or_else(|| KnownWebError::not_found(error_messages::USER_AVATAR_NOT_FOUND))?;
     Ok(Redirect::permanent(&avatar_url))
+}
+
+/// 个人中心页面
+/// GET /user/profile
+#[get("/user/profile")]
+async fn user_profile(
+    claims: Claims,
+    Component(us): Component<UserService>,
+    Extension(global): Extension<GlobalVariables>,
+) -> Result<impl IntoResponse> {
+    let user = us.get_user_detail(claims.user_id).await?;
+    let template = UserProfileTemplate {
+        global,
+        user,
+    };
+    Ok(Html(template.render().context("render failed")?))
+}
+
+#[derive(Debug, Deserialize)]
+struct UpdateProfileRequest {
+    name: Option<String>,
+    avatar: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct UpdateProfileResponse {
+    success: bool,
+    message: String,
+    user: Option<serde_json::Value>,
+}
+
+/// 更新用户信息
+/// POST /api/user/profile
+#[post("/api/user/profile")]
+async fn update_user_profile(
+    claims: Claims,
+    Component(us): Component<UserService>,
+    Json(req): Json<UpdateProfileRequest>,
+) -> Result<impl IntoResponse> {
+    let updated_user = us
+        .update_user_profile(claims.user_id, req.name, req.avatar)
+        .await
+        .context("更新用户信息失败")?;
+
+    Ok(Json(UpdateProfileResponse {
+        success: true,
+        message: "更新成功".to_string(),
+        user: Some(serde_json::json!({
+            "id": updated_user.id,
+            "name": updated_user.name,
+            "avatar": updated_user.avatar,
+        })),
+    }))
 }
 
 // ==================== 微信公众号关注登录 ====================
