@@ -196,7 +196,8 @@
     {% call question::solution_comment_script() %}
     {% call question::answer_collapse_action() %}
     <script src='/static/dist/js/speech.js'></script>
-    <script th:if="${strings.equals('exercise',paper.mode.name()) && #maps.isEmpty(answer)}">
+    {% if mode == "exercise" and user_answer.is_empty() %}
+    <script>
         window.floatButtonAddon = [{
             style: 'always',
             render: function () {
@@ -248,6 +249,7 @@
             });
         });
     </script>
+    {% endif %}
 </body>
 
 </html>
