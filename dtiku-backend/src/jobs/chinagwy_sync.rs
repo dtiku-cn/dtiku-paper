@@ -190,16 +190,13 @@ impl ChinaGwySyncService {
             select
                 id,
                 target_id,
-                (extra->>'type')::smallint as ty,
-                (extra->>'form')::smallint AS form,
-                extra->>'stem' as content,
-                (extra->>'choices')::jsonb as choices,
-                (extra->>'answer')::jsonb as answer,
-                extra->>'explain_a' as explain,
-                (extra->>'explain_a_file')::jsonb as explain_file,
-                extra->>'analysis' as analysis,
-                (extra->>'step_explanation')::jsonb as step_explanation,
-                extra->>'multi_material_id' as multi_material_id
+                coalesce(extra->>'text',extra->>'ask',extra->>'title') as content,
+                extra->>'year' as year,
+                extra->>'optionList' as options,
+                extra->>'typeName' as type_name,
+                extra->>'source' as source,
+                coalesce(extra->>'answer_text',extra->>'answer_txt',extra->>'answerToken') as answer_text,
+                extra->>'analysis' as analysis
             from question
             where from_ty='chinagwy'
             and id = any($1)
@@ -227,7 +224,7 @@ impl ChinaGwySyncService {
             select
                 id,
                 target_id,
-                jsonb_extract_path_text(extra,'content') as content
+                extra->>'value' as content
             from material
             where from_ty = 'chinagwy'
             and id = any($1)
