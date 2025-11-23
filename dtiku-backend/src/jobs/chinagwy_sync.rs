@@ -37,6 +37,7 @@ pub struct ChinaGwySyncService {
     #[inject(component)]
     embedding: Embedding,
     task: schedule_task::Model,
+    #[allow(unused)]
     instance: TaskInstance,
 }
 

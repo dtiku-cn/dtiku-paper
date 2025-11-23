@@ -2,7 +2,10 @@ use crate::{
     plugins::AuthConfig,
     router::{decode, error_messages, jwt, Claims},
     service::user::UserService,
-    views::{GlobalVariables, user::{ArtalkUser, UserLoginRefreshTemplate, UserProfileTemplate}},
+    views::{
+        user::{ArtalkUser, UserLoginRefreshTemplate, UserProfileTemplate},
+        GlobalVariables,
+    },
 };
 use anyhow::Context;
 use askama::Template;
@@ -14,13 +17,14 @@ use chrono::Utc;
 use cookie::time::Duration;
 use serde::{Deserialize, Serialize};
 use sha1::Digest;
+use spring::tracing;
 use spring_redis::redis::AsyncCommands;
 use spring_redis::Redis;
 use spring_web::{
     axum::{
         body::Bytes,
         http::HeaderMap,
-        response::{Html, IntoResponse, Redirect, Json},
+        response::{Html, IntoResponse, Json, Redirect},
         Extension,
     },
     error::{KnownWebError, Result},
@@ -83,10 +87,7 @@ async fn user_profile(
     Extension(global): Extension<GlobalVariables>,
 ) -> Result<impl IntoResponse> {
     let user = us.get_user_detail(claims.user_id).await?;
-    let template = UserProfileTemplate {
-        global,
-        user,
-    };
+    let template = UserProfileTemplate { global, user };
     Ok(Html(template.render().context("render failed")?))
 }
 
@@ -152,13 +153,13 @@ async fn wechat_login_qrcode(
 ) -> Result<impl IntoResponse> {
     // 生成唯一的场景值 ID
     let scene_id = Uuid::new_v4().to_string();
-    
+
     // 创建二维码
     let ticket = us
         .create_wechat_login_qrcode(&scene_id)
         .await
         .context("创建二维码失败")?;
-    
+
     // 将场景值存储到 Redis，标记为待扫码状态
     let key = format!("wechat:login:scene:{}", scene_id);
     let _: () = redis
@@ -166,11 +167,14 @@ async fn wechat_login_qrcode(
         .set_ex(&key, "pending", 600) // 10分钟有效期
         .await
         .context("Redis 操作失败")?;
-    
+
     // 返回二维码信息
     Ok(Json(QrcodeResponse {
         scene_id,
-        qrcode_url: format!("https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket={}", ticket),
+        qrcode_url: format!(
+            "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket={}",
+            ticket
+        ),
         expire_seconds: 600,
     }))
 }
@@ -194,9 +198,9 @@ async fn wechat_login_status(
     Component(us): Component<UserService>,
 ) -> Result<impl IntoResponse> {
     let key = format!("wechat:login:scene:{}", scene_id);
-    
+
     let status: Option<String> = redis.clone().get(&key).await.context("Redis 操作失败")?;
-    
+
     match status.as_deref() {
         None => {
             // 场景值不存在或已过期
@@ -218,7 +222,7 @@ async fn wechat_login_status(
             // 已登录成功，返回用户信息和 token
             let user_id = user_id_str.parse::<i32>().unwrap();
             let user = us.get_user_detail(user_id).await?;
-            
+
             // 生成 JWT token
             let claims = jwt::Claims {
                 user_id,
@@ -226,10 +230,10 @@ async fn wechat_login_status(
                 iat: Utc::now().timestamp() as u64,
             };
             let token = jwt::encode(claims).context("生成 token 失败")?;
-            
+
             // 删除 Redis 中的场景值
             let _: () = redis.clone().del(&key).await.context("Redis 操作失败")?;
-            
+
             Ok(Json(LoginStatusResponse {
                 status: "success".to_string(),
                 token: Some(token),
@@ -254,7 +258,7 @@ async fn wechat_login_status(
 // ==================== 微信工具函数 ====================
 
 /// 验证微信签名
-/// 
+///
 /// 微信签名验证算法：
 /// 1. 将 token、timestamp、nonce 三个参数进行字典序排序
 /// 2. 将三个参数拼接成一个字符串
@@ -266,34 +270,34 @@ fn verify_wechat_signature(
 ) -> bool {
     // 如果 token 为空，跳过验证（仅用于开发环境）
     if token.is_empty() {
-        spring::tracing::warn!("微信事件推送 token 未配置，跳过签名验证");
+        tracing::warn!("微信事件推送 token 未配置，跳过签名验证");
         return true;
     }
-    
+
     // 获取签名参数
     let Some(signature) = params.get("signature") else {
-        spring::tracing::warn!("缺少 signature 参数");
+        tracing::warn!("缺少 signature 参数");
         return false;
     };
-    
+
     let timestamp = params.get("timestamp").map(String::as_str).unwrap_or("");
     let nonce = params.get("nonce").map(String::as_str).unwrap_or("");
-    
+
     // 将 token、timestamp、nonce 进行字典序排序并拼接
     let mut arr = [token, timestamp, nonce];
     arr.sort_unstable();
     let concatenated = arr.concat();
-    
+
     // 计算 SHA1 签名
     let mut hasher = sha1::Sha1::new();
     hasher.update(concatenated.as_bytes());
     let hash_hex = hex::encode(hasher.finalize());
-    
+
     // 比较签名
     let is_valid = hash_hex.eq_ignore_ascii_case(signature);
-    
+
     if !is_valid {
-        spring::tracing::warn!(
+        tracing::warn!(
             "签名验证失败: 计算={}, 收到={}, timestamp={}, nonce={}",
             hash_hex,
             signature,
@@ -301,7 +305,7 @@ fn verify_wechat_signature(
             nonce
         );
     }
-    
+
     is_valid
 }
 
@@ -324,16 +328,15 @@ fn parse_and_verify_wechat_params(
     query: Option<String>,
     token: &str,
 ) -> Result<std::collections::HashMap<String, String>> {
-    let params: std::collections::HashMap<String, String> = 
-        serde_urlencoded::from_str(&query.unwrap_or_default())
-            .context("解析查询参数失败")?;
-    
+    let params: std::collections::HashMap<String, String> =
+        serde_urlencoded::from_str(&query.unwrap_or_default()).context("解析查询参数失败")?;
+
     // 验证微信签名
     if !verify_wechat_signature(token, &params) {
-        spring::tracing::warn!("微信签名验证失败: {:?}", params);
+        tracing::warn!("微信签名验证失败: {:?}", params);
         return Err(KnownWebError::unauthorized("签名验证失败").into());
     }
-    
+
     Ok(params)
 }
 
@@ -344,16 +347,16 @@ async fn wechat_verify_callback(
     RawQuery(query): RawQuery,
     Component(auth_config): Component<AuthConfig>,
 ) -> Result<impl IntoResponse> {
-    spring::tracing::info!("收到微信接入验证请求");
-    
+    tracing::info!("收到微信接入验证请求");
+
     let params = parse_and_verify_wechat_params(query, &auth_config.wechat_mp_event_token)?;
-    
+
     // 返回 echostr 完成验证
     let echostr = params
         .get("echostr")
         .ok_or_else(|| anyhow::anyhow!("缺少 echostr 参数"))?;
-    
-    spring::tracing::info!("微信接入验证成功");
+
+    tracing::info!("微信接入验证成功");
     Ok(echostr.clone())
 }
 
@@ -369,20 +372,20 @@ async fn wechat_event_callback(
 ) -> Result<impl IntoResponse> {
     // 验证签名
     let _params = parse_and_verify_wechat_params(query, &auth_config.wechat_mp_event_token)?;
-    
+
     // 将 bytes 转换为 string
     let body_str = String::from_utf8(body.to_vec()).context("解析 body 失败")?;
-    
-    spring::tracing::info!("收到微信事件推送: {}", body_str);
-    
+
+    tracing::info!("收到微信事件推送: {}", body_str);
+
     // 使用 quick-xml 解析 XML 消息
-    let msg: WechatEventMessage = quick_xml::de::from_str(&body_str)
-        .context("解析 XML 消息失败")?;
-    
-    spring::tracing::debug!("解析后的消息: {:?}", msg);
-    
+    let msg: WechatEventMessage =
+        quick_xml::de::from_str(&body_str).context("解析 XML 消息失败")?;
+
+    tracing::debug!("解析后的消息: {:?}", msg);
+
     let openid = &msg.from_user_name;
-    
+
     // 处理扫码事件
     match msg.event.as_deref() {
         Some("subscribe") => {
@@ -390,9 +393,9 @@ async fn wechat_event_callback(
             // EventKey 格式：qrscene_场景值
             if let Some(event_key) = &msg.event_key {
                 let scene_id = event_key.strip_prefix("qrscene_").unwrap_or(event_key);
-                
-                spring::tracing::info!("用户 {} 通过场景 {} 关注了公众号", openid, scene_id);
-                
+
+                tracing::info!("用户 {} 通过场景 {} 关注了公众号", openid, scene_id);
+
                 // 处理登录逻辑
                 handle_wechat_login(&us, &redis, openid, scene_id).await?;
             }
@@ -401,17 +404,17 @@ async fn wechat_event_callback(
             // 用户已关注时扫码：直接推送此事件
             // EventKey 格式：场景值（不带 qrscene_ 前缀）
             if let Some(scene_id) = &msg.event_key {
-                spring::tracing::info!("已关注用户 {} 扫描了场景 {}", openid, scene_id);
-                
+                tracing::info!("已关注用户 {} 扫描了场景 {}", openid, scene_id);
+
                 // 处理登录逻辑
                 handle_wechat_login(&us, &redis, openid, scene_id).await?;
             }
         }
         _ => {
-            spring::tracing::debug!("忽略其他事件类型: {:?}", msg.event);
+            tracing::debug!("忽略其他事件类型: {:?}", msg.event);
         }
     }
-    
+
     // 返回 success 表示消息已处理
     Ok("success".to_string())
 }
@@ -424,36 +427,36 @@ async fn handle_wechat_login(
     scene_id: &str,
 ) -> anyhow::Result<()> {
     use spring_redis::redis::AsyncCommands;
-    
+
     const LOGIN_SCENE_TTL: u64 = 600; // 10 分钟
-    
+
     // 获取用户信息
     let wechat_user = us
         .get_wechat_user_info(openid)
         .await
         .context("获取微信用户信息失败")?;
-    
+
     // 创建或更新用户
     let user = us
         .find_or_create_wechat_user(&wechat_user)
         .await
         .context("创建或更新用户失败")?;
-    
+
     // 更新 Redis 中的场景值状态，存储用户 ID
     let key = format!("wechat:login:scene:{}", scene_id);
     redis
         .clone()
-        .set_ex(&key, user.id.to_string(), LOGIN_SCENE_TTL)
+        .set_ex::<_, _, ()>(&key, user.id.to_string(), LOGIN_SCENE_TTL)
         .await
         .context("Redis 操作失败")?;
-    
-    spring::tracing::info!(
+
+    tracing::info!(
         "用户登录成功: name={}, id={}, openid={}, scene={}",
         user.name,
         user.id,
         openid,
         scene_id
     );
-    
+
     Ok(())
 }

@@ -31,6 +31,7 @@ pub struct AssetsSaveService {
     #[inject(component)]
     db: DbConn,
     #[inject(component)]
+    #[allow(unused)]
     embedding: Embedding,
     #[inject(component)]
     op: Op,

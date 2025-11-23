@@ -154,7 +154,7 @@ impl UserService {
     }
 
     /// 获取微信公众号 access_token（带缓存）
-    pub async fn get_wechat_access_token(&self) -> anyhow::Result<String> {
+    async fn get_wechat_access_token(&self) -> anyhow::Result<String> {
         use spring_redis::redis::AsyncCommands;
 
         const CACHE_KEY: &str = "wechat:mp:access_token";
@@ -190,7 +190,7 @@ impl UserService {
         let expires_in = (response.expires_in.unwrap_or(7200) - TOKEN_EXPIRE_MARGIN).max(60);
         self.redis
             .clone()
-            .set_ex(CACHE_KEY, &token, expires_in as u64)
+            .set_ex::<_, _, ()>(CACHE_KEY, &token, expires_in as u64)
             .await?;
 
         Ok(token)
@@ -248,13 +248,13 @@ impl UserService {
             .ok_or_else(|| anyhow::anyhow!("用户不存在"))?;
 
         let mut active_user: user_info::ActiveModel = user.into();
-        
+
         if let Some(new_name) = name {
             if !new_name.trim().is_empty() {
                 active_user.name = Set(new_name);
             }
         }
-        
+
         if let Some(new_avatar) = avatar {
             if !new_avatar.trim().is_empty() {
                 active_user.avatar = Set(new_avatar);
