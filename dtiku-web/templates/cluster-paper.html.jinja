@@ -214,11 +214,14 @@
                 },
                 mouseMove: function (e) {
                     var $questionSection = $("#question-section");
+                    var $materialSection = $("#material-section");
                     var lastY = $questionSection.data('last-y');
                     if (lastY) {
                         var deltaY = lastY - e.screenY;
                         var newHeight = Math.min($questionSection.height() + deltaY, screen.availHeight * 0.8);
-                        $questionSection.height(Math.max(newHeight, 95));
+                        let height = Math.max(newHeight, 95);
+                        $questionSection.height(height);
+                        $materialSection.css("margin-bottom", height);
                         $questionSection.data('last-y', e.screenY);
                     }
                 },
@@ -241,6 +244,7 @@
                         .unbind('touchstart', drawerListener.touchStart).unbind('touchmove', drawerListener.touchMove);
                     $(document).unbind('mouseup', drawerListener.mouseUp).unbind('touchend', drawerListener.touchEnd);
                     $('#question-section').css('height', 'auto');
+                    $("#material-section").css('margin-bottom', '0');
                 }
             });
 
