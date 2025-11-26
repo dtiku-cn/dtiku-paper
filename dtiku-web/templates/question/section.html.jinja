@@ -88,6 +88,7 @@
                 <button id="exam" type="button"
                     class="btn btn-link {%if papers.is_empty()%}disabled{%endif%}">练习</button>
                 {%endif%}
+                <a id="duplicate" class="btn btn-link" data-toggle="tooltip" title="">去重</a>
                 <a class="btn btn-link {%if papers.is_empty()%}disabled{%endif%}"
                     href="{%if global.user.is_none()%}#loginModal{%else%}javascript:window.print(){%endif%}"
                     data-toggle="{%if global.user.is_none()%}modal{%endif%}">打印</a>
@@ -121,13 +122,7 @@
                     <a class="q-number float-left text-reset" href="/paper/{{q.paper.paper.id}}#{{q.paper.num}}">
                         <b>({{q.paper.paper.year}}{{label_tree.label_text(q.paper.paper.label_id)}}第{{q.paper.num}}题)</b>
                     </a>
-                    <div class="question-wrapper">
-                        {%call question::xingce_question(q)%}
-                    </div>
-                    <div class="question-wrapper" th:include="${sectionType.name()=='question'}?
-                        ~{fragments/question::xingce_question(${q})}:(
-                        ${sectionType.name()=='explain'}?~{fragments/question::raw_question_solution(${q})}:
-                        ~{fragments/question::xingce_exercise_question(${q},null)})"></div>
+                    <div class="question-wrapper">{%call question::xingce_question(q)%}</div>
                 </div>
             </div>
             {%endfor%}
@@ -252,6 +247,90 @@
             var $carouselItems = $printcontent.find(".carousel-inner>div");
             var $examOperator = $printcontent.find(".exam-operator");
             var $timer = $printcontent.find(".timer");
+            var $duplicateBtn = $("#duplicate");
+
+            function collectDuplicateItems() {
+                var seen = new Set();
+                var duplicates = [];
+                $printcontent.find("[id^='q-']").each(function () {
+                    var qId = this.id;
+                    if (!qId) {
+                        return;
+                    }
+                    if (seen.has(qId)) {
+                        duplicates.push($(this).closest(".carousel-inner>div"));
+                    } else {
+                        seen.add(qId);
+                    }
+                });
+                return duplicates;
+            }
+
+            function refreshDuplicateTooltip(count, hidden) {
+                var text;
+                if (count === 0) {
+                    text = "没有检测到重复题";
+                } else if (hidden) {
+                    text = "已隐藏 " + count + " 道重复题，点击恢复";
+                } else {
+                    text = "检测到 " + count + " 道重复题，点击去重";
+                }
+                $duplicateBtn.attr('title', text).attr('data-original-title', text);
+                if ($duplicateBtn.data('bs.tooltip')) {
+                    $duplicateBtn.tooltip('dispose');
+                }
+                $duplicateBtn.tooltip();
+            }
+
+            function updateDuplicateStatus() {
+                var duplicates = collectDuplicateItems();
+                var hidden = !!$duplicateBtn.data('duplicates-hidden');
+                refreshDuplicateTooltip(duplicates.length, hidden);
+                return duplicates;
+            }
+
+            $duplicateBtn.on('click', function (e) {
+                e.preventDefault();
+                var duplicates = collectDuplicateItems();
+                if (!duplicates.length) {
+                    return;
+                }
+                var hidden = !!$duplicateBtn.data('duplicates-hidden');
+                if (hidden) {
+                    duplicates.forEach(function ($item) {
+                        $item.removeClass('d-none duplicate-hidden');
+                    });
+                } else {
+                    duplicates.forEach(function ($item) {
+                        $item.addClass('d-none duplicate-hidden');
+                    });
+                }
+                $duplicateBtn.data('duplicates-hidden', !hidden);
+                $carouselItems = $printcontent.find(".carousel-inner>div");
+                var $visibleItems = $carouselItems.filter(':not(.d-none)');
+                if (!$visibleItems.filter('.active').length && $visibleItems.length) {
+                    $carouselItems.removeClass('active');
+                    $visibleItems.first().addClass('active');
+                }
+                if (!$visibleItems.length && hidden) {
+                    // 如果恢复前全部隐藏，恢复后确保第一题激活
+                    $carouselItems.first().addClass('active');
+                }
+                refreshDuplicateTooltip(duplicates.length, !hidden);
+            });
+
+            // 若初始存在隐藏的重复题（例如服务端标记）
+            $printcontent.find(".carousel-inner>div.duplicate-hidden").each(function () {
+                $(this).addClass('d-none');
+                $duplicateBtn.data('duplicates-hidden', true);
+            });
+            updateDuplicateStatus();
+            $duplicateBtn.on('shown.bs.tooltip', function () {
+                // tooltip 弹出后更新内容，防止 title 缓存
+                var duplicates = collectDuplicateItems();
+                var hidden = !!$duplicateBtn.data('duplicates-hidden');
+                refreshDuplicateTooltip(duplicates.length, hidden);
+                });
 
             function ms2String(n) {
                 var s = Math.floor(n / 1000), ms = Math.floor(n % 1000 / 100), m = Math.floor(s / 60);
