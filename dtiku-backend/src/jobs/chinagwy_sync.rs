@@ -4,7 +4,6 @@ use crate::{
     plugins::embedding::Embedding,
     utils::regex as regex_util,
 };
-use anyhow::anyhow;
 use anyhow::Context;
 use dtiku_base::model::schedule_task::{self, Progress, TaskInstance};
 use dtiku_paper::model::{
@@ -25,7 +24,7 @@ use spring::{async_trait, plugin::service::Service, tracing};
 use spring_sea_orm::DbConn;
 use spring_sqlx::ConnectPool;
 use sqlx::types::Json;
-use std::{collections::HashMap, num::ParseIntError};
+use std::collections::HashMap;
 
 #[derive(Clone, Service)]
 #[service(prototype)]
@@ -183,7 +182,7 @@ impl ChinaGwySyncService {
             .into_iter()
             .map(|m| (m.material_id, m.number + 1))
             .collect();
-        let mut mids = mid_num_map.keys().cloned().collect_vec();
+        let mids = mid_num_map.keys().cloned().collect_vec();
 
         let questions = sqlx::query_as::<_, OriginQuestion>(
             r##"
@@ -206,18 +205,6 @@ impl ChinaGwySyncService {
         .fetch_all(&self.source_db)
         .await
         .with_context(|| format!("find questions({source_paper_id}) failed"))?;
-
-        for q in &questions {
-            if let Some(multi_material_id) = &q.multi_material_id {
-                mids.extend(
-                    multi_material_id
-                        .split(",")
-                        .map(|mid| mid.parse())
-                        .collect::<Result<Vec<i64>, ParseIntError>>()
-                        .context("parse i32 failed")?,
-                );
-            }
-        }
 
         let materials = sqlx::query_as::<_, OriginMaterial>(
             r##"
@@ -473,41 +460,28 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
 struct OriginQuestion {
     id: i64,
     target_id: Option<i32>,
-    ty: i16,
-    form: i16,
+    type_name: String,
+    year: i16,
     content: String,
-    choices: Option<Json<Vec<Choice>>>,
-    answer: Option<Json<Vec<String>>>,
-    explain: Option<String>,
-    explain_file: Option<Json<Vec<ExplainFile>>>,
+    options: Option<Json<Vec<Choice>>>,
+    source: Option<String>,
+    answer_text: Option<String>,
     analysis: Option<String>,
-    step_explanation: Option<Json<Vec<String>>>,
-    multi_material_id: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Deserialize)]
 pub struct Choice {
-    pub choice: String,
-    pub choice_id: i64,
-    pub is_correct: i64,
-    pub question_id: i64,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Deserialize)]
-pub struct ExplainFile {
-    pub file_url: String,
-    pub media_id: String,
-    pub file_name: String,
-    pub file_type: i64,
-    pub use_platform: i64,
+    pub text: String,
+    pub index: i64,
+    pub token: String,
 }
 
 impl OriginQuestion {
     async fn to_question(&self, model: &Embedding) -> anyhow::Result<question::ActiveModel> {
         let Self {
-            form,
+            type_name,
             content,
-            choices,
+            options,
             ..
         } = self;
 
@@ -516,26 +490,27 @@ impl OriginQuestion {
                 .unwrap_or_default()
                 .0
                 .into_iter()
-                .map(|c| c.choice)
+                .sorted_by_key(|c| c.index)
+                .map(|c| c.text)
                 .collect_vec()
         }
-        let extra = match form {
-            0 | 1 => QuestionExtra::SingleChoice {
-                options: get_options(choices.clone()),
+
+        let extra = match type_name.as_str() {
+            "单选题" => QuestionExtra::SingleChoice {
+                options: get_options(options.clone()),
             },
-            2 => QuestionExtra::IndefiniteChoice {
-                options: get_options(choices.clone()),
+            "多选题" => QuestionExtra::MultiChoice {
+                options: get_options(options.clone()),
             },
-            3 => QuestionExtra::TrueFalse,
-            4 => QuestionExtra::OpenEndedQA { qa: vec![] },
-            5 => QuestionExtra::MultiChoice {
-                options: get_options(choices.clone()),
+            "不定项选择题" => QuestionExtra::IndefiniteChoice {
+                options: get_options(options.clone()),
             },
-            _ => return Err(anyhow!("异常情况")),
+            "判断题" => QuestionExtra::TrueFalse,
+            _ => QuestionExtra::OpenEndedQA { qa: vec![] },
         };
 
         let txt = {
-            let options_string = get_options(choices.clone()).join("\n");
+            let options_string = get_options(options.clone()).join("\n");
             // scraper::Html 底层用了 tendril::NonAtomic 和 Cell 类型，而这些类型不是线程安全的，所以它 不实现 Send。
             // 用代码块，让html 变量在这里作用域结束，释放掉 Cell 的引用。
             let html = Html::parse_fragment(&format!("{content}\n{options_string}"));
@@ -556,74 +531,49 @@ impl OriginQuestion {
 
     fn to_solution(&self) -> anyhow::Result<solution::ActiveModel> {
         let Self {
-            form,
-            choices,
-            answer,
+            type_name,
+            answer_text,
             analysis,
-            explain,
-            explain_file,
             ..
         } = self;
 
-        fn get_options_answer(choices: Option<Json<Vec<Choice>>>) -> Vec<u8> {
-            choices
-                .map(|json| {
-                    json.0
-                        .iter()
-                        .enumerate()
-                        .filter_map(|(i, c)| {
-                            if c.is_correct == 1 {
-                                Some(i as u8)
-                            } else {
-                                None
-                            }
-                        })
-                        .collect()
-                })
-                .unwrap_or_default()
-        }
-        let extra = match form {
-            0 | 1 => SolutionExtra::SingleChoice(SingleChoice {
-                answer: get_options_answer(choices.clone()).remove(0),
-                analysis: if let Some(analysis) = analysis {
-                    let explain = explain.clone().unwrap_or_default();
-                    format!("{analysis}\n{explain}")
-                } else {
-                    explain.clone().unwrap_or_default()
-                },
+        let extra = match type_name.as_str() {
+            "单选题" => SolutionExtra::SingleChoice(SingleChoice {
+                answer: answer_text
+                    .to_owned()
+                    .unwrap()
+                    .chars()
+                    .map(|c| c as u8 - b'A')
+                    .find_or_first(|x| *x > 0)
+                    .unwrap(),
+                analysis: analysis.to_owned().unwrap_or_default(),
             }),
-            2 => SolutionExtra::IndefiniteChoice(MultiChoice {
-                answer: get_options_answer(choices.clone()),
-                analysis: if let Some(analysis) = analysis {
-                    let explain = explain.clone().unwrap_or_default();
-                    format!("{analysis}\n{explain}")
-                } else {
-                    explain.clone().unwrap_or_default()
-                },
+            "多选题" => SolutionExtra::MultiChoice(MultiChoice {
+                answer: answer_text
+                    .to_owned()
+                    .unwrap()
+                    .chars()
+                    .map(|c| c as u8 - b'A')
+                    .collect_vec(),
+                analysis: analysis.to_owned().unwrap_or_default(),
             }),
-            3 => SolutionExtra::TrueFalse(TrueFalseChoice {
-                answer: true,
-                analysis: if let Some(analysis) = analysis {
-                    let explain = explain.clone().unwrap_or_default();
-                    format!("{analysis}\n{explain}")
-                } else {
-                    explain.clone().unwrap_or_default()
-                },
+            "不定项选择题" => SolutionExtra::IndefiniteChoice(MultiChoice {
+                answer: answer_text
+                    .to_owned()
+                    .unwrap()
+                    .chars()
+                    .map(|c| c as u8 - b'A')
+                    .collect_vec(),
+                analysis: analysis.to_owned().unwrap_or_default(),
             }),
-            4 => SolutionExtra::OpenEndedQA(StepByStepAnswer {
-                solution: Some(answer.clone().unwrap_or_default().0.join("\n")),
+            "判断题" => SolutionExtra::TrueFalse(TrueFalseChoice {
+                answer: true, // TODO
+                analysis: analysis.to_owned().unwrap_or_default(),
+            }),
+            _ => SolutionExtra::OpenEndedQA(StepByStepAnswer {
+                solution: answer_text.to_owned(),
                 analysis: vec![],
             }),
-            5 => SolutionExtra::MultiChoice(MultiChoice {
-                answer: get_options_answer(choices.clone()),
-                analysis: if let Some(analysis) = analysis {
-                    let explain = explain.clone().unwrap_or_default();
-                    format!("{analysis}\n{explain}")
-                } else {
-                    explain.clone().unwrap_or_default()
-                },
-            }),
-            _ => return Err(anyhow!("异常情况")),
         };
 
         Ok(solution::ActiveModel {
