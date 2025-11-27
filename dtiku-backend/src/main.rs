@@ -23,6 +23,9 @@ use spring_web::{WebConfigurator, WebPlugin};
 #[auto_config(StreamConfigurator)]
 #[tokio::main]
 async fn main() {
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .ok();
     App::new()
         .opentelemetry_attrs([
             KeyValue::new(SERVICE_NAME, env!("CARGO_PKG_NAME")),

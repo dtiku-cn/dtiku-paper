@@ -1814,6 +1814,7 @@ dependencies = [
  "reqwest-retry",
  "reqwest-scraper 0.7.1",
  "reqwest-tracing",
+ "rustls",
  "scraper",
  "sea-orm",
  "search-api",
