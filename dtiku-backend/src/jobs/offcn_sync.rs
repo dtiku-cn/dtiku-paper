@@ -727,7 +727,7 @@ impl OriginQuestion {
                 },
             }),
             3 => SolutionExtra::TrueFalse(TrueFalseChoice {
-                answer: true, // TODO
+                answer: true, // 就只有一题
                 analysis: if let Some(analysis) = analysis {
                     let explain = explain.clone().unwrap_or_default();
                     format!("{analysis}\n{explain}")

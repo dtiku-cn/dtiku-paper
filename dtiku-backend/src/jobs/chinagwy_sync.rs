@@ -461,10 +461,8 @@ struct OriginQuestion {
     id: i64,
     target_id: Option<i32>,
     type_name: String,
-    year: i16,
     content: String,
     options: Option<Json<Vec<Choice>>>,
-    source: Option<String>,
     answer_text: Option<String>,
     analysis: Option<String>,
 }
@@ -567,7 +565,13 @@ impl OriginQuestion {
                 analysis: analysis.to_owned().unwrap_or_default(),
             }),
             "判断题" => SolutionExtra::TrueFalse(TrueFalseChoice {
-                answer: true, // TODO
+                answer: answer_text
+                    .to_owned()
+                    .unwrap()
+                    .chars()
+                    .map(|c| c as u8 - b'A' == 0)
+                    .last()
+                    .unwrap_or_default(),
                 analysis: analysis.to_owned().unwrap_or_default(),
             }),
             _ => SolutionExtra::OpenEndedQA(StepByStepAnswer {
