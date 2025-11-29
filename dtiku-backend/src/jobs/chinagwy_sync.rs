@@ -192,7 +192,7 @@ impl ChinaGwySyncService {
                 target_id,
                 coalesce(extra->>'text',extra->>'ask',extra->>'title') as content,
                 extra->>'year' as year,
-                extra->>'optionList' as options,
+                extra->'optionList' as options,
                 extra->>'typeName' as type_name,
                 extra->>'source' as source,
                 coalesce(extra->>'answer_text',extra->>'answer_txt',extra->>'answerToken') as answer_text,
