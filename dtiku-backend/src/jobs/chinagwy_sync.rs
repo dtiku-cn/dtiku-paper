@@ -461,7 +461,7 @@ impl TryInto<material::ActiveModel> for OriginMaterial {
 struct OriginQuestion {
     id: i64,
     target_id: Option<i32>,
-    type_name: String,
+    type_name: Option<String>,
     content: String,
     options: Option<Json<Vec<Choice>>>,
     answer_text: Option<String>,
@@ -494,7 +494,7 @@ impl OriginQuestion {
                 .collect_vec()
         }
 
-        let extra = match type_name.as_str() {
+        let extra = match type_name.to_owned().unwrap_or_default().as_str() {
             "单选题" => QuestionExtra::SingleChoice {
                 options: get_options(options.clone()),
             },
@@ -536,7 +536,7 @@ impl OriginQuestion {
             ..
         } = self;
 
-        let extra = match type_name.as_str() {
+        let extra = match type_name.to_owned().unwrap_or_default().as_str() {
             "单选题" => SolutionExtra::SingleChoice(SingleChoice {
                 answer: answer_text
                     .to_owned()
