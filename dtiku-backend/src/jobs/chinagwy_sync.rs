@@ -87,7 +87,8 @@ impl ChinaGwySyncService {
                     select
                         id,
                         label_id,
-                        extra->>'title' as title
+                        extra->>'title' as title,
+                        extra->>'chapters' as chapters
                     from paper p
                     where from_ty ='chinagwy' and target_id is null and id > $1
                     order by id
