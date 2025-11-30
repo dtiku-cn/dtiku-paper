@@ -181,7 +181,7 @@ impl ChinaGwySyncService {
 
         let mid_num_map: HashMap<_, _> = material_ids
             .into_iter()
-            .map(|m| (m.material_id, m.number + 1))
+            .map(|m| (m.material_id, m.number))
             .collect();
         let mids = mid_num_map.keys().cloned().collect_vec();
 
