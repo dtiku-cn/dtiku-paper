@@ -10,6 +10,7 @@ use axum_extra::headers::UserAgent;
 use axum_extra::TypedHeader;
 use chrono::Utc;
 use dtiku_base::service::system_config::SystemConfigService;
+use dtiku_paper::model::FromType;
 use dtiku_paper::service::exam_category::ExamCategoryService;
 use http::HeaderValue;
 use sha2::{Digest, Sha256};
@@ -364,6 +365,7 @@ pub async fn not_found_handler(Host(original_host): Host) -> Response {
 
 task_local! {
     pub static EXAM_ID: i16;
+    pub static FROM_TY: FromType;
 }
 
 /// 为每个请求注入全局上下文变量
@@ -399,6 +401,60 @@ pub async fn with_global_context(
     }
 }
 
+/// 从 host 中提取 exam prefix
+///
+/// 逻辑：
+/// 1. 从 host 中查找 ".dtiku.cn"，提取前缀部分
+/// 2. 如果前缀以配置的 `strip_prefix`(如`test`) 开头，则去掉该前缀
+/// 3. 去掉前缀开头的点号
+/// 4. 如果前缀是 "www"，则返回 "gwy"
+/// 5. 如果未找到 ".dtiku.cn" 或前缀为空，返回默认值 "gwy"
+fn extract_exam_prefix<'a>(host: &'a str, strip_prefix: &str) -> &'a str {
+    let Some(pos) = host.find(".dtiku.cn") else {
+        return "gwy";
+    };
+
+    let prefix = &host[..pos];
+    let prefix = prefix.strip_prefix(strip_prefix).unwrap_or(prefix);
+    let prefix = prefix.trim_start_matches('.');
+
+    if prefix.is_empty() || prefix == "www" {
+        "gwy"
+    } else {
+        prefix
+    }
+}
+
+/// 从请求的 header 或 query 参数中获取 FromType
+///
+/// 优先级：header `x-from-type` > query 参数 `from_type` > 默认值 `Fenbi`
+fn extract_from_type(req: &Request) -> FromType {
+    let from_type_str = req
+        .headers()
+        .get("x-from-type")
+        .and_then(|v| v.to_str().ok())
+        .or_else(|| {
+            req.uri().query().and_then(|q| {
+                q.split('&').find_map(|pair| {
+                    let mut parts = pair.splitn(2, '=');
+                    let key = parts.next()?;
+                    if key == "from_type" {
+                        parts.next()
+                    } else {
+                        None
+                    }
+                })
+            })
+        });
+
+    from_type_str
+        .and_then(|s| {
+            use std::str::FromStr;
+            FromType::from_str(s).ok()
+        })
+        .unwrap_or(FromType::Fenbi)
+}
+
 /// 为每个请求注入全局上下文变量
 #[inline]
 async fn with_context_inner(
@@ -412,22 +468,7 @@ async fn with_context_inner(
     mut req: Request,
     next: Next,
 ) -> Result<Response, WebError> {
-    let prefix = if let Some(pos) = original_host.find(".dtiku.cn") {
-        let prefix = &original_host[..pos]; // "gwy"
-        let prefix = if let Some(strip_prefix) = prefix.strip_prefix(&config.strip_prefix) {
-            strip_prefix
-        } else {
-            prefix
-        };
-        let prefix = prefix.trim_start_matches('.');
-        if prefix == "www" {
-            "gwy"
-        } else {
-            prefix
-        }
-    } else {
-        "gwy"
-    };
+    let prefix = extract_exam_prefix(&original_host, &config.strip_prefix);
     let root_exam = ec_service
         .find_root_exam(prefix)
         .await
@@ -463,5 +504,10 @@ async fn with_context_inner(
         config,
         cookies,
     ));
-    Ok(EXAM_ID.scope(exam_id, next.run(req)).await)
+
+    let from_type = extract_from_type(&req);
+
+    Ok(EXAM_ID
+        .scope(exam_id, FROM_TY.scope(from_type, next.run(req)))
+        .await)
 }
