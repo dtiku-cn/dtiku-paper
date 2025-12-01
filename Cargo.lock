@@ -4585,9 +4585,9 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openai-api-rs"
-version = "6.0.13"
+version = "8.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a167b2db9070d38ba8a3bb24c459ca9303b542215ca9937ea38a0f0b72aa2488"
+checksum = "4e6de2e22a050033c79ad7f5f83848f50dca9e23c6ef6ce12ca39606a3bc5367"
 dependencies = [
  "bytes",
  "futures-util",

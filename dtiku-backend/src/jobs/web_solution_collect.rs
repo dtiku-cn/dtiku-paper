@@ -5,7 +5,7 @@ use dtiku_paper::model::{
     question, scraper_solution, ExamCategory, Material, PaperQuestion, Question, Solution,
 };
 use itertools::Itertools as _;
-use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
+use openai_api_rs::v1::chat_completion::{self, chat_completion::ChatCompletionRequest, Content};
 use reqwest_scraper::ScraperResponse;
 use sea_orm::{ActiveValue::Set, EntityTrait as _};
 use search_api::{baidu, bing, sogou, SearchItem};
@@ -212,10 +212,20 @@ impl WebSolutionCollectService {
         let mut openai = self.openai.clone().build()?;
         let req = ChatCompletionRequest::new(
             model.to_string(),
-            vec![chat_completion::ChatCompletionMessage {
-                role: chat_completion::MessageRole::user,
-                content: chat_completion::Content::Text(format!(
-                    r#"
+            vec![
+                chat_completion::ChatCompletionMessage {
+                    role: chat_completion::MessageRole::system,
+                    content: Content::Text(
+                        "你是一个信息抽取模型，只根据给定内容抽取信息，严格输出合法JSON，不要包含任何解释、前后缀或markdown代码块。".to_string(),
+                    ),
+                    name: None,
+                    tool_calls: None,
+                    tool_call_id: None,
+                },
+                chat_completion::ChatCompletionMessage {
+                    role: chat_completion::MessageRole::user,
+                    content: chat_completion::Content::Text(format!(
+                        r#"
 ## text
 {text}
 
@@ -231,11 +241,12 @@ impl WebSolutionCollectService {
 ## 任务
 从text中剔除掉material，然后提取出包含solution的关键词密集度最高的一个片段，并且要满足question中的要求，如果存在就返回JSON格式：{{"answer":"原文片段"}}，不存在的话就返回{{"answer":null}}，如果text存在对应的解题思路的片段，在json中添加一个字段：{{"answer":"原文片段","analysis":"解题思路原文片段"}}
 "#
-                )),
-                name: None,
-                tool_calls: None,
-                tool_call_id: None,
-            }],
+                    )),
+                    name: None,
+                    tool_calls: None,
+                    tool_call_id: None,
+                },
+            ],
         );
         let resp = openai
             .chat_completion(req)

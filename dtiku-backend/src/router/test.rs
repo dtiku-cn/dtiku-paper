@@ -15,7 +15,8 @@ use gaoya::simhash::SimHashBits;
 use gaoya::simhash::{SimHash, SimSipHasher128};
 use itertools::Itertools;
 use jieba_rs::{Jieba, KeywordExtract, TextRank};
-use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
+use openai_api_rs::v1::chat_completion::Content;
+use openai_api_rs::v1::chat_completion::{self, chat_completion::ChatCompletionRequest};
 use reqwest::header::CONTENT_TYPE;
 use reqwest_scraper::ScraperResponse;
 use sea_orm::EntityTrait;
@@ -34,8 +35,12 @@ use spring_web::{
 #[post("/api/text_similarity")]
 async fn test_text_similarity(Json(q): Json<TextCompare>) -> Result<impl IntoResponse> {
     let TextCompare { source, target } = q;
-    let source = question::get_re_punct().replace_all(&source, "").into_owned();
-    let target = question::get_re_punct().replace_all(&target, "").into_owned();
+    let source = question::get_re_punct()
+        .replace_all(&source, "")
+        .into_owned();
+    let target = question::get_re_punct()
+        .replace_all(&target, "")
+        .into_owned();
     let bag = textdistance::str::bag(&source, &target);
     let cosine = textdistance::str::cosine(&source, &target);
     let damerau_levenshtein = textdistance::str::damerau_levenshtein(&source, &target);
@@ -331,9 +336,19 @@ async fn test_call_open_ai(
     let mut openai = openai_config.build()?;
     let req = ChatCompletionRequest::new(
         model,
-        vec![chat_completion::ChatCompletionMessage {
+        vec![
+            chat_completion::ChatCompletionMessage {
+                role: chat_completion::MessageRole::system,
+                content: Content::Text(
+                    "你是一个信息抽取模型，只根据给定内容抽取信息，严格输出合法JSON，不要包含任何解释、前后缀或markdown代码块。".to_string(),
+                ),
+                name: None,
+                tool_calls: None,
+                tool_call_id: None,
+            },
+            chat_completion::ChatCompletionMessage {
             role: chat_completion::MessageRole::user,
-            content: chat_completion::Content::Text(format!(
+            content: Content::Text(format!(
                 r#"{body}\n
                 从这个文本里抽取出问题和答案，用json返回，json结构如下：[{{"question":"这是示例问题","solution":"这是示例答案"}}]"#
             )),
