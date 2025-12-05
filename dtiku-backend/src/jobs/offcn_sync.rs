@@ -208,7 +208,7 @@ impl OffcnSyncService {
                     )
                 })?
                 .try_get("target_id")
-                .context("get target_id failed")?;
+                .with_context(|| format!("paper#{} get label target_id failed", source_paper_id))?;
         let paper = paper.save_paper(&self.target_db, target_exam_id).await?;
 
         self.sync_questions_and_materials(source_paper_id, &paper)
