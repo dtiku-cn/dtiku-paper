@@ -5,6 +5,7 @@ mod huatu_sync;
 mod idiom_fetch;
 mod offcn_sync;
 mod pay_trade_fetcher;
+mod shenlun_categorize;
 mod web_solution_collect;
 
 use crate::jobs::assets_saver::AssetsSaveService;
@@ -12,6 +13,7 @@ use crate::jobs::chinagwy_sync::ChinaGwySyncService;
 use crate::jobs::huatu_sync::HuatuSyncService;
 use crate::jobs::idiom_fetch::IdiomStatsService;
 use crate::jobs::offcn_sync::OffcnSyncService;
+use crate::jobs::shenlun_categorize::ShenlunCategorizeService;
 use crate::jobs::web_solution_collect::WebSolutionCollectService;
 use crate::plugins::jobs::RunningJobs;
 use anyhow::Context;
@@ -68,6 +70,12 @@ async fn task_schedule(
         ScheduleTaskType::IdiomStats => {
             IdiomStatsService::build(task)
                 .expect("build idiom stats service failed")
+                .start()
+                .await
+        }
+        ScheduleTaskType::ShenlunCategorize => {
+            ShenlunCategorizeService::build(task)
+                .expect("build shenlun categorize service failed")
                 .start()
                 .await
         }
