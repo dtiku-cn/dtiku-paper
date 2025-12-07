@@ -87,39 +87,64 @@
         });
         window.artalk = Artalk.init(config);
     }
-    window.addEventListener('load', async () => {
+    // 使用 DOMContentLoaded 替代 load，提前执行（DOM 就绪即可，无需等待所有资源）
+    function initArtalkWithUserSync() {
+        // 先初始化 Artalk，不等待用户信息同步
+        artalkInit();
+        
+        // 在后台同步用户信息（如果有 token），不阻塞评论系统显示
         const token = Cookies.get("token");
         if (!token && localStorage.getItem("ArtalkUser")) {
             localStorage.removeItem("ArtalkUser");
         }
         if (token && !localStorage.getItem("ArtalkUser")) {
-            const resp = await fetch("https://artalk.dtiku.cn/api/v2/user", {
-                method: 'GET', // 或 POST、PUT 等
+            // 异步获取用户信息，不阻塞评论系统显示
+            fetch("https://artalk.dtiku.cn/api/v2/user", {
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`  // 通常使用 Bearer 方案
+                    'Authorization': `Bearer ${token}`
                 }
+            }).then(resp => resp.json()).then(data => {
+                if (data.is_login) {
+                    const { email, is_admin, link, name } = data.user;
+                    localStorage.setItem("ArtalkUser", JSON.stringify({ email, is_admin, link, name, token }));
+                    // 如果 Artalk 已初始化，更新用户信息
+                    if (window.artalk) {
+                        window.artalk.reload();
+                    }
+                } else {
+                    removeToken();
+                }
+            }).catch(err => {
+                console.warn('获取用户信息失败:', err);
             });
-            const data = await resp.json();
-            if (data.is_login) {
-                const { email, is_admin, link, name } = data.user;
-                localStorage.setItem("ArtalkUser", JSON.stringify({ email, is_admin, link, name, token }));
-            } else {
-                removeToken();
-            }
         }
-        artalkInit();
-        window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {
-            artalk.setDarkMode(dark)
-        });
-        // 内嵌于iframe时
-        window.addEventListener('message', function (event) {
-            const msg = event.data;
-            if (msg && msg.type === 'set-theme') {
-                artalk.setDarkMode(msg.dark)
+        
+        // 设置主题监听（等待 themeSwitcher 可能需要的资源加载完成）
+        window.addEventListener('load', () => {
+            if (window.artalk) {
+                window.themeSwitcher && window.themeSwitcher.listener.push(function (dark) {
+                    artalk.setDarkMode(dark)
+                });
+                // 内嵌于iframe时
+                window.addEventListener('message', function (event) {
+                    const msg = event.data;
+                    if (msg && msg.type === 'set-theme') {
+                        artalk.setDarkMode(msg.dark)
+                    }
+                });
             }
-        });
-    }, false);
+        }, false);
+    }
+    
+    // DOM 就绪即执行，比 load 事件早很多
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initArtalkWithUserSync);
+    } else {
+        // DOM 已经就绪，立即执行
+        initArtalkWithUserSync();
+    }
 </script>
 {% endif %}
 {% if !(global.config.show_comments && comments) && global.config.show_visitors && visitors %}
