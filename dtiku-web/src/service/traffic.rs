@@ -3,7 +3,7 @@ use anyhow::Context as _;
 use askama::Template as _;
 use spring::plugin::Service;
 use spring_redis::{
-    redis::{AsyncCommands as _, Script},
+    redis::AsyncCommands as _,
     Redis,
 };
 use std::net::IpAddr;
@@ -18,44 +18,18 @@ pub struct TrafficService {
 
 impl TrafficService {
     pub async fn is_block_ip(&mut self, host: &str, ip: IpAddr) -> bool {
-        let block_ip_key = format!("traffic:block_ip:{}", host);
+        // 新的存储结构：独立 string key，格式为 traffic:block_ip:{host}:{ip}
+        // Redis 会自动根据 TTL 过期，无需手动检查 block_until
+        let block_ip_key = format!("traffic:block_ip:{}:{}", host, ip);
 
-        let script = Script::new(
-            r#"
-local hash_key = KEYS[1]
-local ip = ARGV[1]
-local now = ARGV[2]
-
-local json_val = redis.call("HGET", hash_key, ip)
-if not json_val then
-    return 0
-end
-
-local data = cjson.decode(json_val)
-local block_until = data["block_until"]
-
-if now >= block_until then
-    redis.call("HDEL", hash_key, ip)
-    return 0
-end
-
-return 1
-"#,
-        );
-
-        let now = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-
-        let blocked: i32 = script
-            .key(block_ip_key)
-            .arg(ip.to_string())
-            .arg(now)
-            .invoke_async(&mut self.redis)
+        let exists: bool = self
+            .redis
+            .exists(block_ip_key)
             .await
             .ok()
-            .flatten()
-            .unwrap_or(0);
+            .unwrap_or(false);
 
-        blocked == 1
+        exists
     }
 
     pub fn gen_cap_template(&self) -> anyhow::Result<String> {
@@ -76,13 +50,13 @@ return 1
     }
 
     pub async fn unblock_ip(&mut self, host: &str, client_ip: IpAddr) {
-        let block_ip_key = format!("traffic:block_ip:{}", host);
-        let _: usize = self
+        // 新的存储结构：独立 string key，直接删除 key 即可
+        let block_ip_key = format!("traffic:block_ip:{}:{}", host, client_ip);
+        let _: bool = self
             .redis
-            .hdel(block_ip_key, client_ip.to_string().as_str())
+            .del(block_ip_key)
             .await
             .ok()
-            .flatten()
-            .unwrap_or(0);
+            .unwrap_or(false);
     }
 }

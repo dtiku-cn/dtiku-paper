@@ -41,28 +41,35 @@ CREATE TEMPORARY TABLE users (
 );
 
 -- ============ 输出表（Sink） ============
+-- 注意：使用独立的 string key 替代 hash，以便为每个记录设置独立的 TTL
+-- key 格式：{prefix}{host}:{field}，例如：traffic:block_ip:{host}:{ip}
+
 -- 1. DDoS防护：封禁IP黑名单
+-- TTL：根据 block_until 计算，最长2小时
 CREATE TABLE redis_block_ip_list (
+    record_key TEXT NOT NULL,  -- 完整 Redis key：traffic:block_ip:{host}:{ip}
     host TEXT NOT NULL,
     ip TEXT NOT NULL,
     request_count BIGINT,
     first_seen TIMESTAMP,
     last_seen TIMESTAMP,
-    block_until TIMESTAMP
+    block_until TIMESTAMP,
+    ttl_seconds INT  -- TTL（秒数），从 block_until 计算
 ) WITH (
     connector = 'redis',
     address = 'redis://redis:6379/0',
     format = 'json',
     type = 'sink',
-    target = 'hash',
-    'target.key_prefix' = 'traffic:block_ip:',
-    'target.field_column' = 'ip',
-    'target.key_column' = 'host',
+    target = 'key',
+    'target.key_column' = 'record_key',
+    'target.ttl_column' = 'ttl_seconds',
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 2. 账户安全：异常用户列表
+-- TTL：30分钟（1800秒）
 CREATE TABLE redis_suspicious_users (
+    record_key TEXT NOT NULL,  -- 完整 Redis key：traffic:suspicious_user:{host}:{user_id}
     host TEXT NOT NULL,
     user_id TEXT NOT NULL,
     user_name TEXT,
@@ -70,62 +77,68 @@ CREATE TABLE redis_suspicious_users (
     error_rate DOUBLE,
     window_start TIMESTAMP,
     window_end TIMESTAMP,
-    risk_level TEXT  -- 'low', 'medium', 'high'
+    risk_level TEXT,  -- 'low', 'medium', 'high'
+    ttl_seconds INT  -- 固定30分钟 = 1800秒
 ) WITH (
     connector = 'redis',
     address = 'redis://redis:6379/0',
     format = 'json',
     type = 'sink',
-    target = 'hash',
-    'target.key_prefix' = 'traffic:suspicious_user:',
-    'target.field_column' = 'user_id',
-    'target.key_column' = 'host',
+    target = 'key',
+    'target.key_column' = 'record_key',
+    'target.ttl_column' = 'ttl_seconds',
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 3. 流量分析：实时访问统计（每分钟）
+-- TTL：5分钟（300秒）
 CREATE TABLE redis_traffic_stats (
+    record_key TEXT NOT NULL,  -- 完整 Redis key：traffic:stats:{host}:{metric_type}:{metric_key}
     host TEXT NOT NULL,
     metric_type TEXT,  -- 'total', 'by_status', 'by_path'
     metric_key TEXT NOT NULL,
     value BIGINT,
     window_start TIMESTAMP,
-    window_end TIMESTAMP
+    window_end TIMESTAMP,
+    ttl_seconds INT  -- 固定5分钟 = 300秒
 ) WITH (
     connector = 'redis',
     address = 'redis://redis:6379/0',
     format = 'json',
     type = 'sink',
-    target = 'hash',
-    'target.key_prefix' = 'traffic:stats:',
-    'target.field_column' = 'metric_key',
-    'target.key_column' = 'host',
+    target = 'key',
+    'target.key_column' = 'record_key',
+    'target.ttl_column' = 'ttl_seconds',
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 4. 智能限流：实时限流配置
+-- TTL：2分钟（120秒），因为每分钟更新
 CREATE TABLE redis_rate_limit_config (
+    record_key TEXT NOT NULL,  -- 完整 Redis key：traffic:rate_limit:{host}:{endpoint}
     host TEXT NOT NULL,
     endpoint TEXT NOT NULL,
     current_qps BIGINT,
     avg_response_time DOUBLE,
     error_rate DOUBLE,
     suggested_limit BIGINT,
-    window_time TIMESTAMP
+    window_time TIMESTAMP,
+    ttl_seconds INT  -- 固定2分钟 = 120秒
 ) WITH (
     connector = 'redis',
     address = 'redis://redis:6379/0',
     format = 'json',
     type = 'sink',
-    target = 'hash',
-    'target.key_prefix' = 'traffic:rate_limit:',
-    'target.field_column' = 'endpoint',
-    'target.key_column' = 'host',
+    target = 'key',
+    'target.key_column' = 'record_key',
+    'target.ttl_column' = 'ttl_seconds',
     'json.timestamp_format' = 'RFC3339'
 );
 
 -- 5. URL热点分析
+-- TTL：10分钟（600秒），窗口5分钟，保留2个窗口
 CREATE TABLE redis_hot_urls (
+    record_key TEXT NOT NULL,  -- 完整 Redis key：traffic:hot_url:{host}:{url_path}
     host TEXT NOT NULL,
     url_path TEXT NOT NULL,
     request_count BIGINT,
@@ -133,16 +146,16 @@ CREATE TABLE redis_hot_urls (
     status_4xx_count BIGINT,
     status_5xx_count BIGINT,
     window_start TIMESTAMP,
-    window_end TIMESTAMP
+    window_end TIMESTAMP,
+    ttl_seconds INT  -- 固定10分钟 = 600秒
 ) WITH (
     connector = 'redis',
     address = 'redis://redis:6379/0',
     format = 'json',
     type = 'sink',
-    target = 'hash',
-    'target.key_prefix' = 'traffic:hot_url:',
-    'target.field_column' = 'url_path',
-    'target.key_column' = 'host',
+    target = 'key',
+    'target.key_column' = 'record_key',
+    'target.ttl_column' = 'ttl_seconds',
     'json.timestamp_format' = 'RFC3339'
 );
 
@@ -152,12 +165,14 @@ CREATE TABLE redis_hot_urls (
 -- 检测规则：1分钟内请求超过100次的IP，或10秒内超过30次的IP
 INSERT INTO redis_block_ip_list
 SELECT 
+    'traffic:block_ip:' || host || ':' || remote_addr as record_key,
     host,
     remote_addr as ip,
     COUNT(*) as request_count,
     MIN(timestamp) as first_seen,
     MAX(timestamp) as last_seen,
-    MAX(timestamp) + INTERVAL '1 hour' as block_until
+    MAX(timestamp) + INTERVAL '1 hour' as block_until,
+    EXTRACT(EPOCH FROM (MAX(timestamp) + INTERVAL '1 hour' - CURRENT_TIMESTAMP))::INT as ttl_seconds
 FROM nginx_access_log
 WHERE 
     -- 排除轮询接口（健康检查、监控等）
@@ -180,6 +195,7 @@ HAVING COUNT(*) > 100  -- 1分钟内超过100次请求
 -- 监控指标：高频请求、高错误率、异常访问模式
 INSERT INTO redis_suspicious_users
 SELECT
+    'traffic:suspicious_user:' || t.host || ':' || COALESCE(u.id::TEXT, t.user_key) as record_key,
     t.host,
     COALESCE(u.id::TEXT, t.user_key) as user_id,
     COALESCE(u.name, 'Unknown') as user_name,
@@ -191,7 +207,8 @@ SELECT
         WHEN t.request_count > 500 OR t.error_rate > 0.5 THEN 'high'
         WHEN t.request_count > 200 OR t.error_rate > 0.3 THEN 'medium'
         ELSE 'low'
-    END as risk_level
+    END as risk_level,
+    1800 as ttl_seconds  -- 固定30分钟
 FROM (
     SELECT
         host,
@@ -215,12 +232,14 @@ LEFT JOIN users u ON t.user_key = u.record_key;
 -- 3.1 总请求数和流量
 INSERT INTO redis_traffic_stats
 SELECT
+    'traffic:stats:' || host || ':total_requests:all' as record_key,
     host,
     'total_requests' as metric_type,
     'all' as metric_key,
     COUNT(*) as value,
     MIN(timestamp) as window_start,
-    MAX(timestamp) as window_end
+    MAX(timestamp) as window_end,
+    300 as ttl_seconds  -- 固定5分钟
 FROM nginx_access_log
 GROUP BY 
     host,
@@ -229,6 +248,12 @@ GROUP BY
 -- 3.2 按状态码分组统计
 INSERT INTO redis_traffic_stats
 SELECT
+    'traffic:stats:' || host || ':by_status:' || CASE
+        WHEN status < 300 THEN '2xx'
+        WHEN status < 400 THEN '3xx'
+        WHEN status < 500 THEN '4xx'
+        ELSE '5xx'
+    END as record_key,
     host,
     'by_status' as metric_type,
     CASE
@@ -239,7 +264,8 @@ SELECT
     END as metric_key,
     COUNT(*) as value,
     MIN(timestamp) as window_start,
-    MAX(timestamp) as window_end
+    MAX(timestamp) as window_end,
+    300 as ttl_seconds  -- 固定5分钟
 FROM nginx_access_log
 GROUP BY 
     host,
@@ -255,6 +281,7 @@ GROUP BY
 -- 根据实时QPS、错误率动态调整限流阈值
 INSERT INTO redis_rate_limit_config
 SELECT
+    'traffic:rate_limit:' || host || ':' || url_path as record_key,
     host,
     url_path as endpoint,
     COUNT(*) / 60 as current_qps,  -- 每秒请求数（1分钟窗口）
@@ -268,7 +295,8 @@ SELECT
             THEN (COUNT(*) / 60) * 0.7  -- 错误率>5%，限流降至70%
         ELSE (COUNT(*) / 60) * 1.5  -- 正常情况，允许150%的QPS
     END::BIGINT as suggested_limit,
-    MAX(log_timestamp) as window_time
+    MAX(log_timestamp) as window_time,
+    120 as ttl_seconds  -- 固定2分钟
 FROM (
     SELECT
         host,
@@ -293,6 +321,7 @@ HAVING COUNT(*) > 10;  -- 只统计有一定流量的端点
 -- ======== 任务5：URL热点分析 - Top热门访问路径 ========
 INSERT INTO redis_hot_urls
 SELECT
+    'traffic:hot_url:' || host || ':' || url_path as record_key,
     host,
     url_path,
     COUNT(*) as request_count,
@@ -300,7 +329,8 @@ SELECT
     SUM(CASE WHEN status >= 400 AND status < 500 THEN 1 ELSE 0 END) as status_4xx_count,
     SUM(CASE WHEN status >= 500 THEN 1 ELSE 0 END) as status_5xx_count,
     MIN(log_timestamp) as window_start,
-    MAX(log_timestamp) as window_end
+    MAX(log_timestamp) as window_end,
+    600 as ttl_seconds  -- 固定10分钟
 FROM (
     SELECT
         host,
@@ -329,12 +359,14 @@ HAVING COUNT(*) > 5;  -- 过滤掉冷门URL
 -- 检测规则：User-Agent特征 + 访问频率 + 无Referer
 INSERT INTO redis_block_ip_list
 SELECT
+    'traffic:block_ip:' || host || ':' || remote_addr as record_key,
     host,
     remote_addr as ip,
     COUNT(*) as request_count,
     MIN(timestamp) as first_seen,
     MAX(timestamp) as last_seen,
-    MAX(timestamp) + INTERVAL '2 hours' as block_until
+    MAX(timestamp) + INTERVAL '2 hours' as block_until,
+    EXTRACT(EPOCH FROM (MAX(timestamp) + INTERVAL '2 hours' - CURRENT_TIMESTAMP))::INT as ttl_seconds
 FROM nginx_access_log
 WHERE 
     -- 常见爬虫UA特征（非白名单爬虫）
