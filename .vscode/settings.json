@@ -22,5 +22,6 @@
             "username": "postgres",
             "password": "12345"
         }
-    ]
+    ],
+    "kiroAgent.configureMCP": "Disabled"
 }

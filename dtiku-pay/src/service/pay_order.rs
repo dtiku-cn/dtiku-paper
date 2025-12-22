@@ -78,7 +78,7 @@ impl PayOrderService {
             code,
             message,
         } = resp;
-        tracing::info!("wechat pay resp code ==> {code:?}, message ==> {message:?}");
+        tracing::info!("wechat pay trade#{out_trade_no} resp code ==> {code:?}, message ==> {message:?}");
         Ok(code_url)
     }
 
@@ -110,7 +110,7 @@ impl PayOrderService {
             alipay_cert_sn,
             sign,
         } = resp;
-        tracing::info!("alipay resp sign ==> {sign:?}, alipay_cert_sn ==> {alipay_cert_sn:?}");
+        tracing::info!("alipay trade#{out_trade_no} resp sign ==> {sign:?}, alipay_cert_sn ==> {alipay_cert_sn:?}");
         Ok(response.qr_code)
     }
 
