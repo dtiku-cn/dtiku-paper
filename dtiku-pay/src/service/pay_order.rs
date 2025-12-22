@@ -55,8 +55,8 @@ impl PayOrderService {
             level.amount()
         };
         let qrcode_url = match from {
-            PayFrom::Alipay => self.alipay(subject, order_id, amount).await?,
-            PayFrom::Wechat => self.wechat_pay(subject, order_id, amount).await?,
+            PayFrom::Alipay => self.alipay(subject, &order, amount).await?,
+            PayFrom::Wechat => self.wechat_pay(subject, &order, amount).await?,
         };
         Ok((order_id, qrcode_url))
     }
@@ -64,10 +64,12 @@ impl PayOrderService {
     async fn wechat_pay(
         &self,
         subject: String,
-        order_id: i32,
+        order: &pay_order::Model,
         amount: i32,
     ) -> anyhow::Result<Option<String>> {
-        let out_trade_no = format!("{:06}", order_id); // 微信“商户订单号”字符串规则校验最少6字节
+        let order_id = order.id;
+        let created = order.created.format("%Y%m%d%H%M%S");
+        let out_trade_no = format!("{order_id}{created}"); // 微信“商户订单号”字符串规则校验最少6字节
         let wechat = self.wechat.clone();
         let resp = wechat
             .native_pay(NativeParams::new(subject, out_trade_no, amount.into()))
@@ -78,16 +80,17 @@ impl PayOrderService {
             code,
             message,
         } = resp;
-        tracing::info!("wechat pay trade#{out_trade_no} resp code ==> {code:?}, message ==> {message:?}");
+        tracing::info!("wechat pay trade#{order_id} resp code ==> {code:?}, message ==> {message:?}");
         Ok(code_url)
     }
 
     async fn alipay(
         &self,
         subject: String,
-        out_trade_no: i32,
+        order: &pay_order::Model,
         amount: i32,
     ) -> anyhow::Result<Option<String>> {
+        let out_trade_no = order.id;
         let alipay = self.alipay.clone();
         let mut biz_content = biz::TradePrecreateBiz::new();
         biz_content.set_subject(subject.into());
@@ -150,10 +153,11 @@ impl PayOrderService {
     pub async fn query_wechat_order(&self, model: pay_order::Model) -> anyhow::Result<pay_order::Model> {
         let wechat = self.wechat.clone();
         let order_id = model.id;
+        let created = model.created.format("%Y%m%d%H%M%S");
         let mchid = &wechat.mch_id;
         let resp = wechat
             .get_pay::<WechatPayOrderResp>(&format!(
-                "/v3/pay/transactions/out-trade-no/{order_id:06}?mchid={mchid}"
+                "/v3/pay/transactions/out-trade-no/{order_id}{created}?mchid={mchid}"
             ))
             .await
             .context("微信订单查询失败")?;
@@ -296,11 +300,20 @@ impl PayOrderService {
         tracing::info!("接收到微信订单状态: {}", data.trade_state);
 
         let status = OrderStatus::from_wechat(&data.trade_state);
-        let out_trade_no = data.out_trade_no.parse::<i32>().context("解析订单号失败")?;
+        // 从 out_trade_no 中提取订单ID（去掉后14位时间戳）
+        let out_trade_no_str = &data.out_trade_no;
+        let order_id = if out_trade_no_str.len() > 14 {
+            out_trade_no_str[..out_trade_no_str.len() - 14]
+                .parse::<i32>()
+                .context("解析订单号失败")?
+        } else {
+            // 兼容旧格式（没有时间戳的情况）
+            out_trade_no_str.parse::<i32>().context("解析订单号失败")?
+        };
         let now = Local::now().naive_local();
 
         let model = pay_order::ActiveModel {
-            id: Set(out_trade_no),
+            id: Set(order_id),
             confirm: Set(Some(now)),
             status: Set(status),
             resp: Set(Some(
@@ -310,7 +323,7 @@ impl PayOrderService {
         }
         .update(&self.db)
         .await
-        .with_context(|| format!("update_pay_order({out_trade_no}) failed"))?;
+        .with_context(|| format!("update_pay_order({order_id}) failed"))?;
         Ok(model)
     }
 
