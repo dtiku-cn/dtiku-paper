@@ -1,14 +1,20 @@
-use dtiku_base::model::{schedule_task, ScheduleTask};
-use dtiku_paper::model::{question, ExamCategory, PaperQuestion, Question};
+use anyhow::Context;
+use dtiku_base::model::{
+    schedule_task::{self, ActiveModel},
+    ScheduleTask,
+};
+use dtiku_paper::model::{
+    question, question_keypoint, ExamCategory, KeyPoint, Paper, PaperQuestion, Question,
+};
 use regex::Regex;
-use sea_orm::{ActiveValue::Set, EntityTrait as _};
+use sea_orm::{ActiveValue::Set, EntityTrait as _, QueryFilter};
 use serde_json::Value;
 use spring::{plugin::Service, tracing};
 use spring_sea_orm::DbConn;
 use std::collections::HashMap;
 
 static REGEX_CONFIGS: &[(&str, &[&str])] = &[
-    ("文章类", &["(议?论文)", "写一篇.*文章", "自拟题目.*写作?一?(?:篇|段)?(?:.*的)?文章"]),
+    ("作文题/_", &["(议?论文)", "写一篇.*文章", "自拟题目.*写作?一?(?:篇|段)?(?:.*的)?文章"]),
 
     ("公文写作题/评论类", &["(时评|短评|社评)", "写一篇(评论)", "写点评", "反驳.*观点", "对.*(?:评析|评价|点评)"]),
     ("公文写作题/总结类", &["一份.*(总结|报告|综述)", "(调查报告|调研提纲|调研报告|考察报告|专题报告|简报|工作总结|汇报|导学材料)"]),
@@ -52,12 +58,8 @@ impl ShenlunCategorizeService {
     fn match_text(&self, html: &str) -> Option<(String, String)> {
         for ((ty, name), res) in &self.regex_configs {
             for re in res {
-                if let Some(caps) = re.captures(html) {
-                    if let Some(m) = caps.get(1) {
-                        return Some((ty.to_string(), name.to_string()));
-                    } else if ty.starts_with("其他") {
-                        return Some((ty.to_string(), "其他类".to_string()));
-                    }
+                if let Some(_caps) = re.captures(html) {
+                    return Some((ty.to_string(), name.to_string()));
                 }
             }
         }
@@ -117,8 +119,55 @@ impl ShenlunCategorizeService {
     async fn stats_shenlun_question(&self, q: &question::Model) -> anyhow::Result<()> {
         let html = q.content.replace(|c: char| c.is_whitespace(), "");
 
-        if let Some(_text) = self.match_text(&html) {
-            // TODO:
+        let paper_type = q.paper_type;
+        if let Some((ty, name)) = self.match_text(&html) {
+            let kp = if name == "其他类" {
+                let parent = KeyPoint::find_by_paper_type_and_name(&self.db, paper_type, &ty)
+                    .await
+                    .with_context(|| {
+                        format!("KeyPoint::find_by_paper_type_and_name({paper_type},{ty})")
+                    })?;
+                if let Some(p) = parent {
+                    KeyPoint::find_by_pid_and_name(&self.db, paper_type, p.id, &name)
+                        .await
+                        .with_context(|| {
+                            format!("KeyPoint::find_by_pid_and_name({paper_type},{ty},{name})")
+                        })?
+                } else {
+                    None
+                }
+            } else if name != "_" {
+                KeyPoint::find_by_paper_type_and_name(&self.db, paper_type, &name)
+                    .await
+                    .with_context(|| {
+                        format!("KeyPoint::find_by_paper_type_and_name({paper_type},{name})")
+                    })?
+            } else {
+                KeyPoint::find_by_paper_type_and_name(&self.db, paper_type, &ty)
+                    .await
+                    .with_context(|| {
+                        format!("KeyPoint::find_by_paper_type_and_name({paper_type},{ty})")
+                    })?
+            };
+
+            if let Some(kp) = kp {
+                let pqs = PaperQuestion::find_by_question_id(&self.db, q.id).await?;
+                let year = if let Some(pq) = pqs.first() {
+                    let p = Paper::find_by_id(pq.paper_id).one(&self.db).await?;
+                    p.map(|p| p.year).unwrap_or(1970)
+                } else {
+                    1970
+                };
+                question_keypoint::ActiveModel {
+                    question_id: Set(q.id),
+                    key_point_id: Set(kp.id),
+                    year: Set(year),
+                    ..Default::default()
+                }
+                .insert_on_conflict(&self.db)
+                .await
+                .context("insert shenlun category question_keypoint failed")?;
+            }
         }
 
         Ok(())

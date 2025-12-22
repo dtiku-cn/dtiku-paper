@@ -32,6 +32,26 @@ impl Entity {
             .with_context(|| format!("key_point::find_by_pid({paper_type},{pid}) failed"))
     }
 
+    pub async fn find_by_pid_and_name<C: ConnectionTrait>(
+        db: &C,
+        paper_type: i16,
+        pid: i32,
+        name: &str,
+    ) -> anyhow::Result<Option<Model>> {
+        Entity::find()
+            .filter(
+                Column::Pid
+                    .eq(pid)
+                    .and(Column::PaperType.eq(paper_type))
+                    .and(Column::Name.eq(name)),
+            )
+            .one(db)
+            .await
+            .with_context(|| {
+                format!("key_point::find_by_pid_and_name({paper_type},{pid},{name}) failed")
+            })
+    }
+
     pub async fn find_by_paper_type<C: ConnectionTrait>(
         db: &C,
         paper_type: i16,
