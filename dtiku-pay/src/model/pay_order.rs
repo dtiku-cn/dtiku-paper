@@ -1,5 +1,5 @@
-use super::{OrderLevel, OrderStatus};
 pub use super::_entities::pay_order::*;
+use super::{OrderLevel, OrderStatus};
 use anyhow::Context;
 use chrono::{Days, NaiveDate};
 use sea_orm::{
@@ -32,17 +32,6 @@ impl ActiveModelBehavior for ActiveModel {
         }
         self.modified = Set(Local::now().naive_local());
         Ok(self)
-    }
-
-    async fn after_save<C>(model: Model, _db: &C, insert: bool) -> Result<Model, DbErr>
-    where
-        C: ConnectionTrait,
-    {
-        if insert {
-            let producer = App::global().get_expect_component::<Producer>();
-            let _ = producer.send_json("pay_order", &model).await;
-        }
-        Ok(model)
     }
 }
 
@@ -148,8 +137,7 @@ impl Entity {
             "#,
         );
 
-        let stmt =
-            Statement::from_sql_and_values(db_backend, sql, vec![start.into(), end.into()]);
+        let stmt = Statement::from_sql_and_values(db_backend, sql, vec![start.into(), end.into()]);
 
         PayStatsByDay::find_by_statement(stmt)
             .all(db)
