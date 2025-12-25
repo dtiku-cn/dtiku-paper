@@ -11,7 +11,6 @@ use sea_orm::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use spring::{plugin::service::Service, tracing};
-use spring_stream::Producer;
 use std::{collections::HashMap, env, fs::File, io::Write as _, path::Path};
 use wechat_pay_rust_sdk::{
     model::{NativeParams, WechatPayDecodeData, WechatPayNotify},
@@ -23,8 +22,6 @@ use wechat_pay_rust_sdk::{
 pub struct PayOrderService {
     #[inject(component)]
     pub db: DbConn,
-    #[inject(component)]
-    producer: Producer,
     #[inject(component)]
     alipay: Alipay,
     #[inject(component)]
@@ -61,7 +58,6 @@ impl PayOrderService {
             PayFrom::Alipay => self.alipay(subject, order_id, amount).await?,
             PayFrom::Wechat => self.wechat_pay(subject, order_id, amount).await?,
         };
-        let _ = self.producer.send_json("pay_order", &order).await;
         Ok((order_id, qrcode_url))
     }
 
