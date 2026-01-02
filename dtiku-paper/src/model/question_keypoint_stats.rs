@@ -19,7 +19,10 @@ impl Entity {
         Entity::find()
             .select_only()
             .column(Column::KeyPointId)
-            .column_as(Expr::col(Column::QuestionCount).sum(), "total_questions")
+            .column_as(
+                Expr::cust("SUM(question_count)::BIGINT"), 
+                "total_questions"
+            )
             .filter(Column::KeyPointId.is_in(key_point_ids))
             .group_by(Column::KeyPointId)
             .into_model::<KeyPointSummary>()

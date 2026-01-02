@@ -7,10 +7,10 @@ use crate::{
 };
 use anyhow::Context;
 use itertools::Itertools;
-use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use spring::plugin::service::Service;
 use spring_redis::cache;
-use spring_sea_orm::{pagination::Pagination, DbConn};
+use spring_sea_orm::{DbConn, pagination::{Page, Pagination, PaginationExt}};
 use std::{collections::HashMap, num::ParseIntError};
 
 #[derive(Clone, Service)]
@@ -108,7 +108,7 @@ impl KeyPointService {
         key_point_id: i32,
         year: Option<i16>,
         page: &Pagination,
-    ) -> anyhow::Result<Vec<i32>> {
+    ) -> anyhow::Result<Page<i32>> {
         let mut condition = question_keypoint::Column::KeyPointId.eq(key_point_id);
         if let Some(y) = year {
             condition = condition.and(question_keypoint::Column::Year.eq(y))
@@ -118,8 +118,7 @@ impl KeyPointService {
             .column(question_keypoint::Column::QuestionId)
             .filter(condition)
             .into_tuple()
-            .paginate(&self.db, page.size)
-            .fetch_page(page.page)
+            .page(&self.db, page)
             .await
             .with_context(|| format!("find_qid_by_kp({key_point_id}, {year:?})"))
     }

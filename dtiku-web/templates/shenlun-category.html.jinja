@@ -3,12 +3,13 @@
 {%- import "macros/painter.html.min.jinja" as painter -%}
 {%- import "macros/shenlun-template.html.min.jinja" as shenlun_template -%}
 {%- import "macros/question.html.min.jinja" as question -%}
+{%- import "macros/elements.html.min.jinja" as elements -%}
 <!doctype html>
 <html lang="zh">
 
 <head>
     {% call general::meta() %}
-    <title>{{kp_tree.kp_text_or_default(kp_id,"申论答案")}} | {{kp_tree.kp_text_or_default(kp_pid,"申论答案")}} | 申论题型分类 |
+    <title>{{kp_tree.kp_text_or_default(query.kp_id,"申论答案")}} | {{kp_tree.kp_text_or_default(query.kp_pid,"申论答案")}} | 申论题型分类 |
         {{global.config.site_title}}</title>
     {% call general::headerfiles() %}
 </head>
@@ -22,8 +23,8 @@
                 <div class="card">
                     <div class="card-header p-2" id="heading-{{kpp.id}}">
                         <button type="button"
-                            class="btn btn-link btn-block d-flex align-items-center text-left {%if kp_pid!=kpp.id%}collapsed{%endif%}"
-                            data-toggle="collapse" aria-expanded="{{kp_pid==kpp.id}}"
+                            class="btn btn-link btn-block d-flex align-items-center text-left {%if query.kp_pid!=kpp.id%}collapsed{%endif%}"
+                            data-toggle="collapse" aria-expanded="{{query.kp_pid==kpp.id}}"
                             data-target="#collapse-{{kpp.id}}">
                             <svg class="icon-svg icon-svg-sm icon-svg-arrow mr-2">
                                 <use xlink:href="#ic-arrow"></use>
@@ -31,13 +32,13 @@
                             <b>{{kpp.name}}</b>
                         </button>
                     </div>
-                    <div class="collapse {%if kp_pid==kpp.id%}show{%endif%}" data-parent="#accordion"
+                    <div class="collapse {%if query.kp_pid==kpp.id%}show{%endif%}" data-parent="#accordion"
                         id="collapse-{{kpp.id}}">
                         <div class="list-group list-group-flush">
                             {%for kp in kpp.children %}
-                            <a class="list-group-item d-flex justify-content-between align-items-center {%if kp_id==kp.id%}active{%endif%}"
+                            <a class="list-group-item d-flex justify-content-between align-items-center {%if query.kp_id==kp.id%}active{%endif%}"
                                 href="/shenlun-categories/{{kpp.id}}/{{kp.id}}">
-                                {%if kp_id == kp.id%}<strong>{{kp.name}}</strong>
+                                {%if query.kp_id == kp.id%}<strong>{{kp.name}}</strong>
                                 {%else%}<span>{{kp.name}}</span>
                                 {%endif%}
                                 <span class="badge badge-pill badge-secondary">{{kp.qcount}}</span>
@@ -51,14 +52,14 @@
         </div>
 
         <div class="col-xs-12 col-md-9">
-            {%if let Some(kp_name) = kp_tree.kp_text(kp_id)%}
+            {%if let Some(kp_name) = kp_tree.kp_text(query.kp_id)%}
             {%call shenlun_template::shenlun_template(kp_name.as_str())%}
             {%endif%}
             <ul class="nav nav-pills my-3" role="tablist">
                 {%for y in years%}
                 <li role="presentation" class="nav-item">
-                    <a class="nav-link d-flex justify-content-between align-items-center {%if year==Some(*y.year)%}active{%endif%}"
-                        href="/shenlun-categories/{{kp_pid}}/{{kp_id}}/{{y.year}}">
+                    <a class="nav-link d-flex justify-content-between align-items-center {%if query.year==Some(*y.year)%}active{%endif%}"
+                        href="/shenlun-categories/{{query.kp_pid}}/{{query.kp_id}}/{{y.year}}">
                         <span class="d-inline-block mr-1">{{y.year}}</span>
                         <span class="badge badge-pill badge-secondary">{{y.question_count}}</span>
                     </a>
@@ -68,17 +69,15 @@
             {%for q in questions%}
             {%call question::question_card(q)%}
             {%endfor%}
+            {%call elements::pagination(page, query.build_url(), true)%}
         </div>
-        <th:block
-            th:include="fragments/elements::pagination(${page},@{/shenlun-categories/{c}/{t}/{y}(c=${category},t=${text},y=${year},fromType=${strings.defaultString(fromType,'')})},true)">
-        </th:block>
     </div>
     </div>
-    {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽")%}
+    {% call artalk::comment(true,true,true,"对网站或题目有啥疑问可以在这里吐槽") %}
     {% call general::footer() %}
     {% call painter::painter() %}
     <script th:replace="fragments/indent::solution-indent"></script>
-    <script th:replace="fragments/elements :: pager-select"></script>
+    {%call elements::pager_select()%}
     <script src='/static/dist/js/speech.js'></script>
 </body>
 

@@ -1,4 +1,7 @@
-use crate::views::{shenlun_category::ShenlunCategoryTemplate, GlobalVariables};
+use crate::views::{
+    shenlun_category::{ShenlunCategoryQuery, ShenlunCategoryTemplate},
+    GlobalVariables,
+};
 use dtiku_paper::{
     domain::keypoint::KeyPointTree,
     service::{keypoint::KeyPointService, question::QuestionService},
@@ -67,15 +70,18 @@ async fn inner_shenlun_category(
     page: Pagination,
 ) -> Result<impl IntoResponse> {
     let years = kps.find_year_stats_for_category(kp_id).await?;
-    let qids = kps.find_qid_by_kp(kp_id, year, &page).await?;
-    let questions = qs.full_question_by_ids(qids).await?;
+    let qids_page = kps.find_qid_by_kp(kp_id, year, &page).await?;
+    let questions = qs.full_question_by_ids(qids_page.content.clone()).await?;
     Ok(ShenlunCategoryTemplate {
         global,
         kp_tree,
-        kp_pid,
-        kp_id,
-        year,
         years,
         questions,
+        page: qids_page,
+        query: ShenlunCategoryQuery {
+            kp_pid,
+            kp_id,
+            year,
+        },
     })
 }

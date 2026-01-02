@@ -10,7 +10,7 @@ pub struct Model {
     pub key_point_id: i32,
     #[sea_orm(primary_key, auto_increment = false)]
     pub year: i16,
-    pub question_count: i32,
+    pub question_count: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -8,8 +8,7 @@ use sea_orm::{
     Statement,
 };
 use serde::Serialize;
-use spring::{async_trait, plugin::ComponentRegistry, App};
-use spring_stream::Producer;
+use spring::async_trait;
 
 #[derive(Debug, FromQueryResult, Serialize)]
 pub struct PayStatsByDay {
