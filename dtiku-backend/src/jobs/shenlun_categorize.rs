@@ -7,7 +7,7 @@ use dtiku_paper::model::{
     question, question_keypoint, ExamCategory, KeyPoint, Paper, PaperQuestion, Question,
 };
 use regex::Regex;
-use sea_orm::{ActiveValue::Set, EntityTrait as _, QueryFilter};
+use sea_orm::{ActiveValue::Set, EntityTrait as _};
 use serde_json::Value;
 use spring::{plugin::Service, tracing};
 use spring_sea_orm::DbConn;
@@ -29,7 +29,8 @@ static REGEX_CONFIGS: &[(&str, &[&str])] = &[
     ("单一题/影响类", &["(变化|影响|作用|功能|意义|成效|危害|效果)"]),
     ("单一题/提出对策类", &["(做法|启示|对策|建议|措施|举措|经验|方式|途径)", "如何.*", "怎么.*", "解决(?:办法|方式)"]),
     ("单一题/原因类", &["(原因|理由|因素)", "为什么.*", "为何.*"]),
-    ("单一题/问题类", &["(问题|困难|挑战|不足|劣势|难题)", "(现象|特征|特点|背景|现状)", "具?体?(表现)"]),
+    ("单一题/问题类", &["(问题|困难|挑战|不足|劣势|难题)", "(现象|背景|现状)"]),
+    ("单一题/特点类", &["(特征|特点)", "具?体?(表现)"]),
 
 ];
 
