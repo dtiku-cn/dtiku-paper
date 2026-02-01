@@ -428,7 +428,7 @@ impl FenbiSyncService {
                 .bind(paper.label_id)
                 .fetch_one(&self.source_db)
                 .await
-                .with_context(|| format!("find target_id for label#{}", paper.label_id))?
+                .with_context(|| format!("find target_id for label#{} failed", paper.label_id))?
                 .try_get("target_id")
                 .context("get target_id failed")?;
         let paper = paper.save_to(&self.target_db, target_label_id).await?;
