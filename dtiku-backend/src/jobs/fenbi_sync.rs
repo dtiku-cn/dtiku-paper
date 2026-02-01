@@ -424,7 +424,7 @@ impl FenbiSyncService {
     async fn save_paper(&self, paper: OriginPaper) -> anyhow::Result<paper::Model> {
         let source_paper_id = paper.id;
         let target_label_id: i32 =
-            sqlx::query("select target_id from label where id = $1 and from_ty in ('fenbi', 'mock_exam')")
+            sqlx::query("select target_id from label where id = $1 and from_ty = 'fenbi'")
                 .bind(paper.label_id)
                 .fetch_one(&self.source_db)
                 .await
